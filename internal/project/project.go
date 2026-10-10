@@ -43,6 +43,7 @@ type Project struct {
 	Root                       string                     `json:"root"`
 	Namespace                  string                     `json:"namespace,omitempty"`
 	SourceAPIVersion           string                     `json:"sourceApiVersion,omitempty"`
+	OrgDomainURL               string                     `json:"orgDomainUrl,omitempty"`
 	SchemaSnapshot             string                     `json:"schemaSnapshot,omitempty"`
 	SchemaSnapshotSHA256       string                     `json:"schemaSnapshotSHA256,omitempty"`
 	PackageDirectories         []PackageDirectory         `json:"packageDirectories"`
@@ -57,6 +58,7 @@ type Project struct {
 	StaticResourceFiles        []string                   `json:"staticResourceFiles"`
 	StaticResourceMetas        []string                   `json:"staticResourceMetas"`
 	DataCategoryGroupFiles     []string                   `json:"dataCategoryGroupFiles,omitempty"`
+	CachePartitionFiles        []string                   `json:"cachePartitionFiles,omitempty"`
 	DataWeaveFiles             []string                   `json:"dataWeaveFiles,omitempty"`
 	DataWeaveMetas             []string                   `json:"dataWeaveMetas,omitempty"`
 	ContentAssetFiles          []string                   `json:"contentAssetFiles,omitempty"`
@@ -65,6 +67,7 @@ type Project struct {
 	FolderFiles                []string                   `json:"folderFiles,omitempty"`
 	NamedCredentialFiles       []string                   `json:"namedCredentialFiles"`
 	RemoteSiteFiles            []string                   `json:"remoteSiteFiles"`
+	CustomPermissionFiles      []string                   `json:"customPermissionFiles"`
 	CustomMetadataFiles        []string                   `json:"customMetadataFiles"`
 	WorkflowFiles              []string                   `json:"workflowFiles"`
 	FlowFiles                  []string                   `json:"flowFiles"`
@@ -89,6 +92,7 @@ type Project struct {
 	LWCHTMLFiles               []string                   `json:"lwcHtmlFiles"`
 	LWCCSSFiles                []string                   `json:"lwcCssFiles"`
 	LWCMetaFiles               []string                   `json:"lwcMetaFiles"`
+	MessageChannelFiles        []string                   `json:"messageChannelFiles,omitempty"`
 	NamespaceRemaps            []namespaceremap.Rule      `json:"namespaceRemaps,omitempty"`
 	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
 	PackageShims               []PackageShim              `json:"packageShims,omitempty"`
@@ -146,8 +150,41 @@ type PackageDependency struct {
 }
 
 type scratchOrgDefinition struct {
-	Features []string       `json:"features"`
-	Settings map[string]any `json:"settings"`
+	Features scratchFeatureNames `json:"features"`
+	Settings map[string]any      `json:"settings"`
+}
+
+// Scratch definitions may express one feature as a string or use an array.
+type scratchFeatureNames []string
+
+func (features *scratchFeatureNames) UnmarshalJSON(data []byte) error {
+	var many []string
+	if err := json.Unmarshal(data, &many); err == nil {
+		*features = many
+		return nil
+	}
+	var one string
+	if err := json.Unmarshal(data, &one); err != nil {
+		return err
+	}
+	*features = []string{one}
+	return nil
+}
+
+// OrgDomainURL returns the optional canonical org-origin seed from the nearest
+// glade.yml. The VM resolves the local default when this seed and saved state are unset.
+func OrgDomainURL(root string) (string, error) {
+	if strings.TrimSpace(root) == "" {
+		return "", nil
+	}
+	cfg, _, err := config.LoadNearest(root)
+	if errors.Is(err, config.ErrNotFound) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return cfg.Org.DomainURL, nil
 }
 
 func OrgShapeFeatures(root string) []string {
@@ -332,6 +369,7 @@ func (p Project) PackagePathForFile(file string) string {
 
 type sfdxProject struct {
 	PackageDirectories []PackageDirectory `json:"packageDirectories"`
+	PackageAliases     map[string]string  `json:"packageAliases"`
 	Namespace          string             `json:"namespace"`
 	SourceAPIVersion   string             `json:"sourceApiVersion"`
 	HasManifest        bool               `json:"-"`
@@ -369,6 +407,9 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	if errors.Is(cfgErr, os.ErrNotExist) {
 		cfgErr = config.ErrNotFound
 	}
+	if cfgErr != nil && !errors.Is(cfgErr, config.ErrNotFound) {
+		return Project{}, cfgErr
+	}
 	if cfgErr == nil {
 		cfgDir := filepath.Dir(cfgPath)
 		if gladeCfg.Project.Root != "" {
@@ -402,6 +443,7 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 		PackageDirectories: cfg.PackageDirectories,
 	}
 	if cfgErr == nil {
+		p.OrgDomainURL = gladeCfg.Org.DomainURL
 		p.SchemaSnapshot = gladeCfg.Project.SchemaSnapshot
 		p.SchemaSnapshotSHA256 = gladeCfg.Project.SchemaSnapshotSHA256
 		p.NamespaceRemaps = gladeCfg.Project.NamespaceRemaps
@@ -412,8 +454,11 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	dependencyCfgOK := false
 	if cfgErr != nil {
 		if nearestCfg, _, err := config.LoadNearest(absRoot); err == nil {
+			p.OrgDomainURL = nearestCfg.Org.DomainURL
 			dependencyCfg = nearestCfg
 			dependencyCfgOK = true
+		} else if !errors.Is(err, config.ErrNotFound) {
+			return Project{}, err
 		}
 	}
 	p.ManagedPackageDependencies, p.DependencyDiagnostics = loadLocalSFDXPackageDependencies(absRoot, cfg, p, stack, dependencyCfg, dependencyCfgOK)
@@ -444,6 +489,7 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	sort.Strings(p.StaticResourceFiles)
 	sort.Strings(p.StaticResourceMetas)
 	sort.Strings(p.DataCategoryGroupFiles)
+	sort.Strings(p.CachePartitionFiles)
 	sort.Strings(p.DataWeaveFiles)
 	sort.Strings(p.DataWeaveMetas)
 	sort.Strings(p.ContentAssetFiles)
@@ -452,6 +498,7 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	sort.Strings(p.FolderFiles)
 	sort.Strings(p.NamedCredentialFiles)
 	sort.Strings(p.RemoteSiteFiles)
+	sort.Strings(p.CustomPermissionFiles)
 	sort.Strings(p.CustomMetadataFiles)
 	sort.Strings(p.WorkflowFiles)
 	sort.Strings(p.FlowFiles)
@@ -477,6 +524,7 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	sort.Strings(p.LWCHTMLFiles)
 	sort.Strings(p.LWCCSSFiles)
 	sort.Strings(p.LWCMetaFiles)
+	sort.Strings(p.MessageChannelFiles)
 	return p, nil
 }
 
@@ -492,6 +540,7 @@ func dedupeProjectFiles(p *Project) {
 	p.StaticResourceFiles = dedupeFilePaths(p.StaticResourceFiles)
 	p.StaticResourceMetas = dedupeFilePaths(p.StaticResourceMetas)
 	p.DataCategoryGroupFiles = dedupeFilePaths(p.DataCategoryGroupFiles)
+	p.CachePartitionFiles = dedupeFilePaths(p.CachePartitionFiles)
 	p.DataWeaveFiles = dedupeFilePaths(p.DataWeaveFiles)
 	p.DataWeaveMetas = dedupeFilePaths(p.DataWeaveMetas)
 	p.ContentAssetFiles = dedupeFilePaths(p.ContentAssetFiles)
@@ -500,6 +549,7 @@ func dedupeProjectFiles(p *Project) {
 	p.FolderFiles = dedupeFilePaths(p.FolderFiles)
 	p.NamedCredentialFiles = dedupeFilePaths(p.NamedCredentialFiles)
 	p.RemoteSiteFiles = dedupeFilePaths(p.RemoteSiteFiles)
+	p.CustomPermissionFiles = dedupeFilePaths(p.CustomPermissionFiles)
 	p.CustomMetadataFiles = dedupeFilePaths(p.CustomMetadataFiles)
 	p.WorkflowFiles = dedupeFilePaths(p.WorkflowFiles)
 	p.FlowFiles = dedupeFilePaths(p.FlowFiles)
@@ -524,6 +574,7 @@ func dedupeProjectFiles(p *Project) {
 	p.LWCHTMLFiles = dedupeFilePaths(p.LWCHTMLFiles)
 	p.LWCCSSFiles = dedupeFilePaths(p.LWCCSSFiles)
 	p.LWCMetaFiles = dedupeFilePaths(p.LWCMetaFiles)
+	p.MessageChannelFiles = dedupeFilePaths(p.MessageChannelFiles)
 }
 
 func dedupeFilePaths(paths []string) []string {
@@ -696,7 +747,14 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 		if managedPackageDependencyNamespaceLoaded(deps, packageName) {
 			continue
 		}
-		depRoots := findLocalSFDXPackageDependencyRoots(root, packageName, dependencyCfgOK)
+		// A sibling project in the same source workspace is an unambiguous local
+		// dependency when its manifest declares the requested package.  This is
+		// the normal SFDX monorepo layout (for example, a plugin next to its
+		// package source), and does not broaden discovery to unrelated
+		// grandchildren or arbitrary filesystem paths.  Ancestor glade.yml
+		// configuration remains the escape hatch for dependencies outside the
+		// workspace.
+		depRoots := findLocalSFDXPackageDependencyRoots(root, packageName, true, sfdxProjectHasPackageAlias(cfg, packageName))
 		if len(depRoots) == 0 {
 			diagnostics = append(diagnostics, DependencyDiagnostic{
 				Namespace: packageName,
@@ -791,11 +849,20 @@ func matchingConfiguredManagedPackageDependencies(packageNames []string, configu
 
 func sfdxPackageDependencyNames(cfg sfdxProject) []string {
 	seen := make(map[string]bool)
+	declared := make(map[string]bool)
+	for _, dir := range cfg.PackageDirectories {
+		if name := normalizeSFDXPackageName(dir.Package); name != "" {
+			declared[name] = true
+		}
+	}
 	var names []string
 	for _, dir := range cfg.PackageDirectories {
 		for _, dep := range dir.Dependencies {
 			name := normalizeSFDXPackageName(dep.Package)
-			if name == "" || seen[name] {
+			// A dependency between package directories in this manifest is
+			// already represented by the loaded project source. It is not an
+			// external managed-package dependency that needs a separate root.
+			if name == "" || declared[name] || seen[name] {
 				continue
 			}
 			seen[name] = true
@@ -805,7 +872,7 @@ func sfdxPackageDependencyNames(cfg sfdxProject) []string {
 	return names
 }
 
-func findLocalSFDXPackageDependencyRoots(root, packageName string, allowSiblingScan bool) []string {
+func findLocalSFDXPackageDependencyRoots(root, packageName string, allowSiblingScan, allowWorkspaceScan bool) []string {
 	wanted := normalizeSFDXPackageName(packageName)
 	if wanted == "" {
 		return nil
@@ -813,7 +880,7 @@ func findLocalSFDXPackageDependencyRoots(root, packageName string, allowSiblingS
 	root = filepath.Clean(root)
 	seen := make(map[string]bool)
 	var matches []string
-	for _, candidate := range localSFDXPackageDependencyCandidates(root, packageName, allowSiblingScan) {
+	for _, candidate := range localSFDXPackageDependencyCandidates(root, packageName, allowSiblingScan, allowWorkspaceScan) {
 		if sameFilePath(candidate, root) || seen[candidate] {
 			continue
 		}
@@ -873,7 +940,7 @@ func findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root string, packa
 	return roots
 }
 
-func localSFDXPackageDependencyCandidates(root, packageName string, allowSiblingScan bool) []string {
+func localSFDXPackageDependencyCandidates(root, packageName string, allowSiblingScan, allowWorkspaceScan bool) []string {
 	seen := make(map[string]bool)
 	var candidates []string
 	add := func(dir string) {
@@ -904,7 +971,48 @@ func localSFDXPackageDependencyCandidates(root, packageName string, allowSibling
 			add(candidate)
 		}
 	}
+	if allowWorkspaceScan {
+		// Some SFDX workspaces keep package sources in category directories
+		// beside the consumer (for example, flow_action_components and
+		// flow_screen_components). The packageAliases entry is the explicit
+		// Salesforce identity that makes this bounded workspace lookup safe;
+		// without it, retain the historical parent/grandparent-only search.
+		for _, category := range localSFDXDirectoryChildren(grandparent) {
+			for _, candidate := range localSFDXDirectoryChildren(category) {
+				add(candidate)
+			}
+		}
+	}
 	return candidates
+}
+
+func localSFDXDirectoryChildren(parent string) []string {
+	entries, err := os.ReadDir(parent)
+	if err != nil {
+		return nil
+	}
+	children := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if !entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+		children = append(children, filepath.Join(parent, entry.Name()))
+	}
+	sort.Strings(children)
+	return children
+}
+
+func sfdxProjectHasPackageAlias(cfg sfdxProject, packageName string) bool {
+	wanted := normalizeSFDXPackageName(packageName)
+	if wanted == "" {
+		return false
+	}
+	for alias := range cfg.PackageAliases {
+		if normalizeSFDXPackageName(alias) == wanted {
+			return true
+		}
+	}
+	return false
 }
 
 func localSFDXSiblingProjectCandidates(parent string) []string {
@@ -1397,6 +1505,8 @@ func collectFiles(root string, p *Project) error {
 			p.StaticResourceMetas = append(p.StaticResourceMetas, path)
 		case strings.HasSuffix(lower, ".datacategorygroup-meta.xml"):
 			p.DataCategoryGroupFiles = append(p.DataCategoryGroupFiles, path)
+		case strings.HasSuffix(lower, ".cachepartition-meta.xml"):
+			p.CachePartitionFiles = append(p.CachePartitionFiles, path)
 		case strings.HasSuffix(lower, ".dwl-meta.xml"):
 			p.DataWeaveMetas = append(p.DataWeaveMetas, path)
 		case strings.HasSuffix(lower, ".dwl"):
@@ -1423,6 +1533,8 @@ func collectFiles(root string, p *Project) error {
 			p.FlowFiles = append(p.FlowFiles, path)
 		case strings.HasSuffix(lower, ".profile"), strings.HasSuffix(lower, ".profile-meta.xml"):
 			p.ProfileFiles = append(p.ProfileFiles, path)
+		case strings.HasSuffix(lower, ".custompermission"), strings.HasSuffix(lower, ".custompermission-meta.xml"):
+			p.CustomPermissionFiles = append(p.CustomPermissionFiles, path)
 		case strings.HasSuffix(lower, ".permissionset"), strings.HasSuffix(lower, ".permissionset-meta.xml"):
 			p.PermissionSetFiles = append(p.PermissionSetFiles, path)
 		case strings.HasSuffix(lower, ".permissionsetgroup"), strings.HasSuffix(lower, ".permissionsetgroup-meta.xml"):
@@ -1453,6 +1565,8 @@ func collectFiles(root string, p *Project) error {
 			p.VisualforcePageFiles = append(p.VisualforcePageFiles, path)
 		case strings.HasSuffix(lower, ".component"):
 			p.VisualforceComponentFiles = append(p.VisualforceComponentFiles, path)
+		case strings.HasSuffix(lower, ".messagechannel-meta.xml"):
+			p.MessageChannelFiles = append(p.MessageChannelFiles, path)
 		case isAuraPath(lower) && isAuraSourceFile(lower):
 			p.AuraFiles = append(p.AuraFiles, path)
 		case isLWCPath(lower):
@@ -1509,7 +1623,15 @@ func isFolderMetadataPath(path string) bool {
 			return true
 		}
 	}
-	return false
+	if !strings.HasSuffix(path, "-meta.xml") {
+		return false
+	}
+	switch strings.ToLower(filepath.Base(filepath.Dir(path))) {
+	case "documents", "reports":
+		return true
+	default:
+		return false
+	}
 }
 
 func isCustomMetadataPath(path string) bool {

@@ -1,0 +1,5214 @@
+{
+  "versions": [
+    {
+      "apiVersion": "62.0",
+      "locale": "en_US",
+      "timezone": "America/Los_Angeles",
+      "language": "en_US",
+      "cases": [
+        {
+          "id": "C001",
+          "code": "Date.newInstance(2024,2,29).year()",
+          "expected": "2024"
+        },
+        {
+          "id": "C002",
+          "code": "Date.newInstance(2024,2,29).month()",
+          "expected": "2"
+        },
+        {
+          "id": "C003",
+          "code": "Date.newInstance(2024,2,29).day()",
+          "expected": "29"
+        },
+        {
+          "id": "C004",
+          "code": "Date.newInstance(2024,2,29).dayOfYear()",
+          "expected": "60"
+        },
+        {
+          "id": "C005",
+          "code": "Date.newInstance(2024,2,29).toStartOfMonth()",
+          "expected": "2024-02-01 00:00:00"
+        },
+        {
+          "id": "C006",
+          "code": "Date.newInstance(2024,2,29).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 11: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C007",
+          "code": "Date.newInstance(2024,2,29).toStartOfWeek()",
+          "expected": "2024-02-25 00:00:00"
+        },
+        {
+          "id": "C008",
+          "code": "Date.newInstance(2024,2,29).addDays(-366)",
+          "expected": "2023-02-28 00:00:00"
+        },
+        {
+          "id": "C009",
+          "code": "Date.newInstance(2024,2,29).addDays(-1)",
+          "expected": "2024-02-28 00:00:00"
+        },
+        {
+          "id": "C010",
+          "code": "Date.newInstance(2024,2,29).addDays(0)",
+          "expected": "2024-02-29 00:00:00"
+        },
+        {
+          "id": "C011",
+          "code": "Date.newInstance(2024,2,29).addDays(1)",
+          "expected": "2024-03-01 00:00:00"
+        },
+        {
+          "id": "C012",
+          "code": "Date.newInstance(2024,2,29).addDays(366)",
+          "expected": "2025-03-01 00:00:00"
+        },
+        {
+          "id": "C013",
+          "code": "Date.newInstance(2023,2,28).year()",
+          "expected": "2023"
+        },
+        {
+          "id": "C014",
+          "code": "Date.newInstance(2023,2,28).month()",
+          "expected": "2"
+        },
+        {
+          "id": "C015",
+          "code": "Date.newInstance(2023,2,28).day()",
+          "expected": "28"
+        },
+        {
+          "id": "C016",
+          "code": "Date.newInstance(2023,2,28).dayOfYear()",
+          "expected": "59"
+        },
+        {
+          "id": "C017",
+          "code": "Date.newInstance(2023,2,28).toStartOfMonth()",
+          "expected": "2023-02-01 00:00:00"
+        },
+        {
+          "id": "C018",
+          "code": "Date.newInstance(2023,2,28).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 22: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C019",
+          "code": "Date.newInstance(2023,2,28).toStartOfWeek()",
+          "expected": "2023-02-26 00:00:00"
+        },
+        {
+          "id": "C020",
+          "code": "Date.newInstance(2023,2,28).addDays(-366)",
+          "expected": "2022-02-27 00:00:00"
+        },
+        {
+          "id": "C021",
+          "code": "Date.newInstance(2023,2,28).addDays(-1)",
+          "expected": "2023-02-27 00:00:00"
+        },
+        {
+          "id": "C022",
+          "code": "Date.newInstance(2023,2,28).addDays(0)",
+          "expected": "2023-02-28 00:00:00"
+        },
+        {
+          "id": "C023",
+          "code": "Date.newInstance(2023,2,28).addDays(1)",
+          "expected": "2023-03-01 00:00:00"
+        },
+        {
+          "id": "C024",
+          "code": "Date.newInstance(2023,2,28).addDays(366)",
+          "expected": "2024-02-29 00:00:00"
+        },
+        {
+          "id": "C025",
+          "code": "Date.newInstance(2000,2,29).year()",
+          "expected": "2000"
+        },
+        {
+          "id": "C026",
+          "code": "Date.newInstance(2000,2,29).month()",
+          "expected": "2"
+        },
+        {
+          "id": "C027",
+          "code": "Date.newInstance(2000,2,29).day()",
+          "expected": "29"
+        },
+        {
+          "id": "C028",
+          "code": "Date.newInstance(2000,2,29).dayOfYear()",
+          "expected": "60"
+        },
+        {
+          "id": "C029",
+          "code": "Date.newInstance(2000,2,29).toStartOfMonth()",
+          "expected": "2000-02-01 00:00:00"
+        },
+        {
+          "id": "C030",
+          "code": "Date.newInstance(2000,2,29).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 33: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C031",
+          "code": "Date.newInstance(2000,2,29).toStartOfWeek()",
+          "expected": "2000-02-27 00:00:00"
+        },
+        {
+          "id": "C032",
+          "code": "Date.newInstance(2000,2,29).addDays(-366)",
+          "expected": "1999-02-28 00:00:00"
+        },
+        {
+          "id": "C033",
+          "code": "Date.newInstance(2000,2,29).addDays(-1)",
+          "expected": "2000-02-28 00:00:00"
+        },
+        {
+          "id": "C034",
+          "code": "Date.newInstance(2000,2,29).addDays(0)",
+          "expected": "2000-02-29 00:00:00"
+        },
+        {
+          "id": "C035",
+          "code": "Date.newInstance(2000,2,29).addDays(1)",
+          "expected": "2000-03-01 00:00:00"
+        },
+        {
+          "id": "C036",
+          "code": "Date.newInstance(2000,2,29).addDays(366)",
+          "expected": "2001-03-01 00:00:00"
+        },
+        {
+          "id": "C037",
+          "code": "Date.newInstance(1900,2,28).year()",
+          "expected": "1900"
+        },
+        {
+          "id": "C038",
+          "code": "Date.newInstance(1900,2,28).month()",
+          "expected": "2"
+        },
+        {
+          "id": "C039",
+          "code": "Date.newInstance(1900,2,28).day()",
+          "expected": "28"
+        },
+        {
+          "id": "C040",
+          "code": "Date.newInstance(1900,2,28).dayOfYear()",
+          "expected": "59"
+        },
+        {
+          "id": "C041",
+          "code": "Date.newInstance(1900,2,28).toStartOfMonth()",
+          "expected": "1900-02-01 00:00:00"
+        },
+        {
+          "id": "C042",
+          "code": "Date.newInstance(1900,2,28).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 44: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C043",
+          "code": "Date.newInstance(1900,2,28).toStartOfWeek()",
+          "expected": "1900-02-25 00:00:00"
+        },
+        {
+          "id": "C044",
+          "code": "Date.newInstance(1900,2,28).addDays(-366)",
+          "expected": "1899-02-27 00:00:00"
+        },
+        {
+          "id": "C045",
+          "code": "Date.newInstance(1900,2,28).addDays(-1)",
+          "expected": "1900-02-27 00:00:00"
+        },
+        {
+          "id": "C046",
+          "code": "Date.newInstance(1900,2,28).addDays(0)",
+          "expected": "1900-02-28 00:00:00"
+        },
+        {
+          "id": "C047",
+          "code": "Date.newInstance(1900,2,28).addDays(1)",
+          "expected": "1900-03-01 00:00:00"
+        },
+        {
+          "id": "C048",
+          "code": "Date.newInstance(1900,2,28).addDays(366)",
+          "expected": "1901-03-01 00:00:00"
+        },
+        {
+          "id": "C049",
+          "code": "Date.newInstance(2026,1,31).year()",
+          "expected": "2026"
+        },
+        {
+          "id": "C050",
+          "code": "Date.newInstance(2026,1,31).month()",
+          "expected": "1"
+        },
+        {
+          "id": "C051",
+          "code": "Date.newInstance(2026,1,31).day()",
+          "expected": "31"
+        },
+        {
+          "id": "C052",
+          "code": "Date.newInstance(2026,1,31).dayOfYear()",
+          "expected": "31"
+        },
+        {
+          "id": "C053",
+          "code": "Date.newInstance(2026,1,31).toStartOfMonth()",
+          "expected": "2026-01-01 00:00:00"
+        },
+        {
+          "id": "C054",
+          "code": "Date.newInstance(2026,1,31).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C055",
+          "code": "Date.newInstance(2026,1,31).toStartOfWeek()",
+          "expected": "2026-01-25 00:00:00"
+        },
+        {
+          "id": "C056",
+          "code": "Date.newInstance(2026,1,31).addDays(-366)",
+          "expected": "2025-01-30 00:00:00"
+        },
+        {
+          "id": "C057",
+          "code": "Date.newInstance(2026,1,31).addDays(-1)",
+          "expected": "2026-01-30 00:00:00"
+        },
+        {
+          "id": "C058",
+          "code": "Date.newInstance(2026,1,31).addDays(0)",
+          "expected": "2026-01-31 00:00:00"
+        },
+        {
+          "id": "C059",
+          "code": "Date.newInstance(2026,1,31).addDays(1)",
+          "expected": "2026-02-01 00:00:00"
+        },
+        {
+          "id": "C060",
+          "code": "Date.newInstance(2026,1,31).addDays(366)",
+          "expected": "2027-02-01 00:00:00"
+        },
+        {
+          "id": "C061",
+          "code": "Date.newInstance(2026,12,31).year()",
+          "expected": "2026"
+        },
+        {
+          "id": "C062",
+          "code": "Date.newInstance(2026,12,31).month()",
+          "expected": "12"
+        },
+        {
+          "id": "C063",
+          "code": "Date.newInstance(2026,12,31).day()",
+          "expected": "31"
+        },
+        {
+          "id": "C064",
+          "code": "Date.newInstance(2026,12,31).dayOfYear()",
+          "expected": "365"
+        },
+        {
+          "id": "C065",
+          "code": "Date.newInstance(2026,12,31).toStartOfMonth()",
+          "expected": "2026-12-01 00:00:00"
+        },
+        {
+          "id": "C066",
+          "code": "Date.newInstance(2026,12,31).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 20: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C067",
+          "code": "Date.newInstance(2026,12,31).toStartOfWeek()",
+          "expected": "2026-12-27 00:00:00"
+        },
+        {
+          "id": "C068",
+          "code": "Date.newInstance(2026,12,31).addDays(-366)",
+          "expected": "2025-12-30 00:00:00"
+        },
+        {
+          "id": "C069",
+          "code": "Date.newInstance(2026,12,31).addDays(-1)",
+          "expected": "2026-12-30 00:00:00"
+        },
+        {
+          "id": "C070",
+          "code": "Date.newInstance(2026,12,31).addDays(0)",
+          "expected": "2026-12-31 00:00:00"
+        },
+        {
+          "id": "C071",
+          "code": "Date.newInstance(2026,12,31).addDays(1)",
+          "expected": "2027-01-01 00:00:00"
+        },
+        {
+          "id": "C072",
+          "code": "Date.newInstance(2026,12,31).addDays(366)",
+          "expected": "2028-01-01 00:00:00"
+        },
+        {
+          "id": "C073",
+          "code": "Date.newInstance(1,1,1).year()",
+          "expected": "1"
+        },
+        {
+          "id": "C074",
+          "code": "Date.newInstance(1,1,1).month()",
+          "expected": "1"
+        },
+        {
+          "id": "C075",
+          "code": "Date.newInstance(1,1,1).day()",
+          "expected": "1"
+        },
+        {
+          "id": "C076",
+          "code": "Date.newInstance(1,1,1).dayOfYear()",
+          "expected": "1"
+        },
+        {
+          "id": "C077",
+          "code": "Date.newInstance(1,1,1).toStartOfMonth()",
+          "expected": "0001-01-01 00:00:00"
+        },
+        {
+          "id": "C078",
+          "code": "Date.newInstance(1,1,1).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 31: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C079",
+          "code": "Date.newInstance(1,1,1).toStartOfWeek()",
+          "expected": "0001-12-26 00:00:00",
+          "remainingReason": "date and time: Julian week calendar and BCE era rendering require Date representation/coercion/display changes outside the owned temporal sections."
+        },
+        {
+          "id": "C080",
+          "code": "Date.newInstance(1,1,1).addDays(-366)",
+          "expected": "0001-01-01 00:00:00",
+          "remainingReason": "date and time: BCE arithmetic result is rendered with astronomical year 0; shared Date representation/coercion/display repair remains outside this dispatch."
+        },
+        {
+          "id": "C081",
+          "code": "Date.newInstance(1,1,1).addDays(-1)",
+          "expected": "0001-12-31 00:00:00",
+          "remainingReason": "date and time: BCE arithmetic result is rendered with astronomical year 0; shared Date representation/coercion/display repair remains outside this dispatch."
+        },
+        {
+          "id": "C082",
+          "code": "Date.newInstance(1,1,1).addDays(0)",
+          "expected": "0001-01-01 00:00:00"
+        },
+        {
+          "id": "C083",
+          "code": "Date.newInstance(1,1,1).addDays(1)",
+          "expected": "0001-01-02 00:00:00"
+        },
+        {
+          "id": "C084",
+          "code": "Date.newInstance(1,1,1).addDays(366)",
+          "expected": "0002-01-02 00:00:00"
+        },
+        {
+          "id": "C085",
+          "code": "Date.newInstance(9999,12,31).year()",
+          "expected": "9999"
+        },
+        {
+          "id": "C086",
+          "code": "Date.newInstance(9999,12,31).month()",
+          "expected": "12"
+        },
+        {
+          "id": "C087",
+          "code": "Date.newInstance(9999,12,31).day()",
+          "expected": "31"
+        },
+        {
+          "id": "C088",
+          "code": "Date.newInstance(9999,12,31).dayOfYear()",
+          "expected": "365"
+        },
+        {
+          "id": "C089",
+          "code": "Date.newInstance(9999,12,31).toStartOfMonth()",
+          "expected": "9999-12-01 00:00:00"
+        },
+        {
+          "id": "C090",
+          "code": "Date.newInstance(9999,12,31).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 42: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C091",
+          "code": "Date.newInstance(9999,12,31).toStartOfWeek()",
+          "expected": "9999-12-26 00:00:00"
+        },
+        {
+          "id": "C092",
+          "code": "Date.newInstance(9999,12,31).addDays(-366)",
+          "expected": "9998-12-30 00:00:00"
+        },
+        {
+          "id": "C093",
+          "code": "Date.newInstance(9999,12,31).addDays(-1)",
+          "expected": "9999-12-30 00:00:00"
+        },
+        {
+          "id": "C094",
+          "code": "Date.newInstance(9999,12,31).addDays(0)",
+          "expected": "9999-12-31 00:00:00"
+        },
+        {
+          "id": "C095",
+          "code": "Date.newInstance(9999,12,31).addDays(1)",
+          "expected": "10000-01-01 00:00:00"
+        },
+        {
+          "id": "C096",
+          "code": "Date.newInstance(9999,12,31).addDays(366)",
+          "expected": "10000-12-31 00:00:00"
+        },
+        {
+          "id": "C097",
+          "code": "Date.newInstance(2026,4,30).year()",
+          "expected": "2026"
+        },
+        {
+          "id": "C098",
+          "code": "Date.newInstance(2026,4,30).month()",
+          "expected": "4"
+        },
+        {
+          "id": "C099",
+          "code": "Date.newInstance(2026,4,30).day()",
+          "expected": "30"
+        },
+        {
+          "id": "C100",
+          "code": "Date.newInstance(2026,4,30).dayOfYear()",
+          "expected": "120"
+        },
+        {
+          "id": "C101",
+          "code": "Date.newInstance(2026,4,30).toStartOfMonth()",
+          "expected": "2026-04-01 00:00:00"
+        },
+        {
+          "id": "C102",
+          "code": "Date.newInstance(2026,4,30).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C103",
+          "code": "Date.newInstance(2026,4,30).toStartOfWeek()",
+          "expected": "2026-04-26 00:00:00"
+        },
+        {
+          "id": "C104",
+          "code": "Date.newInstance(2026,4,30).addDays(-366)",
+          "expected": "2025-04-29 00:00:00"
+        },
+        {
+          "id": "C105",
+          "code": "Date.newInstance(2026,4,30).addDays(-1)",
+          "expected": "2026-04-29 00:00:00"
+        },
+        {
+          "id": "C106",
+          "code": "Date.newInstance(2026,4,30).addDays(0)",
+          "expected": "2026-04-30 00:00:00"
+        },
+        {
+          "id": "C107",
+          "code": "Date.newInstance(2026,4,30).addDays(1)",
+          "expected": "2026-05-01 00:00:00"
+        },
+        {
+          "id": "C108",
+          "code": "Date.newInstance(2026,4,30).addDays(366)",
+          "expected": "2027-05-01 00:00:00"
+        },
+        {
+          "id": "C109",
+          "code": "Date.newInstance(2026,6,15).year()",
+          "expected": "2026"
+        },
+        {
+          "id": "C110",
+          "code": "Date.newInstance(2026,6,15).month()",
+          "expected": "6"
+        },
+        {
+          "id": "C111",
+          "code": "Date.newInstance(2026,6,15).day()",
+          "expected": "15"
+        },
+        {
+          "id": "C112",
+          "code": "Date.newInstance(2026,6,15).dayOfYear()",
+          "expected": "166"
+        },
+        {
+          "id": "C113",
+          "code": "Date.newInstance(2026,6,15).toStartOfMonth()",
+          "expected": "2026-06-01 00:00:00"
+        },
+        {
+          "id": "C114",
+          "code": "Date.newInstance(2026,6,15).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 18: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C115",
+          "code": "Date.newInstance(2026,6,15).toStartOfWeek()",
+          "expected": "2026-06-14 00:00:00"
+        },
+        {
+          "id": "C116",
+          "code": "Date.newInstance(2026,6,15).addDays(-366)",
+          "expected": "2025-06-14 00:00:00"
+        },
+        {
+          "id": "C117",
+          "code": "Date.newInstance(2026,6,15).addDays(-1)",
+          "expected": "2026-06-14 00:00:00"
+        },
+        {
+          "id": "C118",
+          "code": "Date.newInstance(2026,6,15).addDays(0)",
+          "expected": "2026-06-15 00:00:00"
+        },
+        {
+          "id": "C119",
+          "code": "Date.newInstance(2026,6,15).addDays(1)",
+          "expected": "2026-06-16 00:00:00"
+        },
+        {
+          "id": "C120",
+          "code": "Date.newInstance(2026,6,15).addDays(366)",
+          "expected": "2027-06-16 00:00:00"
+        },
+        {
+          "id": "C121",
+          "code": "Date.newInstance(2024,2,29).addMonths(-13)",
+          "expected": "2023-01-29 00:00:00"
+        },
+        {
+          "id": "C122",
+          "code": "Date.newInstance(2024,2,29).addMonths(-1)",
+          "expected": "2024-01-29 00:00:00"
+        },
+        {
+          "id": "C123",
+          "code": "Date.newInstance(2024,2,29).addMonths(1)",
+          "expected": "2024-03-29 00:00:00"
+        },
+        {
+          "id": "C124",
+          "code": "Date.newInstance(2024,2,29).addMonths(13)",
+          "expected": "2025-03-29 00:00:00"
+        },
+        {
+          "id": "C125",
+          "code": "Date.newInstance(2026,1,31).addMonths(-13)",
+          "expected": "2024-12-31 00:00:00"
+        },
+        {
+          "id": "C126",
+          "code": "Date.newInstance(2026,1,31).addMonths(-1)",
+          "expected": "2025-12-31 00:00:00"
+        },
+        {
+          "id": "C127",
+          "code": "Date.newInstance(2026,1,31).addMonths(1)",
+          "expected": "2026-02-28 00:00:00"
+        },
+        {
+          "id": "C128",
+          "code": "Date.newInstance(2026,1,31).addMonths(13)",
+          "expected": "2027-02-28 00:00:00"
+        },
+        {
+          "id": "C129",
+          "code": "Date.newInstance(2026,12,31).addMonths(-13)",
+          "expected": "2025-11-30 00:00:00"
+        },
+        {
+          "id": "C130",
+          "code": "Date.newInstance(2026,12,31).addMonths(-1)",
+          "expected": "2026-11-30 00:00:00"
+        },
+        {
+          "id": "C131",
+          "code": "Date.newInstance(2026,12,31).addMonths(1)",
+          "expected": "2027-01-31 00:00:00"
+        },
+        {
+          "id": "C132",
+          "code": "Date.newInstance(2026,12,31).addMonths(13)",
+          "expected": "2028-01-31 00:00:00"
+        },
+        {
+          "id": "C133",
+          "code": "Date.newInstance(2026,4,30).addMonths(-13)",
+          "expected": "2025-03-30 00:00:00"
+        },
+        {
+          "id": "C134",
+          "code": "Date.newInstance(2026,4,30).addMonths(-1)",
+          "expected": "2026-03-30 00:00:00"
+        },
+        {
+          "id": "C135",
+          "code": "Date.newInstance(2026,4,30).addMonths(1)",
+          "expected": "2026-05-30 00:00:00"
+        },
+        {
+          "id": "C136",
+          "code": "Date.newInstance(2026,4,30).addMonths(13)",
+          "expected": "2027-05-30 00:00:00"
+        },
+        {
+          "id": "C137",
+          "code": "Date.isLeapYear(1900)",
+          "expected": "false"
+        },
+        {
+          "id": "C138",
+          "code": "Date.isLeapYear(2000)",
+          "expected": "true"
+        },
+        {
+          "id": "C139",
+          "code": "Date.isLeapYear(2023)",
+          "expected": "false"
+        },
+        {
+          "id": "C140",
+          "code": "Date.isLeapYear(2024)",
+          "expected": "true"
+        },
+        {
+          "id": "C141",
+          "code": "Date.isLeapYear(2100)",
+          "expected": "false"
+        },
+        {
+          "id": "C142",
+          "code": "Date.daysInMonth(2024,2)",
+          "expected": "29"
+        },
+        {
+          "id": "C143",
+          "code": "Date.daysInMonth(2023,2)",
+          "expected": "28"
+        },
+        {
+          "id": "C144",
+          "code": "Date.daysInMonth(2026,0)",
+          "expected": "31"
+        },
+        {
+          "id": "C145",
+          "code": "Date.daysInMonth(2026,13)",
+          "expected": "31"
+        },
+        {
+          "id": "C146",
+          "code": "Date.newInstance(2026,2,30)",
+          "expected": "2026-03-02 00:00:00"
+        },
+        {
+          "id": "C147",
+          "code": "Date.newInstance(2026,0,0)",
+          "expected": "2025-11-30 00:00:00"
+        },
+        {
+          "id": "C148",
+          "code": "Date.newInstance(0,1,1)",
+          "expected": "0001-01-01 00:00:00",
+          "remainingReason": "date and time: year-0 construction uses astronomical year rendering instead of native BCE year 1; shared Date representation/coercion/display repair remains outside this dispatch."
+        },
+        {
+          "id": "C149",
+          "code": "Date.newInstance(2026,13,1)",
+          "expected": "2027-01-01 00:00:00"
+        },
+        {
+          "id": "C150",
+          "code": "Date d; r=d.addDays(1);",
+          "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+        },
+        {
+          "id": "P001",
+          "code": "Date.valueOf('2024-02-29')",
+          "expected": "2024-02-29 00:00:00"
+        },
+        {
+          "id": "P002",
+          "code": "Date.parse('2024-02-29')",
+          "expected": "EXC|System.TypeException|Invalid date: 2024-02-29"
+        },
+        {
+          "id": "P003",
+          "code": "Datetime.valueOf('2024-02-29')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29"
+        },
+        {
+          "id": "P004",
+          "code": "Datetime.valueOfGmt('2024-02-29')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29"
+        },
+        {
+          "id": "P005",
+          "code": "Datetime.parse('2024-02-29')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29"
+        },
+        {
+          "id": "P006",
+          "code": "Date.valueOf('2026-1-2')",
+          "expected": "2026-01-02 00:00:00"
+        },
+        {
+          "id": "P007",
+          "code": "Date.parse('2026-1-2')",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-1-2"
+        },
+        {
+          "id": "P008",
+          "code": "Datetime.valueOf('2026-1-2')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-1-2"
+        },
+        {
+          "id": "P009",
+          "code": "Datetime.valueOfGmt('2026-1-2')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-1-2"
+        },
+        {
+          "id": "P010",
+          "code": "Datetime.parse('2026-1-2')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-1-2"
+        },
+        {
+          "id": "P011",
+          "code": "Date.valueOf('2026-02-30')",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-02-30"
+        },
+        {
+          "id": "P012",
+          "code": "Date.parse('2026-02-30')",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-02-30"
+        },
+        {
+          "id": "P013",
+          "code": "Datetime.valueOf('2026-02-30')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-02-30"
+        },
+        {
+          "id": "P014",
+          "code": "Datetime.valueOfGmt('2026-02-30')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-02-30"
+        },
+        {
+          "id": "P015",
+          "code": "Datetime.parse('2026-02-30')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-02-30"
+        },
+        {
+          "id": "P016",
+          "code": "Date.valueOf('2026-01-01 12:34:56')",
+          "expected": "2026-01-01 00:00:00"
+        },
+        {
+          "id": "P017",
+          "code": "Date.parse('2026-01-01 12:34:56')",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-01-01 12:34:56"
+        },
+        {
+          "id": "P018",
+          "code": "Datetime.valueOf('2026-01-01 12:34:56')",
+          "expected": "2026-01-01 20:34:56"
+        },
+        {
+          "id": "P019",
+          "code": "Datetime.valueOfGmt('2026-01-01 12:34:56')",
+          "expected": "2026-01-01 12:34:56"
+        },
+        {
+          "id": "P020",
+          "code": "Datetime.parse('2026-01-01 12:34:56')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-01-01 12:34:56"
+        },
+        {
+          "id": "P021",
+          "code": "Date.valueOf('2026-01-01T12:34:56Z')",
+          "expected": "2026-01-01 00:00:00"
+        },
+        {
+          "id": "P022",
+          "code": "Date.parse('2026-01-01T12:34:56Z')",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-01-01T12:34:56Z"
+        },
+        {
+          "id": "P023",
+          "code": "Datetime.valueOf('2026-01-01T12:34:56Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-01-01T12:34:56Z"
+        },
+        {
+          "id": "P024",
+          "code": "Datetime.valueOfGmt('2026-01-01T12:34:56Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-01-01T12:34:56Z"
+        },
+        {
+          "id": "P025",
+          "code": "Datetime.parse('2026-01-01T12:34:56Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-01-01T12:34:56Z"
+        },
+        {
+          "id": "P026",
+          "code": "Date.valueOf('')",
+          "expected": "EXC|System.TypeException|Invalid date: "
+        },
+        {
+          "id": "P027",
+          "code": "Date.parse('')",
+          "expected": "EXC|System.TypeException|Invalid date: "
+        },
+        {
+          "id": "P028",
+          "code": "Datetime.valueOf('')",
+          "expected": "EXC|System.TypeException|Invalid date/time: "
+        },
+        {
+          "id": "P029",
+          "code": "Datetime.valueOfGmt('')",
+          "expected": "EXC|System.TypeException|Invalid date/time: "
+        },
+        {
+          "id": "P030",
+          "code": "Datetime.parse('')",
+          "expected": "EXC|System.TypeException|Invalid date/time: "
+        },
+        {
+          "id": "P031",
+          "code": "Date.valueOf(' 2026-01-01 ')",
+          "expected": "2026-01-01 00:00:00"
+        },
+        {
+          "id": "P032",
+          "code": "Date.parse(' 2026-01-01 ')",
+          "expected": "EXC|System.TypeException|Invalid date:  2026-01-01 "
+        },
+        {
+          "id": "P033",
+          "code": "Datetime.valueOf(' 2026-01-01 ')",
+          "expected": "EXC|System.TypeException|Invalid date/time:  2026-01-01 "
+        },
+        {
+          "id": "P034",
+          "code": "Datetime.valueOfGmt(' 2026-01-01 ')",
+          "expected": "EXC|System.TypeException|Invalid date/time:  2026-01-01 "
+        },
+        {
+          "id": "P035",
+          "code": "Datetime.parse(' 2026-01-01 ')",
+          "expected": "EXC|System.TypeException|Invalid date/time:  2026-01-01 "
+        },
+        {
+          "id": "P036",
+          "code": "Date.valueOf('01/02/2026')",
+          "expected": "EXC|System.TypeException|Invalid date: 01/02/2026"
+        },
+        {
+          "id": "P037",
+          "code": "Date.parse('01/02/2026')",
+          "expected": "2026-01-02 00:00:00"
+        },
+        {
+          "id": "P038",
+          "code": "Datetime.valueOf('01/02/2026')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 01/02/2026"
+        },
+        {
+          "id": "P039",
+          "code": "Datetime.valueOfGmt('01/02/2026')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 01/02/2026"
+        },
+        {
+          "id": "P040",
+          "code": "Datetime.parse('01/02/2026')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 01/02/2026"
+        },
+        {
+          "id": "P041",
+          "code": "Date.valueOf((String)null)",
+          "expected": "EXC|System.NullPointerException|Argument cannot be null."
+        },
+        {
+          "id": "P042",
+          "code": "Date.parse((String)null)",
+          "expected": "EXC|System.NullPointerException|Argument cannot be null."
+        },
+        {
+          "id": "P043",
+          "code": "Datetime.valueOf((String)null)",
+          "expected": "EXC|System.NullPointerException|Argument cannot be null."
+        },
+        {
+          "id": "P044",
+          "code": "Datetime.valueOfGmt((String)null)",
+          "expected": "EXC|System.NullPointerException|Argument cannot be null."
+        },
+        {
+          "id": "P045",
+          "code": "Datetime.parse((String)null)",
+          "expected": "EXC|System.NullPointerException|Argument cannot be null."
+        },
+        {
+          "id": "P046",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('yyyy-MM-dd HH:mm:ss')",
+          "expected": "2024-02-29 00:05:06"
+        },
+        {
+          "id": "P047",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('y yy yyy yyyy')",
+          "expected": "2024 24 2024 2024"
+        },
+        {
+          "id": "P048",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('Y YY YYYY')",
+          "expected": "2024 24 2024"
+        },
+        {
+          "id": "P049",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('M MM MMM MMMM MMMMM')",
+          "expected": "2 02 Feb February February"
+        },
+        {
+          "id": "P050",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('d dd ddd')",
+          "expected": "29 29 029"
+        },
+        {
+          "id": "P051",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('D DD DDD')",
+          "expected": "60 60 060"
+        },
+        {
+          "id": "P052",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('E EEE EEEE')",
+          "expected": "Thu Thu Thursday"
+        },
+        {
+          "id": "P053",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('u')",
+          "expected": "4"
+        },
+        {
+          "id": "P054",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('w ww')",
+          "expected": "9 09"
+        },
+        {
+          "id": "P055",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('W')",
+          "expected": "5"
+        },
+        {
+          "id": "P056",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('F')",
+          "expected": "5"
+        },
+        {
+          "id": "P057",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('G GG GGGG')",
+          "expected": "AD AD AD"
+        },
+        {
+          "id": "P058",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('H HH HHH')",
+          "expected": "0 00 000"
+        },
+        {
+          "id": "P059",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('k kk')",
+          "expected": "24 24"
+        },
+        {
+          "id": "P060",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('h hh')",
+          "expected": "12 12"
+        },
+        {
+          "id": "P061",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('K KK')",
+          "expected": "0 00"
+        },
+        {
+          "id": "P062",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('m mm mmm')",
+          "expected": "5 05 005"
+        },
+        {
+          "id": "P063",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('s ss sss')",
+          "expected": "6 06 006"
+        },
+        {
+          "id": "P064",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('S SS SSS SSSS')",
+          "expected": "0 00 000 0000"
+        },
+        {
+          "id": "P065",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('a')",
+          "expected": "AM"
+        },
+        {
+          "id": "P066",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('z zzzz')",
+          "expected": "GMT Greenwich Mean Time"
+        },
+        {
+          "id": "P067",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('Z ZZ ZZZ')",
+          "expected": "+0000 +0000 +0000"
+        },
+        {
+          "id": "P068",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('X XX XXX')",
+          "expected": "Z Z Z"
+        },
+        {
+          "id": "P069",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('yyyy-MM-dd\\'T\\'HH:mm:ss\\'Z\\'')",
+          "expected": "2024-02-29T00:05:06Z"
+        },
+        {
+          "id": "P070",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('\\'quoted\\' yyyy')",
+          "expected": "quoted 2024"
+        },
+        {
+          "id": "P071",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('\\'\\' yyyy')",
+          "expected": "' 2024"
+        },
+        {
+          "id": "P072",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('yyyy \\'unterminated')",
+          "expected": "EXC|System.StringException|Unrecognized format: yyyy 'unterminated"
+        },
+        {
+          "id": "P073",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('Q')",
+          "expected": "EXC|System.StringException|Unrecognized format: Q"
+        },
+        {
+          "id": "P074",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('')",
+          "expected": ""
+        },
+        {
+          "id": "P075",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('LLLL')",
+          "expected": "February"
+        },
+        {
+          "id": "P076",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('yyyy-MM-dd HH:mm:ss')",
+          "expected": "2026-12-31 23:59:59"
+        },
+        {
+          "id": "P077",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('y yy yyy yyyy')",
+          "expected": "2026 26 2026 2026"
+        },
+        {
+          "id": "P078",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('Y YY YYYY')",
+          "expected": "2027 27 2027"
+        },
+        {
+          "id": "P079",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('M MM MMM MMMM MMMMM')",
+          "expected": "12 12 Dec December December"
+        },
+        {
+          "id": "P080",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('d dd ddd')",
+          "expected": "31 31 031"
+        },
+        {
+          "id": "P081",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('D DD DDD')",
+          "expected": "365 365 365"
+        },
+        {
+          "id": "P082",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('E EEE EEEE')",
+          "expected": "Thu Thu Thursday"
+        },
+        {
+          "id": "P083",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('u')",
+          "expected": "4"
+        },
+        {
+          "id": "P084",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('w ww')",
+          "expected": "1 01"
+        },
+        {
+          "id": "P085",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('W')",
+          "expected": "5"
+        },
+        {
+          "id": "P086",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('F')",
+          "expected": "5"
+        },
+        {
+          "id": "P087",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('G GG GGGG')",
+          "expected": "AD AD AD"
+        },
+        {
+          "id": "P088",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('H HH HHH')",
+          "expected": "23 23 023"
+        },
+        {
+          "id": "P089",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('k kk')",
+          "expected": "23 23"
+        },
+        {
+          "id": "P090",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('h hh')",
+          "expected": "11 11"
+        },
+        {
+          "id": "P091",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('K KK')",
+          "expected": "11 11"
+        },
+        {
+          "id": "P092",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('m mm mmm')",
+          "expected": "59 59 059"
+        },
+        {
+          "id": "P093",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('s ss sss')",
+          "expected": "59 59 059"
+        },
+        {
+          "id": "P094",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('S SS SSS SSSS')",
+          "expected": "0 00 000 0000"
+        },
+        {
+          "id": "P095",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('a')",
+          "expected": "PM"
+        },
+        {
+          "id": "P096",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('z zzzz')",
+          "expected": "GMT Greenwich Mean Time"
+        },
+        {
+          "id": "P097",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('Z ZZ ZZZ')",
+          "expected": "+0000 +0000 +0000"
+        },
+        {
+          "id": "P098",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('X XX XXX')",
+          "expected": "Z Z Z"
+        },
+        {
+          "id": "P099",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('yyyy-MM-dd\\'T\\'HH:mm:ss\\'Z\\'')",
+          "expected": "2026-12-31T23:59:59Z"
+        },
+        {
+          "id": "P100",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('\\'quoted\\' yyyy')",
+          "expected": "quoted 2026"
+        },
+        {
+          "id": "P101",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('\\'\\' yyyy')",
+          "expected": "' 2026"
+        },
+        {
+          "id": "P102",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('yyyy \\'unterminated')",
+          "expected": "EXC|System.StringException|Unrecognized format: yyyy 'unterminated"
+        },
+        {
+          "id": "P103",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('Q')",
+          "expected": "EXC|System.StringException|Unrecognized format: Q"
+        },
+        {
+          "id": "P104",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('')",
+          "expected": ""
+        },
+        {
+          "id": "P105",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('LLLL')",
+          "expected": "December"
+        },
+        {
+          "id": "P106",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('yyyy-MM-dd HH:mm:ss')",
+          "expected": "2026-01-01 12:34:56"
+        },
+        {
+          "id": "P107",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('y yy yyy yyyy')",
+          "expected": "2026 26 2026 2026"
+        },
+        {
+          "id": "P108",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('Y YY YYYY')",
+          "expected": "2026 26 2026"
+        },
+        {
+          "id": "P109",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('M MM MMM MMMM MMMMM')",
+          "expected": "1 01 Jan January January"
+        },
+        {
+          "id": "P110",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('d dd ddd')",
+          "expected": "1 01 001"
+        },
+        {
+          "id": "P111",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('D DD DDD')",
+          "expected": "1 01 001"
+        },
+        {
+          "id": "P112",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('E EEE EEEE')",
+          "expected": "Thu Thu Thursday"
+        },
+        {
+          "id": "P113",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('u')",
+          "expected": "4"
+        },
+        {
+          "id": "P114",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('w ww')",
+          "expected": "1 01"
+        },
+        {
+          "id": "P115",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('W')",
+          "expected": "1"
+        },
+        {
+          "id": "P116",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('F')",
+          "expected": "1"
+        },
+        {
+          "id": "P117",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('G GG GGGG')",
+          "expected": "AD AD AD"
+        },
+        {
+          "id": "P118",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('H HH HHH')",
+          "expected": "12 12 012"
+        },
+        {
+          "id": "P119",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('k kk')",
+          "expected": "12 12"
+        },
+        {
+          "id": "P120",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('h hh')",
+          "expected": "12 12"
+        },
+        {
+          "id": "P121",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('K KK')",
+          "expected": "0 00"
+        },
+        {
+          "id": "P122",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('m mm mmm')",
+          "expected": "34 34 034"
+        },
+        {
+          "id": "P123",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('s ss sss')",
+          "expected": "56 56 056"
+        },
+        {
+          "id": "P124",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('S SS SSS SSSS')",
+          "expected": "0 00 000 0000"
+        },
+        {
+          "id": "P125",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('a')",
+          "expected": "PM"
+        },
+        {
+          "id": "P126",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('z zzzz')",
+          "expected": "GMT Greenwich Mean Time"
+        },
+        {
+          "id": "P127",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('Z ZZ ZZZ')",
+          "expected": "+0000 +0000 +0000"
+        },
+        {
+          "id": "P128",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('X XX XXX')",
+          "expected": "Z Z Z"
+        },
+        {
+          "id": "P129",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('yyyy-MM-dd\\'T\\'HH:mm:ss\\'Z\\'')",
+          "expected": "2026-01-01T12:34:56Z"
+        },
+        {
+          "id": "P130",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('\\'quoted\\' yyyy')",
+          "expected": "quoted 2026"
+        },
+        {
+          "id": "P131",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('\\'\\' yyyy')",
+          "expected": "' 2026"
+        },
+        {
+          "id": "P132",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('yyyy \\'unterminated')",
+          "expected": "EXC|System.StringException|Unrecognized format: yyyy 'unterminated"
+        },
+        {
+          "id": "P133",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('Q')",
+          "expected": "EXC|System.StringException|Unrecognized format: Q"
+        },
+        {
+          "id": "P134",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('')",
+          "expected": ""
+        },
+        {
+          "id": "P135",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('LLLL')",
+          "expected": "January"
+        },
+        {
+          "id": "P136",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).formatLong()",
+          "expected": "6/30/2026, 5:30:45 PM PDT"
+        },
+        {
+          "id": "P137",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).format()",
+          "expected": "6/30/2026, 5:30 PM"
+        },
+        {
+          "id": "P138",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).dateGmt()",
+          "expected": "2026-07-01 00:00:00"
+        },
+        {
+          "id": "P139",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).monthGmt()",
+          "expected": "7"
+        },
+        {
+          "id": "P140",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).day()",
+          "expected": "30"
+        },
+        {
+          "id": "P141",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).dayGmt()",
+          "expected": "1"
+        },
+        {
+          "id": "P142",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).hour()",
+          "expected": "17"
+        },
+        {
+          "id": "P143",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).hourGmt()",
+          "expected": "0"
+        },
+        {
+          "id": "P144",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).minute()",
+          "expected": "30"
+        },
+        {
+          "id": "P145",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).minuteGmt()",
+          "expected": "30"
+        },
+        {
+          "id": "P146",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).second()",
+          "expected": "45"
+        },
+        {
+          "id": "P147",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).secondGmt()",
+          "expected": "45"
+        },
+        {
+          "id": "P148",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).dayOfYear()",
+          "expected": "181"
+        },
+        {
+          "id": "P149",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).dayOfYearGmt()",
+          "expected": "182"
+        },
+        {
+          "id": "P150",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).date()",
+          "expected": "2026-06-30 00:00:00"
+        },
+        {
+          "id": "T001",
+          "code": "TimeZone.getTimeZone('UTC').getID()",
+          "expected": "UTC"
+        },
+        {
+          "id": "T002",
+          "code": "TimeZone.getTimeZone('UTC').getDisplayName()",
+          "expected": "(GMT+00:00) Coordinated Universal Time (UTC)"
+        },
+        {
+          "id": "T003",
+          "code": "TimeZone.getTimeZone('UTC').toString()",
+          "expected": "UTC"
+        },
+        {
+          "id": "T004",
+          "code": "TimeZone.getTimeZone('UTC').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T005",
+          "code": "TimeZone.getTimeZone('UTC').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T006",
+          "code": "TimeZone.getTimeZone('UTC').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "0"
+        },
+        {
+          "id": "T007",
+          "code": "TimeZone.getTimeZone('UTC').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T008",
+          "code": "TimeZone.getTimeZone('UTC').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T009",
+          "code": "TimeZone.getTimeZone('GMT').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "T010",
+          "code": "TimeZone.getTimeZone('GMT').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "T011",
+          "code": "TimeZone.getTimeZone('GMT').toString()",
+          "expected": "GMT"
+        },
+        {
+          "id": "T012",
+          "code": "TimeZone.getTimeZone('GMT').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T013",
+          "code": "TimeZone.getTimeZone('GMT').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T014",
+          "code": "TimeZone.getTimeZone('GMT').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "0"
+        },
+        {
+          "id": "T015",
+          "code": "TimeZone.getTimeZone('GMT').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T016",
+          "code": "TimeZone.getTimeZone('GMT').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T017",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getID()",
+          "expected": "America/Los_Angeles"
+        },
+        {
+          "id": "T018",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getDisplayName()",
+          "expected": "(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)"
+        },
+        {
+          "id": "T019",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').toString()",
+          "expected": "America/Los_Angeles"
+        },
+        {
+          "id": "T020",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T021",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T022",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T023",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T024",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T025",
+          "code": "TimeZone.getTimeZone('America/New_York').getID()",
+          "expected": "America/New_York"
+        },
+        {
+          "id": "T026",
+          "code": "TimeZone.getTimeZone('America/New_York').getDisplayName()",
+          "expected": "(GMT-04:00) Eastern Daylight Time (America/New_York)"
+        },
+        {
+          "id": "T027",
+          "code": "TimeZone.getTimeZone('America/New_York').toString()",
+          "expected": "America/New_York"
+        },
+        {
+          "id": "T028",
+          "code": "TimeZone.getTimeZone('America/New_York').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "-18000000"
+        },
+        {
+          "id": "T029",
+          "code": "TimeZone.getTimeZone('America/New_York').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "-14400000"
+        },
+        {
+          "id": "T030",
+          "code": "TimeZone.getTimeZone('America/New_York').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "-14400000"
+        },
+        {
+          "id": "T031",
+          "code": "TimeZone.getTimeZone('America/New_York').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "-14400000"
+        },
+        {
+          "id": "T032",
+          "code": "TimeZone.getTimeZone('America/New_York').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "-18000000"
+        },
+        {
+          "id": "T033",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getID()",
+          "expected": "America/Phoenix"
+        },
+        {
+          "id": "T034",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getDisplayName()",
+          "expected": "(GMT-07:00) Mountain Standard Time (America/Phoenix)"
+        },
+        {
+          "id": "T035",
+          "code": "TimeZone.getTimeZone('America/Phoenix').toString()",
+          "expected": "America/Phoenix"
+        },
+        {
+          "id": "T036",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T037",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T038",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T039",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T040",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T041",
+          "code": "TimeZone.getTimeZone('Europe/London').getID()",
+          "expected": "Europe/London"
+        },
+        {
+          "id": "T042",
+          "code": "TimeZone.getTimeZone('Europe/London').getDisplayName()",
+          "expected": "(GMT+01:00) British Summer Time (Europe/London)"
+        },
+        {
+          "id": "T043",
+          "code": "TimeZone.getTimeZone('Europe/London').toString()",
+          "expected": "Europe/London"
+        },
+        {
+          "id": "T044",
+          "code": "TimeZone.getTimeZone('Europe/London').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T045",
+          "code": "TimeZone.getTimeZone('Europe/London').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "3600000"
+        },
+        {
+          "id": "T046",
+          "code": "TimeZone.getTimeZone('Europe/London').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "0"
+        },
+        {
+          "id": "T047",
+          "code": "TimeZone.getTimeZone('Europe/London').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T048",
+          "code": "TimeZone.getTimeZone('Europe/London').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T049",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getID()",
+          "expected": "Europe/Berlin"
+        },
+        {
+          "id": "T050",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getDisplayName()",
+          "expected": "(GMT+02:00) Central European Summer Time (Europe/Berlin)"
+        },
+        {
+          "id": "T051",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').toString()",
+          "expected": "Europe/Berlin"
+        },
+        {
+          "id": "T052",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "3600000"
+        },
+        {
+          "id": "T053",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "7200000"
+        },
+        {
+          "id": "T054",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "3600000"
+        },
+        {
+          "id": "T055",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "3600000"
+        },
+        {
+          "id": "T056",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "3600000"
+        },
+        {
+          "id": "T057",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getID()",
+          "expected": "Australia/Sydney"
+        },
+        {
+          "id": "T058",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getDisplayName()",
+          "expected": "(GMT+11:00) Australian Eastern Daylight Time (Australia/Sydney)",
+          "remainingReason": "execution context: fixed VM clock 2026-05-02 differs from native capture 2026-10-04; Sydney display name resolves a different DST season."
+        },
+        {
+          "id": "T059",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').toString()",
+          "expected": "Australia/Sydney"
+        },
+        {
+          "id": "T060",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "39600000"
+        },
+        {
+          "id": "T061",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "36000000"
+        },
+        {
+          "id": "T062",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "39600000"
+        },
+        {
+          "id": "T063",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "39600000"
+        },
+        {
+          "id": "T064",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "39600000"
+        },
+        {
+          "id": "T065",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getID()",
+          "expected": "Asia/Kolkata"
+        },
+        {
+          "id": "T066",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getDisplayName()",
+          "expected": "(GMT+05:30) India Standard Time (Asia/Kolkata)"
+        },
+        {
+          "id": "T067",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').toString()",
+          "expected": "Asia/Kolkata"
+        },
+        {
+          "id": "T068",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T069",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T070",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T071",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T072",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T073",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getID()",
+          "expected": "Asia/Tokyo"
+        },
+        {
+          "id": "T074",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getDisplayName()",
+          "expected": "(GMT+09:00) Japan Standard Time (Asia/Tokyo)"
+        },
+        {
+          "id": "T075",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').toString()",
+          "expected": "Asia/Tokyo"
+        },
+        {
+          "id": "T076",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "32400000"
+        },
+        {
+          "id": "T077",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "32400000"
+        },
+        {
+          "id": "T078",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "32400000"
+        },
+        {
+          "id": "T079",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "32400000"
+        },
+        {
+          "id": "T080",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "32400000"
+        },
+        {
+          "id": "T081",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getID()",
+          "expected": "GMT+05:30"
+        },
+        {
+          "id": "T082",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getDisplayName()",
+          "expected": "(GMT+05:30) Pacific Standard Time (GMT+05:30)"
+        },
+        {
+          "id": "T083",
+          "code": "TimeZone.getTimeZone('GMT+05:30').toString()",
+          "expected": "GMT+05:30"
+        },
+        {
+          "id": "T084",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T085",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T086",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T087",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T088",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T089",
+          "code": "TimeZone.getTimeZone('GMT-0800').getID()",
+          "expected": "GMT-08:00"
+        },
+        {
+          "id": "T090",
+          "code": "TimeZone.getTimeZone('GMT-0800').getDisplayName()",
+          "expected": "(GMT-08:00) Pacific Standard Time (GMT-08:00)"
+        },
+        {
+          "id": "T091",
+          "code": "TimeZone.getTimeZone('GMT-0800').toString()",
+          "expected": "GMT-08:00"
+        },
+        {
+          "id": "T092",
+          "code": "TimeZone.getTimeZone('GMT-0800').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T093",
+          "code": "TimeZone.getTimeZone('GMT-0800').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T094",
+          "code": "TimeZone.getTimeZone('GMT-0800').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T095",
+          "code": "TimeZone.getTimeZone('GMT-0800').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T096",
+          "code": "TimeZone.getTimeZone('GMT-0800').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T097",
+          "code": "TimeZone.getTimeZone('US/Pacific').getID()",
+          "expected": "US/Pacific"
+        },
+        {
+          "id": "T098",
+          "code": "TimeZone.getTimeZone('US/Pacific').getDisplayName()",
+          "expected": "(GMT-07:00) Pacific Daylight Time (US/Pacific)"
+        },
+        {
+          "id": "T099",
+          "code": "TimeZone.getTimeZone('US/Pacific').toString()",
+          "expected": "US/Pacific"
+        },
+        {
+          "id": "T100",
+          "code": "TimeZone.getTimeZone('US/Pacific').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T101",
+          "code": "TimeZone.getTimeZone('US/Pacific').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T102",
+          "code": "TimeZone.getTimeZone('US/Pacific').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T103",
+          "code": "TimeZone.getTimeZone('US/Pacific').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T104",
+          "code": "TimeZone.getTimeZone('US/Pacific').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T105",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "T106",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "T107",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').toString()",
+          "expected": "GMT"
+        },
+        {
+          "id": "T108",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T109",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T110",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "0"
+        },
+        {
+          "id": "T111",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T112",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T113",
+          "code": "Time.newInstance(0,0,0,0).hour()",
+          "expected": "0"
+        },
+        {
+          "id": "T114",
+          "code": "Time.newInstance(0,0,0,0).minute()",
+          "expected": "0"
+        },
+        {
+          "id": "T115",
+          "code": "Time.newInstance(0,0,0,0).second()",
+          "expected": "0"
+        },
+        {
+          "id": "T116",
+          "code": "Time.newInstance(0,0,0,0).millisecond()",
+          "expected": "0"
+        },
+        {
+          "id": "T117",
+          "code": "Time.newInstance(0,0,0,0).addHours(1)",
+          "expected": "01:00:00.000Z"
+        },
+        {
+          "id": "T118",
+          "code": "Time.newInstance(0,0,0,0).addMilliseconds(-1)",
+          "expected": "23:59:59.999Z"
+        },
+        {
+          "id": "T119",
+          "code": "Time.newInstance(23,59,59,999).hour()",
+          "expected": "23"
+        },
+        {
+          "id": "T120",
+          "code": "Time.newInstance(23,59,59,999).minute()",
+          "expected": "59"
+        },
+        {
+          "id": "T121",
+          "code": "Time.newInstance(23,59,59,999).second()",
+          "expected": "59"
+        },
+        {
+          "id": "T122",
+          "code": "Time.newInstance(23,59,59,999).millisecond()",
+          "expected": "999"
+        },
+        {
+          "id": "T123",
+          "code": "Time.newInstance(23,59,59,999).addHours(1)",
+          "expected": "00:59:59.999Z"
+        },
+        {
+          "id": "T124",
+          "code": "Time.newInstance(23,59,59,999).addMilliseconds(-1)",
+          "expected": "23:59:59.998Z"
+        },
+        {
+          "id": "T125",
+          "code": "Time.newInstance(12,34,56,789).hour()",
+          "expected": "12"
+        },
+        {
+          "id": "T126",
+          "code": "Time.newInstance(12,34,56,789).minute()",
+          "expected": "34"
+        },
+        {
+          "id": "T127",
+          "code": "Time.newInstance(12,34,56,789).second()",
+          "expected": "56"
+        },
+        {
+          "id": "T128",
+          "code": "Time.newInstance(12,34,56,789).millisecond()",
+          "expected": "789"
+        },
+        {
+          "id": "T129",
+          "code": "Time.newInstance(12,34,56,789).addHours(1)",
+          "expected": "13:34:56.789Z"
+        },
+        {
+          "id": "T130",
+          "code": "Time.newInstance(12,34,56,789).addMilliseconds(-1)",
+          "expected": "12:34:56.788Z"
+        },
+        {
+          "id": "T131",
+          "code": "Time.newInstance(24,0,0,0).hour()",
+          "expected": "0"
+        },
+        {
+          "id": "T132",
+          "code": "Time.newInstance(24,0,0,0).minute()",
+          "expected": "0"
+        },
+        {
+          "id": "T133",
+          "code": "Time.newInstance(24,0,0,0).second()",
+          "expected": "0"
+        },
+        {
+          "id": "T134",
+          "code": "Time.newInstance(24,0,0,0).millisecond()",
+          "expected": "0"
+        },
+        {
+          "id": "T135",
+          "code": "Time.newInstance(24,0,0,0).addHours(1)",
+          "expected": "01:00:00.000Z"
+        },
+        {
+          "id": "T136",
+          "code": "Time.newInstance(24,0,0,0).addMilliseconds(-1)",
+          "expected": "23:59:59.999Z"
+        },
+        {
+          "id": "T137",
+          "code": "Time.newInstance(-1,0,0,0).hour()",
+          "expected": "23"
+        },
+        {
+          "id": "T138",
+          "code": "Time.newInstance(-1,0,0,0).minute()",
+          "expected": "0"
+        },
+        {
+          "id": "T139",
+          "code": "Time.newInstance(-1,0,0,0).second()",
+          "expected": "0"
+        },
+        {
+          "id": "T140",
+          "code": "Time.newInstance(-1,0,0,0).millisecond()",
+          "expected": "0"
+        },
+        {
+          "id": "T141",
+          "code": "Time.newInstance(-1,0,0,0).addHours(1)",
+          "expected": "00:00:00.000Z"
+        },
+        {
+          "id": "T142",
+          "code": "Time.newInstance(-1,0,0,0).addMilliseconds(-1)",
+          "expected": "22:59:59.999Z"
+        },
+        {
+          "id": "T143",
+          "code": "Time.newInstance(12,60,0,0)",
+          "expected": "13:00:00.000Z"
+        },
+        {
+          "id": "T144",
+          "code": "Time.newInstance(12,0,60,0)",
+          "expected": "12:01:00.000Z"
+        },
+        {
+          "id": "T145",
+          "code": "Time.newInstance(12,0,0,1000)",
+          "expected": "12:00:01.000Z"
+        },
+        {
+          "id": "T146",
+          "code": "Time t; r=t.hour();",
+          "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+        },
+        {
+          "id": "T147",
+          "code": "TimeZone.getTimeZone((String)null)",
+          "expected": "EXC|System.NullPointerException|Script-thrown exception"
+        },
+        {
+          "id": "T148",
+          "code": "TimeZone.getTimeZone('UTC').getOffset((Datetime)null)",
+          "expected": "EXC|System.NullPointerException|Null argument for TimeZone.getOffset()"
+        },
+        {
+          "id": "T149",
+          "code": "Datetime d; r=d.formatGmt('yyyy');",
+          "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+        },
+        {
+          "id": "T150",
+          "code": "Date.newInstance(2026,1,1).daysBetween(Date.newInstance(2026,12,31))",
+          "expected": "364"
+        }
+      ],
+      "controls": [
+        {
+          "id": "O001",
+          "code": "Datetime.valueOf('2026-05-02 05:00:00Z')",
+          "expected": "2026-05-02 12:00:00"
+        },
+        {
+          "id": "O002",
+          "code": "Datetime.valueOf('2026-05-02T05:00:00Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02T05:00:00Z"
+        },
+        {
+          "id": "O003",
+          "code": "Datetime.valueOf('2026-05-02 07:00:00+02:00')",
+          "expected": "2026-05-02 14:00:00"
+        },
+        {
+          "id": "O004",
+          "code": "Datetime.valueOf('2026-05-02 5:0:0')",
+          "expected": "2026-05-02 12:00:00"
+        },
+        {
+          "id": "O005",
+          "code": "Datetime.valueOf('2026-05-02 01:02:03-7')",
+          "expected": "2026-05-02 08:02:03"
+        },
+        {
+          "id": "O006",
+          "code": "Datetime.valueOf('2026-05-02 01:02:030')",
+          "expected": "2026-05-02 08:02:30"
+        },
+        {
+          "id": "O007",
+          "code": "Datetime.valueOf('2024-02-29T23:05:06Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29T23:05:06Z"
+        },
+        {
+          "id": "O008",
+          "code": "Datetime.valueOf('2026-05-02T01:02:03.125Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02T01:02:03.125Z"
+        },
+        {
+          "id": "O009",
+          "code": "Datetime.valueOfGmt('2026-05-02 05:00:00Z')",
+          "expected": "2026-05-02 05:00:00"
+        },
+        {
+          "id": "O010",
+          "code": "Datetime.valueOfGmt('2026-05-02T05:00:00Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02T05:00:00Z"
+        },
+        {
+          "id": "O011",
+          "code": "Datetime.valueOfGmt('2026-05-02 07:00:00+02:00')",
+          "expected": "2026-05-02 07:00:00"
+        },
+        {
+          "id": "O012",
+          "code": "Datetime.valueOfGmt('2026-05-02 5:0:0')",
+          "expected": "2026-05-02 05:00:00"
+        },
+        {
+          "id": "O013",
+          "code": "Datetime.valueOfGmt('2026-05-02 01:02:03-7')",
+          "expected": "2026-05-02 01:02:03"
+        },
+        {
+          "id": "O014",
+          "code": "Datetime.valueOfGmt('2026-05-02 01:02:030')",
+          "expected": "2026-05-02 01:02:30"
+        },
+        {
+          "id": "O015",
+          "code": "Datetime.valueOfGmt('2024-02-29T23:05:06Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29T23:05:06Z"
+        },
+        {
+          "id": "O016",
+          "code": "Datetime.valueOfGmt('2026-05-02T01:02:03.125Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02T01:02:03.125Z"
+        },
+        {
+          "id": "O017",
+          "code": "Object n; r=Date.valueOf(n);",
+          "expected": "null"
+        },
+        {
+          "id": "O018",
+          "code": "Date d=Date.newInstance(2026,5,4); Object o=d; r=Date.valueOf(o);",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "O019",
+          "code": "Object o='2026-05-04'; r=Date.valueOf(o);",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-05-04"
+        },
+        {
+          "id": "O020",
+          "code": "Object o='2026-05-02 01:02:03'; r=Datetime.valueOf(o);",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02 01:02:03"
+        },
+        {
+          "id": "O021",
+          "code": "Datetime d=Datetime.newInstanceGmt(2026,5,2,1,2,3); Object o=d; r=Datetime.valueOf(o);",
+          "expected": "2026-05-02 01:02:03"
+        },
+        {
+          "id": "O022",
+          "code": "Date.valueOf('2026-05-04T23:59:58Z')",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "O023",
+          "code": "Date.valueOf('2026-05-04 23:59:58-7')",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "O024",
+          "code": "Date.valueOf('2026-05-04 23:59:580')",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "O025",
+          "code": "Date.valueOf('2026-5-4')",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "O026",
+          "code": "Date.valueOf('2026-05-04,not-a-date')",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "K010",
+          "code": "Datetime.valueOf('2010-01-01 1:1:1-7')",
+          "expected": "2010-01-01 09:01:01"
+        },
+        {
+          "id": "K021",
+          "code": "Object n; r=Datetime.valueOf(n);",
+          "expected": "null"
+        },
+        {
+          "id": "K023",
+          "code": "Object o='2026-05-02 01:02:03'; r=Datetime.valueOf(o);",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02 01:02:03"
+        },
+        {
+          "id": "K040",
+          "code": "Date.parse('01/01/26')",
+          "expected": "2026-01-01 00:00:00"
+        },
+        {
+          "id": "K046",
+          "code": "Datetime.parse('1/2/2026, 3:04 PM')",
+          "expected": "2026-01-02 23:04:00"
+        },
+        {
+          "id": "K049",
+          "code": "Datetime.valueOfGmt('2010-13-01 1:1:1')",
+          "expected": "2011-01-01 01:01:01"
+        },
+        {
+          "id": "Z001",
+          "code": "TimeZone.getTimeZone(' UTC').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z002",
+          "code": "TimeZone.getTimeZone(' UTC').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z003",
+          "code": "TimeZone.getTimeZone(' UTC').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z004",
+          "code": "TimeZone.getTimeZone('GMT+05:3').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z005",
+          "code": "TimeZone.getTimeZone('GMT+05:3').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z006",
+          "code": "TimeZone.getTimeZone('GMT+05:3').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z007",
+          "code": "TimeZone.getTimeZone('GMT+14:01').getID()",
+          "expected": "GMT+14:01"
+        },
+        {
+          "id": "Z008",
+          "code": "TimeZone.getTimeZone('GMT+14:01').getDisplayName()",
+          "expected": "(GMT+14:01) Pacific Standard Time (GMT+14:01)"
+        },
+        {
+          "id": "Z009",
+          "code": "TimeZone.getTimeZone('GMT+14:01').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "50460000"
+        },
+        {
+          "id": "Z010",
+          "code": "TimeZone.getTimeZone('UTC-02:00').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z011",
+          "code": "TimeZone.getTimeZone('UTC-02:00').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z012",
+          "code": "TimeZone.getTimeZone('UTC-02:00').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z013",
+          "code": "TimeZone.getTimeZone('GMT+14:00').getID()",
+          "expected": "GMT+14:00"
+        },
+        {
+          "id": "Z014",
+          "code": "TimeZone.getTimeZone('GMT+14:00').getDisplayName()",
+          "expected": "(GMT+14:00) Pacific Standard Time (GMT+14:00)"
+        },
+        {
+          "id": "Z015",
+          "code": "TimeZone.getTimeZone('GMT+14:00').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "50400000"
+        },
+        {
+          "id": "Z016",
+          "code": "TimeZone.getTimeZone('gmt').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z017",
+          "code": "TimeZone.getTimeZone('gmt').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z018",
+          "code": "TimeZone.getTimeZone('gmt').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z019",
+          "code": "TimeZone.getTimeZone('utc').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z020",
+          "code": "TimeZone.getTimeZone('utc').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z021",
+          "code": "TimeZone.getTimeZone('utc').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z022",
+          "code": "TimeZone.getTimeZone('Etc/UTC').getID()",
+          "expected": "Etc/UTC"
+        },
+        {
+          "id": "Z023",
+          "code": "TimeZone.getTimeZone('Etc/UTC').getDisplayName()",
+          "expected": "(GMT+00:00) Coordinated Universal Time (Etc/UTC)"
+        },
+        {
+          "id": "Z024",
+          "code": "TimeZone.getTimeZone('Etc/UTC').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z025",
+          "code": "TimeZone.getTimeZone('Z').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z026",
+          "code": "TimeZone.getTimeZone('Z').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z027",
+          "code": "TimeZone.getTimeZone('Z').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z028",
+          "code": "Datetime.newInstanceGmt(2024,2,29,23,5,6).format('yyyy-MM-dd\\'T\\'HH:mm:ss','UTC-02:00')",
+          "expected": "2024-02-29T23:05:06"
+        },
+        {
+          "id": "Z029",
+          "code": "Datetime.newInstanceGmt(2024,2,29,23,5,6).format('z zzzz','UTC')",
+          "expected": "UTC Coordinated Universal Time"
+        },
+        {
+          "id": "Z030",
+          "code": "Date.newInstance(4,20,2020)",
+          "expected": "0011-02-10 00:00:00"
+        },
+        {
+          "id": "Z031",
+          "code": "Datetime.newInstanceGmt(1,1,2024)",
+          "expected": "0006-07-17 00:00:00"
+        },
+        {
+          "id": "E001",
+          "code": "Datetime.newInstanceGmt(2007,6,23,3,3,3).getTime()",
+          "expected": "1182567783000"
+        },
+        {
+          "id": "L001",
+          "code": "Datetime.valueOfGmt('2024-02-29T00:00:01Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29T00:00:01Z"
+        },
+        {
+          "id": "L002",
+          "code": "Datetime.valueOfGmt('2024-03-01T00:00:00Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-03-01T00:00:00Z"
+        },
+        {
+          "id": "L003",
+          "code": "Datetime.valueOfGmt('2024-02-29T12:34:56Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29T12:34:56Z"
+        },
+        {
+          "id": "H001",
+          "code": "Datetime.valueOfGmt('2024-02-29 25:00:00')",
+          "expected": "2024-03-01 01:00:00"
+        }
+      ]
+    },
+    {
+      "apiVersion": "67.0",
+      "locale": "en_US",
+      "timezone": "America/Los_Angeles",
+      "language": "en_US",
+      "cases": [
+        {
+          "id": "C001",
+          "code": "Date.newInstance(2024,2,29).year()",
+          "expected": "2024"
+        },
+        {
+          "id": "C002",
+          "code": "Date.newInstance(2024,2,29).month()",
+          "expected": "2"
+        },
+        {
+          "id": "C003",
+          "code": "Date.newInstance(2024,2,29).day()",
+          "expected": "29"
+        },
+        {
+          "id": "C004",
+          "code": "Date.newInstance(2024,2,29).dayOfYear()",
+          "expected": "60"
+        },
+        {
+          "id": "C005",
+          "code": "Date.newInstance(2024,2,29).toStartOfMonth()",
+          "expected": "2024-02-01 00:00:00"
+        },
+        {
+          "id": "C006",
+          "code": "Date.newInstance(2024,2,29).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 11: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C007",
+          "code": "Date.newInstance(2024,2,29).toStartOfWeek()",
+          "expected": "2024-02-25 00:00:00"
+        },
+        {
+          "id": "C008",
+          "code": "Date.newInstance(2024,2,29).addDays(-366)",
+          "expected": "2023-02-28 00:00:00"
+        },
+        {
+          "id": "C009",
+          "code": "Date.newInstance(2024,2,29).addDays(-1)",
+          "expected": "2024-02-28 00:00:00"
+        },
+        {
+          "id": "C010",
+          "code": "Date.newInstance(2024,2,29).addDays(0)",
+          "expected": "2024-02-29 00:00:00"
+        },
+        {
+          "id": "C011",
+          "code": "Date.newInstance(2024,2,29).addDays(1)",
+          "expected": "2024-03-01 00:00:00"
+        },
+        {
+          "id": "C012",
+          "code": "Date.newInstance(2024,2,29).addDays(366)",
+          "expected": "2025-03-01 00:00:00"
+        },
+        {
+          "id": "C013",
+          "code": "Date.newInstance(2023,2,28).year()",
+          "expected": "2023"
+        },
+        {
+          "id": "C014",
+          "code": "Date.newInstance(2023,2,28).month()",
+          "expected": "2"
+        },
+        {
+          "id": "C015",
+          "code": "Date.newInstance(2023,2,28).day()",
+          "expected": "28"
+        },
+        {
+          "id": "C016",
+          "code": "Date.newInstance(2023,2,28).dayOfYear()",
+          "expected": "59"
+        },
+        {
+          "id": "C017",
+          "code": "Date.newInstance(2023,2,28).toStartOfMonth()",
+          "expected": "2023-02-01 00:00:00"
+        },
+        {
+          "id": "C018",
+          "code": "Date.newInstance(2023,2,28).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 22: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C019",
+          "code": "Date.newInstance(2023,2,28).toStartOfWeek()",
+          "expected": "2023-02-26 00:00:00"
+        },
+        {
+          "id": "C020",
+          "code": "Date.newInstance(2023,2,28).addDays(-366)",
+          "expected": "2022-02-27 00:00:00"
+        },
+        {
+          "id": "C021",
+          "code": "Date.newInstance(2023,2,28).addDays(-1)",
+          "expected": "2023-02-27 00:00:00"
+        },
+        {
+          "id": "C022",
+          "code": "Date.newInstance(2023,2,28).addDays(0)",
+          "expected": "2023-02-28 00:00:00"
+        },
+        {
+          "id": "C023",
+          "code": "Date.newInstance(2023,2,28).addDays(1)",
+          "expected": "2023-03-01 00:00:00"
+        },
+        {
+          "id": "C024",
+          "code": "Date.newInstance(2023,2,28).addDays(366)",
+          "expected": "2024-02-29 00:00:00"
+        },
+        {
+          "id": "C025",
+          "code": "Date.newInstance(2000,2,29).year()",
+          "expected": "2000"
+        },
+        {
+          "id": "C026",
+          "code": "Date.newInstance(2000,2,29).month()",
+          "expected": "2"
+        },
+        {
+          "id": "C027",
+          "code": "Date.newInstance(2000,2,29).day()",
+          "expected": "29"
+        },
+        {
+          "id": "C028",
+          "code": "Date.newInstance(2000,2,29).dayOfYear()",
+          "expected": "60"
+        },
+        {
+          "id": "C029",
+          "code": "Date.newInstance(2000,2,29).toStartOfMonth()",
+          "expected": "2000-02-01 00:00:00"
+        },
+        {
+          "id": "C030",
+          "code": "Date.newInstance(2000,2,29).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 33: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C031",
+          "code": "Date.newInstance(2000,2,29).toStartOfWeek()",
+          "expected": "2000-02-27 00:00:00"
+        },
+        {
+          "id": "C032",
+          "code": "Date.newInstance(2000,2,29).addDays(-366)",
+          "expected": "1999-02-28 00:00:00"
+        },
+        {
+          "id": "C033",
+          "code": "Date.newInstance(2000,2,29).addDays(-1)",
+          "expected": "2000-02-28 00:00:00"
+        },
+        {
+          "id": "C034",
+          "code": "Date.newInstance(2000,2,29).addDays(0)",
+          "expected": "2000-02-29 00:00:00"
+        },
+        {
+          "id": "C035",
+          "code": "Date.newInstance(2000,2,29).addDays(1)",
+          "expected": "2000-03-01 00:00:00"
+        },
+        {
+          "id": "C036",
+          "code": "Date.newInstance(2000,2,29).addDays(366)",
+          "expected": "2001-03-01 00:00:00"
+        },
+        {
+          "id": "C037",
+          "code": "Date.newInstance(1900,2,28).year()",
+          "expected": "1900"
+        },
+        {
+          "id": "C038",
+          "code": "Date.newInstance(1900,2,28).month()",
+          "expected": "2"
+        },
+        {
+          "id": "C039",
+          "code": "Date.newInstance(1900,2,28).day()",
+          "expected": "28"
+        },
+        {
+          "id": "C040",
+          "code": "Date.newInstance(1900,2,28).dayOfYear()",
+          "expected": "59"
+        },
+        {
+          "id": "C041",
+          "code": "Date.newInstance(1900,2,28).toStartOfMonth()",
+          "expected": "1900-02-01 00:00:00"
+        },
+        {
+          "id": "C042",
+          "code": "Date.newInstance(1900,2,28).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 44: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C043",
+          "code": "Date.newInstance(1900,2,28).toStartOfWeek()",
+          "expected": "1900-02-25 00:00:00"
+        },
+        {
+          "id": "C044",
+          "code": "Date.newInstance(1900,2,28).addDays(-366)",
+          "expected": "1899-02-27 00:00:00"
+        },
+        {
+          "id": "C045",
+          "code": "Date.newInstance(1900,2,28).addDays(-1)",
+          "expected": "1900-02-27 00:00:00"
+        },
+        {
+          "id": "C046",
+          "code": "Date.newInstance(1900,2,28).addDays(0)",
+          "expected": "1900-02-28 00:00:00"
+        },
+        {
+          "id": "C047",
+          "code": "Date.newInstance(1900,2,28).addDays(1)",
+          "expected": "1900-03-01 00:00:00"
+        },
+        {
+          "id": "C048",
+          "code": "Date.newInstance(1900,2,28).addDays(366)",
+          "expected": "1901-03-01 00:00:00"
+        },
+        {
+          "id": "C049",
+          "code": "Date.newInstance(2026,1,31).year()",
+          "expected": "2026"
+        },
+        {
+          "id": "C050",
+          "code": "Date.newInstance(2026,1,31).month()",
+          "expected": "1"
+        },
+        {
+          "id": "C051",
+          "code": "Date.newInstance(2026,1,31).day()",
+          "expected": "31"
+        },
+        {
+          "id": "C052",
+          "code": "Date.newInstance(2026,1,31).dayOfYear()",
+          "expected": "31"
+        },
+        {
+          "id": "C053",
+          "code": "Date.newInstance(2026,1,31).toStartOfMonth()",
+          "expected": "2026-01-01 00:00:00"
+        },
+        {
+          "id": "C054",
+          "code": "Date.newInstance(2026,1,31).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C055",
+          "code": "Date.newInstance(2026,1,31).toStartOfWeek()",
+          "expected": "2026-01-25 00:00:00"
+        },
+        {
+          "id": "C056",
+          "code": "Date.newInstance(2026,1,31).addDays(-366)",
+          "expected": "2025-01-30 00:00:00"
+        },
+        {
+          "id": "C057",
+          "code": "Date.newInstance(2026,1,31).addDays(-1)",
+          "expected": "2026-01-30 00:00:00"
+        },
+        {
+          "id": "C058",
+          "code": "Date.newInstance(2026,1,31).addDays(0)",
+          "expected": "2026-01-31 00:00:00"
+        },
+        {
+          "id": "C059",
+          "code": "Date.newInstance(2026,1,31).addDays(1)",
+          "expected": "2026-02-01 00:00:00"
+        },
+        {
+          "id": "C060",
+          "code": "Date.newInstance(2026,1,31).addDays(366)",
+          "expected": "2027-02-01 00:00:00"
+        },
+        {
+          "id": "C061",
+          "code": "Date.newInstance(2026,12,31).year()",
+          "expected": "2026"
+        },
+        {
+          "id": "C062",
+          "code": "Date.newInstance(2026,12,31).month()",
+          "expected": "12"
+        },
+        {
+          "id": "C063",
+          "code": "Date.newInstance(2026,12,31).day()",
+          "expected": "31"
+        },
+        {
+          "id": "C064",
+          "code": "Date.newInstance(2026,12,31).dayOfYear()",
+          "expected": "365"
+        },
+        {
+          "id": "C065",
+          "code": "Date.newInstance(2026,12,31).toStartOfMonth()",
+          "expected": "2026-12-01 00:00:00"
+        },
+        {
+          "id": "C066",
+          "code": "Date.newInstance(2026,12,31).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 20: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C067",
+          "code": "Date.newInstance(2026,12,31).toStartOfWeek()",
+          "expected": "2026-12-27 00:00:00"
+        },
+        {
+          "id": "C068",
+          "code": "Date.newInstance(2026,12,31).addDays(-366)",
+          "expected": "2025-12-30 00:00:00"
+        },
+        {
+          "id": "C069",
+          "code": "Date.newInstance(2026,12,31).addDays(-1)",
+          "expected": "2026-12-30 00:00:00"
+        },
+        {
+          "id": "C070",
+          "code": "Date.newInstance(2026,12,31).addDays(0)",
+          "expected": "2026-12-31 00:00:00"
+        },
+        {
+          "id": "C071",
+          "code": "Date.newInstance(2026,12,31).addDays(1)",
+          "expected": "2027-01-01 00:00:00"
+        },
+        {
+          "id": "C072",
+          "code": "Date.newInstance(2026,12,31).addDays(366)",
+          "expected": "2028-01-01 00:00:00"
+        },
+        {
+          "id": "C073",
+          "code": "Date.newInstance(1,1,1).year()",
+          "expected": "1"
+        },
+        {
+          "id": "C074",
+          "code": "Date.newInstance(1,1,1).month()",
+          "expected": "1"
+        },
+        {
+          "id": "C075",
+          "code": "Date.newInstance(1,1,1).day()",
+          "expected": "1"
+        },
+        {
+          "id": "C076",
+          "code": "Date.newInstance(1,1,1).dayOfYear()",
+          "expected": "1"
+        },
+        {
+          "id": "C077",
+          "code": "Date.newInstance(1,1,1).toStartOfMonth()",
+          "expected": "0001-01-01 00:00:00"
+        },
+        {
+          "id": "C078",
+          "code": "Date.newInstance(1,1,1).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 31: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C079",
+          "code": "Date.newInstance(1,1,1).toStartOfWeek()",
+          "expected": "0001-12-26 00:00:00",
+          "remainingReason": "date and time: Julian week calendar and BCE era rendering require Date representation/coercion/display changes outside the owned temporal sections."
+        },
+        {
+          "id": "C080",
+          "code": "Date.newInstance(1,1,1).addDays(-366)",
+          "expected": "0001-01-01 00:00:00",
+          "remainingReason": "date and time: BCE arithmetic result is rendered with astronomical year 0; shared Date representation/coercion/display repair remains outside this dispatch."
+        },
+        {
+          "id": "C081",
+          "code": "Date.newInstance(1,1,1).addDays(-1)",
+          "expected": "0001-12-31 00:00:00",
+          "remainingReason": "date and time: BCE arithmetic result is rendered with astronomical year 0; shared Date representation/coercion/display repair remains outside this dispatch."
+        },
+        {
+          "id": "C082",
+          "code": "Date.newInstance(1,1,1).addDays(0)",
+          "expected": "0001-01-01 00:00:00"
+        },
+        {
+          "id": "C083",
+          "code": "Date.newInstance(1,1,1).addDays(1)",
+          "expected": "0001-01-02 00:00:00"
+        },
+        {
+          "id": "C084",
+          "code": "Date.newInstance(1,1,1).addDays(366)",
+          "expected": "0002-01-02 00:00:00"
+        },
+        {
+          "id": "C085",
+          "code": "Date.newInstance(9999,12,31).year()",
+          "expected": "9999"
+        },
+        {
+          "id": "C086",
+          "code": "Date.newInstance(9999,12,31).month()",
+          "expected": "12"
+        },
+        {
+          "id": "C087",
+          "code": "Date.newInstance(9999,12,31).day()",
+          "expected": "31"
+        },
+        {
+          "id": "C088",
+          "code": "Date.newInstance(9999,12,31).dayOfYear()",
+          "expected": "365"
+        },
+        {
+          "id": "C089",
+          "code": "Date.newInstance(9999,12,31).toStartOfMonth()",
+          "expected": "9999-12-01 00:00:00"
+        },
+        {
+          "id": "C090",
+          "code": "Date.newInstance(9999,12,31).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 42: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C091",
+          "code": "Date.newInstance(9999,12,31).toStartOfWeek()",
+          "expected": "9999-12-26 00:00:00"
+        },
+        {
+          "id": "C092",
+          "code": "Date.newInstance(9999,12,31).addDays(-366)",
+          "expected": "9998-12-30 00:00:00"
+        },
+        {
+          "id": "C093",
+          "code": "Date.newInstance(9999,12,31).addDays(-1)",
+          "expected": "9999-12-30 00:00:00"
+        },
+        {
+          "id": "C094",
+          "code": "Date.newInstance(9999,12,31).addDays(0)",
+          "expected": "9999-12-31 00:00:00"
+        },
+        {
+          "id": "C095",
+          "code": "Date.newInstance(9999,12,31).addDays(1)",
+          "expected": "10000-01-01 00:00:00"
+        },
+        {
+          "id": "C096",
+          "code": "Date.newInstance(9999,12,31).addDays(366)",
+          "expected": "10000-12-31 00:00:00"
+        },
+        {
+          "id": "C097",
+          "code": "Date.newInstance(2026,4,30).year()",
+          "expected": "2026"
+        },
+        {
+          "id": "C098",
+          "code": "Date.newInstance(2026,4,30).month()",
+          "expected": "4"
+        },
+        {
+          "id": "C099",
+          "code": "Date.newInstance(2026,4,30).day()",
+          "expected": "30"
+        },
+        {
+          "id": "C100",
+          "code": "Date.newInstance(2026,4,30).dayOfYear()",
+          "expected": "120"
+        },
+        {
+          "id": "C101",
+          "code": "Date.newInstance(2026,4,30).toStartOfMonth()",
+          "expected": "2026-04-01 00:00:00"
+        },
+        {
+          "id": "C102",
+          "code": "Date.newInstance(2026,4,30).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C103",
+          "code": "Date.newInstance(2026,4,30).toStartOfWeek()",
+          "expected": "2026-04-26 00:00:00"
+        },
+        {
+          "id": "C104",
+          "code": "Date.newInstance(2026,4,30).addDays(-366)",
+          "expected": "2025-04-29 00:00:00"
+        },
+        {
+          "id": "C105",
+          "code": "Date.newInstance(2026,4,30).addDays(-1)",
+          "expected": "2026-04-29 00:00:00"
+        },
+        {
+          "id": "C106",
+          "code": "Date.newInstance(2026,4,30).addDays(0)",
+          "expected": "2026-04-30 00:00:00"
+        },
+        {
+          "id": "C107",
+          "code": "Date.newInstance(2026,4,30).addDays(1)",
+          "expected": "2026-05-01 00:00:00"
+        },
+        {
+          "id": "C108",
+          "code": "Date.newInstance(2026,4,30).addDays(366)",
+          "expected": "2027-05-01 00:00:00"
+        },
+        {
+          "id": "C109",
+          "code": "Date.newInstance(2026,6,15).year()",
+          "expected": "2026"
+        },
+        {
+          "id": "C110",
+          "code": "Date.newInstance(2026,6,15).month()",
+          "expected": "6"
+        },
+        {
+          "id": "C111",
+          "code": "Date.newInstance(2026,6,15).day()",
+          "expected": "15"
+        },
+        {
+          "id": "C112",
+          "code": "Date.newInstance(2026,6,15).dayOfYear()",
+          "expected": "166"
+        },
+        {
+          "id": "C113",
+          "code": "Date.newInstance(2026,6,15).toStartOfMonth()",
+          "expected": "2026-06-01 00:00:00"
+        },
+        {
+          "id": "C114",
+          "code": "Date.newInstance(2026,6,15).toEndOfMonth()",
+          "expected": "COMPILE_ERROR\tline 18: Method does not exist or incorrect signature: void toEndOfMonth() from the type Date"
+        },
+        {
+          "id": "C115",
+          "code": "Date.newInstance(2026,6,15).toStartOfWeek()",
+          "expected": "2026-06-14 00:00:00"
+        },
+        {
+          "id": "C116",
+          "code": "Date.newInstance(2026,6,15).addDays(-366)",
+          "expected": "2025-06-14 00:00:00"
+        },
+        {
+          "id": "C117",
+          "code": "Date.newInstance(2026,6,15).addDays(-1)",
+          "expected": "2026-06-14 00:00:00"
+        },
+        {
+          "id": "C118",
+          "code": "Date.newInstance(2026,6,15).addDays(0)",
+          "expected": "2026-06-15 00:00:00"
+        },
+        {
+          "id": "C119",
+          "code": "Date.newInstance(2026,6,15).addDays(1)",
+          "expected": "2026-06-16 00:00:00"
+        },
+        {
+          "id": "C120",
+          "code": "Date.newInstance(2026,6,15).addDays(366)",
+          "expected": "2027-06-16 00:00:00"
+        },
+        {
+          "id": "C121",
+          "code": "Date.newInstance(2024,2,29).addMonths(-13)",
+          "expected": "2023-01-29 00:00:00"
+        },
+        {
+          "id": "C122",
+          "code": "Date.newInstance(2024,2,29).addMonths(-1)",
+          "expected": "2024-01-29 00:00:00"
+        },
+        {
+          "id": "C123",
+          "code": "Date.newInstance(2024,2,29).addMonths(1)",
+          "expected": "2024-03-29 00:00:00"
+        },
+        {
+          "id": "C124",
+          "code": "Date.newInstance(2024,2,29).addMonths(13)",
+          "expected": "2025-03-29 00:00:00"
+        },
+        {
+          "id": "C125",
+          "code": "Date.newInstance(2026,1,31).addMonths(-13)",
+          "expected": "2024-12-31 00:00:00"
+        },
+        {
+          "id": "C126",
+          "code": "Date.newInstance(2026,1,31).addMonths(-1)",
+          "expected": "2025-12-31 00:00:00"
+        },
+        {
+          "id": "C127",
+          "code": "Date.newInstance(2026,1,31).addMonths(1)",
+          "expected": "2026-02-28 00:00:00"
+        },
+        {
+          "id": "C128",
+          "code": "Date.newInstance(2026,1,31).addMonths(13)",
+          "expected": "2027-02-28 00:00:00"
+        },
+        {
+          "id": "C129",
+          "code": "Date.newInstance(2026,12,31).addMonths(-13)",
+          "expected": "2025-11-30 00:00:00"
+        },
+        {
+          "id": "C130",
+          "code": "Date.newInstance(2026,12,31).addMonths(-1)",
+          "expected": "2026-11-30 00:00:00"
+        },
+        {
+          "id": "C131",
+          "code": "Date.newInstance(2026,12,31).addMonths(1)",
+          "expected": "2027-01-31 00:00:00"
+        },
+        {
+          "id": "C132",
+          "code": "Date.newInstance(2026,12,31).addMonths(13)",
+          "expected": "2028-01-31 00:00:00"
+        },
+        {
+          "id": "C133",
+          "code": "Date.newInstance(2026,4,30).addMonths(-13)",
+          "expected": "2025-03-30 00:00:00"
+        },
+        {
+          "id": "C134",
+          "code": "Date.newInstance(2026,4,30).addMonths(-1)",
+          "expected": "2026-03-30 00:00:00"
+        },
+        {
+          "id": "C135",
+          "code": "Date.newInstance(2026,4,30).addMonths(1)",
+          "expected": "2026-05-30 00:00:00"
+        },
+        {
+          "id": "C136",
+          "code": "Date.newInstance(2026,4,30).addMonths(13)",
+          "expected": "2027-05-30 00:00:00"
+        },
+        {
+          "id": "C137",
+          "code": "Date.isLeapYear(1900)",
+          "expected": "false"
+        },
+        {
+          "id": "C138",
+          "code": "Date.isLeapYear(2000)",
+          "expected": "true"
+        },
+        {
+          "id": "C139",
+          "code": "Date.isLeapYear(2023)",
+          "expected": "false"
+        },
+        {
+          "id": "C140",
+          "code": "Date.isLeapYear(2024)",
+          "expected": "true"
+        },
+        {
+          "id": "C141",
+          "code": "Date.isLeapYear(2100)",
+          "expected": "false"
+        },
+        {
+          "id": "C142",
+          "code": "Date.daysInMonth(2024,2)",
+          "expected": "29"
+        },
+        {
+          "id": "C143",
+          "code": "Date.daysInMonth(2023,2)",
+          "expected": "28"
+        },
+        {
+          "id": "C144",
+          "code": "Date.daysInMonth(2026,0)",
+          "expected": "31"
+        },
+        {
+          "id": "C145",
+          "code": "Date.daysInMonth(2026,13)",
+          "expected": "31"
+        },
+        {
+          "id": "C146",
+          "code": "Date.newInstance(2026,2,30)",
+          "expected": "2026-03-02 00:00:00"
+        },
+        {
+          "id": "C147",
+          "code": "Date.newInstance(2026,0,0)",
+          "expected": "2025-11-30 00:00:00"
+        },
+        {
+          "id": "C148",
+          "code": "Date.newInstance(0,1,1)",
+          "expected": "0001-01-01 00:00:00",
+          "remainingReason": "date and time: year-0 construction uses astronomical year rendering instead of native BCE year 1; shared Date representation/coercion/display repair remains outside this dispatch."
+        },
+        {
+          "id": "C149",
+          "code": "Date.newInstance(2026,13,1)",
+          "expected": "2027-01-01 00:00:00"
+        },
+        {
+          "id": "C150",
+          "code": "Date d; r=d.addDays(1);",
+          "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+        },
+        {
+          "id": "P001",
+          "code": "Date.valueOf('2024-02-29')",
+          "expected": "2024-02-29 00:00:00"
+        },
+        {
+          "id": "P002",
+          "code": "Date.parse('2024-02-29')",
+          "expected": "EXC|System.TypeException|Invalid date: 2024-02-29"
+        },
+        {
+          "id": "P003",
+          "code": "Datetime.valueOf('2024-02-29')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29"
+        },
+        {
+          "id": "P004",
+          "code": "Datetime.valueOfGmt('2024-02-29')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29"
+        },
+        {
+          "id": "P005",
+          "code": "Datetime.parse('2024-02-29')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29"
+        },
+        {
+          "id": "P006",
+          "code": "Date.valueOf('2026-1-2')",
+          "expected": "2026-01-02 00:00:00"
+        },
+        {
+          "id": "P007",
+          "code": "Date.parse('2026-1-2')",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-1-2"
+        },
+        {
+          "id": "P008",
+          "code": "Datetime.valueOf('2026-1-2')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-1-2"
+        },
+        {
+          "id": "P009",
+          "code": "Datetime.valueOfGmt('2026-1-2')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-1-2"
+        },
+        {
+          "id": "P010",
+          "code": "Datetime.parse('2026-1-2')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-1-2"
+        },
+        {
+          "id": "P011",
+          "code": "Date.valueOf('2026-02-30')",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-02-30"
+        },
+        {
+          "id": "P012",
+          "code": "Date.parse('2026-02-30')",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-02-30"
+        },
+        {
+          "id": "P013",
+          "code": "Datetime.valueOf('2026-02-30')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-02-30"
+        },
+        {
+          "id": "P014",
+          "code": "Datetime.valueOfGmt('2026-02-30')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-02-30"
+        },
+        {
+          "id": "P015",
+          "code": "Datetime.parse('2026-02-30')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-02-30"
+        },
+        {
+          "id": "P016",
+          "code": "Date.valueOf('2026-01-01 12:34:56')",
+          "expected": "2026-01-01 00:00:00"
+        },
+        {
+          "id": "P017",
+          "code": "Date.parse('2026-01-01 12:34:56')",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-01-01 12:34:56"
+        },
+        {
+          "id": "P018",
+          "code": "Datetime.valueOf('2026-01-01 12:34:56')",
+          "expected": "2026-01-01 20:34:56"
+        },
+        {
+          "id": "P019",
+          "code": "Datetime.valueOfGmt('2026-01-01 12:34:56')",
+          "expected": "2026-01-01 12:34:56"
+        },
+        {
+          "id": "P020",
+          "code": "Datetime.parse('2026-01-01 12:34:56')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-01-01 12:34:56"
+        },
+        {
+          "id": "P021",
+          "code": "Date.valueOf('2026-01-01T12:34:56Z')",
+          "expected": "2026-01-01 00:00:00"
+        },
+        {
+          "id": "P022",
+          "code": "Date.parse('2026-01-01T12:34:56Z')",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-01-01T12:34:56Z"
+        },
+        {
+          "id": "P023",
+          "code": "Datetime.valueOf('2026-01-01T12:34:56Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-01-01T12:34:56Z"
+        },
+        {
+          "id": "P024",
+          "code": "Datetime.valueOfGmt('2026-01-01T12:34:56Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-01-01T12:34:56Z"
+        },
+        {
+          "id": "P025",
+          "code": "Datetime.parse('2026-01-01T12:34:56Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-01-01T12:34:56Z"
+        },
+        {
+          "id": "P026",
+          "code": "Date.valueOf('')",
+          "expected": "EXC|System.TypeException|Invalid date: "
+        },
+        {
+          "id": "P027",
+          "code": "Date.parse('')",
+          "expected": "EXC|System.TypeException|Invalid date: "
+        },
+        {
+          "id": "P028",
+          "code": "Datetime.valueOf('')",
+          "expected": "EXC|System.TypeException|Invalid date/time: "
+        },
+        {
+          "id": "P029",
+          "code": "Datetime.valueOfGmt('')",
+          "expected": "EXC|System.TypeException|Invalid date/time: "
+        },
+        {
+          "id": "P030",
+          "code": "Datetime.parse('')",
+          "expected": "EXC|System.TypeException|Invalid date/time: "
+        },
+        {
+          "id": "P031",
+          "code": "Date.valueOf(' 2026-01-01 ')",
+          "expected": "2026-01-01 00:00:00"
+        },
+        {
+          "id": "P032",
+          "code": "Date.parse(' 2026-01-01 ')",
+          "expected": "EXC|System.TypeException|Invalid date:  2026-01-01 "
+        },
+        {
+          "id": "P033",
+          "code": "Datetime.valueOf(' 2026-01-01 ')",
+          "expected": "EXC|System.TypeException|Invalid date/time:  2026-01-01 "
+        },
+        {
+          "id": "P034",
+          "code": "Datetime.valueOfGmt(' 2026-01-01 ')",
+          "expected": "EXC|System.TypeException|Invalid date/time:  2026-01-01 "
+        },
+        {
+          "id": "P035",
+          "code": "Datetime.parse(' 2026-01-01 ')",
+          "expected": "EXC|System.TypeException|Invalid date/time:  2026-01-01 "
+        },
+        {
+          "id": "P036",
+          "code": "Date.valueOf('01/02/2026')",
+          "expected": "EXC|System.TypeException|Invalid date: 01/02/2026"
+        },
+        {
+          "id": "P037",
+          "code": "Date.parse('01/02/2026')",
+          "expected": "2026-01-02 00:00:00"
+        },
+        {
+          "id": "P038",
+          "code": "Datetime.valueOf('01/02/2026')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 01/02/2026"
+        },
+        {
+          "id": "P039",
+          "code": "Datetime.valueOfGmt('01/02/2026')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 01/02/2026"
+        },
+        {
+          "id": "P040",
+          "code": "Datetime.parse('01/02/2026')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 01/02/2026"
+        },
+        {
+          "id": "P041",
+          "code": "Date.valueOf((String)null)",
+          "expected": "EXC|System.NullPointerException|Argument cannot be null."
+        },
+        {
+          "id": "P042",
+          "code": "Date.parse((String)null)",
+          "expected": "EXC|System.NullPointerException|Argument cannot be null."
+        },
+        {
+          "id": "P043",
+          "code": "Datetime.valueOf((String)null)",
+          "expected": "EXC|System.NullPointerException|Argument cannot be null."
+        },
+        {
+          "id": "P044",
+          "code": "Datetime.valueOfGmt((String)null)",
+          "expected": "EXC|System.NullPointerException|Argument cannot be null."
+        },
+        {
+          "id": "P045",
+          "code": "Datetime.parse((String)null)",
+          "expected": "EXC|System.NullPointerException|Argument cannot be null."
+        },
+        {
+          "id": "P046",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('yyyy-MM-dd HH:mm:ss')",
+          "expected": "2024-02-29 00:05:06"
+        },
+        {
+          "id": "P047",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('y yy yyy yyyy')",
+          "expected": "2024 24 2024 2024"
+        },
+        {
+          "id": "P048",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('Y YY YYYY')",
+          "expected": "2024 24 2024"
+        },
+        {
+          "id": "P049",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('M MM MMM MMMM MMMMM')",
+          "expected": "2 02 Feb February February"
+        },
+        {
+          "id": "P050",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('d dd ddd')",
+          "expected": "29 29 029"
+        },
+        {
+          "id": "P051",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('D DD DDD')",
+          "expected": "60 60 060"
+        },
+        {
+          "id": "P052",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('E EEE EEEE')",
+          "expected": "Thu Thu Thursday"
+        },
+        {
+          "id": "P053",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('u')",
+          "expected": "4"
+        },
+        {
+          "id": "P054",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('w ww')",
+          "expected": "9 09"
+        },
+        {
+          "id": "P055",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('W')",
+          "expected": "5"
+        },
+        {
+          "id": "P056",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('F')",
+          "expected": "5"
+        },
+        {
+          "id": "P057",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('G GG GGGG')",
+          "expected": "AD AD AD"
+        },
+        {
+          "id": "P058",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('H HH HHH')",
+          "expected": "0 00 000"
+        },
+        {
+          "id": "P059",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('k kk')",
+          "expected": "24 24"
+        },
+        {
+          "id": "P060",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('h hh')",
+          "expected": "12 12"
+        },
+        {
+          "id": "P061",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('K KK')",
+          "expected": "0 00"
+        },
+        {
+          "id": "P062",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('m mm mmm')",
+          "expected": "5 05 005"
+        },
+        {
+          "id": "P063",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('s ss sss')",
+          "expected": "6 06 006"
+        },
+        {
+          "id": "P064",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('S SS SSS SSSS')",
+          "expected": "0 00 000 0000"
+        },
+        {
+          "id": "P065",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('a')",
+          "expected": "AM"
+        },
+        {
+          "id": "P066",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('z zzzz')",
+          "expected": "GMT Greenwich Mean Time"
+        },
+        {
+          "id": "P067",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('Z ZZ ZZZ')",
+          "expected": "+0000 +0000 +0000"
+        },
+        {
+          "id": "P068",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('X XX XXX')",
+          "expected": "Z Z Z"
+        },
+        {
+          "id": "P069",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('yyyy-MM-dd\\'T\\'HH:mm:ss\\'Z\\'')",
+          "expected": "2024-02-29T00:05:06Z"
+        },
+        {
+          "id": "P070",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('\\'quoted\\' yyyy')",
+          "expected": "quoted 2024"
+        },
+        {
+          "id": "P071",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('\\'\\' yyyy')",
+          "expected": "' 2024"
+        },
+        {
+          "id": "P072",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('yyyy \\'unterminated')",
+          "expected": "EXC|System.StringException|Unrecognized format: yyyy 'unterminated"
+        },
+        {
+          "id": "P073",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('Q')",
+          "expected": "EXC|System.StringException|Unrecognized format: Q"
+        },
+        {
+          "id": "P074",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('')",
+          "expected": ""
+        },
+        {
+          "id": "P075",
+          "code": "Datetime.newInstanceGmt(2024,2,29,0,5,6).formatGmt('LLLL')",
+          "expected": "February"
+        },
+        {
+          "id": "P076",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('yyyy-MM-dd HH:mm:ss')",
+          "expected": "2026-12-31 23:59:59"
+        },
+        {
+          "id": "P077",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('y yy yyy yyyy')",
+          "expected": "2026 26 2026 2026"
+        },
+        {
+          "id": "P078",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('Y YY YYYY')",
+          "expected": "2027 27 2027"
+        },
+        {
+          "id": "P079",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('M MM MMM MMMM MMMMM')",
+          "expected": "12 12 Dec December December"
+        },
+        {
+          "id": "P080",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('d dd ddd')",
+          "expected": "31 31 031"
+        },
+        {
+          "id": "P081",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('D DD DDD')",
+          "expected": "365 365 365"
+        },
+        {
+          "id": "P082",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('E EEE EEEE')",
+          "expected": "Thu Thu Thursday"
+        },
+        {
+          "id": "P083",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('u')",
+          "expected": "4"
+        },
+        {
+          "id": "P084",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('w ww')",
+          "expected": "1 01"
+        },
+        {
+          "id": "P085",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('W')",
+          "expected": "5"
+        },
+        {
+          "id": "P086",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('F')",
+          "expected": "5"
+        },
+        {
+          "id": "P087",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('G GG GGGG')",
+          "expected": "AD AD AD"
+        },
+        {
+          "id": "P088",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('H HH HHH')",
+          "expected": "23 23 023"
+        },
+        {
+          "id": "P089",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('k kk')",
+          "expected": "23 23"
+        },
+        {
+          "id": "P090",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('h hh')",
+          "expected": "11 11"
+        },
+        {
+          "id": "P091",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('K KK')",
+          "expected": "11 11"
+        },
+        {
+          "id": "P092",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('m mm mmm')",
+          "expected": "59 59 059"
+        },
+        {
+          "id": "P093",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('s ss sss')",
+          "expected": "59 59 059"
+        },
+        {
+          "id": "P094",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('S SS SSS SSSS')",
+          "expected": "0 00 000 0000"
+        },
+        {
+          "id": "P095",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('a')",
+          "expected": "PM"
+        },
+        {
+          "id": "P096",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('z zzzz')",
+          "expected": "GMT Greenwich Mean Time"
+        },
+        {
+          "id": "P097",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('Z ZZ ZZZ')",
+          "expected": "+0000 +0000 +0000"
+        },
+        {
+          "id": "P098",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('X XX XXX')",
+          "expected": "Z Z Z"
+        },
+        {
+          "id": "P099",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('yyyy-MM-dd\\'T\\'HH:mm:ss\\'Z\\'')",
+          "expected": "2026-12-31T23:59:59Z"
+        },
+        {
+          "id": "P100",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('\\'quoted\\' yyyy')",
+          "expected": "quoted 2026"
+        },
+        {
+          "id": "P101",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('\\'\\' yyyy')",
+          "expected": "' 2026"
+        },
+        {
+          "id": "P102",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('yyyy \\'unterminated')",
+          "expected": "EXC|System.StringException|Unrecognized format: yyyy 'unterminated"
+        },
+        {
+          "id": "P103",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('Q')",
+          "expected": "EXC|System.StringException|Unrecognized format: Q"
+        },
+        {
+          "id": "P104",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('')",
+          "expected": ""
+        },
+        {
+          "id": "P105",
+          "code": "Datetime.newInstanceGmt(2026,12,31,23,59,59).formatGmt('LLLL')",
+          "expected": "December"
+        },
+        {
+          "id": "P106",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('yyyy-MM-dd HH:mm:ss')",
+          "expected": "2026-01-01 12:34:56"
+        },
+        {
+          "id": "P107",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('y yy yyy yyyy')",
+          "expected": "2026 26 2026 2026"
+        },
+        {
+          "id": "P108",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('Y YY YYYY')",
+          "expected": "2026 26 2026"
+        },
+        {
+          "id": "P109",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('M MM MMM MMMM MMMMM')",
+          "expected": "1 01 Jan January January"
+        },
+        {
+          "id": "P110",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('d dd ddd')",
+          "expected": "1 01 001"
+        },
+        {
+          "id": "P111",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('D DD DDD')",
+          "expected": "1 01 001"
+        },
+        {
+          "id": "P112",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('E EEE EEEE')",
+          "expected": "Thu Thu Thursday"
+        },
+        {
+          "id": "P113",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('u')",
+          "expected": "4"
+        },
+        {
+          "id": "P114",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('w ww')",
+          "expected": "1 01"
+        },
+        {
+          "id": "P115",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('W')",
+          "expected": "1"
+        },
+        {
+          "id": "P116",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('F')",
+          "expected": "1"
+        },
+        {
+          "id": "P117",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('G GG GGGG')",
+          "expected": "AD AD AD"
+        },
+        {
+          "id": "P118",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('H HH HHH')",
+          "expected": "12 12 012"
+        },
+        {
+          "id": "P119",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('k kk')",
+          "expected": "12 12"
+        },
+        {
+          "id": "P120",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('h hh')",
+          "expected": "12 12"
+        },
+        {
+          "id": "P121",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('K KK')",
+          "expected": "0 00"
+        },
+        {
+          "id": "P122",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('m mm mmm')",
+          "expected": "34 34 034"
+        },
+        {
+          "id": "P123",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('s ss sss')",
+          "expected": "56 56 056"
+        },
+        {
+          "id": "P124",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('S SS SSS SSSS')",
+          "expected": "0 00 000 0000"
+        },
+        {
+          "id": "P125",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('a')",
+          "expected": "PM"
+        },
+        {
+          "id": "P126",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('z zzzz')",
+          "expected": "GMT Greenwich Mean Time"
+        },
+        {
+          "id": "P127",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('Z ZZ ZZZ')",
+          "expected": "+0000 +0000 +0000"
+        },
+        {
+          "id": "P128",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('X XX XXX')",
+          "expected": "Z Z Z"
+        },
+        {
+          "id": "P129",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('yyyy-MM-dd\\'T\\'HH:mm:ss\\'Z\\'')",
+          "expected": "2026-01-01T12:34:56Z"
+        },
+        {
+          "id": "P130",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('\\'quoted\\' yyyy')",
+          "expected": "quoted 2026"
+        },
+        {
+          "id": "P131",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('\\'\\' yyyy')",
+          "expected": "' 2026"
+        },
+        {
+          "id": "P132",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('yyyy \\'unterminated')",
+          "expected": "EXC|System.StringException|Unrecognized format: yyyy 'unterminated"
+        },
+        {
+          "id": "P133",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('Q')",
+          "expected": "EXC|System.StringException|Unrecognized format: Q"
+        },
+        {
+          "id": "P134",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('')",
+          "expected": ""
+        },
+        {
+          "id": "P135",
+          "code": "Datetime.newInstanceGmt(2026,1,1,12,34,56).formatGmt('LLLL')",
+          "expected": "January"
+        },
+        {
+          "id": "P136",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).formatLong()",
+          "expected": "6/30/2026, 5:30:45 PM PDT"
+        },
+        {
+          "id": "P137",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).format()",
+          "expected": "6/30/2026, 5:30 PM"
+        },
+        {
+          "id": "P138",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).dateGmt()",
+          "expected": "2026-07-01 00:00:00"
+        },
+        {
+          "id": "P139",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).monthGmt()",
+          "expected": "7"
+        },
+        {
+          "id": "P140",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).day()",
+          "expected": "30"
+        },
+        {
+          "id": "P141",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).dayGmt()",
+          "expected": "1"
+        },
+        {
+          "id": "P142",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).hour()",
+          "expected": "17"
+        },
+        {
+          "id": "P143",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).hourGmt()",
+          "expected": "0"
+        },
+        {
+          "id": "P144",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).minute()",
+          "expected": "30"
+        },
+        {
+          "id": "P145",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).minuteGmt()",
+          "expected": "30"
+        },
+        {
+          "id": "P146",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).second()",
+          "expected": "45"
+        },
+        {
+          "id": "P147",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).secondGmt()",
+          "expected": "45"
+        },
+        {
+          "id": "P148",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).dayOfYear()",
+          "expected": "181"
+        },
+        {
+          "id": "P149",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).dayOfYearGmt()",
+          "expected": "182"
+        },
+        {
+          "id": "P150",
+          "code": "Datetime.newInstanceGmt(2026,7,1,0,30,45).date()",
+          "expected": "2026-06-30 00:00:00"
+        },
+        {
+          "id": "T001",
+          "code": "TimeZone.getTimeZone('UTC').getID()",
+          "expected": "UTC"
+        },
+        {
+          "id": "T002",
+          "code": "TimeZone.getTimeZone('UTC').getDisplayName()",
+          "expected": "(GMT+00:00) Coordinated Universal Time (UTC)"
+        },
+        {
+          "id": "T003",
+          "code": "TimeZone.getTimeZone('UTC').toString()",
+          "expected": "UTC"
+        },
+        {
+          "id": "T004",
+          "code": "TimeZone.getTimeZone('UTC').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T005",
+          "code": "TimeZone.getTimeZone('UTC').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T006",
+          "code": "TimeZone.getTimeZone('UTC').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "0"
+        },
+        {
+          "id": "T007",
+          "code": "TimeZone.getTimeZone('UTC').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T008",
+          "code": "TimeZone.getTimeZone('UTC').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T009",
+          "code": "TimeZone.getTimeZone('GMT').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "T010",
+          "code": "TimeZone.getTimeZone('GMT').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "T011",
+          "code": "TimeZone.getTimeZone('GMT').toString()",
+          "expected": "GMT"
+        },
+        {
+          "id": "T012",
+          "code": "TimeZone.getTimeZone('GMT').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T013",
+          "code": "TimeZone.getTimeZone('GMT').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T014",
+          "code": "TimeZone.getTimeZone('GMT').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "0"
+        },
+        {
+          "id": "T015",
+          "code": "TimeZone.getTimeZone('GMT').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T016",
+          "code": "TimeZone.getTimeZone('GMT').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T017",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getID()",
+          "expected": "America/Los_Angeles"
+        },
+        {
+          "id": "T018",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getDisplayName()",
+          "expected": "(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)"
+        },
+        {
+          "id": "T019",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').toString()",
+          "expected": "America/Los_Angeles"
+        },
+        {
+          "id": "T020",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T021",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T022",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T023",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T024",
+          "code": "TimeZone.getTimeZone('America/Los_Angeles').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T025",
+          "code": "TimeZone.getTimeZone('America/New_York').getID()",
+          "expected": "America/New_York"
+        },
+        {
+          "id": "T026",
+          "code": "TimeZone.getTimeZone('America/New_York').getDisplayName()",
+          "expected": "(GMT-04:00) Eastern Daylight Time (America/New_York)"
+        },
+        {
+          "id": "T027",
+          "code": "TimeZone.getTimeZone('America/New_York').toString()",
+          "expected": "America/New_York"
+        },
+        {
+          "id": "T028",
+          "code": "TimeZone.getTimeZone('America/New_York').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "-18000000"
+        },
+        {
+          "id": "T029",
+          "code": "TimeZone.getTimeZone('America/New_York').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "-14400000"
+        },
+        {
+          "id": "T030",
+          "code": "TimeZone.getTimeZone('America/New_York').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "-14400000"
+        },
+        {
+          "id": "T031",
+          "code": "TimeZone.getTimeZone('America/New_York').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "-14400000"
+        },
+        {
+          "id": "T032",
+          "code": "TimeZone.getTimeZone('America/New_York').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "-18000000"
+        },
+        {
+          "id": "T033",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getID()",
+          "expected": "America/Phoenix"
+        },
+        {
+          "id": "T034",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getDisplayName()",
+          "expected": "(GMT-07:00) Mountain Standard Time (America/Phoenix)"
+        },
+        {
+          "id": "T035",
+          "code": "TimeZone.getTimeZone('America/Phoenix').toString()",
+          "expected": "America/Phoenix"
+        },
+        {
+          "id": "T036",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T037",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T038",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T039",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T040",
+          "code": "TimeZone.getTimeZone('America/Phoenix').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T041",
+          "code": "TimeZone.getTimeZone('Europe/London').getID()",
+          "expected": "Europe/London"
+        },
+        {
+          "id": "T042",
+          "code": "TimeZone.getTimeZone('Europe/London').getDisplayName()",
+          "expected": "(GMT+01:00) British Summer Time (Europe/London)"
+        },
+        {
+          "id": "T043",
+          "code": "TimeZone.getTimeZone('Europe/London').toString()",
+          "expected": "Europe/London"
+        },
+        {
+          "id": "T044",
+          "code": "TimeZone.getTimeZone('Europe/London').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T045",
+          "code": "TimeZone.getTimeZone('Europe/London').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "3600000"
+        },
+        {
+          "id": "T046",
+          "code": "TimeZone.getTimeZone('Europe/London').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "0"
+        },
+        {
+          "id": "T047",
+          "code": "TimeZone.getTimeZone('Europe/London').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T048",
+          "code": "TimeZone.getTimeZone('Europe/London').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T049",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getID()",
+          "expected": "Europe/Berlin"
+        },
+        {
+          "id": "T050",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getDisplayName()",
+          "expected": "(GMT+02:00) Central European Summer Time (Europe/Berlin)"
+        },
+        {
+          "id": "T051",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').toString()",
+          "expected": "Europe/Berlin"
+        },
+        {
+          "id": "T052",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "3600000"
+        },
+        {
+          "id": "T053",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "7200000"
+        },
+        {
+          "id": "T054",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "3600000"
+        },
+        {
+          "id": "T055",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "3600000"
+        },
+        {
+          "id": "T056",
+          "code": "TimeZone.getTimeZone('Europe/Berlin').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "3600000"
+        },
+        {
+          "id": "T057",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getID()",
+          "expected": "Australia/Sydney"
+        },
+        {
+          "id": "T058",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getDisplayName()",
+          "expected": "(GMT+11:00) Australian Eastern Daylight Time (Australia/Sydney)",
+          "remainingReason": "execution context: fixed VM clock 2026-05-02 differs from native capture 2026-10-04; Sydney display name resolves a different DST season."
+        },
+        {
+          "id": "T059",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').toString()",
+          "expected": "Australia/Sydney"
+        },
+        {
+          "id": "T060",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "39600000"
+        },
+        {
+          "id": "T061",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "36000000"
+        },
+        {
+          "id": "T062",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "39600000"
+        },
+        {
+          "id": "T063",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "39600000"
+        },
+        {
+          "id": "T064",
+          "code": "TimeZone.getTimeZone('Australia/Sydney').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "39600000"
+        },
+        {
+          "id": "T065",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getID()",
+          "expected": "Asia/Kolkata"
+        },
+        {
+          "id": "T066",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getDisplayName()",
+          "expected": "(GMT+05:30) India Standard Time (Asia/Kolkata)"
+        },
+        {
+          "id": "T067",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').toString()",
+          "expected": "Asia/Kolkata"
+        },
+        {
+          "id": "T068",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T069",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T070",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T071",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T072",
+          "code": "TimeZone.getTimeZone('Asia/Kolkata').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T073",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getID()",
+          "expected": "Asia/Tokyo"
+        },
+        {
+          "id": "T074",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getDisplayName()",
+          "expected": "(GMT+09:00) Japan Standard Time (Asia/Tokyo)"
+        },
+        {
+          "id": "T075",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').toString()",
+          "expected": "Asia/Tokyo"
+        },
+        {
+          "id": "T076",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "32400000"
+        },
+        {
+          "id": "T077",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "32400000"
+        },
+        {
+          "id": "T078",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "32400000"
+        },
+        {
+          "id": "T079",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "32400000"
+        },
+        {
+          "id": "T080",
+          "code": "TimeZone.getTimeZone('Asia/Tokyo').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "32400000"
+        },
+        {
+          "id": "T081",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getID()",
+          "expected": "GMT+05:30"
+        },
+        {
+          "id": "T082",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getDisplayName()",
+          "expected": "(GMT+05:30) Pacific Standard Time (GMT+05:30)"
+        },
+        {
+          "id": "T083",
+          "code": "TimeZone.getTimeZone('GMT+05:30').toString()",
+          "expected": "GMT+05:30"
+        },
+        {
+          "id": "T084",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T085",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T086",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T087",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T088",
+          "code": "TimeZone.getTimeZone('GMT+05:30').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "19800000"
+        },
+        {
+          "id": "T089",
+          "code": "TimeZone.getTimeZone('GMT-0800').getID()",
+          "expected": "GMT-08:00"
+        },
+        {
+          "id": "T090",
+          "code": "TimeZone.getTimeZone('GMT-0800').getDisplayName()",
+          "expected": "(GMT-08:00) Pacific Standard Time (GMT-08:00)"
+        },
+        {
+          "id": "T091",
+          "code": "TimeZone.getTimeZone('GMT-0800').toString()",
+          "expected": "GMT-08:00"
+        },
+        {
+          "id": "T092",
+          "code": "TimeZone.getTimeZone('GMT-0800').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T093",
+          "code": "TimeZone.getTimeZone('GMT-0800').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T094",
+          "code": "TimeZone.getTimeZone('GMT-0800').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T095",
+          "code": "TimeZone.getTimeZone('GMT-0800').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T096",
+          "code": "TimeZone.getTimeZone('GMT-0800').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T097",
+          "code": "TimeZone.getTimeZone('US/Pacific').getID()",
+          "expected": "US/Pacific"
+        },
+        {
+          "id": "T098",
+          "code": "TimeZone.getTimeZone('US/Pacific').getDisplayName()",
+          "expected": "(GMT-07:00) Pacific Daylight Time (US/Pacific)"
+        },
+        {
+          "id": "T099",
+          "code": "TimeZone.getTimeZone('US/Pacific').toString()",
+          "expected": "US/Pacific"
+        },
+        {
+          "id": "T100",
+          "code": "TimeZone.getTimeZone('US/Pacific').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T101",
+          "code": "TimeZone.getTimeZone('US/Pacific').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T102",
+          "code": "TimeZone.getTimeZone('US/Pacific').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T103",
+          "code": "TimeZone.getTimeZone('US/Pacific').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "-25200000"
+        },
+        {
+          "id": "T104",
+          "code": "TimeZone.getTimeZone('US/Pacific').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "-28800000"
+        },
+        {
+          "id": "T105",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "T106",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "T107",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').toString()",
+          "expected": "GMT"
+        },
+        {
+          "id": "T108",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getOffset(Datetime.newInstanceGmt(2026,1,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T109",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getOffset(Datetime.newInstanceGmt(2026,7,1,12,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T110",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getOffset(Datetime.newInstanceGmt(2026,3,8,9,59,59))",
+          "expected": "0"
+        },
+        {
+          "id": "T111",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getOffset(Datetime.newInstanceGmt(2026,3,8,10,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T112",
+          "code": "TimeZone.getTimeZone('Bogus/Zone').getOffset(Datetime.newInstanceGmt(2026,11,1,9,0,0))",
+          "expected": "0"
+        },
+        {
+          "id": "T113",
+          "code": "Time.newInstance(0,0,0,0).hour()",
+          "expected": "0"
+        },
+        {
+          "id": "T114",
+          "code": "Time.newInstance(0,0,0,0).minute()",
+          "expected": "0"
+        },
+        {
+          "id": "T115",
+          "code": "Time.newInstance(0,0,0,0).second()",
+          "expected": "0"
+        },
+        {
+          "id": "T116",
+          "code": "Time.newInstance(0,0,0,0).millisecond()",
+          "expected": "0"
+        },
+        {
+          "id": "T117",
+          "code": "Time.newInstance(0,0,0,0).addHours(1)",
+          "expected": "01:00:00.000Z"
+        },
+        {
+          "id": "T118",
+          "code": "Time.newInstance(0,0,0,0).addMilliseconds(-1)",
+          "expected": "23:59:59.999Z"
+        },
+        {
+          "id": "T119",
+          "code": "Time.newInstance(23,59,59,999).hour()",
+          "expected": "23"
+        },
+        {
+          "id": "T120",
+          "code": "Time.newInstance(23,59,59,999).minute()",
+          "expected": "59"
+        },
+        {
+          "id": "T121",
+          "code": "Time.newInstance(23,59,59,999).second()",
+          "expected": "59"
+        },
+        {
+          "id": "T122",
+          "code": "Time.newInstance(23,59,59,999).millisecond()",
+          "expected": "999"
+        },
+        {
+          "id": "T123",
+          "code": "Time.newInstance(23,59,59,999).addHours(1)",
+          "expected": "00:59:59.999Z"
+        },
+        {
+          "id": "T124",
+          "code": "Time.newInstance(23,59,59,999).addMilliseconds(-1)",
+          "expected": "23:59:59.998Z"
+        },
+        {
+          "id": "T125",
+          "code": "Time.newInstance(12,34,56,789).hour()",
+          "expected": "12"
+        },
+        {
+          "id": "T126",
+          "code": "Time.newInstance(12,34,56,789).minute()",
+          "expected": "34"
+        },
+        {
+          "id": "T127",
+          "code": "Time.newInstance(12,34,56,789).second()",
+          "expected": "56"
+        },
+        {
+          "id": "T128",
+          "code": "Time.newInstance(12,34,56,789).millisecond()",
+          "expected": "789"
+        },
+        {
+          "id": "T129",
+          "code": "Time.newInstance(12,34,56,789).addHours(1)",
+          "expected": "13:34:56.789Z"
+        },
+        {
+          "id": "T130",
+          "code": "Time.newInstance(12,34,56,789).addMilliseconds(-1)",
+          "expected": "12:34:56.788Z"
+        },
+        {
+          "id": "T131",
+          "code": "Time.newInstance(24,0,0,0).hour()",
+          "expected": "0"
+        },
+        {
+          "id": "T132",
+          "code": "Time.newInstance(24,0,0,0).minute()",
+          "expected": "0"
+        },
+        {
+          "id": "T133",
+          "code": "Time.newInstance(24,0,0,0).second()",
+          "expected": "0"
+        },
+        {
+          "id": "T134",
+          "code": "Time.newInstance(24,0,0,0).millisecond()",
+          "expected": "0"
+        },
+        {
+          "id": "T135",
+          "code": "Time.newInstance(24,0,0,0).addHours(1)",
+          "expected": "01:00:00.000Z"
+        },
+        {
+          "id": "T136",
+          "code": "Time.newInstance(24,0,0,0).addMilliseconds(-1)",
+          "expected": "23:59:59.999Z"
+        },
+        {
+          "id": "T137",
+          "code": "Time.newInstance(-1,0,0,0).hour()",
+          "expected": "23"
+        },
+        {
+          "id": "T138",
+          "code": "Time.newInstance(-1,0,0,0).minute()",
+          "expected": "0"
+        },
+        {
+          "id": "T139",
+          "code": "Time.newInstance(-1,0,0,0).second()",
+          "expected": "0"
+        },
+        {
+          "id": "T140",
+          "code": "Time.newInstance(-1,0,0,0).millisecond()",
+          "expected": "0"
+        },
+        {
+          "id": "T141",
+          "code": "Time.newInstance(-1,0,0,0).addHours(1)",
+          "expected": "00:00:00.000Z"
+        },
+        {
+          "id": "T142",
+          "code": "Time.newInstance(-1,0,0,0).addMilliseconds(-1)",
+          "expected": "22:59:59.999Z"
+        },
+        {
+          "id": "T143",
+          "code": "Time.newInstance(12,60,0,0)",
+          "expected": "13:00:00.000Z"
+        },
+        {
+          "id": "T144",
+          "code": "Time.newInstance(12,0,60,0)",
+          "expected": "12:01:00.000Z"
+        },
+        {
+          "id": "T145",
+          "code": "Time.newInstance(12,0,0,1000)",
+          "expected": "12:00:01.000Z"
+        },
+        {
+          "id": "T146",
+          "code": "Time t; r=t.hour();",
+          "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+        },
+        {
+          "id": "T147",
+          "code": "TimeZone.getTimeZone((String)null)",
+          "expected": "EXC|System.NullPointerException|Script-thrown exception"
+        },
+        {
+          "id": "T148",
+          "code": "TimeZone.getTimeZone('UTC').getOffset((Datetime)null)",
+          "expected": "EXC|System.NullPointerException|Null argument for TimeZone.getOffset()"
+        },
+        {
+          "id": "T149",
+          "code": "Datetime d; r=d.formatGmt('yyyy');",
+          "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+        },
+        {
+          "id": "T150",
+          "code": "Date.newInstance(2026,1,1).daysBetween(Date.newInstance(2026,12,31))",
+          "expected": "364"
+        }
+      ],
+      "controls": [
+        {
+          "id": "O001",
+          "code": "Datetime.valueOf('2026-05-02 05:00:00Z')",
+          "expected": "2026-05-02 12:00:00"
+        },
+        {
+          "id": "O002",
+          "code": "Datetime.valueOf('2026-05-02T05:00:00Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02T05:00:00Z"
+        },
+        {
+          "id": "O003",
+          "code": "Datetime.valueOf('2026-05-02 07:00:00+02:00')",
+          "expected": "2026-05-02 14:00:00"
+        },
+        {
+          "id": "O004",
+          "code": "Datetime.valueOf('2026-05-02 5:0:0')",
+          "expected": "2026-05-02 12:00:00"
+        },
+        {
+          "id": "O005",
+          "code": "Datetime.valueOf('2026-05-02 01:02:03-7')",
+          "expected": "2026-05-02 08:02:03"
+        },
+        {
+          "id": "O006",
+          "code": "Datetime.valueOf('2026-05-02 01:02:030')",
+          "expected": "2026-05-02 08:02:30"
+        },
+        {
+          "id": "O007",
+          "code": "Datetime.valueOf('2024-02-29T23:05:06Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29T23:05:06Z"
+        },
+        {
+          "id": "O008",
+          "code": "Datetime.valueOf('2026-05-02T01:02:03.125Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02T01:02:03.125Z"
+        },
+        {
+          "id": "O009",
+          "code": "Datetime.valueOfGmt('2026-05-02 05:00:00Z')",
+          "expected": "2026-05-02 05:00:00"
+        },
+        {
+          "id": "O010",
+          "code": "Datetime.valueOfGmt('2026-05-02T05:00:00Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02T05:00:00Z"
+        },
+        {
+          "id": "O011",
+          "code": "Datetime.valueOfGmt('2026-05-02 07:00:00+02:00')",
+          "expected": "2026-05-02 07:00:00"
+        },
+        {
+          "id": "O012",
+          "code": "Datetime.valueOfGmt('2026-05-02 5:0:0')",
+          "expected": "2026-05-02 05:00:00"
+        },
+        {
+          "id": "O013",
+          "code": "Datetime.valueOfGmt('2026-05-02 01:02:03-7')",
+          "expected": "2026-05-02 01:02:03"
+        },
+        {
+          "id": "O014",
+          "code": "Datetime.valueOfGmt('2026-05-02 01:02:030')",
+          "expected": "2026-05-02 01:02:30"
+        },
+        {
+          "id": "O015",
+          "code": "Datetime.valueOfGmt('2024-02-29T23:05:06Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29T23:05:06Z"
+        },
+        {
+          "id": "O016",
+          "code": "Datetime.valueOfGmt('2026-05-02T01:02:03.125Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02T01:02:03.125Z"
+        },
+        {
+          "id": "O017",
+          "code": "Object n; r=Date.valueOf(n);",
+          "expected": "null"
+        },
+        {
+          "id": "O018",
+          "code": "Date d=Date.newInstance(2026,5,4); Object o=d; r=Date.valueOf(o);",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "O019",
+          "code": "Object o='2026-05-04'; r=Date.valueOf(o);",
+          "expected": "EXC|System.TypeException|Invalid date: 2026-05-04"
+        },
+        {
+          "id": "O020",
+          "code": "Object o='2026-05-02 01:02:03'; r=Datetime.valueOf(o);",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02 01:02:03"
+        },
+        {
+          "id": "O021",
+          "code": "Datetime d=Datetime.newInstanceGmt(2026,5,2,1,2,3); Object o=d; r=Datetime.valueOf(o);",
+          "expected": "2026-05-02 01:02:03"
+        },
+        {
+          "id": "O022",
+          "code": "Date.valueOf('2026-05-04T23:59:58Z')",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "O023",
+          "code": "Date.valueOf('2026-05-04 23:59:58-7')",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "O024",
+          "code": "Date.valueOf('2026-05-04 23:59:580')",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "O025",
+          "code": "Date.valueOf('2026-5-4')",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "O026",
+          "code": "Date.valueOf('2026-05-04,not-a-date')",
+          "expected": "2026-05-04 00:00:00"
+        },
+        {
+          "id": "K010",
+          "code": "Datetime.valueOf('2010-01-01 1:1:1-7')",
+          "expected": "2010-01-01 09:01:01"
+        },
+        {
+          "id": "K021",
+          "code": "Object n; r=Datetime.valueOf(n);",
+          "expected": "null"
+        },
+        {
+          "id": "K023",
+          "code": "Object o='2026-05-02 01:02:03'; r=Datetime.valueOf(o);",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2026-05-02 01:02:03"
+        },
+        {
+          "id": "K040",
+          "code": "Date.parse('01/01/26')",
+          "expected": "2026-01-01 00:00:00"
+        },
+        {
+          "id": "K046",
+          "code": "Datetime.parse('1/2/2026, 3:04 PM')",
+          "expected": "2026-01-02 23:04:00"
+        },
+        {
+          "id": "K049",
+          "code": "Datetime.valueOfGmt('2010-13-01 1:1:1')",
+          "expected": "2011-01-01 01:01:01"
+        },
+        {
+          "id": "Z001",
+          "code": "TimeZone.getTimeZone(' UTC').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z002",
+          "code": "TimeZone.getTimeZone(' UTC').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z003",
+          "code": "TimeZone.getTimeZone(' UTC').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z004",
+          "code": "TimeZone.getTimeZone('GMT+05:3').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z005",
+          "code": "TimeZone.getTimeZone('GMT+05:3').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z006",
+          "code": "TimeZone.getTimeZone('GMT+05:3').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z007",
+          "code": "TimeZone.getTimeZone('GMT+14:01').getID()",
+          "expected": "GMT+14:01"
+        },
+        {
+          "id": "Z008",
+          "code": "TimeZone.getTimeZone('GMT+14:01').getDisplayName()",
+          "expected": "(GMT+14:01) Pacific Standard Time (GMT+14:01)"
+        },
+        {
+          "id": "Z009",
+          "code": "TimeZone.getTimeZone('GMT+14:01').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "50460000"
+        },
+        {
+          "id": "Z010",
+          "code": "TimeZone.getTimeZone('UTC-02:00').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z011",
+          "code": "TimeZone.getTimeZone('UTC-02:00').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z012",
+          "code": "TimeZone.getTimeZone('UTC-02:00').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z013",
+          "code": "TimeZone.getTimeZone('GMT+14:00').getID()",
+          "expected": "GMT+14:00"
+        },
+        {
+          "id": "Z014",
+          "code": "TimeZone.getTimeZone('GMT+14:00').getDisplayName()",
+          "expected": "(GMT+14:00) Pacific Standard Time (GMT+14:00)"
+        },
+        {
+          "id": "Z015",
+          "code": "TimeZone.getTimeZone('GMT+14:00').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "50400000"
+        },
+        {
+          "id": "Z016",
+          "code": "TimeZone.getTimeZone('gmt').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z017",
+          "code": "TimeZone.getTimeZone('gmt').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z018",
+          "code": "TimeZone.getTimeZone('gmt').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z019",
+          "code": "TimeZone.getTimeZone('utc').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z020",
+          "code": "TimeZone.getTimeZone('utc').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z021",
+          "code": "TimeZone.getTimeZone('utc').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z022",
+          "code": "TimeZone.getTimeZone('Etc/UTC').getID()",
+          "expected": "Etc/UTC"
+        },
+        {
+          "id": "Z023",
+          "code": "TimeZone.getTimeZone('Etc/UTC').getDisplayName()",
+          "expected": "(GMT+00:00) Coordinated Universal Time (Etc/UTC)"
+        },
+        {
+          "id": "Z024",
+          "code": "TimeZone.getTimeZone('Etc/UTC').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z025",
+          "code": "TimeZone.getTimeZone('Z').getID()",
+          "expected": "GMT"
+        },
+        {
+          "id": "Z026",
+          "code": "TimeZone.getTimeZone('Z').getDisplayName()",
+          "expected": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "id": "Z027",
+          "code": "TimeZone.getTimeZone('Z').getOffset(Datetime.newInstanceGmt(2024,2,29,23,59,58))",
+          "expected": "0"
+        },
+        {
+          "id": "Z028",
+          "code": "Datetime.newInstanceGmt(2024,2,29,23,5,6).format('yyyy-MM-dd\\'T\\'HH:mm:ss','UTC-02:00')",
+          "expected": "2024-02-29T23:05:06"
+        },
+        {
+          "id": "Z029",
+          "code": "Datetime.newInstanceGmt(2024,2,29,23,5,6).format('z zzzz','UTC')",
+          "expected": "UTC Coordinated Universal Time"
+        },
+        {
+          "id": "Z030",
+          "code": "Date.newInstance(4,20,2020)",
+          "expected": "0011-02-10 00:00:00"
+        },
+        {
+          "id": "Z031",
+          "code": "Datetime.newInstanceGmt(1,1,2024)",
+          "expected": "0006-07-17 00:00:00"
+        },
+        {
+          "id": "E001",
+          "code": "Datetime.newInstanceGmt(2007,6,23,3,3,3).getTime()",
+          "expected": "1182567783000"
+        },
+        {
+          "id": "L001",
+          "code": "Datetime.valueOfGmt('2024-02-29T00:00:01Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29T00:00:01Z"
+        },
+        {
+          "id": "L002",
+          "code": "Datetime.valueOfGmt('2024-03-01T00:00:00Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-03-01T00:00:00Z"
+        },
+        {
+          "id": "L003",
+          "code": "Datetime.valueOfGmt('2024-02-29T12:34:56Z')",
+          "expected": "EXC|System.TypeException|Invalid date/time: 2024-02-29T12:34:56Z"
+        },
+        {
+          "id": "H001",
+          "code": "Datetime.valueOfGmt('2024-02-29 25:00:00')",
+          "expected": "2024-03-01 01:00:00"
+        }
+      ]
+    }
+  ]
+}

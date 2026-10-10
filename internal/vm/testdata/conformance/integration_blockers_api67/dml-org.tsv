@@ -1,0 +1,6 @@
+Q1	true|{"Id":"001000000000001AAA","Name":"Single"}|{"Name":"Single","Id":"001000000000001AAA"}
+D01	false|true|UNDELETE_FAILED
+D04	true|true|[]
+D05	true|true|null
+D03	EXC|System.TypeException|Invalid id value for this SObject type: 003000000000001AAA
+D02	false|true|UNDELETE_FAILED

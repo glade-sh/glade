@@ -1,0 +1,8 @@
+S01	true|null
+S02	["Group","User"]
+J00	Parent__r
+J01	First|First
+J02	First|First
+Q1	true|{"Id":"001000000000002AAA","Name":"Single"}|{"Name":"Single","Id":"001000000000002AAA"}
+C1	null
+C2	0

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -145,6 +146,59 @@ func typeContractDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol,
 	}
 }
 
+func typeContractNativeDiagnostic(typ typesys.TypeSymbol, message string, start, end int, source string) diagnostic.Diagnostic {
+	return diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "GLADESEMA019",
+		Message:  message,
+		File:     typ.File,
+		Range:    semaRange(source, start, end),
+	}
+}
+
+// Async marker-interface and Object/same-type controls reject these
+// statically certain tests, including the captured async marker interfaces.
+func semaInstanceofAlwaysTrueMessage(left, target string, model *semaTypeMemberView) string {
+	if left == "" {
+		return ""
+	}
+	always := strings.EqualFold(left, target) || strings.EqualFold(semaCanonicalPlatformAlias(target), "Object")
+	// Platform event records are statically SObjects.
+	if strings.EqualFold(target, "SObject") && semaPlatformEventType(left, model) {
+		always = true
+	}
+	marker := strings.EqualFold(target, "Database.Stateful") || strings.EqualFold(target, "Database.AllowsCallouts")
+	if !always && marker && !semaProjectTypeShadowsPlatform(model, target) {
+		always = semaTypeMatches(model, left, target, make(map[string]bool))
+	}
+	if !always {
+		return ""
+	}
+	return fmt.Sprintf("Operation instanceof is always true since an instance of %s is always an instance of %s", left, target)
+}
+
+// Salesforce reports an own static getter write introduced after API 41 as a
+// visibility failure, even though the underlying contract is a read-only
+// property. Keep the structured local contract code while preserving that
+// source-compatible diagnostic wording for the exact boundary.
+func typeContractPropertyAssignmentDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, target resolvedMember, unqualified bool, start, end int, source string) diagnostic.Diagnostic {
+	if unqualified && !apexversion.Before(typ.EffectiveAPIVersion, 42) &&
+		strings.EqualFold(target.owner, typ.Name) &&
+		strings.EqualFold(member.Name, target.member.Name+".get") &&
+		hasModifier(member.Modifiers, "static") && hasModifier(target.member.Modifiers, "static") {
+		return diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADESEMA019",
+			Message:  fmt.Sprintf("Variable is not visible: %s.%s", target.owner, target.member.Name),
+			File:     typ.File,
+			Range:    semaRange(source, start, end),
+		}
+	}
+	d := typeContractDiagnostic(typ, member, "property has no setter", start, end, source)
+	d.NativeMessage = "Variable is not visible: " + target.owner + "." + target.member.Name
+	return d
+}
+
 func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	var walk func(ir.Expr)
@@ -156,6 +210,12 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			File:     typ.File,
 			Range:    semaRange(source, bodyOffset+pos, bodyOffset+pos+1),
 		})
+	}
+	// C037/P001/P004: a setter-only property has no readable value, even
+	// within its declaring type. Preserve the local detail and native text.
+	appendPropertyReadDiagnostic := func(target resolvedMember) {
+		appendDiagnostic("property has no getter")
+		diagnostics[len(diagnostics)-1].NativeMessage = "Variable is not visible: " + target.owner + "." + target.member.Name
 	}
 	compatible := func(left, right string) bool {
 		return left == "" || right == "" || strings.EqualFold(left, "null") || strings.EqualFold(right, "null") ||
@@ -185,6 +245,10 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			}
 			operand := a.inferIRExprType(*current.Left, scope, model, typ.Name)
 			switch current.Operator {
+			case "~":
+				if operand != "" && !strings.EqualFold(operand, "Integer") && !strings.EqualFold(operand, "Long") {
+					appendDiagnostic("operator ~ requires an Integer or Long operand")
+				}
 			case "!":
 				if operand != "" && !strings.EqualFold(operand, "Boolean") {
 					appendDiagnostic("operator ! requires a Boolean operand")
@@ -210,9 +274,12 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 					appendDiagnostic("operator + requires numeric or String operands")
 				}
 			case "&", "|", "^":
-				booleanPair := current.Operator != "^" && strings.EqualFold(left, "Boolean") && strings.EqualFold(right, "Boolean")
+				booleanPair := strings.EqualFold(left, "Boolean") && strings.EqualFold(right, "Boolean")
 				if left != "" && right != "" && !booleanPair && (!isSemaIntegralType(left) || !isSemaIntegralType(right)) {
 					appendDiagnostic("bitwise operator requires Integer or Long operands")
+					if current.Operator == "&" {
+						diagnostics[len(diagnostics)-1].NativeMessage = "& operator can only be applied to Boolean expressions or to Integer or Long expressions"
+					}
 				}
 			case "<", "<=", ">", ">=":
 				if left != "" && right != "" && !semaOrderablePrimitivePair(left, right) && (!isSemaNumericType(left) || !isSemaNumericType(right)) {
@@ -220,13 +287,25 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				}
 			case "instanceof":
 				target := strings.TrimSpace(current.Right.Name)
-				if left != "" && target != "" && !runtimeCompatible(left, target) {
+				if strings.EqualFold(left, "null") {
+					// C006: a null literal is rejected at compile time; typed null
+					// variables remain valid runtime tests.
+					appendDiagnostic("instanceof comparison is always true for null literal")
+				} else if left != "" && target != "" && !runtimeCompatible(left, target) {
 					appendDiagnostic("instanceof comparison is impossible")
 				} else if typeUsesAPIVersionAtLeast(typ, 60) && semaNestedIterableInstanceofAlwaysTrue(left, target, typ.Name, model) {
 					appendDiagnostic("instanceof comparison is always true")
 				}
 			}
 		case ir.ExprCall:
+			// Native Map bracket reads are invalid; Map.get remains a method call.
+			if current.Operator == "[]" && current.Left != nil {
+				receiverType := a.inferIRExprType(*current.Left, scope, model, typ.Name)
+				base, _ := semaGenericBaseAndArgs(receiverType)
+				if strings.EqualFold(base, "Map") {
+					diagnostics = append(diagnostics, typeContractNativeDiagnostic(typ, "Expression must be a list type: "+receiverType, bodyOffset+pos, bodyOffset+pos+1, source))
+				}
+			}
 			if (strings.HasPrefix(current.Callee, "__safe_field:") || strings.HasPrefix(current.Callee, "__safe_call:")) && current.Left != nil {
 				if semaIRExprLooksLikeTypeReceiver(*current.Left, scope, model) {
 					appendDiagnostic("safe navigation cannot use a static receiver")
@@ -238,7 +317,7 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				}
 				receiverType := a.inferIRExprType(*current.Left, scope, model, typ.Name)
 				field := strings.TrimPrefix(current.Callee, "__assignField:")
-				if target, ok := semaResolveFieldPath(model, receiverType, field); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyHasAccessor(target.member, "set") {
+				if target, ok := semaResolveFieldPath(model, receiverType, field); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyAssignmentAllowed(typ, member, target, false, semaIRExprLooksLikeTypeReceiver(*current.Left, scope, model), model) {
 					appendDiagnostic("property has no setter")
 				}
 			}
@@ -246,26 +325,33 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				receiverType := a.inferIRExprType(*current.Left, scope, model, typ.Name)
 				field := strings.TrimPrefix(current.Callee, "__field:")
 				if target, ok := semaResolveFieldPath(model, receiverType, field); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyHasAccessor(target.member, "get") {
-					appendDiagnostic("property has no getter")
+					appendPropertyReadDiagnostic(target)
 				}
 			}
 			if strings.HasPrefix(current.Callee, "__cast:") && len(current.Args) == 1 {
 				target := strings.TrimPrefix(current.Callee, "__cast:")
 				value := a.inferIRExprType(current.Args[0], scope, model, typ.Name)
 				if value != "" && !runtimeCompatible(target, value) {
-					appendDiagnostic("cast is incompatible with its operand")
+					if message, reports := semaReportsCastMessage(target, value, model); reports {
+						diagnostics = append(diagnostics, semaReportsDiagnostic(typ, "GLADESEMA019", message, bodyOffset+pos, bodyOffset+pos+1, source))
+					} else {
+						appendDiagnostic("cast is incompatible with its operand")
+						if target == "Integer" && value == "String" && !semaProjectTypeShadowsPlatform(model, target) && !semaProjectTypeShadowsPlatform(model, value) {
+							diagnostics[len(diagnostics)-1].NativeMessage = "Incompatible types since an instance of String is never an instance of Integer"
+						}
+					}
 				}
 			}
 			if strings.EqualFold(current.Callee, "__coalesce") && len(current.Args) == 2 {
 				left := a.inferIRExprType(current.Args[0], scope, model, typ.Name)
 				right := a.inferIRExprType(current.Args[1], scope, model, typ.Name)
-				if !compatible(left, right) {
+				if !compatible(left, right) && !semaCoalesceSOQLSingletonAssignable(current.Args[0], left, right, model) {
 					appendDiagnostic("coalesce operands do not share a compatible type")
 				}
 			}
 		case ir.ExprVariable:
 			if target, ok := semaResolveFieldPath(model, typ.Name, current.Name); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyHasAccessor(target.member, "get") {
-				appendDiagnostic("property has no getter")
+				appendPropertyReadDiagnostic(target)
 			}
 		}
 	}
@@ -331,17 +417,45 @@ func semaRuntimeTypeTestCompatible(owner, left, right string, model *semaTypeMem
 	if !leftOK || !rightOK {
 		return true
 	}
+	// An Apex class need not implement these platform
+	// marker interfaces for the runtime test to compile and return false.
+	if !leftMembers.platform && !leftMembers.sobject && leftMembers.kind == apexast.DeclarationClass &&
+		rightMembers.platform && rightMembers.kind == apexast.DeclarationInterface &&
+		(strings.EqualFold(right, "Database.Stateful") || strings.EqualFold(right, "Database.AllowsCallouts")) {
+		return true
+	}
 	if leftMembers.kind == apexast.DeclarationInterface {
 		return rightMembers.kind == apexast.DeclarationInterface ||
 			hasModifier(rightMembers.modifiers, "abstract") ||
 			hasModifier(rightMembers.modifiers, "virtual") ||
-			semaAssignableToType(left, right, model)
+			semaAssignableToType(left, right, model) ||
+			semaRuntimeTypesShareImplementation(left, right, model)
 	}
 	if rightMembers.kind == apexast.DeclarationInterface {
 		return leftMembers.kind == apexast.DeclarationInterface ||
 			hasModifier(leftMembers.modifiers, "abstract") ||
 			hasModifier(leftMembers.modifiers, "virtual") ||
-			semaAssignableToType(right, left, model)
+			semaAssignableToType(right, left, model) ||
+			semaRuntimeTypesShareImplementation(left, right, model)
+	}
+	return false
+}
+
+// R137: a known subclass can implement an interface even when its base does
+// not. That concrete implementation witnesses a possible runtime comparison.
+func semaRuntimeTypesShareImplementation(left, right string, model *semaTypeMemberView) bool {
+	if model == nil || model.state == nil || model.state.base == nil {
+		return false
+	}
+	for _, members := range []map[string]typeMembers{model.current, model.state.base.members} {
+		for key := range members {
+			candidate, ok := model.lookup(key)
+			// Sema takes the destination first, unlike VM assignability.
+			if ok && !candidate.platform && candidate.kind == apexast.DeclarationClass &&
+				semaAssignableToType(left, candidate.name, model) && semaAssignableToType(right, candidate.name, model) {
+				return true
+			}
+		}
 	}
 	return false
 }
@@ -364,6 +478,28 @@ func semaNestedIterableInstanceofAlwaysTrue(left, target, owner string, model *s
 		return false
 	}
 	return semaAssignableToType(targetArgument, leftArgs[0], model)
+}
+
+func typeContractPropertyAssignmentAllowed(typ typesys.TypeSymbol, member typesys.MemberSymbol, target resolvedMember, unqualified, typeReceiver bool, model *semaTypeMemberView) bool {
+	if typeContractPropertyHasAccessor(target.member, "set") {
+		return true
+	}
+	// Legacy callers can replace another component's static getter value only
+	// when both component versions predate API 42. Resolve the declaring version
+	// from the same member model that supplied the property, including inheritance.
+	if typeReceiver && !strings.EqualFold(target.owner, typ.Name) &&
+		hasModifier(target.member.Modifiers, "static") && apexversion.Before(typ.EffectiveAPIVersion, 42) {
+		if owner, ok := model.lookup(normalizeName(target.owner)); ok && apexversion.Before(owner.effectiveAPIVersion, 42) {
+			return true
+		}
+	}
+	// Before API 42, a static getter can initialize its own backing value through
+	// an unqualified assignment. The existing accessor body context retains the
+	// property name as "property.get" and its declaring component API version.
+	return unqualified && apexversion.Before(typ.EffectiveAPIVersion, 42) &&
+		strings.EqualFold(target.owner, typ.Name) &&
+		strings.EqualFold(member.Name, target.member.Name+".get") &&
+		hasModifier(member.Modifiers, "static") && hasModifier(target.member.Modifiers, "static")
 }
 
 func typeContractPropertyHasAccessor(member typesys.MemberSymbol, kind string) bool {

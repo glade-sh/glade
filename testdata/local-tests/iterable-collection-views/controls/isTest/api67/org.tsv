@@ -1,0 +1,11 @@
+V001	true|false|true
+V002	true|false|true
+V003	EXC|System.TypeException|Invalid conversion from runtime type Set<Integer> to Set<String>
+V004	1
+V005	true|false
+V006	true|false
+V007	true|true
+V008	EXC|System.TypeException|Invalid conversion from runtime type Set<Integer> to Set<String>
+V009	false
+V010	true
+V011	1

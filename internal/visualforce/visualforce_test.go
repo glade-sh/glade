@@ -3,6 +3,7 @@ package visualforce
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -97,6 +98,67 @@ func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
 	}
 }
 
+func TestLoadProjectUsesVisualforceSidecarVersionAndProjectFallback(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	pagePath := filepath.Join(root, "force-app/main/default/pages/Legacy52.page")
+	componentPath := filepath.Join(root, "force-app/main/default/components/LegacyComponent.component")
+	fallbackPath := filepath.Join(root, "force-app/main/default/pages/ProjectFallback.page")
+	writeFile(t, pagePath, `<apex:page/>`)
+	// meta_page_api61 accepts the numeric sidecar version at API 59 and 67.
+	writeFile(t, pagePath+"-meta.xml", `<ApexPage><apiVersion>61.0</apiVersion></ApexPage>`)
+	writeFile(t, componentPath, `<apex:component/>`)
+	writeFile(t, componentPath+"-meta.xml", `<ApexComponent><apiVersion>62.0</apiVersion></ApexComponent>`)
+	writeFile(t, fallbackPath, `<apex:page/>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	idx, err := LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, ok := idx.Page("Legacy52")
+	if !ok || page.APIVersion != "61.0" {
+		t.Fatalf("sidecar page = %#v, %v; want API 61.0", page, ok)
+	}
+	component, ok := idx.Component("LegacyComponent")
+	if !ok || component.APIVersion != "62.0" {
+		t.Fatalf("sidecar component = %#v, %v; want API 62.0", component, ok)
+	}
+	fallback, ok := idx.Page("ProjectFallback")
+	if !ok || fallback.APIVersion != "65.0" {
+		t.Fatalf("fallback page = %#v, %v; want project API 65.0", fallback, ok)
+	}
+}
+
+func TestLoadProjectRejectsInvalidVisualforceSidecarVersion(t *testing.T) {
+	for _, raw := range []string{"67.1", "68.0", "not-a-version"} {
+		t.Run(raw, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "force-app/main/default/pages/Probe.page")
+			writeFile(t, path, `<apex:page/>`)
+			writeFile(t, path+"-meta.xml", `<ApexPage><apiVersion>`+raw+`</apiVersion></ApexPage>`)
+
+			_, err := LoadProject(project.Project{
+				Root:                 root,
+				SourceAPIVersion:     "65.0",
+				VisualforcePageFiles: []string{path},
+			})
+			want := "unsupported Visualforce source API version"
+			if raw == "not-a-version" {
+				// Native meta_page_version_nonnumeric/meta_component_version_nonnumeric
+				// uses the xsd:double diagnostic for a nonnumeric sidecar value.
+				want = "Error parsing file: '" + raw + "' is not valid for the type xsd:double"
+			}
+			if err == nil || !strings.Contains(err.Error(), want) {
+				t.Fatalf("LoadProject error = %v, want invalid sidecar version", err)
+			}
+		})
+	}
+}
+
 func TestLoadProjectIndexesMetadataOnlyPages(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -173,19 +235,18 @@ func TestLoadProjectBestEffortKeepsLenientMarkup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	idx, err := LoadProject(p)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// Native root_page_unclosed_html rejects malformed markup on the strict
+	// source path; this fixture checks the explicitly lenient indexing API.
+	idx := LoadProjectBestEffort(p)
 	if _, ok := idx.Page("Good"); !ok {
-		t.Fatalf("strict index missed lenient page: %#v", idx)
+		t.Fatalf("best-effort index missed lenient page: %#v", idx)
 	}
 	if _, ok := idx.Page("Broken"); !ok {
-		t.Fatalf("strict index missed XML-hostile page: %#v", idx)
+		t.Fatalf("best-effort index missed XML-hostile page: %#v", idx)
 	}
 	component, ok := idx.Component("Good")
 	if !ok || len(component.Attributes) != 1 || component.Attributes[0].Name != "actSupAction" {
-		t.Fatalf("strict index missed parseable component: %#v", idx)
+		t.Fatalf("best-effort index missed parseable component: %#v", idx)
 	}
 }
 

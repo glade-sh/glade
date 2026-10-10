@@ -1,0 +1,194 @@
+<template><button onclick={advance}>Advance</button>
+<section data-case="modern_00"><template lwc:if={a0}><span>A</span></template></section>
+<section data-case="else_00"><template lwc:if={a1}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_00"><template lwc:if={a2}><span>A</span></template><template lwc:elseif={b2}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_00"><template lwc:if={a3}><span>A</span></template><template lwc:elseif={b3}><span>B</span></template><template lwc:elseif={c3}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_00"><template lwc:if={a4}><template lwc:if={b4}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_00"><span lwc:if={a5}>A</span><span lwc:elseif={b5}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_00"><template if:true={a6}><span>A</span></template></section>
+<section data-case="legacy_false_00"><template if:false={a7}><span>B</span></template></section>
+<section data-case="legacy_element_00"><span if:true={a8}>A</span><span if:false={a8}>B</span></section>
+<section data-case="path_00"><template lwc:if={row9.a}><span>A</span></template><template lwc:elseif={row9.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_00"><template lwc:if={a10}><span>A</span></template><template lwc:elseif={b10}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_00"><span if:true={a11}>A</span><span if:false={a11}>B</span></section>
+<section data-case="modern_01"><template lwc:if={a12}><span>A</span></template></section>
+<section data-case="else_01"><template lwc:if={a13}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_01"><template lwc:if={a14}><span>A</span></template><template lwc:elseif={b14}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_01"><template lwc:if={a15}><span>A</span></template><template lwc:elseif={b15}><span>B</span></template><template lwc:elseif={c15}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_01"><template lwc:if={a16}><template lwc:if={b16}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_01"><span lwc:if={a17}>A</span><span lwc:elseif={b17}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_01"><template if:true={a18}><span>A</span></template></section>
+<section data-case="legacy_false_01"><template if:false={a19}><span>B</span></template></section>
+<section data-case="legacy_element_01"><span if:true={a20}>A</span><span if:false={a20}>B</span></section>
+<section data-case="path_01"><template lwc:if={row21.a}><span>A</span></template><template lwc:elseif={row21.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_01"><template lwc:if={a22}><span>A</span></template><template lwc:elseif={b22}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_01"><span if:true={a23}>A</span><span if:false={a23}>B</span></section>
+<section data-case="modern_02"><template lwc:if={a24}><span>A</span></template></section>
+<section data-case="else_02"><template lwc:if={a25}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_02"><template lwc:if={a26}><span>A</span></template><template lwc:elseif={b26}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_02"><template lwc:if={a27}><span>A</span></template><template lwc:elseif={b27}><span>B</span></template><template lwc:elseif={c27}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_02"><template lwc:if={a28}><template lwc:if={b28}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_02"><span lwc:if={a29}>A</span><span lwc:elseif={b29}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_02"><template if:true={a30}><span>A</span></template></section>
+<section data-case="legacy_false_02"><template if:false={a31}><span>B</span></template></section>
+<section data-case="legacy_element_02"><span if:true={a32}>A</span><span if:false={a32}>B</span></section>
+<section data-case="path_02"><template lwc:if={row33.a}><span>A</span></template><template lwc:elseif={row33.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_02"><template lwc:if={a34}><span>A</span></template><template lwc:elseif={b34}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_02"><span if:true={a35}>A</span><span if:false={a35}>B</span></section>
+<section data-case="modern_03"><template lwc:if={a36}><span>A</span></template></section>
+<section data-case="else_03"><template lwc:if={a37}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_03"><template lwc:if={a38}><span>A</span></template><template lwc:elseif={b38}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_03"><template lwc:if={a39}><span>A</span></template><template lwc:elseif={b39}><span>B</span></template><template lwc:elseif={c39}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_03"><template lwc:if={a40}><template lwc:if={b40}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_03"><span lwc:if={a41}>A</span><span lwc:elseif={b41}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_03"><template if:true={a42}><span>A</span></template></section>
+<section data-case="legacy_false_03"><template if:false={a43}><span>B</span></template></section>
+<section data-case="legacy_element_03"><span if:true={a44}>A</span><span if:false={a44}>B</span></section>
+<section data-case="path_03"><template lwc:if={row45.a}><span>A</span></template><template lwc:elseif={row45.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_03"><template lwc:if={a46}><span>A</span></template><template lwc:elseif={b46}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_03"><span if:true={a47}>A</span><span if:false={a47}>B</span></section>
+<section data-case="modern_04"><template lwc:if={a48}><span>A</span></template></section>
+<section data-case="else_04"><template lwc:if={a49}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_04"><template lwc:if={a50}><span>A</span></template><template lwc:elseif={b50}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_04"><template lwc:if={a51}><span>A</span></template><template lwc:elseif={b51}><span>B</span></template><template lwc:elseif={c51}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_04"><template lwc:if={a52}><template lwc:if={b52}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_04"><span lwc:if={a53}>A</span><span lwc:elseif={b53}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_04"><template if:true={a54}><span>A</span></template></section>
+<section data-case="legacy_false_04"><template if:false={a55}><span>B</span></template></section>
+<section data-case="legacy_element_04"><span if:true={a56}>A</span><span if:false={a56}>B</span></section>
+<section data-case="path_04"><template lwc:if={row57.a}><span>A</span></template><template lwc:elseif={row57.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_04"><template lwc:if={a58}><span>A</span></template><template lwc:elseif={b58}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_04"><span if:true={a59}>A</span><span if:false={a59}>B</span></section>
+<section data-case="modern_05"><template lwc:if={a60}><span>A</span></template></section>
+<section data-case="else_05"><template lwc:if={a61}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_05"><template lwc:if={a62}><span>A</span></template><template lwc:elseif={b62}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_05"><template lwc:if={a63}><span>A</span></template><template lwc:elseif={b63}><span>B</span></template><template lwc:elseif={c63}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_05"><template lwc:if={a64}><template lwc:if={b64}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_05"><span lwc:if={a65}>A</span><span lwc:elseif={b65}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_05"><template if:true={a66}><span>A</span></template></section>
+<section data-case="legacy_false_05"><template if:false={a67}><span>B</span></template></section>
+<section data-case="legacy_element_05"><span if:true={a68}>A</span><span if:false={a68}>B</span></section>
+<section data-case="path_05"><template lwc:if={row69.a}><span>A</span></template><template lwc:elseif={row69.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_05"><template lwc:if={a70}><span>A</span></template><template lwc:elseif={b70}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_05"><span if:true={a71}>A</span><span if:false={a71}>B</span></section>
+<section data-case="modern_06"><template lwc:if={a72}><span>A</span></template></section>
+<section data-case="else_06"><template lwc:if={a73}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_06"><template lwc:if={a74}><span>A</span></template><template lwc:elseif={b74}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_06"><template lwc:if={a75}><span>A</span></template><template lwc:elseif={b75}><span>B</span></template><template lwc:elseif={c75}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_06"><template lwc:if={a76}><template lwc:if={b76}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_06"><span lwc:if={a77}>A</span><span lwc:elseif={b77}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_06"><template if:true={a78}><span>A</span></template></section>
+<section data-case="legacy_false_06"><template if:false={a79}><span>B</span></template></section>
+<section data-case="legacy_element_06"><span if:true={a80}>A</span><span if:false={a80}>B</span></section>
+<section data-case="path_06"><template lwc:if={row81.a}><span>A</span></template><template lwc:elseif={row81.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_06"><template lwc:if={a82}><span>A</span></template><template lwc:elseif={b82}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_06"><span if:true={a83}>A</span><span if:false={a83}>B</span></section>
+<section data-case="modern_07"><template lwc:if={a84}><span>A</span></template></section>
+<section data-case="else_07"><template lwc:if={a85}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_07"><template lwc:if={a86}><span>A</span></template><template lwc:elseif={b86}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_07"><template lwc:if={a87}><span>A</span></template><template lwc:elseif={b87}><span>B</span></template><template lwc:elseif={c87}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_07"><template lwc:if={a88}><template lwc:if={b88}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_07"><span lwc:if={a89}>A</span><span lwc:elseif={b89}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_07"><template if:true={a90}><span>A</span></template></section>
+<section data-case="legacy_false_07"><template if:false={a91}><span>B</span></template></section>
+<section data-case="legacy_element_07"><span if:true={a92}>A</span><span if:false={a92}>B</span></section>
+<section data-case="path_07"><template lwc:if={row93.a}><span>A</span></template><template lwc:elseif={row93.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_07"><template lwc:if={a94}><span>A</span></template><template lwc:elseif={b94}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_07"><span if:true={a95}>A</span><span if:false={a95}>B</span></section>
+<section data-case="modern_08"><template lwc:if={a96}><span>A</span></template></section>
+<section data-case="else_08"><template lwc:if={a97}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_08"><template lwc:if={a98}><span>A</span></template><template lwc:elseif={b98}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_08"><template lwc:if={a99}><span>A</span></template><template lwc:elseif={b99}><span>B</span></template><template lwc:elseif={c99}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_08"><template lwc:if={a100}><template lwc:if={b100}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_08"><span lwc:if={a101}>A</span><span lwc:elseif={b101}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_08"><template if:true={a102}><span>A</span></template></section>
+<section data-case="legacy_false_08"><template if:false={a103}><span>B</span></template></section>
+<section data-case="legacy_element_08"><span if:true={a104}>A</span><span if:false={a104}>B</span></section>
+<section data-case="path_08"><template lwc:if={row105.a}><span>A</span></template><template lwc:elseif={row105.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_08"><template lwc:if={a106}><span>A</span></template><template lwc:elseif={b106}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_08"><span if:true={a107}>A</span><span if:false={a107}>B</span></section>
+<section data-case="modern_09"><template lwc:if={a108}><span>A</span></template></section>
+<section data-case="else_09"><template lwc:if={a109}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_09"><template lwc:if={a110}><span>A</span></template><template lwc:elseif={b110}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_09"><template lwc:if={a111}><span>A</span></template><template lwc:elseif={b111}><span>B</span></template><template lwc:elseif={c111}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_09"><template lwc:if={a112}><template lwc:if={b112}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_09"><span lwc:if={a113}>A</span><span lwc:elseif={b113}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_09"><template if:true={a114}><span>A</span></template></section>
+<section data-case="legacy_false_09"><template if:false={a115}><span>B</span></template></section>
+<section data-case="legacy_element_09"><span if:true={a116}>A</span><span if:false={a116}>B</span></section>
+<section data-case="path_09"><template lwc:if={row117.a}><span>A</span></template><template lwc:elseif={row117.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_09"><template lwc:if={a118}><span>A</span></template><template lwc:elseif={b118}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_09"><span if:true={a119}>A</span><span if:false={a119}>B</span></section>
+<section data-case="modern_10"><template lwc:if={a120}><span>A</span></template></section>
+<section data-case="else_10"><template lwc:if={a121}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_10"><template lwc:if={a122}><span>A</span></template><template lwc:elseif={b122}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_10"><template lwc:if={a123}><span>A</span></template><template lwc:elseif={b123}><span>B</span></template><template lwc:elseif={c123}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_10"><template lwc:if={a124}><template lwc:if={b124}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_10"><span lwc:if={a125}>A</span><span lwc:elseif={b125}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_10"><template if:true={a126}><span>A</span></template></section>
+<section data-case="legacy_false_10"><template if:false={a127}><span>B</span></template></section>
+<section data-case="legacy_element_10"><span if:true={a128}>A</span><span if:false={a128}>B</span></section>
+<section data-case="path_10"><template lwc:if={row129.a}><span>A</span></template><template lwc:elseif={row129.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_10"><template lwc:if={a130}><span>A</span></template><template lwc:elseif={b130}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_10"><span if:true={a131}>A</span><span if:false={a131}>B</span></section>
+<section data-case="modern_11"><template lwc:if={a132}><span>A</span></template></section>
+<section data-case="else_11"><template lwc:if={a133}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_11"><template lwc:if={a134}><span>A</span></template><template lwc:elseif={b134}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_11"><template lwc:if={a135}><span>A</span></template><template lwc:elseif={b135}><span>B</span></template><template lwc:elseif={c135}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_11"><template lwc:if={a136}><template lwc:if={b136}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_11"><span lwc:if={a137}>A</span><span lwc:elseif={b137}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_11"><template if:true={a138}><span>A</span></template></section>
+<section data-case="legacy_false_11"><template if:false={a139}><span>B</span></template></section>
+<section data-case="legacy_element_11"><span if:true={a140}>A</span><span if:false={a140}>B</span></section>
+<section data-case="path_11"><template lwc:if={row141.a}><span>A</span></template><template lwc:elseif={row141.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_11"><template lwc:if={a142}><span>A</span></template><template lwc:elseif={b142}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_11"><span if:true={a143}>A</span><span if:false={a143}>B</span></section>
+<section data-case="modern_12"><template lwc:if={a144}><span>A</span></template></section>
+<section data-case="else_12"><template lwc:if={a145}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_12"><template lwc:if={a146}><span>A</span></template><template lwc:elseif={b146}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_12"><template lwc:if={a147}><span>A</span></template><template lwc:elseif={b147}><span>B</span></template><template lwc:elseif={c147}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_12"><template lwc:if={a148}><template lwc:if={b148}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_12"><span lwc:if={a149}>A</span><span lwc:elseif={b149}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_12"><template if:true={a150}><span>A</span></template></section>
+<section data-case="legacy_false_12"><template if:false={a151}><span>B</span></template></section>
+<section data-case="legacy_element_12"><span if:true={a152}>A</span><span if:false={a152}>B</span></section>
+<section data-case="path_12"><template lwc:if={row153.a}><span>A</span></template><template lwc:elseif={row153.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_12"><template lwc:if={a154}><span>A</span></template><template lwc:elseif={b154}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_12"><span if:true={a155}>A</span><span if:false={a155}>B</span></section>
+<section data-case="modern_13"><template lwc:if={a156}><span>A</span></template></section>
+<section data-case="else_13"><template lwc:if={a157}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_13"><template lwc:if={a158}><span>A</span></template><template lwc:elseif={b158}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_13"><template lwc:if={a159}><span>A</span></template><template lwc:elseif={b159}><span>B</span></template><template lwc:elseif={c159}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_13"><template lwc:if={a160}><template lwc:if={b160}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_13"><span lwc:if={a161}>A</span><span lwc:elseif={b161}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_13"><template if:true={a162}><span>A</span></template></section>
+<section data-case="legacy_false_13"><template if:false={a163}><span>B</span></template></section>
+<section data-case="legacy_element_13"><span if:true={a164}>A</span><span if:false={a164}>B</span></section>
+<section data-case="path_13"><template lwc:if={row165.a}><span>A</span></template><template lwc:elseif={row165.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_13"><template lwc:if={a166}><span>A</span></template><template lwc:elseif={b166}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_13"><span if:true={a167}>A</span><span if:false={a167}>B</span></section>
+<section data-case="modern_14"><template lwc:if={a168}><span>A</span></template></section>
+<section data-case="else_14"><template lwc:if={a169}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_14"><template lwc:if={a170}><span>A</span></template><template lwc:elseif={b170}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_14"><template lwc:if={a171}><span>A</span></template><template lwc:elseif={b171}><span>B</span></template><template lwc:elseif={c171}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_14"><template lwc:if={a172}><template lwc:if={b172}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_14"><span lwc:if={a173}>A</span><span lwc:elseif={b173}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_14"><template if:true={a174}><span>A</span></template></section>
+<section data-case="legacy_false_14"><template if:false={a175}><span>B</span></template></section>
+<section data-case="legacy_element_14"><span if:true={a176}>A</span><span if:false={a176}>B</span></section>
+<section data-case="path_14"><template lwc:if={row177.a}><span>A</span></template><template lwc:elseif={row177.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_14"><template lwc:if={a178}><span>A</span></template><template lwc:elseif={b178}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_14"><span if:true={a179}>A</span><span if:false={a179}>B</span></section>
+<section data-case="modern_15"><template lwc:if={a180}><span>A</span></template></section>
+<section data-case="else_15"><template lwc:if={a181}><span>A</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="chain_15"><template lwc:if={a182}><span>A</span></template><template lwc:elseif={b182}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="long_chain_15"><template lwc:if={a183}><span>A</span></template><template lwc:elseif={b183}><span>B</span></template><template lwc:elseif={c183}><span>C</span></template><template lwc:else><span>D</span></template></section>
+<section data-case="nested_15"><template lwc:if={a184}><template lwc:if={b184}><span>A</span></template><template lwc:else><span>B</span></template></template><template lwc:else><span>C</span></template></section>
+<section data-case="element_15"><span lwc:if={a185}>A</span><span lwc:elseif={b185}>B</span><span lwc:else>C</span></section>
+<section data-case="legacy_true_15"><template if:true={a186}><span>A</span></template></section>
+<section data-case="legacy_false_15"><template if:false={a187}><span>B</span></template></section>
+<section data-case="legacy_element_15"><span if:true={a188}>A</span><span if:false={a188}>B</span></section>
+<section data-case="path_15"><template lwc:if={row189.a}><span>A</span></template><template lwc:elseif={row189.b}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_chain_15"><template lwc:if={a190}><span>A</span></template><template lwc:elseif={b190}><span>B</span></template><template lwc:else><span>C</span></template></section>
+<section data-case="reactive_legacy_element_15"><span if:true={a191}>A</span><span if:false={a191}>B</span></section>
+</template>

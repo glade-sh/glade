@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	"github.com/glade-sh/glade/internal/namespaceremap"
@@ -202,7 +203,7 @@ func RefreshBuildArtifacts(index Index, previous *BuildArtifacts) (BuildArtifact
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + metadata.RequestedPath)
 		}
-		currentPhysicalPath := canonicalPhysicalPath(metadata.RequestedPath)
+		currentPhysicalPath := artifacts.Sources.canonicalPhysicalPath(metadata.RequestedPath)
 		if previous != nil && previous.Sources != nil {
 			if source, ok := previous.Sources.sourceForMetadata(metadata); ok && source.Digest() == expected && source.metadata.PhysicalPath == index.sourceDigests.requested[metadata.RequestedPath] && source.metadata.PhysicalPath == currentPhysicalPath {
 				artifacts.Sources.adopt(source, input)
@@ -519,6 +520,7 @@ type WorkspaceSourceStats struct {
 type WorkspaceSources struct {
 	mu                   sync.Mutex
 	readFile             func(string) ([]byte, error)
+	physicalDirectories  map[string]string
 	physical             map[string]*physicalSource
 	logical              map[logicalSourceKey]*logicalSource
 	occurrence           map[sourceOccurrenceKey]WorkspaceSource
@@ -559,11 +561,12 @@ func newWorkspaceSources(readFile func(string) ([]byte, error)) *WorkspaceSource
 		readFile = os.ReadFile
 	}
 	return &WorkspaceSources{
-		readFile:     readFile,
-		physical:     make(map[string]*physicalSource),
-		logical:      make(map[logicalSourceKey]*logicalSource),
-		occurrence:   make(map[sourceOccurrenceKey]WorkspaceSource),
-		apexMetadata: make(map[sourceOccurrenceKey]ApexMetadataInput),
+		readFile:            readFile,
+		physicalDirectories: make(map[string]string),
+		physical:            make(map[string]*physicalSource),
+		logical:             make(map[logicalSourceKey]*logicalSource),
+		occurrence:          make(map[sourceOccurrenceKey]WorkspaceSource),
+		apexMetadata:        make(map[sourceOccurrenceKey]ApexMetadataInput),
 	}
 }
 
@@ -680,7 +683,7 @@ func (s *WorkspaceSources) adopt(source WorkspaceSource, input ApexMetadataInput
 	}
 	physicalPath := source.metadata.PhysicalPath
 	if physicalPath == "" {
-		physicalPath = canonicalPhysicalPath(source.metadata.RequestedPath)
+		physicalPath = s.canonicalPhysicalPath(source.metadata.RequestedPath)
 	}
 	logicalKey := logicalSourceKey{
 		physicalPath:     physicalPath,
@@ -724,7 +727,7 @@ func sourceOccurrenceKeyForMetadata(metadata SourceMetadata) sourceOccurrenceKey
 }
 
 func (s *WorkspaceSources) load(metadata SourceMetadata) (WorkspaceSource, error) {
-	physicalPath := canonicalPhysicalPath(metadata.RequestedPath)
+	physicalPath := s.canonicalPhysicalPath(metadata.RequestedPath)
 	metadata.PhysicalPath = physicalPath
 	metadata.NamespaceRemaps = append([]namespaceremap.Rule(nil), metadata.NamespaceRemaps...)
 
@@ -803,6 +806,38 @@ func (s *WorkspaceSources) loadLogical(key logicalSourceKey, raw, namespace stri
 	logical.normalized = namespaceremap.ApplySource(remaps, normalized)
 	close(logical.ready)
 	return logical
+}
+
+// Source directories are stable within one build. Resolve their symlinks once
+// per arena, while checking each file so file symlinks retain full resolution.
+func (s *WorkspaceSources) canonicalPhysicalPath(path string) string {
+	abs := cleanedAbsolutePath(path)
+	// Windows also canonicalizes the file's spelling in EvalSymlinks.
+	if runtime.GOOS == "windows" || !filepath.IsAbs(abs) {
+		return canonicalPhysicalPath(path)
+	}
+	dir := filepath.Dir(abs)
+	s.mu.Lock()
+	resolvedDir, ok := s.physicalDirectories[dir]
+	if !ok {
+		resolved, err := filepath.EvalSymlinks(dir)
+		if err != nil {
+			s.mu.Unlock()
+			return abs
+		}
+		resolvedDir = cleanedAbsolutePath(resolved)
+		s.physicalDirectories[dir] = resolvedDir
+	}
+	s.mu.Unlock()
+	resolved := filepath.Join(resolvedDir, filepath.Base(abs))
+	info, err := os.Lstat(resolved)
+	if err != nil {
+		return abs
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return canonicalPhysicalPath(abs)
+	}
+	return resolved
 }
 
 func canonicalPhysicalPath(path string) string {

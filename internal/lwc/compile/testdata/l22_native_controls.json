@@ -1,0 +1,403 @@
+[
+  {
+    "id": "c_control_import_modal_missing_module",
+    "group": "modal lifecycle",
+    "kind": "compile",
+    "category": "boundary",
+    "basis": "org",
+    "control_role": "question",
+    "control_for": "c_import_modal_missing_module",
+    "twin": "c_control_import_modal_good",
+    "js": "import Owned from 'lightning/modalOwnedMissing';import { LightningElement } from 'lwc'; export default class FamilyOverlays extends LightningElement { value='Owned'; handle(){ return Owned; } }",
+    "template": "<template><span>L22 owned compiler question</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": [
+        "No MODULE named markup://lightning:modalOwnedMissing found : [markup://c:familyL22000]"
+      ],
+      "67.0": [
+        "No MODULE named markup://lightning:modalOwnedMissing found : [markup://c:familyL22000]"
+      ]
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "c_control_import_modal_good",
+    "group": "modal lifecycle",
+    "kind": "compile",
+    "category": "normal",
+    "basis": "org",
+    "control_role": "known-good-twin",
+    "control_for": "c_import_modal_default",
+    "twin": "c_control_import_modal_missing_module",
+    "js": "import Owned from 'lightning/modal';import { LightningElement } from 'lwc'; export default class FamilyOverlays extends LightningElement { value='Owned'; handle(){ return Owned; } }",
+    "template": "<template><span>L22 owned compiler question</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {
+      "59.0": [],
+      "67.0": []
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "c_control_import_alert_missing_module",
+    "group": "alert/confirm/prompt",
+    "kind": "compile",
+    "category": "boundary",
+    "basis": "org",
+    "control_role": "question",
+    "control_for": "c_import_alert_missing_module",
+    "twin": "c_control_import_alert_good",
+    "js": "import Owned from 'lightning/alertOwnedMissing';import { LightningElement } from 'lwc'; export default class FamilyOverlays extends LightningElement { value='Owned'; handle(){ return Owned; } }",
+    "template": "<template><span>L22 owned compiler question</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": [
+        "No MODULE named markup://lightning:alertOwnedMissing found : [markup://c:familyL22000]"
+      ],
+      "67.0": [
+        "No MODULE named markup://lightning:alertOwnedMissing found : [markup://c:familyL22000]"
+      ]
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "c_control_import_alert_good",
+    "group": "alert/confirm/prompt",
+    "kind": "compile",
+    "category": "normal",
+    "basis": "org",
+    "control_role": "known-good-twin",
+    "control_for": "c_import_alert_default",
+    "twin": "c_control_import_alert_missing_module",
+    "js": "import Owned from 'lightning/alert';import { LightningElement } from 'lwc'; export default class FamilyOverlays extends LightningElement { value='Owned'; handle(){ return Owned; } }",
+    "template": "<template><span>L22 owned compiler question</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {
+      "59.0": [],
+      "67.0": []
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "c_control_import_confirm_missing_module",
+    "group": "alert/confirm/prompt",
+    "kind": "compile",
+    "category": "boundary",
+    "basis": "org",
+    "control_role": "question",
+    "control_for": "c_import_confirm_missing_module",
+    "twin": "c_control_import_confirm_good",
+    "js": "import Owned from 'lightning/confirmOwnedMissing';import { LightningElement } from 'lwc'; export default class FamilyOverlays extends LightningElement { value='Owned'; handle(){ return Owned; } }",
+    "template": "<template><span>L22 owned compiler question</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": [
+        "No MODULE named markup://lightning:confirmOwnedMissing found : [markup://c:familyL22000]"
+      ],
+      "67.0": [
+        "No MODULE named markup://lightning:confirmOwnedMissing found : [markup://c:familyL22000]"
+      ]
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "c_control_import_confirm_good",
+    "group": "alert/confirm/prompt",
+    "kind": "compile",
+    "category": "normal",
+    "basis": "org",
+    "control_role": "known-good-twin",
+    "control_for": "c_import_confirm_default",
+    "twin": "c_control_import_confirm_missing_module",
+    "js": "import Owned from 'lightning/confirm';import { LightningElement } from 'lwc'; export default class FamilyOverlays extends LightningElement { value='Owned'; handle(){ return Owned; } }",
+    "template": "<template><span>L22 owned compiler question</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {
+      "59.0": [],
+      "67.0": []
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "c_control_import_prompt_missing_module",
+    "group": "alert/confirm/prompt",
+    "kind": "compile",
+    "category": "boundary",
+    "basis": "org",
+    "control_role": "question",
+    "control_for": "c_import_prompt_missing_module",
+    "twin": "c_control_import_prompt_good",
+    "js": "import Owned from 'lightning/promptOwnedMissing';import { LightningElement } from 'lwc'; export default class FamilyOverlays extends LightningElement { value='Owned'; handle(){ return Owned; } }",
+    "template": "<template><span>L22 owned compiler question</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": [
+        "No MODULE named markup://lightning:promptOwnedMissing found : [markup://c:familyL22000]"
+      ],
+      "67.0": [
+        "No MODULE named markup://lightning:promptOwnedMissing found : [markup://c:familyL22000]"
+      ]
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "c_control_import_prompt_good",
+    "group": "alert/confirm/prompt",
+    "kind": "compile",
+    "category": "normal",
+    "basis": "org",
+    "control_role": "known-good-twin",
+    "control_for": "c_import_prompt_default",
+    "twin": "c_control_import_prompt_missing_module",
+    "js": "import Owned from 'lightning/prompt';import { LightningElement } from 'lwc'; export default class FamilyOverlays extends LightningElement { value='Owned'; handle(){ return Owned; } }",
+    "template": "<template><span>L22 owned compiler question</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {
+      "59.0": [],
+      "67.0": []
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "c_control_import_toast_missing_module",
+    "group": "toast",
+    "kind": "compile",
+    "category": "boundary",
+    "basis": "org",
+    "control_role": "question",
+    "control_for": "c_import_toast_missing_module",
+    "twin": "c_control_import_toast_good",
+    "js": "import Owned from 'lightning/platformShowToastEventOwnedMissing';import { LightningElement } from 'lwc'; export default class FamilyOverlays extends LightningElement { value='Owned'; handle(){ return Owned; } }",
+    "template": "<template><span>L22 owned compiler question</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": [
+        "No MODULE named markup://lightning:platformShowToastEventOwnedMissing found : [markup://c:familyL22000]"
+      ],
+      "67.0": [
+        "No MODULE named markup://lightning:platformShowToastEventOwnedMissing found : [markup://c:familyL22000]"
+      ]
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "c_control_import_toast_good",
+    "group": "toast",
+    "kind": "compile",
+    "category": "normal",
+    "basis": "org",
+    "control_role": "known-good-twin",
+    "control_for": "c_import_toast_default",
+    "twin": "c_control_import_toast_missing_module",
+    "js": "import Owned from 'lightning/platformShowToastEvent';import { LightningElement } from 'lwc'; export default class FamilyOverlays extends LightningElement { value='Owned'; handle(){ return Owned; } }",
+    "template": "<template><span>L22 owned compiler question</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {
+      "59.0": [],
+      "67.0": []
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "c_control_metadata_bad_target",
+    "group": "modal lifecycle",
+    "kind": "compile",
+    "category": "boundary",
+    "basis": "org",
+    "control_role": "question",
+    "control_for": "c_metadata_bad_target",
+    "twin": "c_control_metadata_tab",
+    "js": "import { api } from 'lwc'; import LightningModal from 'lightning/modal'; export default class FamilyOverlays extends LightningModal { @api value; handle(){ this.close(this.value); } }",
+    "template": "<template><lightning-modal-body>Owned</lightning-modal-body></template>",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__OwnedMissing</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": [
+        "lightning__OwnedMissing is not a valid TARGETS"
+      ],
+      "67.0": [
+        "lightning__OwnedMissing is not a valid TARGETS"
+      ]
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "c_control_metadata_tab",
+    "group": "modal lifecycle",
+    "kind": "compile",
+    "category": "normal",
+    "basis": "org",
+    "control_role": "known-good-twin",
+    "control_for": "c_metadata_tab",
+    "twin": "c_control_metadata_bad_target",
+    "js": "import { api } from 'lwc'; import LightningModal from 'lightning/modal'; export default class FamilyOverlays extends LightningModal { @api value; handle(){ this.close(this.value); } }",
+    "template": "<template><lightning-modal-body>Owned</lightning-modal-body></template>",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__Tab</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {
+      "59.0": [],
+      "67.0": []
+    },
+    "bundle_name": "familyL22000"
+  },
+  {
+    "id": "r_control_alert_message_number_escape",
+    "group": "alert/confirm/prompt",
+    "kind": "runtime",
+    "category": "boundary",
+    "basis": "org",
+    "control_role": "question",
+    "control_for": "r_alert_message_number_escape",
+    "twin": "r_control_alert_normal_escape",
+    "service": "alert",
+    "options": {
+      "message": 42,
+      "label": "L22 Owned label"
+    },
+    "action": "escape",
+    "operation": "once",
+    "observation": "Native return/error and promise state, explicit browser Escape action, accessible overlay DOM; same 150ms pre-action and 800ms settlement windows as the original row",
+    "expected": {
+      "59.0": "BROWSER|{\"id\":\"r_control_alert_message_number_escape\",\"observation\":{\"browserActions\":[{\"action\":\"escape\",\"appearanceWindowMs\":4000,\"before\":\"L22 Owned label\\n\\n42\\n\\nOK\",\"kind\":\"overlay-observed\",\"performed\":true}],\"domAfterSettlement\":{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME59\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]},\"domCheckpoints\":[{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME59\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]},{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME59\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]}],\"events\":[],\"fixtureEventObservation\":\"no fixture events observed within declared window\",\"fixtureEvents\":[],\"promiseObservation\":\"pending within 800ms after declared action\",\"promises\":[{\"index\":0,\"returnValue\":{\"thenable\":true,\"type\":\"object\"},\"state\":\"pending\"}],\"sequence\":[{\"phase\":\"immediately-after-open\",\"states\":[\"pending\"]},{\"phase\":\"after-one-microtask\",\"states\":[\"pending\"]},{\"phase\":\"before-browser-action\",\"states\":[\"pending\"]}],\"service\":\"alert\",\"settlementWindowMs\":800},\"stage\":\"done\"}",
+      "67.0": "BROWSER|{\"id\":\"r_control_alert_message_number_escape\",\"observation\":{\"browserActions\":[{\"action\":\"escape\",\"appearanceWindowMs\":4000,\"before\":\"L22 Owned label\\n\\n42\\n\\nOK\",\"kind\":\"overlay-observed\",\"performed\":true}],\"domAfterSettlement\":{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME67\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]},\"domCheckpoints\":[{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME67\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]},{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME67\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]}],\"events\":[],\"fixtureEventObservation\":\"no fixture events observed within declared window\",\"fixtureEvents\":[],\"promiseObservation\":\"pending within 800ms after declared action\",\"promises\":[{\"index\":0,\"returnValue\":{\"thenable\":true,\"type\":\"object\"},\"state\":\"pending\"}],\"sequence\":[{\"phase\":\"immediately-after-open\",\"states\":[\"pending\"]},{\"phase\":\"after-one-microtask\",\"states\":[\"pending\"]},{\"phase\":\"before-browser-action\",\"states\":[\"pending\"]}],\"service\":\"alert\",\"settlementWindowMs\":800},\"stage\":\"done\"}"
+    },
+    "diagnostic_expected": {},
+    "spec": {
+      "id": "r_control_alert_message_number_escape",
+      "group": "alert/confirm/prompt",
+      "kind": "runtime",
+      "category": "boundary",
+      "basis": "org",
+      "control_role": "question",
+      "control_for": "r_alert_message_number_escape",
+      "twin": "r_control_alert_normal_escape",
+      "service": "alert",
+      "options": {
+        "message": 42,
+        "label": "L22 Owned label"
+      },
+      "action": "escape",
+      "operation": "once",
+      "observation": "Native return/error and promise state, explicit browser Escape action, accessible overlay DOM; same 150ms pre-action and 800ms settlement windows as the original row"
+    }
+  },
+  {
+    "id": "r_control_alert_normal_escape",
+    "group": "alert/confirm/prompt",
+    "kind": "runtime",
+    "category": "normal",
+    "basis": "org",
+    "control_role": "known-good-twin",
+    "control_for": "r_alert_normal_escape",
+    "twin": "r_control_alert_message_number_escape",
+    "service": "alert",
+    "options": {
+      "message": "L22 Owned message",
+      "label": "L22 Owned label"
+    },
+    "action": "escape",
+    "operation": "once",
+    "observation": "Native return/error and promise state, explicit browser Escape action, accessible overlay DOM; same 150ms pre-action and 800ms settlement windows as the original row",
+    "expected": {
+      "59.0": "BROWSER|{\"id\":\"r_control_alert_normal_escape\",\"observation\":{\"browserActions\":[{\"action\":\"escape\",\"appearanceWindowMs\":4000,\"before\":\"L22 Owned label\\n\\nL22 Owned message\\n\\nOK\",\"kind\":\"overlay-observed\",\"performed\":true}],\"domAfterSettlement\":{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME59\"},\"observation\":\"no accessible overlay DOM at this checkpoint\",\"overlays\":[]},\"domCheckpoints\":[{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"LIGHTNING-OVERLAY-CONTAINER\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":true,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]},{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME59\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":true,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]}],\"events\":[],\"fixtureEventObservation\":\"no fixture events observed within declared window\",\"fixtureEvents\":[],\"promiseObservation\":\"states recorded\",\"promises\":[{\"index\":0,\"returnValue\":{\"thenable\":true,\"type\":\"object\"},\"state\":\"fulfilled\",\"value\":{\"type\":\"undefined\"}}],\"sequence\":[{\"phase\":\"immediately-after-open\",\"states\":[\"pending\"]},{\"phase\":\"after-one-microtask\",\"states\":[\"pending\"]},{\"phase\":\"before-browser-action\",\"states\":[\"pending\"]}],\"service\":\"alert\",\"settlementWindowMs\":800},\"stage\":\"done\"}",
+      "67.0": "BROWSER|{\"id\":\"r_control_alert_normal_escape\",\"observation\":{\"browserActions\":[{\"action\":\"escape\",\"appearanceWindowMs\":4000,\"before\":\"L22 Owned label\\n\\nL22 Owned message\\n\\nOK\",\"kind\":\"overlay-observed\",\"performed\":true}],\"domAfterSettlement\":{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME67\"},\"observation\":\"no accessible overlay DOM at this checkpoint\",\"overlays\":[]},\"domCheckpoints\":[{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"LIGHTNING-OVERLAY-CONTAINER\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":true,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]},{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME67\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":true,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]}],\"events\":[],\"fixtureEventObservation\":\"no fixture events observed within declared window\",\"fixtureEvents\":[],\"promiseObservation\":\"states recorded\",\"promises\":[{\"index\":0,\"returnValue\":{\"thenable\":true,\"type\":\"object\"},\"state\":\"fulfilled\",\"value\":{\"type\":\"undefined\"}}],\"sequence\":[{\"phase\":\"immediately-after-open\",\"states\":[\"pending\"]},{\"phase\":\"after-one-microtask\",\"states\":[\"pending\"]},{\"phase\":\"before-browser-action\",\"states\":[\"pending\"]}],\"service\":\"alert\",\"settlementWindowMs\":800},\"stage\":\"done\"}"
+    },
+    "diagnostic_expected": {},
+    "spec": {
+      "id": "r_control_alert_normal_escape",
+      "group": "alert/confirm/prompt",
+      "kind": "runtime",
+      "category": "normal",
+      "basis": "org",
+      "control_role": "known-good-twin",
+      "control_for": "r_alert_normal_escape",
+      "twin": "r_control_alert_message_number_escape",
+      "service": "alert",
+      "options": {
+        "message": "L22 Owned message",
+        "label": "L22 Owned label"
+      },
+      "action": "escape",
+      "operation": "once",
+      "observation": "Native return/error and promise state, explicit browser Escape action, accessible overlay DOM; same 150ms pre-action and 800ms settlement windows as the original row"
+    }
+  },
+  {
+    "id": "r_control_alert_message_string_number_escape",
+    "group": "alert/confirm/prompt",
+    "kind": "runtime",
+    "category": "boundary",
+    "basis": "org",
+    "control_role": "type-twin",
+    "control_for": "r_alert_message_number_escape",
+    "twin": "r_control_alert_message_number_escape",
+    "service": "alert",
+    "options": {
+      "message": "42",
+      "label": "L22 Owned label"
+    },
+    "action": "escape",
+    "operation": "once",
+    "observation": "Native return/error and promise state, explicit browser Escape action, accessible overlay DOM; same 150ms pre-action and 800ms settlement windows as the original row",
+    "expected": {
+      "59.0": "BROWSER|{\"id\":\"r_control_alert_message_string_number_escape\",\"observation\":{\"browserActions\":[{\"action\":\"escape\",\"appearanceWindowMs\":4000,\"before\":\"L22 Owned label\\n\\n42\\n\\nOK\",\"kind\":\"overlay-observed\",\"performed\":true}],\"domAfterSettlement\":{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME59\"},\"observation\":\"no accessible overlay DOM at this checkpoint\",\"overlays\":[]},\"domCheckpoints\":[{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"LIGHTNING-OVERLAY-CONTAINER\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":true,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]},{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME59\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":true,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]}],\"events\":[],\"fixtureEventObservation\":\"no fixture events observed within declared window\",\"fixtureEvents\":[],\"promiseObservation\":\"states recorded\",\"promises\":[{\"index\":0,\"returnValue\":{\"thenable\":true,\"type\":\"object\"},\"state\":\"fulfilled\",\"value\":{\"type\":\"undefined\"}}],\"sequence\":[{\"phase\":\"immediately-after-open\",\"states\":[\"pending\"]},{\"phase\":\"after-one-microtask\",\"states\":[\"pending\"]},{\"phase\":\"before-browser-action\",\"states\":[\"pending\"]}],\"service\":\"alert\",\"settlementWindowMs\":800},\"stage\":\"done\"}",
+      "67.0": "BROWSER|{\"id\":\"r_control_alert_message_string_number_escape\",\"observation\":{\"browserActions\":[{\"action\":\"escape\",\"appearanceWindowMs\":4000,\"before\":\"L22 Owned label\\n\\n42\\n\\nOK\",\"kind\":\"overlay-observed\",\"performed\":true}],\"domAfterSettlement\":{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME67\"},\"observation\":\"no accessible overlay DOM at this checkpoint\",\"overlays\":[]},\"domCheckpoints\":[{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"LIGHTNING-OVERLAY-CONTAINER\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":true,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]},{\"accessibleDOMOnly\":true,\"activeElement\":{\"label\":null,\"role\":null,\"tag\":\"C-FAMILY-L22-RUNTIME67\"},\"observation\":\"visible overlay DOM observed\",\"overlays\":[{\"buttons\":[],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":false,\"role\":\"alertdialog\",\"shadowAccessible\":true,\"tag\":\"LIGHTNING-INTERACTIVE-DIALOG-BASE\",\"text\":\"\"},{\"buttons\":[{\"disabled\":false,\"label\":null,\"text\":\"OK\",\"title\":\"\"}],\"descriptionPresent\":false,\"fields\":[],\"label\":null,\"labelledByPresent\":true,\"role\":\"alertdialog\",\"shadowAccessible\":false,\"tag\":\"SECTION\",\"text\":\"L22 Owned labelOK\"}]}],\"events\":[],\"fixtureEventObservation\":\"no fixture events observed within declared window\",\"fixtureEvents\":[],\"promiseObservation\":\"states recorded\",\"promises\":[{\"index\":0,\"returnValue\":{\"thenable\":true,\"type\":\"object\"},\"state\":\"fulfilled\",\"value\":{\"type\":\"undefined\"}}],\"sequence\":[{\"phase\":\"immediately-after-open\",\"states\":[\"pending\"]},{\"phase\":\"after-one-microtask\",\"states\":[\"pending\"]},{\"phase\":\"before-browser-action\",\"states\":[\"pending\"]}],\"service\":\"alert\",\"settlementWindowMs\":800},\"stage\":\"done\"}"
+    },
+    "diagnostic_expected": {},
+    "spec": {
+      "id": "r_control_alert_message_string_number_escape",
+      "group": "alert/confirm/prompt",
+      "kind": "runtime",
+      "category": "boundary",
+      "basis": "org",
+      "control_role": "type-twin",
+      "control_for": "r_alert_message_number_escape",
+      "twin": "r_control_alert_message_number_escape",
+      "service": "alert",
+      "options": {
+        "message": "42",
+        "label": "L22 Owned label"
+      },
+      "action": "escape",
+      "operation": "once",
+      "observation": "Native return/error and promise state, explicit browser Escape action, accessible overlay DOM; same 150ms pre-action and 800ms settlement windows as the original row"
+    }
+  }
+]

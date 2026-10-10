@@ -1,0 +1,250 @@
+{
+  "source": "Owned source-format Document and ApexPage metadata with independent native anonymous and @IsTest observations at API 62.0 and 67.0. Named default-isolation and SeeAllData=true controls retain their own sources and terminal assertions.",
+  "captures": [
+    {
+      "apiVersion": "62.0",
+      "project": "document_source_loading/api62",
+      "cases": [
+        {
+          "id": "R001",
+          "route": "anonymous",
+          "code": "r=[SELECT COUNT() FROM Document WHERE DeveloperName='ResPic62_f48cd82f84b648a89f0148cd'];",
+          "expected": "1",
+          "compile": false
+        },
+        {
+          "id": "R002",
+          "route": "anonymous",
+          "code": "Document d=[SELECT Name,DeveloperName,Type,BodyLength FROM Document WHERE DeveloperName='ResPic62_f48cd82f84b648a89f0148cd' LIMIT 1]; r=d.Name+'|'+d.DeveloperName+'|'+d.Type+'|'+String.valueOf(d.BodyLength>0);",
+          "expected": "ResPic62_f48cd82f84b648a89f0148cd|ResPic62_f48cd82f84b648a89f0148cd|png|true",
+          "compile": false
+        },
+        {
+          "id": "R003",
+          "route": "anonymous",
+          "code": "Set<String> names=new Set<String>{'ResPage62_f48cd82f84b648a89f0148cd'}; r=Database.query('SELECT Id,Name FROM ApexPage WHERE Name IN :names').size();",
+          "expected": "1",
+          "compile": false
+        },
+        {
+          "id": "R004",
+          "route": "anonymous",
+          "code": "r=Page.ResPage62_f48cd82f84b648a89f0148cd.getUrl();",
+          "expected": "/apex/respage62_f48cd82f84b648a89f0148cd",
+          "compile": false
+        },
+        {
+          "id": "R005",
+          "route": "anonymous",
+          "code": "Set<String> names=new Set<String>{'ResMissing62_f48cd82f84b648a89f0148cd'}; r=Database.query('SELECT Id FROM ApexPage WHERE Name IN :names').size();",
+          "expected": "0",
+          "compile": false
+        },
+        {
+          "id": "R006",
+          "route": "anonymous",
+          "code": "r=[SELECT COUNT() FROM Document WHERE DeveloperName='ResMissing62_f48cd82f84b648a89f0148cd'];",
+          "expected": "0",
+          "compile": false
+        },
+        {
+          "id": "C001",
+          "route": "anonymous",
+          "code": "PageReference missing=Page.ResMissing62_f48cd82f84b648a89f0148cd; pq.out('C001',missing.getUrl());",
+          "expected": "COMPILE_ERROR\tline 6: Page does not exist: ResMissing62_f48cd82f84b648a89f0148cd",
+          "compile": true
+        }
+      ],
+      "named": {
+        "directory": "document_source_loading/named-api62",
+        "sha256": {
+          "R001.cls": "66ebab33e0a8b10a1a59a4de23656ecfd74d3fbab4fb87dfec8f32883a47e3ec",
+          "R002.cls": "f6fc71e12b5db019bf8b87dab65d162eef7a460f89ccf96ae2fd1a72ddd23ab3",
+          "R003.cls": "0198c5b7f3d9d76127372c3713015eebae8823de2bb13d6d23e38a9e3e865cac",
+          "R004.cls": "ffcc60d6b79999f7769d90baa9bfef27efcdce88ce871535ad6dc9aa4481c52c",
+          "R005.cls": "a9e226fc440eff169f87e288bc57717788c28e01fd73053f5451a22c015c0273",
+          "R006.cls": "527e8b4a854cc0472ed3341a74228ade7c83d7329a550a0d231ba8ffb0989b81",
+          "R007.cls": "5ab81a53b90ffecee5d98d9ecd2d0749228b2935b0d70a9b5408557238e77e9f",
+          "R008.cls": "6434b9e2cabd30842bd15a13e4e2b68350af73afed419b054591466208eb5a7e",
+          "R009.cls": "2abac65d6fbf1c654a7ad4cea5824e2c589b755b397a01dc901f2a55f9b60bb7",
+          "R010.cls": "83eb2dbb65dbdb645d0e9372454ac5c32683db26e411329b6b14ae0073754d3c",
+          "S001.cls": "83f884b82fba069fb2e2e59e6d08f091915db03c8d77b9c1217436042812c0e4",
+          "S002.cls": "da94ddb1eca8a2626e094dc289e8d56eb03acd14c55a4fa52b508fa6ae388262",
+          "C001.cls": "6fcff2c215b22e0882c9b681fc0dff92cfd0db3e9b9cc24ea3a01a5cd2b25c9f",
+          "source-manifest.json": "a240004a0d88a0f376edbb162bc2a87e068c70fcadc4d129ce2a65bad6d4bf18",
+          "org.tsv": "e71795d29dc3185df74facd2d8915243979121ebeea514326dc20fb9c2b4b7d6",
+          "compile.tsv": "4d65100b8432d3fc24a72dfea88c398b37842ed5cc70b14831e6d1663d3da0c2",
+          "native-test-results.json": "7ea487ab10ebb4b7a3492f507fafbf0c35c34fbdf2a36bd660f3bfb942586696",
+          "C001.compiler.json": "791a5baea5fca7f4b1359cd25a803639c4598fbf41adf681ee4c7a3b560a0ed2"
+        }
+      },
+      "pageParamsCases": [
+        {
+          "id": "R011",
+          "route": "anonymous",
+          "code": "Test.setCurrentPage(Page.ResPage62_f48cd82f84b648a89f0148cd); ApexPages.currentPage().getParameters().put('id','001000000000001AAA'); r=ApexPages.currentPage().getUrl();",
+          "expected": "EXC|System.StringException|Test.setCurrentPage() can only be called from testMethods",
+          "compile": false
+        },
+        {
+          "id": "R012",
+          "route": "anonymous",
+          "code": "Test.setCurrentPage(new PageReference('/apex/ResPage62_f48cd82f84b648a89f0148cd')); ApexPages.currentPage().getParameters().put('id','001000000000001AAA'); r=ApexPages.currentPage().getUrl();",
+          "expected": "EXC|System.StringException|Test.setCurrentPage() can only be called from testMethods",
+          "compile": false
+        },
+        {
+          "id": "C001",
+          "route": "anonymous",
+          "code": "PageReference missing=Page.ResMissing62_f48cd82f84b648a89f0148cd; Test.setCurrentPage(missing); r=ApexPages.currentPage().getUrl();",
+          "expected": "COMPILE_ERROR\tline 6: Page does not exist: ResMissing62_f48cd82f84b648a89f0148cd",
+          "compile": true
+        }
+      ],
+      "pageParamsAnonymous": {
+        "directory": "document_source_loading/page-params-anonymous-api62",
+        "sha256": {
+          "org.tsv": "97f1f6b1c6d3a058aa3a5451f33ad85407441615723f2cb2df7b6b536fd78ef8",
+          "runtime.apex": "c94835d3197f1b38c38547482292c75b6eea68ec96ec525d4c5b9fb7b777badf",
+          "compile/C001.apex": "5433602bf37e5223bd8f264de4ea833822e88159f31a52933c65b6951e97f484"
+        }
+      },
+      "pageParamsNamed": {
+        "directory": "document_source_loading/page-params-named-api62",
+        "sha256": {
+          "R011.cls": "26c758403a6fab40c4e85e5e01a76aac30cf5d98923fbe154faacc18d6e56d04",
+          "R012.cls": "e00c91876fc12c882b8cf0ce873da583a3dc86ccf9f491cb0cc18a90f1d77c95",
+          "C001.cls": "f5484b59b042fc3ae74b3a26e9203b35943a2f062bf27f9a47576acd4761078e",
+          "C001.compiler.json": "791a5baea5fca7f4b1359cd25a803639c4598fbf41adf681ee4c7a3b560a0ed2",
+          "source-manifest.json": "1a18b25f6394be9605c9913b244f69cbcf9f2f8f5fb0d3218061bfd6582b348f",
+          "org.tsv": "b998fcd6f8e0e9e82982d2bdbd46ccbe0d18b02463a1ca0b965542f6f100e5f1",
+          "compile.tsv": "02d29725bc6faae3ec365e463a29d92425fde67ca5961f4adb040e230c1e39eb",
+          "native-test-results.json": "f8396fd81804332c463affbc010f72f9555321a8bc5c9c7e220e23c1e1c13fb7"
+        }
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "project": "document_source_loading/api67",
+      "cases": [
+        {
+          "id": "R001",
+          "route": "anonymous",
+          "code": "r=[SELECT COUNT() FROM Document WHERE DeveloperName='ResPic67_f48cd82f84b648a89f0148cd'];",
+          "expected": "1",
+          "compile": false
+        },
+        {
+          "id": "R002",
+          "route": "anonymous",
+          "code": "Document d=[SELECT Name,DeveloperName,Type,BodyLength FROM Document WHERE DeveloperName='ResPic67_f48cd82f84b648a89f0148cd' LIMIT 1]; r=d.Name+'|'+d.DeveloperName+'|'+d.Type+'|'+String.valueOf(d.BodyLength>0);",
+          "expected": "ResPic67_f48cd82f84b648a89f0148cd|ResPic67_f48cd82f84b648a89f0148cd|png|true",
+          "compile": false
+        },
+        {
+          "id": "R003",
+          "route": "anonymous",
+          "code": "Set<String> names=new Set<String>{'ResPage67_f48cd82f84b648a89f0148cd'}; r=Database.query('SELECT Id,Name FROM ApexPage WHERE Name IN :names').size();",
+          "expected": "1",
+          "compile": false
+        },
+        {
+          "id": "R004",
+          "route": "anonymous",
+          "code": "r=Page.ResPage67_f48cd82f84b648a89f0148cd.getUrl();",
+          "expected": "/apex/respage67_f48cd82f84b648a89f0148cd",
+          "compile": false
+        },
+        {
+          "id": "R005",
+          "route": "anonymous",
+          "code": "Set<String> names=new Set<String>{'ResMissing67_f48cd82f84b648a89f0148cd'}; r=Database.query('SELECT Id FROM ApexPage WHERE Name IN :names').size();",
+          "expected": "0",
+          "compile": false
+        },
+        {
+          "id": "R006",
+          "route": "anonymous",
+          "code": "r=[SELECT COUNT() FROM Document WHERE DeveloperName='ResMissing67_f48cd82f84b648a89f0148cd'];",
+          "expected": "0",
+          "compile": false
+        },
+        {
+          "id": "C001",
+          "route": "anonymous",
+          "code": "PageReference missing=Page.ResMissing67_f48cd82f84b648a89f0148cd; pq.out('C001',missing.getUrl());",
+          "expected": "COMPILE_ERROR\tline 6: Page does not exist: ResMissing67_f48cd82f84b648a89f0148cd",
+          "compile": true
+        }
+      ],
+      "named": {
+        "directory": "document_source_loading/named-api67",
+        "sha256": {
+          "R001.cls": "2a11e35c5643cdd01341d6e0f0f07fab181e915d0fec67f51ea2f4f73355ad04",
+          "R002.cls": "722fc5fc2bc1a1d7b3ef093b7022d051ffb38c849aadc8f0c086e153147ad8b2",
+          "R003.cls": "98c41fae9d8a3049fb2c5bd0c40c1ef8bdf0c2cac2ad2f53b1688e45c4b55da6",
+          "R004.cls": "3231723b2094ef81750142e5bd8104645df11faa647333a8d9f19ad3a0f2f7a0",
+          "R005.cls": "e6e104231a4649f118af89577d401a26c5e2b5ba3782ade278eb5d298a0264ef",
+          "R006.cls": "4259574795dc9fc7729822b3ca03ccce09450c8407436bd1ba992b8f3725bf13",
+          "R007.cls": "e1b9c7118f4e46757b13bc5e9462fc1f0c442c7baaeb709b97ea81645596e79c",
+          "R008.cls": "654ee0633e834604c675a141241b9526d7289037f94982ad3bfa77268af454c6",
+          "R009.cls": "3c46d9e79e3bad58cdccdf5a95ff6f93536ec1f2e9bec68c0f3c85c1bbabe00e",
+          "R010.cls": "27e845b4cc8ce9310dfed524a8fe8e1e31ead07a42337a31c8d8b7c9c1682014",
+          "S001.cls": "a2bced66f985bbcfa178fa542b5632f74681dbd0015a47cf905d5cd07feaef5f",
+          "S002.cls": "10a4fee1d92eb74c2d3e678993e2daa75bd4e718ad7f9f2ebecfe507637745f4",
+          "C001.cls": "e77edc3cc4aa6d993cd402f882764053e3b1427080cbd2aac526643166fe98aa",
+          "source-manifest.json": "e4569a77e608b1987b69a84832ee93defdda3f5bde1ad543db2415d4bb43e705",
+          "org.tsv": "9d93f1fc97f5a47a7b2ccba853367daf1529ea7487ceba28ce161ff14208b3e0",
+          "compile.tsv": "5d8c4f15d53d2b7ddb9872bca16e1bc88524676cd2ed145fa4a76fa279539dbc",
+          "native-test-results.json": "35736fa9806d7c902ae3c46961ba1be9f4142403abdf4a452552a59b45e80772",
+          "C001.compiler.json": "c1723bbf83696a43d4cb657d44d65ca1f4148a43269e40e9755abe181a8c62b7"
+        }
+      },
+      "pageParamsCases": [
+        {
+          "id": "R011",
+          "route": "anonymous",
+          "code": "Test.setCurrentPage(Page.ResPage67_f48cd82f84b648a89f0148cd); ApexPages.currentPage().getParameters().put('id','001000000000001AAA'); r=ApexPages.currentPage().getUrl();",
+          "expected": "EXC|System.StringException|Test.setCurrentPage() can only be called from testMethods",
+          "compile": false
+        },
+        {
+          "id": "R012",
+          "route": "anonymous",
+          "code": "Test.setCurrentPage(new PageReference('/apex/ResPage67_f48cd82f84b648a89f0148cd')); ApexPages.currentPage().getParameters().put('id','001000000000001AAA'); r=ApexPages.currentPage().getUrl();",
+          "expected": "EXC|System.StringException|Test.setCurrentPage() can only be called from testMethods",
+          "compile": false
+        },
+        {
+          "id": "C001",
+          "route": "anonymous",
+          "code": "PageReference missing=Page.ResMissing67_f48cd82f84b648a89f0148cd; Test.setCurrentPage(missing); r=ApexPages.currentPage().getUrl();",
+          "expected": "COMPILE_ERROR\tline 6: Page does not exist: ResMissing67_f48cd82f84b648a89f0148cd",
+          "compile": true
+        }
+      ],
+      "pageParamsAnonymous": {
+        "directory": "document_source_loading/page-params-anonymous-api67",
+        "sha256": {
+          "org.tsv": "3891860a8630974f6efe16f6f21eb5dc410223a23567f0dc7fdf15585e59e1be",
+          "runtime.apex": "c6ea4ea11dbe45fc3d681f923b249a524e88c2bdaf7dac1c26d612e32e9b4c78",
+          "compile/C001.apex": "d131da92c409f46c58c06c9f6c95f6179be939db0b44c421506ada74dd248be1"
+        }
+      },
+      "pageParamsNamed": {
+        "directory": "document_source_loading/page-params-named-api67",
+        "sha256": {
+          "R011.cls": "420f185c1af897f1e1eb7c3db7cebb87ad06dfeaeb7e1151d5bd8bd427c07fbe",
+          "R012.cls": "07f31261e59ba845d44e1fcef0fd13f23ad42db293b3f426a7c0121502de03e6",
+          "C001.cls": "95ae1c990ee2b685a6d319e5437fb2082dcad8b975b6647dc0d70b981ecc8a8b",
+          "C001.compiler.json": "c1723bbf83696a43d4cb657d44d65ca1f4148a43269e40e9755abe181a8c62b7",
+          "source-manifest.json": "96ea2ea40f13eb645ae642f99377bc96d5c3f8de5b9da3ed969f0246cb3828ae",
+          "org.tsv": "f5902cc334ae739234d8848daf1b189e3066cde51784dee507401ea08e898011",
+          "compile.tsv": "7f45c5c109a23f7068ec68311e2c85f12b97b8f03d51f3eee96be83aa5b39064",
+          "native-test-results.json": "5c00793db0a01adc5a699e617bf3e1ee450206fe6442ea30fe0d3bcf0055c07c"
+        }
+      }
+    }
+  ],
+  "pageParamsSource": "Native capture owned observation, owned capture exports: independent anonymous and @IsTest R011/R012/C001 at API62/67. Anonymous Test.setCurrentPage rejects outside testMethods; named Page token lowercase versus literal URL case preserved, both with id parameter."
+}

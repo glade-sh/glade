@@ -1,0 +1,15 @@
+<apex:page showHeader="false" sidebar="false" standardStylesheets="false" docType="html-5.0">
+<apex:includeLightning/>
+<span id="l14-vf-host-ready">L14_VF_READY_67.0</span>
+<div id="l14-vf-control-host"></div><pre id="l14-vf-events">[]</pre>
+<script>
+var l14events=[];
+function l14event(value){l14events.push(value);document.getElementById('l14-vf-events').textContent=JSON.stringify(l14events);}
+var l14case=new URLSearchParams(window.location.search).get('l14case') || 'page_object_Account_new';
+try {$Lightning.use('c:FamilyL14VFOut67',function(){
+ l14event({event:'use-callback'});
+ $Lightning.createComponent('c:familyL14VFControl67',{caseId:l14case},'l14-vf-control-host',function(cmp,status,error){
+  l14event({event:'create-callback',status:status === undefined ? '\u003cundefined\u003e' : status,error:error === undefined ? '\u003cundefined\u003e' : String(error),present:!!cmp});
+ });
+});}catch(error){l14event({event:'host-error',name:error.name,message:String(error.message)});}
+</script></apex:page>

@@ -72,11 +72,7 @@ func TestRequestBaseURLIgnoresUnsafeForwardedProto(t *testing.T) {
 
 func testSourceMetadata(t *testing.T) SourceMetadata {
 	t.Helper()
-	root := filepath.Join(".testdata-generated", strings.NewReplacer("/", "_", " ", "_").Replace(t.Name()))
-	if err := os.RemoveAll(root); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.RemoveAll(root) })
+	root := t.TempDir()
 	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalOne.cls"), "public class LocalOne {}")
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalTwo.cls"), "public class LocalTwo {}")
@@ -4859,7 +4855,12 @@ func TestToolingExecuteAnonymousLocalEventBusAndConnectApiStubs(t *testing.T) {
 	body := `{"anonymousBody":"EventBus.publish(new Account(Name = 'Local Event'));"}`
 	exec := httptest.NewRecorder()
 	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/tooling/executeAnonymous", strings.NewReader(body)))
-	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":false`)) || !bytes.Contains(exec.Body.Bytes(), []byte("platform events")) {
+	var eventResult map[string]any
+	if err := json.Unmarshal(exec.Body.Bytes(), &eventResult); err != nil {
+		t.Fatalf("decode executeAnonymous EventBus response: %v", err)
+	}
+	// A39 R170/S001: API 62/67 reject a typed Account publish at compile time.
+	if exec.Code != http.StatusOK || eventResult["compiled"] != false || eventResult["success"] != false || eventResult["compileProblem"] != "Argument must be a Platform Event sObject type." {
 		t.Fatalf("executeAnonymous event/connect status = %d body=%s", exec.Code, exec.Body.String())
 	}
 	if len(org.Objects["Account"].Records) != 0 {
@@ -5974,7 +5975,8 @@ func TestExecuteAnonymousUsesHeaderUserContext(t *testing.T) {
 	handler := New(&org)
 
 	payload, err := json.Marshal(map[string]string{"anonymousBody": `
-System.assertEquals('005000000000777', UserInfo.getUserId());
+// A30 J016 and A26 R008 (API 62/67): UserInfo.getUserId() returns 18 characters.
+System.assert('005000000000777AAA'.equals(UserInfo.getUserId()));
 System.assertEquals('trail@example.test', UserInfo.getUserName());
 System.assertEquals('trail-email@example.test', UserInfo.getUserEmail());
 insert new Account(Name = 'Header User');
@@ -6007,7 +6009,8 @@ func TestExecuteAnonymousUsesBearerUserContext(t *testing.T) {
 	handler := New(&org)
 
 	payload, err := json.Marshal(map[string]string{"anonymousBody": `
-System.assertEquals('005000000000778', UserInfo.getUserId());
+// A30 J016 and A26 R008 (API 62/67): UserInfo.getUserId() returns 18 characters.
+System.assert('005000000000778AAA'.equals(UserInfo.getUserId()));
 System.assertEquals('bearer@example.test', UserInfo.getUserName());
 System.assertEquals('bearer-email@example.test', UserInfo.getUserEmail());
 `})
@@ -6326,7 +6329,7 @@ func TestSalesforceErrorResponses(t *testing.T) {
 			path:          serverTestDataPath + "/query?q=SELECT%20FROM",
 			wantStatus:    http.StatusBadRequest,
 			wantCode:      "MALFORMED_QUERY",
-			wantMessageIn: "expected",
+			wantMessageIn: "SELECT requires at least one field",
 		},
 		{
 			name:          "dml required field",

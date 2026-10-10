@@ -16,19 +16,40 @@ import (
 
 func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
+	ignored := newSemaIgnoredText(body)
 	for _, match := range callPattern.FindAllStringSubmatchIndex(body, -1) {
-		if semaOffsetInIgnoredText(body, match[0]) {
+		if ignored.contains(match[0]) {
 			continue
 		}
 		callee := strings.TrimSpace(body[match[2]:match[3]])
 		if skipSemaCall(callee) {
+			// The text fallback needs the same narrow
+			// comparison gate as IR before skipped assertEquals calls exit.
+			if strings.EqualFold(callee, "System.assertEquals") && !isSemaConstructorCallAt(body, match[0]) {
+				scope := scopes.flatAtCopy(match[0])
+				if _, bound := scope[normalizeName("System")]; !bound {
+					args, haveArgs := callArgumentsAt(body, match[3])
+					if haveArgs && len(args) == 2 {
+						receiverType := resolveNestedTypeName(model, typ.Name, "System")
+						if d, rejected := semaTestCallDiagnostic(typ, receiverType, "assertEquals", semaArgTypes(args, scope, model), bodyOffset+match[2], bodyOffset+match[3], source, model); rejected {
+							diagnostics = append(diagnostics, d)
+						}
+					}
+				}
+			}
 			continue
 		}
 		if isSemaConstructorCallAt(body, match[0]) {
 			continue
 		}
 		args, haveArgs := callArgumentsAt(body, match[3])
-		scope := scopes.flatAt(match[0])
+		scope := scopes.flatAtCopy(match[0])
+		if receiver, _, ok := splitSemaMethodPath(callee); ok && scope[normalizeName(receiver)] == "" && !semaProjectTypeShadowsPlatform(model, receiver) {
+			if hidden := semaHTTPReferencedInvisibleType(receiver, model); hidden != "" {
+				diagnostics = append(diagnostics, semaHTTPDiagnostic(typ, "Type is not visible: "+hidden, bodyOffset+match[2], bodyOffset+match[3], source))
+				continue
+			}
+		}
 		if scope[semaCurrentTypeScopeKey] == "" {
 			scope[semaCurrentTypeScopeKey] = typ.Name
 		}
@@ -423,7 +444,7 @@ func semaResolvedMembersAllPlatformBacked(model *semaTypeMemberView, candidates 
 		return false
 	}
 	for _, candidate := range candidates {
-		owner, ok := model.lookup(normalizeName(candidate.owner))
+		owner, _, ok := semaLookupTypeMembers(model, candidate.owner)
 		if !ok || (!owner.dependency && !owner.sobject) {
 			return false
 		}
@@ -470,14 +491,26 @@ func resolveMemberMethodsSeen(model *semaTypeMemberView, typeName, method string
 	if !ok {
 		return nil
 	}
-	resolved := make([]resolvedMember, 0)
-	seenSignatures := make(map[string]bool)
-	if direct := members.methods[normalizeName(method)]; len(direct) > 0 {
+	direct := members.methods[normalizeName(method)]
+	resolved := make([]resolvedMember, 0, len(direct))
+	if len(direct) > 0 {
 		for _, member := range direct {
-			signature := methodSignatureKey(member)
-			seenSignatures[signature] = true
+			// Instantiate the platform Batchable contract before
+			// matching its signature to the concrete callback. Clone parameters
+			// so one item type cannot change the cached platform declaration.
+			if members.platform && semaDatabaseBatchableInterface(typeName) {
+				member.Parameters = append([]apexast.Parameter(nil), member.Parameters...)
+				member = semaInstantiateInterfaceMethod(member, typeName)
+			}
 			resolved = append(resolved, resolvedMember{owner: members.name, member: member})
 		}
+	}
+	if members.superClass == "" && len(members.interfaces) == 0 {
+		return resolved
+	}
+	seenSignatures := make(map[string]bool, len(resolved))
+	for _, direct := range resolved {
+		seenSignatures[methodSignatureKey(direct.member)] = true
 	}
 	for _, inherited := range resolveMemberMethodsSeen(model, members.superClass, method, seen) {
 		signature := methodSignatureKey(inherited.member)
@@ -490,7 +523,7 @@ func resolveMemberMethodsSeen(model *semaTypeMemberView, typeName, method string
 	for _, iface := range members.interfaces {
 		for _, inherited := range resolveMemberMethodsSeen(model, iface, method, seen) {
 			signature := methodSignatureKey(inherited.member)
-			if seenSignatures[signature] {
+			if seenSignatures[signature] || semaNarrowedBatchableExecuteImplemented(model, iface, inherited, resolved) {
 				continue
 			}
 			seenSignatures[signature] = true
@@ -498,6 +531,43 @@ func resolveMemberMethodsSeen(model *semaTypeMemberView, typeName, method string
 		}
 	}
 	return resolved
+}
+
+// Batchable<SObject> permits a concrete schema SObject as its execute scope.
+// Its implemented requirement is not an additional overload on the class.
+func semaNarrowedBatchableExecuteImplemented(model *semaTypeMemberView, iface string, required resolvedMember, candidates []resolvedMember) bool {
+	_, args := semaGenericBaseAndArgs(iface)
+	if !semaDatabaseBatchableInterface(iface) ||
+		len(args) != 1 || !strings.EqualFold(args[0], "SObject") ||
+		!semaDatabaseBatchableInterface(required.owner) ||
+		methodSignatureKey(required.member) != "execute/database.batchablecontext/list<sobject>" {
+		return false
+	}
+	contract, _, ok := semaLookupTypeMembers(model, iface)
+	if !ok || !contract.platform || contract.kind != apexast.DeclarationInterface {
+		return false
+	}
+	for _, candidate := range candidates {
+		method := candidate.member
+		owner, _, ok := semaLookupTypeMembers(model, candidate.owner)
+		if !ok || owner.kind != apexast.DeclarationClass ||
+			hasModifier(method.Modifiers, "static") || hasModifier(method.Modifiers, "abstract") ||
+			(!hasModifier(method.Modifiers, "public") && !hasModifier(method.Modifiers, "global")) ||
+			!strings.EqualFold(method.Type, "void") || len(method.Parameters) != 2 ||
+			!strings.EqualFold(method.Parameters[0].Type, "Database.BatchableContext") {
+			continue
+		}
+		scopeBase, scopeArgs := semaGenericBaseAndArgs(method.Parameters[1].Type)
+		if !strings.EqualFold(scopeBase, "List") || len(scopeArgs) != 1 {
+			continue
+		}
+		// Resolve the full type identity; a same-short-name Apex class is not
+		// a schema SObject and cannot implement this special contract.
+		if scope, _, ok := semaLookupTypeMembers(model, scopeArgs[0]); ok && scope.sobject {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, args []semaArg, start, end int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
@@ -668,10 +738,7 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		}
 		if visibilityDiagnostic, blocked := checkSemaMemberAccess(typ, member, callee, candidate, start, end, source, model); blocked {
 			accessible := make([]resolvedMember, 0, len(candidates))
-			for _, alternate := range candidates {
-				if !memberApplicable(alternate.member, argTypes, model) {
-					continue
-				}
+			for _, alternate := range applicableResolvedMembers(candidates, argTypes, model) {
 				if _, staticBlocked := checkSemaStaticAccessWithModel(typ, member, callee, alternate, receiverMode, start, end, source, model); staticBlocked {
 					continue
 				}
@@ -730,12 +797,38 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		return nil
 	}
 	return []diagnostic.Diagnostic{{
-		Severity: diagnostic.Error,
-		Code:     "GLADESEMA009",
-		Message:  fmt.Sprintf("%s %q has no matching overload for call %q with %d argument(s)", member.Kind, member.Name, callee, len(args)),
-		File:     typ.File,
-		Range:    semaRange(source, start, end),
+		Severity:      diagnostic.Error,
+		Code:          "GLADESEMA009",
+		NativeMessage: nativeNarrowedBatchableCallRejection(model, candidates, argTypes),
+		Message:       fmt.Sprintf("%s %q has no matching overload for call %q with %d argument(s)", member.Kind, member.Name, callee, len(args)),
+		File:          typ.File,
+		Range:         semaRange(source, start, end),
 	}}
+}
+
+// Type-system C004/C015 capture the wrong-scope rejection on a concrete narrowed
+// Batchable<SObject>. Other methods retain their existing diagnostic rendering.
+func nativeNarrowedBatchableCallRejection(model *semaTypeMemberView, candidates []resolvedMember, argTypes []string) string {
+	if len(argTypes) != 2 || !strings.EqualFold(argTypes[0], "null") || !strings.EqualFold(argTypes[1], "String") {
+		return ""
+	}
+	for _, candidate := range candidates {
+		if !strings.EqualFold(candidate.member.Name, "execute") {
+			continue
+		}
+		owner, _, ok := semaLookupTypeMembers(model, candidate.owner)
+		if !ok || owner.kind != apexast.DeclarationClass {
+			continue
+		}
+		for _, iface := range owner.interfaces {
+			for _, required := range resolveMemberMethods(model, iface, "execute") {
+				if semaNarrowedBatchableExecuteImplemented(model, iface, required, candidates) {
+					return fmt.Sprintf("Method does not exist or incorrect signature: void execute(%s) from the type %s", semaVisualforceArgumentTypes(argTypes), owner.name)
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func diagnoseDatabaseExecuteBatchArg(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, argTypes []string, start, end int, source string, model *semaTypeMemberView) (diagnostic.Diagnostic, bool) {
@@ -1203,6 +1296,9 @@ func staticAccessDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol,
 }
 
 func unsupportedLocalFeatureDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, feature string, start, end int, source string) diagnostic.Diagnostic {
+	if hidden := semaHTTPInvisibleType(feature); hidden != "" {
+		return semaHTTPDiagnostic(typ, "Type is not visible: "+hidden, start, end, source)
+	}
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
 		Code:     "GLADESEMA028",
@@ -1228,6 +1324,11 @@ func checkSemaMemberAccess(from typesys.TypeSymbol, context typesys.MemberSymbol
 		return diagnostic.Diagnostic{}, false
 	}
 	if from.IsTest && hasModifier(target.member.Modifiers, "testvisible") {
+		return diagnostic.Diagnostic{}, false
+	}
+	// C044-C047: only transient declarations participate in the implicit
+	// execute-anonymous enclosing type's private/protected access scope.
+	if owner, ok := model.lookupName(target.owner); ok && hasModifier(owner.modifiers, vm.AnonymousClassModifier) && (from.Name == "__GladeAnonymous" || hasModifier(from.Modifiers, vm.AnonymousClassModifier)) {
 		return diagnostic.Diagnostic{}, false
 	}
 	allowed := false
@@ -1325,11 +1426,79 @@ func callArgsMatch(params []apexast.Parameter, args []semaArg, scope map[string]
 	return true
 }
 
-func bestResolvedMemberByArgTypes(candidates []resolvedMember, argTypes []string, model *semaTypeMemberView) (resolvedMember, bool, bool) {
-	applicable := make([]resolvedMember, 0, len(candidates))
+// Type-system R001/R002/C009/C010: on single-argument untyped-null calls,
+// a derived static declaration takes precedence among applicable overloads. C002/C006/R009-R011 retain inherited overloads
+// when the derived parameter cannot accept the argument. C011 checks visibility
+// after selection, so an inaccessible derived method cannot fall back to a base.
+func applicableResolvedMembers(candidates []resolvedMember, argTypes []string, model *semaTypeMemberView) []resolvedMember {
+	return appendApplicableResolvedMembers(make([]resolvedMember, 0, len(candidates)), candidates, argTypes, model)
+}
+
+// Callers that only select a member can provide a small stack-backed buffer.
+// Keep the captured static preference shared with visibility fallback checks.
+func appendApplicableResolvedMembers(applicable, candidates []resolvedMember, argTypes []string, model *semaTypeMemberView) []resolvedMember {
 	for _, candidate := range candidates {
 		if memberApplicable(candidate.member, argTypes, model) {
 			applicable = append(applicable, candidate)
+		}
+	}
+	// These captures establish this preference for one untyped null. Other
+	// call shapes keep the existing conversion/specificity rules and owners.
+	if len(argTypes) != 1 || !strings.EqualFold(argTypes[0], "null") {
+		return applicable
+	}
+	preferred := make([]resolvedMember, 0, len(applicable))
+	for _, candidate := range applicable {
+		hidden := false
+		if hasModifier(candidate.member.Modifiers, "static") {
+			for _, other := range applicable {
+				if hasModifier(other.member.Modifiers, "static") &&
+					!strings.EqualFold(other.owner, candidate.owner) && semaIsSubclass(model, other.owner, candidate.owner) {
+					hidden = true
+					break
+				}
+			}
+		}
+		if !hidden {
+			preferred = append(preferred, candidate)
+		}
+	}
+	return preferred
+}
+
+func bestResolvedMemberByArgTypes(candidates []resolvedMember, argTypes []string, model *semaTypeMemberView) (resolvedMember, bool, bool) {
+	if len(candidates) == 1 {
+		if memberApplicable(candidates[0].member, argTypes, model) {
+			return candidates[0], true, false
+		}
+		return resolvedMember{}, false, false
+	}
+	var small [4]resolvedMember
+	applicable := small[:0]
+	if len(candidates) > len(small) {
+		applicable = make([]resolvedMember, 0, len(candidates))
+	}
+	applicable = appendApplicableResolvedMembers(applicable, candidates, argTypes, model)
+	if len(applicable) == 1 {
+		return applicable[0], true, false
+	}
+	// R167-R171/C010: calls containing only untyped nulls do not select the
+	// most-specific user overload. Calls with typed arguments follow normal scores.
+	if len(applicable) > 1 && !semaResolvedMembersAllPlatformBacked(model, applicable) {
+		onlyUntypedNulls := len(argTypes) > 0
+		for _, argType := range argTypes {
+			onlyUntypedNulls = onlyUntypedNulls && strings.EqualFold(argType, "null")
+		}
+		for i, argType := range argTypes {
+			if !onlyUntypedNulls || !strings.EqualFold(argType, "null") {
+				continue
+			}
+			paramType := semaCanonicalPlatformAlias(applicable[0].member.Parameters[i].Type)
+			for _, candidate := range applicable[1:] {
+				if !strings.EqualFold(paramType, semaCanonicalPlatformAlias(candidate.member.Parameters[i].Type)) {
+					return resolvedMember{}, false, true
+				}
+			}
 		}
 	}
 	if best, ok := bestResolvedMemberByExactObjectTieBreak(applicable, argTypes); ok {
@@ -1769,6 +1938,9 @@ func semaConversionScore(paramType, argType string, model *semaTypeMemberView) i
 	if strings.EqualFold(paramType, argType) {
 		return 1000
 	}
+	if strings.EqualFold(paramType, "Object") {
+		return 10
+	}
 	if strings.EqualFold(argType, "Database.QueryResult") && semaDynamicQueryResultAssignableTo(paramType, model) {
 		if base, _ := semaGenericBaseAndArgs(paramType); strings.EqualFold(base, "List") {
 			return 875
@@ -1836,16 +2008,16 @@ func semaNumericConversionScore(paramType, argType string) int {
 		case "long":
 			return 900
 		case "decimal":
-			return 800
-		case "double":
 			return 700
+		case "double":
+			return 800
 		}
 	case "long":
 		switch normalizeName(paramType) {
 		case "decimal":
-			return 800
-		case "double":
 			return 700
+		case "double":
+			return 800
 		}
 	case "decimal":
 		if strings.EqualFold(paramType, "Double") {
@@ -2032,7 +2204,7 @@ func semaPlatformAssignableToType(paramType, argType string, model *semaTypeMemb
 func semaStandardExceptionType(typeName string) bool {
 	typeName = strings.TrimPrefix(strings.TrimSpace(typeName), "System.")
 	switch normalizeName(typeName) {
-	case "assertionexception", "assertexception", "aurahandledexception", "asyncexception", "bigobjectexception", "calloutexception", "canvasexception", "dmlexception", "emailexception", "externalobjectexception", "illegalargumentexception", "illegalstateexception", "invalidheaderexception", "invalidparametervalueexception", "invalidreadonlyuserdmlexception", "jsonexception", "limitexception", "listexception", "mathexception", "noaccessexception", "nodatafoundexception", "nosuchelementexception", "nullpointerexception", "patternsyntaxexception", "queryexception", "requiredfeaturemissingexception", "searchexception", "securityexception", "sobjectexception", "stringexception", "typeexception", "xmlexception":
+	case "assertionexception", "assertexception", "aurahandledexception", "asyncexception", "bigobjectexception", "calloutexception", "canvasexception", "dmlexception", "emailexception", "externalobjectexception", "fatalcursorexception", "formulavalidationexception", "illegalargumentexception", "illegalstateexception", "invalidheaderexception", "invalidparametervalueexception", "invalidreadonlyuserdmlexception", "jsonexception", "limitexception", "listexception", "mathexception", "noaccessexception", "nodatafoundexception", "nosuchelementexception", "nullpointerexception", "patternsyntaxexception", "queryexception", "requiredfeaturemissingexception", "searchexception", "securityexception", "sobjectexception", "stringexception", "transientcursorexception", "typeexception", "xmlexception":
 		return true
 	default:
 		base := shortNestedTypeName(typeName)
@@ -2162,6 +2334,14 @@ func semaQualifyStandardSObjectType(typeName string, model *semaTypeMemberView) 
 	return "Schema." + members.name
 }
 
+func semaRunAsArgumentAllowed(typeName string, model *semaTypeMemberView) bool {
+	typeName = semaQualifyStandardSObjectType(semaCanonicalPlatformAlias(typeName), model)
+	// The contract names the platform SObject, not a shadowable source User.
+	// Qualify the argument through the model so an unrelated Apex User stays User.
+	return typeName == "" || strings.EqualFold(typeName, "null") || strings.EqualFold(typeName, "Schema.User") ||
+		strings.EqualFold(typeName, "Version") || strings.EqualFold(typeName, "Package.Version")
+}
+
 func semaCanonicalAssignableType(typeName string) string {
 	typeName = semaCanonicalPlatformAlias(normalizeArrayType(strings.TrimSpace(typeName)))
 	base, args := semaGenericBaseAndArgs(typeName)
@@ -2200,28 +2380,25 @@ func isSemaSObjectLike(typeName string, model *semaTypeMemberView) bool {
 	if schemaName, ok := semaSchemaQualifiedTypeName(typeName); ok {
 		return isSemaSObjectLike(schemaName, model)
 	}
-	if strings.EqualFold(typeName, "SObject") {
+	// Type names are ASCII identifiers, so one lowercase normalization is the
+	// same test as folding the raw name at every comparison below.
+	normalized := normalizeName(typeName)
+	switch normalized {
+	case "sobject", "aggregateresult":
 		return true
-	}
-	if strings.EqualFold(typeName, "AggregateResult") {
-		return true
-	}
-	switch normalizeName(typeName) {
 	case "object", "string", "id", "boolean", "integer", "long", "double", "decimal", "date", "datetime", "time", "blob", "type", "exception":
 		return false
 	}
-	if strings.HasSuffix(normalizeName(typeName), "__c") || strings.HasSuffix(normalizeName(typeName), "__e") || strings.HasSuffix(normalizeName(typeName), "__mdt") {
+	if strings.HasSuffix(normalized, "__c") || strings.HasSuffix(normalized, "__e") || strings.HasSuffix(normalized, "__mdt") {
 		return true
 	}
-	if isCommonSemaSObjectName(typeName) {
+	if isCommonSemaSObjectName(normalized) {
 		return true
 	}
-	for _, known := range vm.CommonSObjectTypeNames() {
-		if strings.EqualFold(typeName, known) {
-			return true
-		}
+	if vm.IsCommonSObjectTypeName(normalized) {
+		return true
 	}
-	if members, ok := model.lookup(normalizeName(typeName)); ok {
+	if members, ok := model.lookup(normalized); ok {
 		return members.sobject
 	}
 	return false
@@ -2407,11 +2584,22 @@ func semaLookupTypeMembers(model *semaTypeMemberView, typeName string) (typeMemb
 	}
 	if semaExplicitPlatformQualifiedName(typeName) {
 		canonical := semaCanonicalPlatformAlias(typeName)
+		// Location is also a standard SObject. Its explicit System alias must
+		// bypass the SObject-first lazy lookup and retain the platform class.
 		if strings.EqualFold(canonical, "Location") && model != nil && model.state != nil && model.state.platform != nil {
 			if model.state.platform.platform != nil {
 				if symbol, ok := model.state.platform.platform.symbolsByKey[normalizeName(canonical)]; ok {
 					return semaTypeMembersFromPlatformSymbol(*symbol), normalizeName(canonical), true
 				}
+			}
+		}
+		if members, ok := model.lookup(normalizeName(typeName)); ok {
+			return semaEnsureStandardSObjectTypeMembers(model, normalizeName(typeName), members), normalizeName(typeName), true
+		}
+		if model != nil && model.state != nil && model.state.platform != nil {
+			if members, ok := model.state.platform.lookup(normalizeName(canonical)); ok {
+				members.name = typeName
+				return members, normalizeName(typeName), true
 			}
 		}
 	}
@@ -2983,4 +3171,162 @@ func semaDescribeFieldStringProperty(part string) bool {
 	default:
 		return false
 	}
+}
+
+// A missing source member cannot fall back to the platform class it shadows.
+// Callers resolve source/inherited candidates and missing superclasses first.
+// Dotted method paths still need the later field/receiver resolution pass.
+func semaShadowMissingMethodDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiver, method, callee string, args []string, start, end int, source string, model *semaTypeMemberView) (diagnostic.Diagnostic, bool) {
+	if model == nil || model.state == nil || model.state.base == nil || strings.Contains(receiver, ".") || strings.Contains(method, ".") || semaObjectMethodName(method) || strings.EqualFold(method, "getClass") {
+		return diagnostic.Diagnostic{}, false
+	}
+	// Class literals are platform Type values even beside a source Type class.
+	// Do not resolve their reflection methods against that unrelated source.
+	if _, literal := semaClassLiteralMethod(callee); literal || strings.EqualFold(semaCanonicalPlatformAlias(receiver), "Type") {
+		return diagnostic.Diagnostic{}, false
+	}
+	if selected, ok := semaSourceTopLevelType(model, receiver); !ok || selected.kind != apexast.DeclarationClass {
+		return diagnostic.Diagnostic{}, false
+	}
+	// Enum values may carry a canonical short name even when their expression
+	// was explicitly platform-qualified; those are not source class receivers
+	// and must retain their existing enum-method resolution.
+	collision := false
+	for _, target := range semaPlatformTypesNamed(model, receiver) {
+		collision = collision || target.kind == apexast.DeclarationClass
+	}
+	if !collision {
+		return diagnostic.Diagnostic{}, false
+	}
+	return semaShadowMissingMethod(typ, member, callee, method, receiver, args, start, end, source), true
+}
+
+func semaShadowMissingMethod(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee, method, receiver string, args []string, start, end int, source string) diagnostic.Diagnostic {
+	d := unknownCallDiagnostic(typ, member, callee, start, end, source)
+	d.NativeMessage = fmt.Sprintf("Method does not exist or incorrect signature: void %s(%s) from the type %s", method, semaVisualforceArgumentTypes(args), receiver)
+	return d
+}
+
+// semaSourceTopLevelType returns the project top-level type that a simple
+// name selects; platform, dependency and SObject types are not shadows.
+func semaSourceTopLevelType(model *semaTypeMemberView, name string) (typeMembers, bool) {
+	if model == nil || strings.Contains(name, ".") {
+		return typeMembers{}, false
+	}
+	selected, ok := model.lookupName(name)
+	if !ok || selected.dependency || selected.platform || selected.sobject || selected.nestingDepth != 0 || !strings.EqualFold(semaShortTypeKey(selected.name), name) {
+		return typeMembers{}, false
+	}
+	return selected, true
+}
+
+// semaPlatformTypesNamed returns the platform classes and enums with this
+// simple name. Candidate keys include aliases, so the simple name must match.
+func semaPlatformTypesNamed(model *semaTypeMemberView, name string) []typeMembers {
+	if model == nil || model.state == nil || model.state.platform == nil {
+		return nil
+	}
+	var out []typeMembers
+	for _, key := range model.state.platform.candidateKeys(normalizeName(name)) {
+		if target, ok := model.state.platform.lookup(key); ok && target.platform && (target.kind == apexast.DeclarationClass || target.kind == apexast.DeclarationEnum) && strings.EqualFold(semaShortTypeKey(target.name), name) {
+			out = append(out, target)
+		}
+	}
+	return out
+}
+
+// semaShadowsPlatformType reports a project top-level type whose simple name
+// is also a platform class or enum, such as a source HttpRequest or Type.
+func semaShadowsPlatformType(model *semaTypeMemberView, name string) bool {
+	_, ok := semaSourceTopLevelType(model, name)
+	return ok && len(semaPlatformTypesNamed(model, name)) != 0
+}
+
+// Native r2 C008-C019: beside a project type that shadows a platform type
+// name, a missing method on a class literal (System.Type), on a qualified
+// platform enum value, or on a value of the shadowing project enum is rejected
+// with the receiver's native type name. Other receivers keep their existing
+// permissive resolution; no native row observes them.
+func (a *Analyzer) semaIRShadowReceiverMissingMethod(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, start, end int, source string, model *semaTypeMemberView) (diagnostic.Diagnostic, bool) {
+	method := strings.TrimPrefix(expr.Callee, "__safe_call:")
+	receiverType := ""
+	if idx := strings.Index(strings.ToLower(method), ".class."); idx > 0 && expr.Left == nil {
+		literal := method[:idx]
+		method = method[idx+len(".class."):]
+		if !semaShadowsPlatformType(model, literal) && !semaShadowsPlatformType(model, "Type") {
+			return diagnostic.Diagnostic{}, false
+		}
+		catalogued, known := false, false
+		for _, target := range semaPlatformTypesNamed(model, "Type") {
+			if target.kind == apexast.DeclarationClass {
+				catalogued, known = true, known || len(target.methods[normalizeName(method)]) != 0
+			}
+		}
+		if !catalogued || known {
+			return diagnostic.Diagnostic{}, false
+		}
+		receiverType = "System.Type"
+	} else {
+		receiver := ir.Expr{}
+		if expr.Left != nil {
+			receiver = *expr.Left
+		} else if path, name, ok := splitSemaMethodPath(method); ok {
+			receiver, method = ir.Expr{Kind: ir.ExprVariable, Name: path}, name
+		}
+		receiverType = semaShadowEnumReceiverType(receiver, scope, model)
+		if receiverType == "" {
+			return diagnostic.Diagnostic{}, false
+		}
+		if _, known := semaEnumMethodSignature(model, receiverType, method); known {
+			return diagnostic.Diagnostic{}, false
+		}
+	}
+	if method == "" || strings.Contains(method, ".") || semaObjectMethodName(method) {
+		return diagnostic.Diagnostic{}, false
+	}
+	return semaShadowMissingMethod(typ, member, expr.Callee, method, receiverType, irCallArgTypes(a, expr.Args, scope, model, typ.Name), start, end, source), true
+}
+
+// semaShadowEnumReceiverType names an enum receiver for the rule above: a
+// qualified platform enum (R013-R016) whose simple name a project type
+// shadows, or a project enum (R017-R019) that shadows a platform type name.
+// Conditional receivers qualify only when both branches name the same enum.
+func semaShadowEnumReceiverType(receiver ir.Expr, scope irSemaScope, model *semaTypeMemberView) string {
+	if receiver.Kind == ir.ExprCall && receiver.Callee == "__ternary" && len(receiver.Args) == 3 {
+		whenTrue := semaShadowEnumReceiverType(receiver.Args[1], scope, model)
+		if whenTrue != "" && strings.EqualFold(whenTrue, semaShadowEnumReceiverType(receiver.Args[2], scope, model)) {
+			return whenTrue
+		}
+		return ""
+	}
+	if receiver.Kind != ir.ExprVariable || receiver.Name == "" {
+		return ""
+	}
+	typeName, scoped := scope.lookup(receiver.Name)
+	if !scoped {
+		root, _, _ := strings.Cut(receiver.Name, ".")
+		dot := strings.LastIndex(receiver.Name, ".")
+		if _, rootScoped := scope.lookup(root); rootScoped || dot <= 0 {
+			return ""
+		}
+		typeName = receiver.Name[:dot]
+	}
+	display := ""
+	if semaExplicitPlatformEnumType(typeName) {
+		// A platform class with this simple name (System.Type) is not an enum.
+		short, enum, class := semaShortTypeKey(typeName), false, false
+		for _, target := range semaPlatformTypesNamed(model, short) {
+			enum, class = enum || target.kind == apexast.DeclarationEnum, class || target.kind == apexast.DeclarationClass
+		}
+		if enum && !class && semaShadowsPlatformType(model, short) {
+			display = typeName
+		}
+	} else if selected, ok := semaSourceTopLevelType(model, typeName); ok && selected.kind == apexast.DeclarationEnum && len(semaPlatformTypesNamed(model, typeName)) != 0 {
+		display = selected.name
+	}
+	// An unbound dotted receiver must be one of that enum's values.
+	if display != "" && !scoped && semaEnumValuePathType(model, receiver.Name) == "" {
+		return ""
+	}
+	return display
 }

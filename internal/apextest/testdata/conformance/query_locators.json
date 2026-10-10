@@ -1,0 +1,2337 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "Declarations": {
+    "QL": "public class QL {\n public String names(List<SObject> rows) {\n  List<String> values=new List<String>();\n  for(SObject row:rows) values.add(String.valueOf(row.get('Name')));\n  return String.join(values,'|');\n }\n public String walk(Database.QueryLocator q) {\n  List<SObject> rows=new List<SObject>();\n  Database.QueryLocatorIterator it=q.iterator();\n  while(it.hasNext()) rows.add(it.next());\n  return names(rows);\n }\n}"
+  },
+  "Prelude": "QL helper=new QL();\nList<Account> seed=new List<Account>{\n new Account(Name='A34-Alpha',AccountNumber='A34-oracle-20261005',NumberOfEmployees=0),\n new Account(Name='A34-Beta',AccountNumber='A34-oracle-20261005',NumberOfEmployees=1),\n new Account(Name='A34-Gamma',AccountNumber='A34-oracle-20261005',NumberOfEmployees=2),\n new Account(Name='A34-Omega',AccountNumber='A34-oracle-20261005',NumberOfEmployees=null)\n};\ninsert seed;\nSet<Id> owned=new Map<Id,Account>(seed).keySet();\nString text='SELECT Id,Name,NumberOfEmployees FROM Account WHERE Id IN :owned ORDER BY Name';\nString emptyText='SELECT Id,Name FROM Account WHERE Id IN :owned AND Name=\\'A34-Absent\\'';\n",
+  "Cases": [
+    {
+      "ID": "R001",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+''); r=helper.walk(q);",
+      "Expected": "A34-Alpha|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R002",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+' LIMIT 0'); r=helper.walk(q);",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R003",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+' LIMIT 1'); r=helper.walk(q);",
+      "Expected": "A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R004",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+' LIMIT 2'); r=helper.walk(q);",
+      "Expected": "A34-Alpha|A34-Beta",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R005",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+' LIMIT 4'); r=helper.walk(q);",
+      "Expected": "A34-Alpha|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R006",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+' LIMIT 5'); r=helper.walk(q);",
+      "Expected": "A34-Alpha|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R007",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+' LIMIT 2 OFFSET 0'); r=helper.walk(q);",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R008",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+' LIMIT 2 OFFSET 1'); r=helper.walk(q);",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R009",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+' LIMIT 2 OFFSET 3'); r=helper.walk(q);",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R010",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+' LIMIT 2 OFFSET 4'); r=helper.walk(q);",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R011",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+' LIMIT 2 OFFSET 5'); r=helper.walk(q);",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R012",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text+' LIMIT 1 OFFSET 2000'); r=helper.walk(q);",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R014",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); r=helper.walk(q);",
+      "Expected": "A34-Alpha|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R015",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); r=q.iterator().hasNext();",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R016",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); r=q.getQuery()==text;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R020",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text,AccessLevel.USER_MODE); r=helper.walk(q);",
+      "Expected": "A34-Alpha|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R021",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text,AccessLevel.USER_MODE); r=q.iterator().hasNext();",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R022",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text,AccessLevel.USER_MODE); r=q.getQuery()==text;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R023",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(emptyText); r=helper.walk(q);",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R024",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(emptyText); r=q.iterator().hasNext();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R025",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(emptyText); r=q.getQuery()==emptyText;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R029",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(emptyText,AccessLevel.USER_MODE); r=helper.walk(q);",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R030",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(emptyText,AccessLevel.USER_MODE); r=q.iterator().hasNext();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R031",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(emptyText,AccessLevel.USER_MODE); r=q.getQuery()==emptyText;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R032",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT Id,Name FROM Account WHERE Id IN :owned ORDER BY Name DESC'); r=helper.walk(q);",
+      "Expected": "A34-Omega|A34-Gamma|A34-Beta|A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R033",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT Id,Name FROM Account WHERE Id IN :owned ORDER BY Name DESC'); r=q.iterator().hasNext();",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R034",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT Id,Name FROM Account WHERE Id IN :owned ORDER BY Name DESC'); r=q.getQuery()=='SELECT Id,Name FROM Account WHERE Id IN :owned ORDER BY Name DESC';",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R038",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT Id,Name FROM Account WHERE Id IN :owned ORDER BY Name DESC',AccessLevel.USER_MODE); r=helper.walk(q);",
+      "Expected": "A34-Omega|A34-Gamma|A34-Beta|A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R039",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT Id,Name FROM Account WHERE Id IN :owned ORDER BY Name DESC',AccessLevel.USER_MODE); r=q.iterator().hasNext();",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R040",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT Id,Name FROM Account WHERE Id IN :owned ORDER BY Name DESC',AccessLevel.USER_MODE); r=q.getQuery()=='SELECT Id,Name FROM Account WHERE Id IN :owned ORDER BY Name DESC';",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R041",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator([SELECT Id,Name FROM Account WHERE Id IN :owned ORDER BY Name]); r=helper.walk(q);",
+      "Expected": "A34-Alpha|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R042",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator([SELECT Id,Name FROM Account WHERE Id IN :owned LIMIT 0]); r=q.iterator().hasNext();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R043",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Iterator<SObject> it=q.iterator(); r=((Account)it.next()).Name;",
+      "Expected": "A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R044",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator it=q.iterator(); r=String.valueOf(it.hasNext())+'|'+it.hasNext()+'|'+((Account)it.next()).Name;",
+      "Expected": "true|true|A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R045",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); r=helper.walk(q)+'/'+helper.walk(q);",
+      "Expected": "A34-Alpha|A34-Beta|A34-Gamma|A34-Omega/",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R046",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator a=q.iterator(),b=q.iterator(); a.next(); r=((Account)a.next()).Name+'|'+((Account)b.next()).Name;",
+      "Expected": "EXC|System.NoSuchElementException|Iterator has no more elements",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R047",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator it=q.iterator(); Integer n=0; while(it.hasNext()){it.next();n++;if(n==2)break;} r=String.valueOf(n)+'|'+((Account)it.next()).Name;",
+      "Expected": "2|A34-Gamma",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R048",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator it=q.iterator(); List<String> names=new List<String>(); while(it.hasNext()){Account a=(Account)it.next();if(a.NumberOfEmployees==1)continue;names.add(a.Name);} r=String.join(names,'|');",
+      "Expected": "A34-Alpha|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R049",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator it=q.iterator(); r=it.next() instanceof Account;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R050",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator it=q.iterator(); Contact a=(Contact)it.next(); r=a==null;",
+      "Expected": "EXC|System.TypeException|Invalid conversion from runtime type Account to Contact",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R051",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); SObject a=q.iterator().next(); r=a.getSObjectType()==Account.SObjectType;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R052",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :owned'); r=q.iterator().next().get('Name');",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Name",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R053",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=c.getNumRecords();",
+      "Expected": "4",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R055",
+      "Code": "Database.Cursor c=Database.getCursor(text,AccessLevel.USER_MODE); r=c.getNumRecords();",
+      "Expected": "4",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R056",
+      "Code": "Database.Cursor c=Database.getCursor(emptyText); r=c.getNumRecords();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R058",
+      "Code": "Database.Cursor c=Database.getCursor(emptyText,AccessLevel.USER_MODE); r=c.getNumRecords();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R059",
+      "Code": "Database.Cursor c=Database.getCursor(text+' LIMIT 1'); r=c.getNumRecords();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R061",
+      "Code": "Database.Cursor c=Database.getCursor(text+' LIMIT 1',AccessLevel.USER_MODE); r=c.getNumRecords();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R062",
+      "Code": "Database.Cursor c=Database.getCursor(text+' LIMIT 2 OFFSET 1'); r=c.getNumRecords();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R064",
+      "Code": "Database.Cursor c=Database.getCursor(text+' LIMIT 2 OFFSET 1',AccessLevel.USER_MODE); r=c.getNumRecords();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R065",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(-1,-1));",
+      "Expected": "EXC|System.InvalidParameterValueException|Start position cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R066",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(-1,0));",
+      "Expected": "EXC|System.InvalidParameterValueException|Start position cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R067",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(-1,1));",
+      "Expected": "EXC|System.InvalidParameterValueException|Start position cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R068",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(-1,2));",
+      "Expected": "EXC|System.InvalidParameterValueException|Start position cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R069",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(-1,4));",
+      "Expected": "EXC|System.InvalidParameterValueException|Start position cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R070",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(-1,5));",
+      "Expected": "EXC|System.InvalidParameterValueException|Start position cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R071",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(-1,null));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R072",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(0,-1));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch size cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R073",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(0,0));",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R074",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(0,1));",
+      "Expected": "A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R075",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(0,2));",
+      "Expected": "A34-Alpha|A34-Beta",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R076",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(0,4));",
+      "Expected": "A34-Alpha|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R077",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(0,5));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 5",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R078",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(0,null));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R079",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(1,-1));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch size cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R080",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(1,0));",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R081",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(1,1));",
+      "Expected": "A34-Beta",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R082",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(1,2));",
+      "Expected": "A34-Beta|A34-Gamma",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R083",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(1,4));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 5",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R084",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(1,5));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 6",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R085",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(1,null));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R086",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(3,-1));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch size cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R087",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(3,0));",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R088",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(3,1));",
+      "Expected": "A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R089",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(3,2));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 5",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R090",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(3,4));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 7",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R091",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(3,5));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 8",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R092",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(3,null));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R093",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(4,-1));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch size cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R094",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(4,0));",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R095",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(4,1));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 5",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R096",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(4,2));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 6",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R097",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(4,4));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 8",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R098",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(4,5));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 9",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R099",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(4,null));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R100",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(5,-1));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch size cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R101",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(5,0));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 5",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R102",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(5,1));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 6",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R103",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(5,2));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 7",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R104",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(5,4));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 9",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R105",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(5,5));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 10",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R106",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(5,null));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R107",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(2147483647,-1));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch size cannot be a negative value: -1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R108",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(2147483647,0));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 2147483647",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R109",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(2147483647,1));",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R110",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(2147483647,2));",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R111",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(2147483647,4));",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R112",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(2147483647,5));",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R113",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(2147483647,null));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R114",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(null,-1));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R115",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(null,0));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R116",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(null,1));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R117",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(null,2));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R118",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(null,4));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R119",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(null,5));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R120",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(null,null));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R122",
+      "Code": "Database.Cursor c=Database.getCursor(emptyText); r=helper.names(c.fetch(0,1));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R123",
+      "Code": "Database.Cursor c=Database.getCursor(emptyText); r=helper.names(c.fetch(1,0));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R126",
+      "Code": "Database.Cursor c=Database.getCursor(emptyText); r=helper.names(c.fetch(0,2147483647));",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 2147483647",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R127",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(2,2))+'/'+helper.names(c.fetch(0,2));",
+      "Expected": "A34-Gamma|A34-Omega/A34-Alpha|A34-Beta",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R128",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(0,1))+'/'+helper.names(c.fetch(0,1));",
+      "Expected": "A34-Alpha/A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R129",
+      "Code": "Database.Cursor c=Database.getCursor(text); List<SObject> rows=new List<SObject>(); for(Integer pos=0;pos<c.getNumRecords();pos+=2)rows.addAll(c.fetch(pos,2)); r=helper.names(rows);",
+      "Expected": "A34-Alpha|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R131",
+      "Code": "Database.Cursor c=Database.getCursor(text); List<SObject> rows=c.fetch(0,1); rows[0].put('Name','Local'); r=helper.names(c.fetch(0,1));",
+      "Expected": "A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R132",
+      "Code": "Database.Cursor c=Database.getCursor(text); c.fetch(0,1); r=c.getNumRecords();",
+      "Expected": "4",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R133",
+      "Code": "Database.Cursor c=Database.getCursor(text); List<Account> rows=c.fetch(0,2); r=rows[1].Name;",
+      "Expected": "A34-Beta",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R134",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=c.fetch(0,1)[0] instanceof Account;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R135",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT Id FROM Account WHERE Id IN :owned ORDER BY Name'); r=c.fetch(0,1)[0].get('Name');",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Name",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R136",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator(null); r=helper.walk(c);",
+      "Expected": "COMPILE_ERROR\tline 66: Ambiguous method signature: void getQueryLocator(NULL)",
+      "Compile": false,
+      "NativeNull": false,
+      "DiagnosticLine": 66
+    },
+    {
+      "ID": "R137",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator(''); r=helper.walk(c);",
+      "Expected": "EXC|System.QueryException|unexpected token: '<EOF>'",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R138",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator('not SOQL'); r=helper.walk(c);",
+      "Expected": "EXC|System.QueryException|unexpected token: 'not'",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R139",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator('SELECT Id FROM Missing_A34__c'); r=helper.walk(c);",
+      "Expected": "EXC|System.QueryException|sObject type 'Missing_A34__c' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R140",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator('SELECT Missing_A34__c FROM Account WHERE Id IN :owned'); r=helper.walk(c);",
+      "Expected": "EXC|System.QueryException|No such column 'Missing_A34__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R141",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator('SELECT Id FROM Account WHERE Id=:unbound'); r=helper.walk(c);",
+      "Expected": "EXC|System.QueryException|Variable does not exist: unbound",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R142",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator('SELECT COUNT() FROM Account WHERE Id IN :owned'); r=helper.walk(c);",
+      "Expected": "EXC|System.QueryException|use countQuery() for [select count()...] queries",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R143",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator('SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees'); r=helper.walk(c);",
+      "Expected": "EXC|System.QueryException|Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R144",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :owned LIMIT -1'); r=helper.walk(c);",
+      "Expected": "EXC|System.QueryException|Limit must be a non-negative value",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R145",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator('SELECT Id FROM Account WHERE Id IN :owned FOR UPDATE'); r=helper.walk(c);",
+      "Expected": "EXC|System.QueryException|You cannot lock records in Batch Apex using FOR UPDATE",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R151",
+      "Code": "Database.QueryLocator c=Database.getQueryLocatorWithBinds('SELECT Id,Name FROM Account WHERE Id IN :ids ORDER BY Name',null,AccessLevel.SYSTEM_MODE); r=helper.walk(c);",
+      "Expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R152",
+      "Code": "Database.Cursor c=Database.getCursor(null); r=c.getNumRecords();",
+      "Expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R153",
+      "Code": "Database.Cursor c=Database.getCursor(''); r=c.getNumRecords();",
+      "Expected": "EXC|System.InvalidParameterValueException|System.InvalidParameterValueException: Query must not be empty or null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R154",
+      "Code": "Database.Cursor c=Database.getCursor('not SOQL'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|unexpected token: 'not'",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R155",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT Id FROM Missing_A34__c'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|sObject type 'Missing_A34__c' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R156",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT Missing_A34__c FROM Account WHERE Id IN :owned'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|No such column 'Missing_A34__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R157",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT Id FROM Account WHERE Id=:unbound'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|Variable does not exist: unbound",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R158",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT COUNT() FROM Account WHERE Id IN :owned'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|use countQuery() for [select count()...] queries",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R159",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|Query contains aggregate expressions, these are not permitted in cursor queries",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R160",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT Id FROM Account WHERE Id IN :owned LIMIT -1'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|Limit must be a non-negative value",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R161",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT Id FROM Account WHERE Id IN :owned FOR UPDATE'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|You cannot lock records with Cursor using FOR UPDATE",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R167",
+      "Code": "Database.Cursor c=Database.getCursorWithBinds('SELECT Id,Name FROM Account WHERE Id IN :ids ORDER BY Name',null,AccessLevel.SYSTEM_MODE); r=c.getNumRecords();",
+      "Expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R168",
+      "Code": "Database.QueryLocator q=null; r=q.getQuery();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R169",
+      "Code": "Database.QueryLocator q=null; r=q.iterator().hasNext();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R170",
+      "Code": "Database.QueryLocatorIterator it=null; r=it.hasNext();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R171",
+      "Code": "Database.QueryLocatorIterator it=null; r=it.next();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R172",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(emptyText); r=q.iterator().next();",
+      "Expected": "EXC|System.NoSuchElementException|Iterator has no more elements",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R173",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator it=q.iterator(); while(it.hasNext())it.next(); r=it.hasNext();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R174",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator it=q.iterator(); while(it.hasNext())it.next(); r=it.next();",
+      "Expected": "EXC|System.NoSuchElementException|Iterator has no more elements",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R175",
+      "Code": "Database.Cursor c=null; r=c.getNumRecords();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R176",
+      "Code": "Database.Cursor c=null; r=c.fetch(0,1);",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R177",
+      "Code": "Database.Cursor c=null; r=c?.getNumRecords();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R178",
+      "Code": "Database.QueryLocator q=null; r=q?.getQuery();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R179",
+      "Code": "Database.Cursor c=(Database.Cursor)JSON.deserialize('{}',Database.Cursor.class); r=c.getNumRecords();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R180",
+      "Code": "Database.Cursor c=(Database.Cursor)JSON.deserialize('{}',Database.Cursor.class); r=c.fetch(0,1);",
+      "Expected": "EXC|System.InvalidParameterValueException|Fetch beyond bound detected: 1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R181",
+      "Code": "Database.QueryLocator q=(Database.QueryLocator)JSON.deserialize('{}',Database.QueryLocator.class); r=q.iterator().hasNext();",
+      "Expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Database.QueryLocator",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R182",
+      "Code": "Database.Cursor c=Database.getCursor(text); String encoded=JSON.serialize(c); r=encoded!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R183",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); String encoded=JSON.serialize(q); r=encoded!=null;",
+      "Expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Database.QueryLocator",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R184",
+      "Code": "Database.Cursor c=Database.getCursor(text); Database.Cursor restored=(Database.Cursor)JSON.deserialize(JSON.serialize(c),Database.Cursor.class); r=helper.names(restored.fetch(0,1));",
+      "Expected": "A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R185",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Object value=q; r=value instanceof Database.QueryLocator;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R186",
+      "Code": "Database.Cursor c=Database.getCursor(text); Object value=c; r=value instanceof Database.Cursor;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R187",
+      "Code": "Database.Cursor c=Database.getCursor(text); Database.Cursor other=c; r=helper.names(other.fetch(0,1));",
+      "Expected": "A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R188",
+      "Code": "Database.Cursor c=Database.getCursor(text); Savepoint sp=Database.setSavepoint(); try{seed[0].Name='A34-Changed'; update seed[0]; r=helper.names(c.fetch(0,1));}finally{Database.rollback(sp);}",
+      "Expected": "A34-Changed",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R189",
+      "Code": "Database.Cursor c=Database.getCursor(text); Savepoint sp=Database.setSavepoint(); try{delete seed[0]; r=helper.names(c.fetch(0,1));}finally{Database.rollback(sp);}",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R190",
+      "Code": "Database.Cursor c; Savepoint sp=Database.setSavepoint(); c=Database.getCursor(text); Database.rollback(sp); r=helper.names(c.fetch(0,1));",
+      "Expected": "A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R191",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator(text); Savepoint sp=Database.setSavepoint(); try{seed[0].Name='A34-Changed'; update seed[0]; r=helper.walk(c);}finally{Database.rollback(sp);}",
+      "Expected": "A34-Changed|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R192",
+      "Code": "Database.QueryLocator c=Database.getQueryLocator(text); Savepoint sp=Database.setSavepoint(); try{delete seed[0]; r=helper.walk(c);}finally{Database.rollback(sp);}",
+      "Expected": "A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R193",
+      "Code": "Database.QueryLocator c; Savepoint sp=Database.setSavepoint(); c=Database.getQueryLocator(text); Database.rollback(sp); r=helper.walk(c);",
+      "Expected": "A34-Alpha|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R194",
+      "Code": "Integer before=Limits.getQueries(); Database.Cursor c=Database.getCursor(text); r=Limits.getQueries()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R195",
+      "Code": "Integer before=Limits.getQueries(); Database.QueryLocator q=Database.getQueryLocator(text); r=Limits.getQueries()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R196",
+      "Code": "Integer before=Limits.getQueries(); Database.QueryLocator q=Database.getQueryLocator([SELECT Id FROM Account WHERE Id IN :owned]); r=Limits.getQueries()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R197",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getQueries(); c.fetch(0,0); r=Limits.getQueries()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R198",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getQueries(); c.fetch(0,1); r=Limits.getQueries()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R199",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getQueries(); c.fetch(0,2); r=Limits.getQueries()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R200",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getQueries(); c.fetch(0,4); r=Limits.getQueries()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R201",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getQueries(); c.fetch(0,1); c.fetch(0,1); r=Limits.getQueries()-before;",
+      "Expected": "2",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R202",
+      "Code": "Integer before=Limits.getQueryRows(); Database.Cursor c=Database.getCursor(text); r=Limits.getQueryRows()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R203",
+      "Code": "Integer before=Limits.getQueryRows(); Database.QueryLocator q=Database.getQueryLocator(text); r=Limits.getQueryRows()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R204",
+      "Code": "Integer before=Limits.getQueryRows(); Database.QueryLocator q=Database.getQueryLocator([SELECT Id FROM Account WHERE Id IN :owned]); r=Limits.getQueryRows()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R205",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getQueryRows(); c.fetch(0,0); r=Limits.getQueryRows()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R206",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getQueryRows(); c.fetch(0,1); r=Limits.getQueryRows()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R207",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getQueryRows(); c.fetch(0,2); r=Limits.getQueryRows()-before;",
+      "Expected": "2",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R208",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getQueryRows(); c.fetch(0,4); r=Limits.getQueryRows()-before;",
+      "Expected": "4",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R209",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getQueryRows(); c.fetch(0,1); c.fetch(0,1); r=Limits.getQueryRows()-before;",
+      "Expected": "2",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R210",
+      "Code": "Integer before=Limits.getApexCursorRows(); Database.Cursor c=Database.getCursor(text); r=Limits.getApexCursorRows()-before;",
+      "Expected": "4",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R211",
+      "Code": "Integer before=Limits.getApexCursorRows(); Database.QueryLocator q=Database.getQueryLocator(text); r=Limits.getApexCursorRows()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R212",
+      "Code": "Integer before=Limits.getApexCursorRows(); Database.QueryLocator q=Database.getQueryLocator([SELECT Id FROM Account WHERE Id IN :owned]); r=Limits.getApexCursorRows()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R213",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getApexCursorRows(); c.fetch(0,0); r=Limits.getApexCursorRows()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R214",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getApexCursorRows(); c.fetch(0,1); r=Limits.getApexCursorRows()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R215",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getApexCursorRows(); c.fetch(0,2); r=Limits.getApexCursorRows()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R216",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getApexCursorRows(); c.fetch(0,4); r=Limits.getApexCursorRows()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R217",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getApexCursorRows(); c.fetch(0,1); c.fetch(0,1); r=Limits.getApexCursorRows()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R218",
+      "Code": "Integer before=Limits.getFetchCallsOnApexCursor(); Database.Cursor c=Database.getCursor(text); r=Limits.getFetchCallsOnApexCursor()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R219",
+      "Code": "Integer before=Limits.getFetchCallsOnApexCursor(); Database.QueryLocator q=Database.getQueryLocator(text); r=Limits.getFetchCallsOnApexCursor()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R220",
+      "Code": "Integer before=Limits.getFetchCallsOnApexCursor(); Database.QueryLocator q=Database.getQueryLocator([SELECT Id FROM Account WHERE Id IN :owned]); r=Limits.getFetchCallsOnApexCursor()-before;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R221",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getFetchCallsOnApexCursor(); c.fetch(0,0); r=Limits.getFetchCallsOnApexCursor()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R222",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getFetchCallsOnApexCursor(); c.fetch(0,1); r=Limits.getFetchCallsOnApexCursor()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R223",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getFetchCallsOnApexCursor(); c.fetch(0,2); r=Limits.getFetchCallsOnApexCursor()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R224",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getFetchCallsOnApexCursor(); c.fetch(0,4); r=Limits.getFetchCallsOnApexCursor()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R225",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getFetchCallsOnApexCursor(); c.fetch(0,1); c.fetch(0,1); r=Limits.getFetchCallsOnApexCursor()-before;",
+      "Expected": "2",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R226",
+      "Code": "r=Limits.getLimitFetchCallsOnApexCursor();",
+      "Expected": "100",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R227",
+      "Code": "r=Limits.getLimitApexCursorRows();",
+      "Expected": "50000000",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R228",
+      "Code": "r=Limits.getLimitQueries();",
+      "Expected": "100",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R229",
+      "Code": "r=Limits.getLimitQueryRows();",
+      "Expected": "50000",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "C001",
+      "Code": "try{Database.Cursor c=null; Object r=c==null; pq.out('C001',r); }catch(Exception e){pq.err('C001',e);}",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C002",
+      "Code": "try{Database.QueryLocator q=null; Object r=q==null; pq.out('C002',r); }catch(Exception e){pq.err('C002',e);}",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C003",
+      "Code": "try{Database.QueryLocatorIterator it=null; Object r=it==null; pq.out('C003',r); }catch(Exception e){pq.err('C003',e);}",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C004",
+      "Code": "try{Database.Cursor c=null; List<SObject> rows=c.fetch(0,1); Object r=rows; pq.out('C004',r); }catch(Exception e){pq.err('C004',e);}",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C005",
+      "Code": "try{Database.Cursor c=null; Integer n=c.getNumRecords(); Object r=n; pq.out('C005',r); }catch(Exception e){pq.err('C005',e);}",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C006",
+      "Code": "try{Database.QueryLocator q=null; String text=q.getQuery(); Object r=text; pq.out('C006',r); }catch(Exception e){pq.err('C006',e);}",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C007",
+      "Code": "try{Database.QueryLocator q=null; Iterator<SObject> it=q.iterator(); Object r=it; pq.out('C007',r); }catch(Exception e){pq.err('C007',e);}",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C008",
+      "Code": "try{Database.QueryLocatorIterator it=null; SObject row=it.next(); Object r=row; pq.out('C008',r); }catch(Exception e){pq.err('C008',e);}",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C009",
+      "Code": "try{Database.QueryLocatorIterator it=null; Boolean b=it.hasNext(); Object r=b; pq.out('C009',r); }catch(Exception e){pq.err('C009',e);}",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C010",
+      "Code": "try{System.FatalCursorException e; Object r=e==null; pq.out('C010',r); }catch(Exception e){pq.err('C010',e);}",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C011",
+      "Code": "try{System.TransientCursorException e; Object r=e==null; pq.out('C011',r); }catch(Exception e){pq.err('C011',e);}",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C012",
+      "Code": "try{Database.Cursor c=null; Object r=c.fetch(); pq.out('C012',r); }catch(Exception e){pq.err('C012',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fetch() from the type Database.Cursor",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C013",
+      "Code": "try{Database.Cursor c=null; Object r=c.fetch(0); pq.out('C013',r); }catch(Exception e){pq.err('C013',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fetch(Integer) from the type Database.Cursor",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C014",
+      "Code": "try{Database.Cursor c=null; Object r=c.fetch(0,1,2); pq.out('C014',r); }catch(Exception e){pq.err('C014',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fetch(Integer, Integer, Integer) from the type Database.Cursor",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C015",
+      "Code": "try{Database.Cursor c=null; Object r=c.fetch('0',1); pq.out('C015',r); }catch(Exception e){pq.err('C015',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fetch(String, Integer) from the type Database.Cursor",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C016",
+      "Code": "try{Database.Cursor c=null; Object r=c.fetch(0L,1); pq.out('C016',r); }catch(Exception e){pq.err('C016',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fetch(Long, Integer) from the type Database.Cursor",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C017",
+      "Code": "try{Database.Cursor c=null; Object r=c.fetch(0,1L); pq.out('C017',r); }catch(Exception e){pq.err('C017',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fetch(Integer, Long) from the type Database.Cursor",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C018",
+      "Code": "try{Database.Cursor c=null; Object r=c.fetch(0,1.0); pq.out('C018',r); }catch(Exception e){pq.err('C018',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fetch(Integer, Decimal) from the type Database.Cursor",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C019",
+      "Code": "try{Database.Cursor c=null; Object r=c.getNumRecords(0); pq.out('C019',r); }catch(Exception e){pq.err('C019',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getNumRecords(Integer) from the type Database.Cursor",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C020",
+      "Code": "try{Database.Cursor c=null; Object r=c.iterator(); pq.out('C020',r); }catch(Exception e){pq.err('C020',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void iterator() from the type Database.Cursor",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C021",
+      "Code": "try{Database.Cursor c=null; Object r=c.getQuery(); pq.out('C021',r); }catch(Exception e){pq.err('C021',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getQuery() from the type Database.Cursor",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C022",
+      "Code": "try{Database.QueryLocator q=null; Object r=q.iterator(0); pq.out('C022',r); }catch(Exception e){pq.err('C022',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void iterator(Integer) from the type Database.QueryLocator",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C023",
+      "Code": "try{Database.QueryLocator q=null; Object r=q.getQuery(0); pq.out('C023',r); }catch(Exception e){pq.err('C023',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getQuery(Integer) from the type Database.QueryLocator",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C024",
+      "Code": "try{Database.QueryLocator q=null; Object r=q.getNumRecords(); pq.out('C024',r); }catch(Exception e){pq.err('C024',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getNumRecords() from the type Database.QueryLocator",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C025",
+      "Code": "try{Database.QueryLocator q=null; Object r=q.fetch(0,1); pq.out('C025',r); }catch(Exception e){pq.err('C025',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fetch(Integer, Integer) from the type Database.QueryLocator",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C026",
+      "Code": "try{Database.QueryLocator q=null; Object r=q.hasNext(); pq.out('C026',r); }catch(Exception e){pq.err('C026',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void hasNext() from the type Database.QueryLocator",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C027",
+      "Code": "try{Database.QueryLocator q=null; Object r=q.next(); pq.out('C027',r); }catch(Exception e){pq.err('C027',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void next() from the type Database.QueryLocator",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C028",
+      "Code": "try{Database.QueryLocatorIterator it=null; Object r=it.next(0); pq.out('C028',r); }catch(Exception e){pq.err('C028',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void next(Integer) from the type Database.QueryLocatorIterator",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C029",
+      "Code": "try{Database.QueryLocatorIterator it=null; Object r=it.hasNext(0); pq.out('C029',r); }catch(Exception e){pq.err('C029',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void hasNext(Integer) from the type Database.QueryLocatorIterator",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C030",
+      "Code": "try{Database.QueryLocatorIterator it=null; Object r=it.remove(); pq.out('C030',r); }catch(Exception e){pq.err('C030',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void remove() from the type Database.QueryLocatorIterator",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C031",
+      "Code": "try{Database.QueryLocatorIterator it=null; Object r=it.getNumRecords(); pq.out('C031',r); }catch(Exception e){pq.err('C031',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getNumRecords() from the type Database.QueryLocatorIterator",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C032",
+      "Code": "try{Object value=Database.getCursor(); Object r=value==null; pq.out('C032',r); }catch(Exception e){pq.err('C032',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getCursor() from the type Database",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C033",
+      "Code": "try{Object value=Database.getCursor(1); Object r=value==null; pq.out('C033',r); }catch(Exception e){pq.err('C033',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getCursor(Integer) from the type Database",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C034",
+      "Code": "try{Object value=Database.getCursor(new List<Account>()); Object r=value==null; pq.out('C034',r); }catch(Exception e){pq.err('C034',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getCursor(List<Account>) from the type Database",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C035",
+      "Code": "try{Object value=Database.getCursorWithBinds(null,null); Object r=value==null; pq.out('C035',r); }catch(Exception e){pq.err('C035',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getCursorWithBinds(NULL, NULL) from the type Database",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C036",
+      "Code": "try{Object value=Database.getQueryLocator(); Object r=value==null; pq.out('C036',r); }catch(Exception e){pq.err('C036',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getQueryLocator() from the type Database",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C037",
+      "Code": "try{Object value=Database.getQueryLocator(1); Object r=value==null; pq.out('C037',r); }catch(Exception e){pq.err('C037',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getQueryLocator(Integer) from the type Database",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "C038",
+      "Code": "try{Object value=Database.getQueryLocatorWithBinds(null,null); Object r=value==null; pq.out('C038',r); }catch(Exception e){pq.err('C038',e);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getQueryLocatorWithBinds(NULL, NULL) from the type Database",
+      "Compile": true,
+      "NativeNull": false,
+      "DiagnosticLine": 6
+    },
+    {
+      "ID": "N001",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Integer before=Limits.getQueryRows(); helper.walk(q); r=Limits.getQueryRows()-before;",
+      "Expected": "4",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N002",
+      "Code": "Integer beforeQ=Limits.getQueries(),beforeR=Limits.getQueryRows(); Database.QueryLocator q=Database.getQueryLocatorWithBinds('SELECT Id,Name FROM Account WHERE Id IN :ids ORDER BY Name',new Map<String,Object>{'ids'=>owned},AccessLevel.USER_MODE); r=String.valueOf(Limits.getQueries()-beforeQ)+'|'+(Limits.getQueryRows()-beforeR);",
+      "Expected": "1|0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N003",
+      "Code": "Database.QueryLocator q=Database.getQueryLocatorWithBinds('SELECT Id,Name FROM Account WHERE Id IN :ids ORDER BY Name',new Map<String,Object>{'ids'=>owned},AccessLevel.USER_MODE); Integer before=Limits.getQueryRows(); helper.walk(q); r=Limits.getQueryRows()-before;",
+      "Expected": "4",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N004",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator a=q.iterator(),b=q.iterator(); r=String.valueOf(a.hasNext())+'|'+b.hasNext()+'|'+((Account)a.next()).Name;",
+      "Expected": "true|false|A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N005",
+      "Code": "Database.Cursor c=Database.getCursor(text); r=helper.names(c.fetch(2147483647,1));",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N006",
+      "Code": "Database.Cursor c=Database.getCursor(text); Integer before=Limits.getQueries(); c.fetch(0,0); r=Limits.getQueries()-before;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N007",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Integer beforeQ=Limits.getQueries(),beforeR=Limits.getQueryRows(); Database.QueryLocatorIterator it=q.iterator(); r=String.valueOf(Limits.getQueries()-beforeQ)+'|'+(Limits.getQueryRows()-beforeR);",
+      "Expected": "0|0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N008",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator it=q.iterator(); Integer beforeQ=Limits.getQueries(),beforeR=Limits.getQueryRows(); it.hasNext(); r=String.valueOf(Limits.getQueries()-beforeQ)+'|'+(Limits.getQueryRows()-beforeR);",
+      "Expected": "0|4",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N009",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator it=q.iterator(); Integer beforeQ=Limits.getQueries(),beforeR=Limits.getQueryRows(); it.next(); r=String.valueOf(Limits.getQueries()-beforeQ)+'|'+(Limits.getQueryRows()-beforeR);",
+      "Expected": "0|4",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N010",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); Database.QueryLocatorIterator it=q.iterator(); it.next(); Integer beforeR=Limits.getQueryRows(); it.next(); r=Limits.getQueryRows()-beforeR;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N011",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees LIMIT 1'); r=q.iterator().hasNext();",
+      "Expected": "EXC|System.QueryException|Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N012",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees LIMIT 1'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|Query contains aggregate expressions, these are not permitted in cursor queries",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N013",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT COUNT(Id) n FROM Account WHERE Id IN :owned'); r=q.iterator().hasNext();",
+      "Expected": "EXC|System.QueryException|Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N014",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT COUNT(Id) n FROM Account WHERE Id IN :owned LIMIT 1'); AggregateResult row=(AggregateResult)q.iterator().next(); r=row.get('n');",
+      "Expected": "EXC|System.QueryException|Non-grouped query that uses overall aggregate functions cannot also use LIMIT",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N015",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees'); r=q!=null;",
+      "Expected": "EXC|System.QueryException|Aggregate query does not support queryMore(), use LIMIT to restrict the results to a single batch",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N017",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT COUNT(Id) n FROM Account WHERE Id IN :owned LIMIT 1'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|Non-grouped query that uses overall aggregate functions cannot also use LIMIT",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N019",
+      "Code": "r=Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :owned LIMIT 1');",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N020",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT COUNT() FROM Account WHERE Id IN :owned LIMIT 1'); r=q.iterator().hasNext();",
+      "Expected": "EXC|System.QueryException|use countQuery() for [select count()...] queries",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N021",
+      "Code": "List<SObject> rows=Database.query('SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :owned GROUP BY NumberOfEmployees LIMIT 1'); r=rows.size();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N022",
+      "Code": "Database.Cursor c=Database.getCursor(text); Map<String,Object> fields=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(c)); List<String> keys=new List<String>(fields.keySet()); keys.sort(); r=String.join(keys,'|');",
+      "Expected": "queryId",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N023",
+      "Code": "Database.Cursor c=Database.getCursor(text); Database.Cursor restored=(Database.Cursor)JSON.deserialize(JSON.serialize(c),Database.Cursor.class); r=restored.getNumRecords();",
+      "Expected": "4",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N024",
+      "Code": "Database.Cursor c=(Database.Cursor)JSON.deserialize('{}',Database.Cursor.class); r=JSON.serialize(c);",
+      "Expected": "{\"queryId\":null}",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N025",
+      "Code": "r=JSON.deserialize('null',Database.Cursor.class)==null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N026",
+      "Code": "r=JSON.deserialize('null',Database.QueryLocator.class)==null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N027",
+      "Code": "Database.Cursor c=(Database.Cursor)JSON.deserialize('{\"Records\":[],\"Query\":\"ignored\",\"unknown\":1}',Database.Cursor.class); r=c.getNumRecords();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N028",
+      "Code": "Database.Cursor c=Database.getCursor(text); Database.Cursor restored=(Database.Cursor)JSON.deserializeStrict(JSON.serialize(c),Database.Cursor.class); r=helper.names(restored.fetch(0,1));",
+      "Expected": "A34-Alpha",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N029",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); r=JSON.serializePretty(q);",
+      "Expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Database.QueryLocator",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N030",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator(text); r=JSON.serialize(new List<Object>{q});",
+      "Expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Database.QueryLocator",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N031",
+      "Code": "Database.Cursor c=Database.getCursor(text); Map<String,Object> fields=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(c)); r=fields.get('queryId') instanceof String && fields.get('queryId')!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N033",
+      "Code": "Database.Cursor c=(Database.Cursor)JSON.deserializeStrict('{\"unknown\":1}',Database.Cursor.class); r=c.getNumRecords();",
+      "Expected": "EXC|System.JSONException|Unknown field: Database.Cursor.unknown",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N034",
+      "Code": "Database.Cursor c=(Database.Cursor)JSON.deserializeStrict('{\"queryId\":null}',Database.Cursor.class); r=c.getNumRecords();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N037",
+      "Code": "Database.Cursor c=(Database.Cursor)JSON.deserialize('{}',Database.Cursor.class); r=JSON.serialize(c,true);",
+      "Expected": "{}",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "N038",
+      "Code": "Database.Cursor c=(Database.Cursor)JSON.deserialize('{}',Database.Cursor.class); r=JSON.serializePretty(c);",
+      "Expected": "{\\n  \"queryId\" : null\\n}",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "S001",
+      "Code": "List<SObject> rows=Database.query('SELECT Id FROM Missing_A34__c'); r=rows.size();",
+      "Expected": "EXC|System.QueryException|sObject type 'Missing_A34__c' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "S002",
+      "Code": "List<SObject> rows=Database.query('SELECT Missing_A34__c FROM Account WHERE Id IN :owned'); r=rows.size();",
+      "Expected": "EXC|System.QueryException|No such column 'Missing_A34__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "S003",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT Id FROM Account WHERE Missing_A34__c=1'); r=q.iterator().hasNext();",
+      "Expected": "EXC|System.QueryException|No such column 'Missing_A34__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "S004",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT Id FROM Account WHERE Missing_A34__c=1'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|No such column 'Missing_A34__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "S005",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT Id FROM Account ORDER BY Missing_A34__c'); r=q.iterator().hasNext();",
+      "Expected": "EXC|System.QueryException|No such column 'Missing_A34__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "S006",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT Id FROM Account ORDER BY Missing_A34__c'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|No such column 'Missing_A34__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "S007",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT Id,Name FROM Account WHERE Id IN :owned AND NumberOfEmployees=1 ORDER BY Name'); r=helper.walk(q);",
+      "Expected": "A34-Beta",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "S008",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT Id,Name FROM Account WHERE Id IN :owned AND NumberOfEmployees=1 ORDER BY Name'); r=helper.names(c.fetch(0,1));",
+      "Expected": "A34-Beta",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "S009",
+      "Code": "Database.QueryLocator q=Database.getQueryLocator('SELECT Missing_A34 FROM Account WHERE Id IN :owned'); r=q.iterator().hasNext();",
+      "Expected": "EXC|System.QueryException|No such column 'Missing_A34' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "S010",
+      "Code": "Database.Cursor c=Database.getCursor('SELECT Missing_A34 FROM Account WHERE Id IN :owned'); r=c.getNumRecords();",
+      "Expected": "EXC|System.QueryException|No such column 'Missing_A34' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "V004",
+      "Code": "Iterable<SObject> values=new List<SObject>{seed[0],seed[1]}; Integer before=Limits.getQueryRows(); List<SObject> first=new List<SObject>(),second=new List<SObject>(); for(SObject row:values) first.add(row); for(SObject row:values) second.add(row); r=String.valueOf(Limits.getQueryRows()-before)+'|'+helper.names(first)+'|'+helper.names(second);",
+      "Expected": "0|A34-Alpha|A34-Beta|A34-Alpha|A34-Beta",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "V005",
+      "Code": "insert new List<Contact>{new Contact(AccountId=seed[0].Id,LastName='A34-Wanted'),new Contact(AccountId=seed[0].Id,LastName='A34-Other')}; Set<Id> parents=new Set<Id>{seed[0].Id}; String wanted='A34-Wanted'; Database.QueryLocator q=Database.getQueryLocator('SELECT Id,Name,(SELECT Id,LastName FROM Contacts WHERE LastName=:wanted ORDER BY LastName) FROM Account WHERE Id IN :parents ORDER BY Name'); wanted='A34-Other'; Account row=(Account)q.iterator().next(); r=row.Name+'|'+row.Contacts.size()+'|'+(row.Contacts.isEmpty()?'':row.Contacts[0].LastName);",
+      "Expected": "A34-Alpha|1|A34-Wanted",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "V006",
+      "Code": "insert new List<Contact>{new Contact(AccountId=seed[0].Id,LastName='A34-Wanted'),new Contact(AccountId=seed[0].Id,LastName='A34-Other')}; Set<Id> parents=new Set<Id>{seed[0].Id}; String wanted='A34-Wanted'; Database.Cursor c=Database.getCursor('SELECT Id,Name,(SELECT Id,LastName FROM Contacts WHERE LastName=:wanted ORDER BY LastName) FROM Account WHERE Id IN :parents ORDER BY Name'); wanted='A34-Other'; Account row=(Account)c.fetch(0,1)[0]; r=row.Name+'|'+row.Contacts.size()+'|'+(row.Contacts.isEmpty()?'':row.Contacts[0].LastName);",
+      "Expected": "EXC|System.QueryException|Query contains aggregate relationships, these are not permitted in cursor queries",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "V007",
+      "Code": "insert new List<Contact>{new Contact(AccountId=seed[0].Id,LastName='A34-Wanted'),new Contact(AccountId=seed[0].Id,LastName='A34-Other')}; Map<String,Object> binds=new Map<String,Object>{'ids'=>new Set<Id>{seed[0].Id},'wanted'=>'A34-Wanted'}; Database.QueryLocator q=Database.getQueryLocatorWithBinds('SELECT Id,Name,(SELECT Id,LastName FROM Contacts WHERE LastName=:wanted ORDER BY LastName) FROM Account WHERE Id IN :ids ORDER BY Name',binds,AccessLevel.USER_MODE); binds.put('wanted','A34-Other'); Account row=(Account)q.iterator().next(); r=row.Name+'|'+row.Contacts.size()+'|'+(row.Contacts.isEmpty()?'':row.Contacts[0].LastName);",
+      "Expected": "A34-Alpha|1|A34-Wanted",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "V008",
+      "Code": "insert new List<Contact>{new Contact(AccountId=seed[0].Id,LastName='A34-Wanted'),new Contact(AccountId=seed[0].Id,LastName='A34-Other')}; Map<String,Object> binds=new Map<String,Object>{'ids'=>new Set<Id>{seed[0].Id},'wanted'=>'A34-Wanted'}; Database.Cursor c=Database.getCursorWithBinds('SELECT Id,Name,(SELECT Id,LastName FROM Contacts WHERE LastName=:wanted ORDER BY LastName) FROM Account WHERE Id IN :ids ORDER BY Name',binds,AccessLevel.USER_MODE); binds.put('wanted','A34-Other'); Account row=(Account)c.fetch(0,1)[0]; r=row.Name+'|'+row.Contacts.size()+'|'+(row.Contacts.isEmpty()?'':row.Contacts[0].LastName);",
+      "Expected": "EXC|System.QueryException|Query contains aggregate relationships, these are not permitted in cursor queries",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "V013",
+      "Code": "List<Account> viewed=[SELECT Id,Name FROM Account WHERE Id IN :owned ORDER BY Name FOR VIEW]; Database.Cursor c=Database.getCursor('SELECT Id,Name,Type FROM RecentlyViewed WHERE Id IN :owned ORDER BY Name'); List<SObject> first=c.fetch(0,2),second=c.fetch(2,2); r=String.valueOf(viewed.size())+'|'+c.getNumRecords()+'|'+helper.names(first)+'|'+helper.names(second);",
+      "Expected": "4|4|A34-Alpha|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "V014",
+      "Code": "List<Account> viewed=[SELECT Id,Name FROM Account WHERE Id IN :owned ORDER BY Name FOR VIEW]; Database.QueryLocator q=Database.getQueryLocator('SELECT Id,Name,Type FROM RecentlyViewed WHERE Id IN :owned ORDER BY Name'); r=String.valueOf(viewed.size())+'|'+helper.walk(q);",
+      "Expected": "4|A34-Alpha|A34-Beta|A34-Gamma|A34-Omega",
+      "Compile": false,
+      "NativeNull": false
+    }
+  ],
+  "Remaining": [
+    {
+      "ID": "R017",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R018",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R019",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R026",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R027",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R028",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R035",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R036",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R037",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R054",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R057",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R060",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R063",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R146",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R147",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R148",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R149",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R150",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R162",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R163",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R164",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R165",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "ID": "R166",
+      "Owner": "security access",
+      "Reason": "Native anonymous execution prohibits explicit SYSTEM_MODE; AccessLevel/SOQL security enforcement belongs to security access, including its named-route observation.",
+      "Expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    }
+  ],
+  "CaseRows": {
+    "queueable-cursor-maximum": [
+      "R222",
+      "R223",
+      "R224",
+      "R225",
+      "R226"
+    ],
+    "queueable-profile-1": [
+      "R194",
+      "R195",
+      "R196",
+      "R197",
+      "R198",
+      "R199",
+      "R200",
+      "R201",
+      "R202",
+      "R203",
+      "R204",
+      "R205",
+      "R206",
+      "R207",
+      "R208",
+      "R209",
+      "R210",
+      "R211",
+      "R212",
+      "R213",
+      "R214",
+      "R215",
+      "R216",
+      "R217",
+      "R218",
+      "R219",
+      "R220",
+      "R221",
+      "R222",
+      "R223",
+      "R224",
+      "R225",
+      "R226",
+      "R227",
+      "R228",
+      "R229"
+    ],
+    "queueable-profile-2": [
+      "R194",
+      "R195",
+      "R196",
+      "R197",
+      "R198",
+      "R199",
+      "R200",
+      "R201",
+      "R202",
+      "R203",
+      "R204",
+      "R205",
+      "R206",
+      "R207",
+      "R208",
+      "R209",
+      "R210",
+      "R211",
+      "R212",
+      "R213",
+      "R214",
+      "R215",
+      "R216",
+      "R217",
+      "R218",
+      "R219",
+      "R220",
+      "R221",
+      "R222",
+      "R223",
+      "R224",
+      "R225",
+      "R226",
+      "R227",
+      "R228",
+      "R229"
+    ],
+    "cursor-row-maximum": [
+      "R194",
+      "R195",
+      "R196",
+      "R197",
+      "R198",
+      "R199",
+      "R200",
+      "R201",
+      "R202",
+      "R203",
+      "R204",
+      "R205",
+      "R206",
+      "R207",
+      "R208",
+      "R209",
+      "R210",
+      "R211",
+      "R212",
+      "R213",
+      "R214",
+      "R215",
+      "R216",
+      "R217",
+      "R218",
+      "R219",
+      "R220",
+      "R221",
+      "R222",
+      "R223",
+      "R224",
+      "R225",
+      "R226",
+      "R227",
+      "R228",
+      "R229"
+    ]
+  },
+  "CaptureExclusions": {
+    "native-HTTP500": "Database.getCursor(query,true) returned Salesforce REST HTTP 500 at diagnostic C035; omitted rather than assigned an inferred answer.",
+    "unframed-native-inputs": "Original R013 OFFSET 2001, R121 empty fetch(0,0), R124 empty fetch(-1,1), R125 empty fetch(0,-1), and R130 clear returned fetch list then refetch emitted no framed row even after standard recursive isolation at both API 62 and 67. Omitted; raw full-attempt captures retained. Equivalent case groups remain covered.",
+    "queueable-cursor-maximum": "Queueable 100/101 maximum enforcement is retained in earlier capture evidence; this capture is synchronous and bounded.",
+    "queueable-profile-1": "Queueable profile is retained in earlier capture evidence; creation and repeated-fetch deltas are recaptured here anonymously.",
+    "queueable-profile-2": "Queueable profile is retained in earlier capture evidence; creation and repeated-fetch deltas are recaptured here anonymously.",
+    "cursor-row-maximum": "Maximum cursor-row enforcement uses synthetic local counters later; no 50-million-record Salesforce fixture.",
+    "lifetime": "Real server expiry is not forced by waiting or fabricating a cursor token; invalid/null/exhausted and rollback handles are captured.",
+    "unframed-native-controls": "N016 ordinary COUNT(Id) LIMIT, N018 ordinary SUM LIMIT, N032/N036 bad queryId and N035 numeric queryId emitted no framed result after recursive isolation at API 62 and 67. No native result inferred. Ordinary query diagnostics stay unchanged; external cursor tokens remain an explicit unsupported boundary.",
+    "unframed-native-review-iterable": "V001/V002/V003/V009 QueryLocator-to-Iterable cast traversal/acquisition controls returned anonymous Salesforce REST HTTP 500 and native @IsTest Internal Salesforce Error before the observation at API 62 and 67. Native failures are retained as owned observations; no query-row result inferred and no cast behavior changed without a working native control."
+  }
+}

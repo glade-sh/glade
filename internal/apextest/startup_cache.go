@@ -15,7 +15,7 @@ import (
 
 var disableDiskCache atomic.Bool
 
-const testRuntimeCacheABI = "apextest-runtime-v6"
+const testRuntimeCacheABI = "apextest-runtime-v7"
 
 func DisableDiskCacheForTesting() func() {
 	wasDisabled := disableDiskCache.Load()

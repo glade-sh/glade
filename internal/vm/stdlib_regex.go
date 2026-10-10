@@ -14,8 +14,12 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		value, err := patternMatches(args)
 		return value, receiver, false, true, err
 	case "matcher":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, receiver, false, true, fmt.Errorf("Pattern.matcher expects input String")
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Script-thrown exception")
+		}
+		inputText, err := stringArg("Pattern.matcher", args)
+		if err != nil {
+			return Null, receiver, false, true, err
 		}
 		regexp2Source, err := patternRegexp2Source(receiver)
 		if err != nil {
@@ -35,11 +39,11 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		if backreferences, ok := receiver.Fields["backreferencePairs"]; ok {
 			matcher.Fields["backreferencePairs"] = backreferences
 		}
-		matcher.Fields["input"] = args[0]
+		matcher.Fields["input"] = String(inputText)
 		matcherClearMatch(matcher)
 		matcher.Fields["index"] = Int(0)
 		matcher.Fields["regionStart"] = Int(0)
-		matcher.Fields["regionEnd"] = Int(int64(apexStringLength(args[0].Text)))
+		matcher.Fields["regionEnd"] = Int(int64(apexStringLength(inputText)))
 		return matcher, receiver, false, true, nil
 	case "pattern":
 		if len(args) != 0 {
@@ -91,17 +95,18 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		indices, err := matcherRegexp2MatchIndices(receiver, input, region, matcherOpMatches)
+		indices, hitEnd, requiresEnd, err := matcherRegexp2MatchIndices(receiver, input, region, matcherOpMatches)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		receiver.Fields["hitEnd"] = Bool(false)
+		receiver.Fields["hitEnd"] = Bool(hitEnd)
 		receiver.Fields["requireEnd"] = Bool(false)
 		if indices == nil {
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
 		}
 		matcherSaveMatch(receiver, indices)
+		receiver.Fields["requireEnd"] = Bool(requiresEnd)
 		receiver.Fields["index"] = Int(int64(region.endByte))
 		return Bool(true), receiver, true, true, nil
 	case "lookingAt":
@@ -112,20 +117,25 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		indices, err := matcherRegexp2MatchIndices(receiver, input, region, matcherOpLookingAt)
+		indices, hitEnd, requiresEnd, err := matcherRegexp2MatchIndices(receiver, input, region, matcherOpLookingAt)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		receiver.Fields["hitEnd"] = Bool(false)
+		receiver.Fields["hitEnd"] = Bool(hitEnd)
 		receiver.Fields["requireEnd"] = Bool(false)
 		if indices == nil {
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
 		}
 		matcherSaveMatch(receiver, indices)
+		receiver.Fields["requireEnd"] = Bool(requiresEnd)
 		receiver.Fields["index"] = Int(int64(indices[1]))
 		return Bool(true), receiver, true, true, nil
 	case "find":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			// R232, API 62/67: the native failure bypasses catch(Exception).
+			return Null, receiver, false, true, fmt.Errorf("System.UnexpectedException: Salesforce System Error")
+		}
 		if len(args) != 0 && (len(args) != 1 || args[0].Kind != ValueInt) {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.find expects optional Integer start")
 		}
@@ -136,8 +146,15 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		startByte := region.startByte
 		if len(args) == 1 {
 			startIndex := int(args[0].Int)
-			if startIndex < region.startIndex || startIndex > region.endIndex {
-				return Null, receiver, false, true, fmt.Errorf("Matcher.find start out of region")
+			if startIndex < 0 || startIndex > apexStringLength(input) {
+				return Null, receiver, false, true, newExceptionError("System.StringException", "Starting index out of bounds (parameter 1): Illegal start index")
+			}
+			// K002: find(start) resets the region before starting its search.
+			receiver.Fields["regionStart"] = Int(0)
+			receiver.Fields["regionEnd"] = Int(int64(apexStringLength(input)))
+			region, err = matcherRegion(receiver, input)
+			if err != nil {
+				return Null, receiver, false, true, err
 			}
 			startByte, err = byteIndexForApexStringIndex(input, startIndex)
 			if err != nil {
@@ -153,24 +170,23 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if startByte > region.endByte {
 			matcherClearMatch(receiver)
 			receiver.Fields["index"] = Int(int64(region.endByte + 1))
-			receiver.Fields["hitEnd"] = Bool(true)
 			receiver.Fields["requireEnd"] = Bool(false)
 			return Bool(false), receiver, true, true, nil
 		}
-		indices, err := matcherRegexp2FindIndices(receiver, input, region, startByte)
+		indices, hitEnd, requiresEnd, err := matcherRegexp2FindIndices(receiver, input, region, startByte)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
 		if indices == nil {
 			matcherClearMatch(receiver)
 			receiver.Fields["index"] = Int(int64(region.endByte + 1))
-			receiver.Fields["hitEnd"] = Bool(true)
+			receiver.Fields["hitEnd"] = Bool(hitEnd)
 			receiver.Fields["requireEnd"] = Bool(false)
 			return Bool(false), receiver, true, true, nil
 		}
 		matcherSaveMatch(receiver, indices)
-		receiver.Fields["hitEnd"] = Bool(false)
-		receiver.Fields["requireEnd"] = Bool(false)
+		receiver.Fields["hitEnd"] = Bool(hitEnd)
+		receiver.Fields["requireEnd"] = Bool(requiresEnd)
 		next := indices[1]
 		if indices[0] == indices[1] {
 			next = nextRegexSearchIndex(input, next)
@@ -229,8 +245,16 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
+		// K003: replacement leaves the matcher at the last search result.
+		err = matcherReplaceSearchState(receiver, method == "replaceAll")
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
 		return String(replaced), receiver, true, true, nil
 	case "reset":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+		}
 		if len(args) != 0 && (len(args) != 1 || args[0].Kind != ValueString) {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.reset expects optional input String")
 		}
@@ -242,8 +266,11 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		input := receiver.Fields["input"]
 		receiver.Fields["regionStart"] = Int(0)
 		receiver.Fields["regionEnd"] = Int(int64(apexStringLength(input.Text)))
-		return receiver, receiver, true, true, nil
+		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "region":
+		if len(args) == 2 && (args[0].Kind == ValueNull || args[1].Kind == ValueNull) {
+			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+		}
 		if len(args) != 2 || args[0].Kind != ValueInt || args[1].Kind != ValueInt {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.region expects start and end Integers")
 		}
@@ -276,6 +303,9 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		return Int(int64(region.endIndex)), receiver, false, true, nil
 	case "usePattern":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+		}
 		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Pattern" {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.usePattern expects Pattern")
 		}
@@ -294,12 +324,21 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		receiver.Fields["regexp2Source"] = String(regexp2Source)
 		receiver.Fields["patternSource"] = source
-		matcherClearMatch(receiver)
-		region, err := matcherRegion(receiver, input)
+		if groups := receiver.Fields["groups"]; groups.Kind == ValueList {
+			plan, err := matcherRegexp2PlanForInput(receiver, input)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			indices := make([]int, (plan.publicGroupCount()+1)*2)
+			for i := range indices {
+				indices[i] = -1
+			}
+			matcherSaveMatch(receiver, indices)
+		}
+		_, err = matcherRegion(receiver, input)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		receiver.Fields["index"] = Int(int64(region.startByte))
 		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "appendReplacement", "appendTail":
 		return Null, receiver, false, true, unsupportedCallError("Matcher." + method + " requires Java StringBuffer append semantics")
@@ -314,12 +353,18 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		return Bool(matcherBoolField(receiver, "transparentBounds", false)), receiver, false, true, nil
 	case "useAnchoringBounds":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+		}
 		if len(args) != 1 || args[0].Kind != ValueBool {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.useAnchoringBounds expects Boolean")
 		}
 		receiver.Fields["anchoringBounds"] = args[0]
 		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "useTransparentBounds":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+		}
 		if len(args) != 1 || args[0].Kind != ValueBool {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.useTransparentBounds expects Boolean")
 		}
@@ -356,6 +401,9 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 }
 
 func matcherReplaceRegexp2(name string, matcher Value, input string, region matcherRegionBounds, args []Value, all bool) (string, error) {
+	if len(args) == 1 && args[0].Kind == ValueNull {
+		return "", newExceptionError("System.NullPointerException", "Argument cannot be null.")
+	}
 	if len(args) != 1 || args[0].Kind != ValueString {
 		return "", fmt.Errorf("%s expects replacement String", name)
 	}
@@ -364,10 +412,6 @@ func matcherReplaceRegexp2(name string, matcher Value, input string, region matc
 	if err != nil {
 		return "", err
 	}
-	segments, err := parseJavaReplacement(name, args[0].Text, plan.publicGroupCount())
-	if err != nil {
-		return "", fmt.Errorf("%s %w", name, err)
-	}
 	regionRunes := []rune(regionText)
 	match, err := plan.findValidStartingAt(regionText, 0)
 	if err != nil {
@@ -375,6 +419,23 @@ func matcherReplaceRegexp2(name string, matcher Value, input string, region matc
 	}
 	if match == nil {
 		return input, nil
+	}
+	var namedGroups map[string]int
+	if strings.HasPrefix(name, "Matcher.") {
+		namedGroups = map[string]int{}
+		for index, number := range plan.publicGroupNumbers {
+			groupName := plan.re.GroupNameFromNumber(number)
+			if groupName != fmt.Sprint(number) {
+				namedGroups[groupName] = index
+			}
+		}
+	}
+	segments, err := parseJavaReplacementWithNames(name, args[0].Text, plan.publicGroupCount(), namedGroups)
+	if err != nil {
+		if strings.HasPrefix(name, "Matcher.") {
+			return "", matcherReplacementError(args[0].Text, err)
+		}
+		return "", fmt.Errorf("%s %w", name, err)
 	}
 	var out strings.Builder
 	last := 0
@@ -406,6 +467,15 @@ func matcherReplaceRegexp2(name string, matcher Value, input string, region matc
 	}
 	out.WriteString(string(regionRunes[last:]))
 	return input[:region.startByte] + out.String() + input[region.endByte:], nil
+}
+
+func matcherReplaceSearchState(matcher Value, all bool) error {
+	for {
+		found, _, _, _, err := callMatcherMember(matcher, "find", nil)
+		if err != nil || !found.Bool || !all {
+			return err
+		}
+	}
 }
 
 func expandRegexp2Replacement(match *regexp2.Match, segments []javaReplacementSegment) string {

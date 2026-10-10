@@ -20,6 +20,9 @@ func EstimateResultRetainedBytes(result Result) int64 {
 		if result.Diagnostics[i].Range != nil {
 			size += int64(unsafe.Sizeof(diagnostic.Range{}))
 		}
+		if result.Diagnostics[i].NativeLine != nil {
+			size += int64(unsafe.Sizeof(int(0)))
+		}
 	}
 	// Go does not expose map capacity. Two entry-widths plus a small bucket
 	// allowance per live entry conservatively covers keys, values, and buckets
@@ -90,6 +93,10 @@ func cloneResult(result Result) Result {
 		cloned.Diagnostics = make([]diagnostic.Diagnostic, len(result.Diagnostics))
 		copy(cloned.Diagnostics, result.Diagnostics)
 		for i := range cloned.Diagnostics {
+			if result.Diagnostics[i].NativeLine != nil {
+				copiedLine := *result.Diagnostics[i].NativeLine
+				cloned.Diagnostics[i].NativeLine = &copiedLine
+			}
 			if result.Diagnostics[i].Range == nil {
 				continue
 			}

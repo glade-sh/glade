@@ -118,6 +118,17 @@ func (e *Engine) summaryRelationsForChild(childObjectName string) []summaryRelat
 			})
 		}
 	}
+	// DuplicateRecordSet.RecordCount is a system-maintained count of manually
+	// persisted items. Reuse the rollup pipeline, including deletion and rollback.
+	if strings.EqualFold(childObjectName, "DuplicateRecordItem") {
+		parent, parentOK := e.Org.Objects["DuplicateRecordSet"]
+		field, fieldOK := parent.Definition.Fields["RecordCount"]
+		if parentOK && fieldOK && field.Type != storage.FieldSummary {
+			field.SummaryOperation = "count"
+			field.SummaryForeignKey = "DuplicateRecordItem.DuplicateRecordSetId"
+			relations = append(relations, summaryRelation{parentObject: "DuplicateRecordSet", parentField: "RecordCount", field: field, fkFieldName: "DuplicateRecordSetId"})
+		}
+	}
 	e.SummaryByChild.store(childObjectName, relations)
 	return relations
 }
@@ -366,6 +377,15 @@ func summaryFilterMatches(value storage.Value, filter storage.SummaryFilterItem)
 }
 
 func summaryValueMatchesText(value storage.Value, text string) bool {
+	for _, candidate := range strings.Split(text, ",") {
+		if summaryValueMatchesSingleText(value, candidate) {
+			return true
+		}
+	}
+	return false
+}
+
+func summaryValueMatchesSingleText(value storage.Value, text string) bool {
 	text = strings.TrimSpace(text)
 	switch value.Kind {
 	case storage.ValueBoolean:

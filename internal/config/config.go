@@ -5,8 +5,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/namespaceremap"
@@ -43,7 +45,35 @@ type PackageShim struct {
 }
 
 type OrgConfig struct {
-	Features []string `json:"features"`
+	Features  []string `json:"features"`
+	DomainURL string   `json:"domainUrl,omitempty"`
+}
+
+// NormalizeOrgDomainURL validates an optional canonical HTTP origin and removes
+// its optional trailing slash. Unset remains unset until the VM uses its default.
+func NormalizeOrgDomainURL(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", nil
+	}
+	origin, err := url.Parse(raw)
+	if err != nil {
+		return "", fmt.Errorf("invalid org domain URL %q: %w", raw, err)
+	}
+	scheme := strings.ToLower(origin.Scheme)
+	if (scheme != "http" && scheme != "https") || origin.Hostname() == "" || origin.Opaque != "" || origin.User != nil || origin.RawQuery != "" || origin.ForceQuery || strings.Contains(raw, "#") || (origin.EscapedPath() != "" && origin.EscapedPath() != "/") {
+		return "", fmt.Errorf("invalid org domain URL %q: expected an absolute http(s) origin without userinfo, path, query or fragment", raw)
+	}
+	if strings.HasSuffix(origin.Host, ":") {
+		return "", fmt.Errorf("invalid org domain URL %q: empty port", raw)
+	}
+	if port := origin.Port(); port != "" {
+		value, err := strconv.Atoi(port)
+		if err != nil || value < 0 || value > 65535 {
+			return "", fmt.Errorf("invalid org domain URL %q: invalid port", raw)
+		}
+	}
+	return scheme + "://" + origin.Host, nil
 }
 
 func LoadNearest(start string) (Config, string, error) {
@@ -163,6 +193,13 @@ func parseYAMLSubset(src string) (Config, error) {
 			cfg.Project.SchemaSnapshot = trimScalar(value)
 		case "project.schemaSnapshotSHA256":
 			cfg.Project.SchemaSnapshotSHA256 = strings.ToLower(trimScalar(value))
+		case "org.domainUrl":
+			_, rawValue, _ := strings.Cut(raw, ":")
+			domainURL, err := NormalizeOrgDomainURL(trimScalar(stripDomainURLComment(rawValue)))
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: org.domainUrl: %w", lineNo+1, err)
+			}
+			cfg.Org.DomainURL = domainURL
 		case "org.features":
 			values, err := parseInlineList(value)
 			if err != nil {
@@ -289,6 +326,25 @@ func parsePackageShims(values []string) ([]PackageShim, error) {
 func stripComment(s string) string {
 	if idx := strings.IndexByte(s, '#'); idx >= 0 {
 		return s[:idx]
+	}
+	return s
+}
+
+// Preserve fragment delimiters in this origin scalar so validation can reject
+// them; only an unquoted, whitespace-separated # starts a YAML comment.
+func stripDomainURLComment(s string) string {
+	var quote byte
+	for i := 0; i < len(s); i++ {
+		switch {
+		case quote != 0:
+			if s[i] == quote {
+				quote = 0
+			}
+		case s[i] == '\'' || s[i] == '"':
+			quote = s[i]
+		case s[i] == '#' && (i == 0 || s[i-1] == ' ' || s[i-1] == '\t'):
+			return s[:i]
+		}
 	}
 	return s
 }

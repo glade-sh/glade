@@ -1,0 +1,1882 @@
+{
+  "59.0": {
+    "conversion": "Credential-free input: native Full Edit field components and uiBehavior flattened into owned Layout XML. Fixture filename/section storage are local identifiers; no native metadata FullName or layout ID is inferred. Original captured runtime source remains unchanged.",
+    "fixture": "internal/lwc/compile/testdata/l11_native_layouts/api59/FamilyL11Child__c-Captured Full Edit.layout-meta.xml",
+    "fixture_sha256": "32ce1f78fe8486e72d4b027ec75357f4c72c440c45ec5af6b5e70524e8389159",
+    "layout": {
+      "id": "00h000000000001AAA",
+      "layoutType": "Full",
+      "mode": "Edit",
+      "objectApiName": "FamilyL11Child__c",
+      "recordTypeId": "012000000000000AAA",
+      "saveOptions": [],
+      "sections": [
+        {
+          "collapsible": false,
+          "columns": 2,
+          "heading": "Information",
+          "id": "01B000000000001EAA",
+          "layoutRows": [
+            {
+              "layoutItems": [
+                {
+                  "editableForNew": true,
+                  "editableForUpdate": true,
+                  "label": "Name",
+                  "layoutComponents": [
+                    {
+                      "apiName": "Name",
+                      "componentType": "Field",
+                      "label": "Name"
+                    }
+                  ],
+                  "lookupIdApiName": "Id",
+                  "required": true,
+                  "sortable": false,
+                  "uiBehavior": "Required"
+                },
+                {
+                  "editableForNew": false,
+                  "editableForUpdate": false,
+                  "label": "Owner",
+                  "layoutComponents": [
+                    {
+                      "apiName": "OwnerId",
+                      "componentType": "Field",
+                      "label": "Owner ID"
+                    }
+                  ],
+                  "lookupIdApiName": "OwnerId",
+                  "required": false,
+                  "sortable": false,
+                  "uiBehavior": "Edit"
+                }
+              ]
+            }
+          ],
+          "rows": 1,
+          "tabOrder": "TopDown",
+          "useHeading": false
+        },
+        {
+          "collapsible": false,
+          "columns": 2,
+          "heading": "System Information",
+          "id": "01B000000000002EAA",
+          "layoutRows": [
+            {
+              "layoutItems": [
+                {
+                  "editableForNew": false,
+                  "editableForUpdate": false,
+                  "label": "Created By",
+                  "layoutComponents": [
+                    {
+                      "apiName": "CreatedById",
+                      "componentType": "Field",
+                      "label": "Created By ID"
+                    },
+                    {
+                      "apiName": "CreatedDate",
+                      "componentType": "Field",
+                      "label": "Created Date"
+                    }
+                  ],
+                  "lookupIdApiName": "CreatedById",
+                  "required": false,
+                  "sortable": false,
+                  "uiBehavior": "Readonly"
+                },
+                {
+                  "editableForNew": false,
+                  "editableForUpdate": false,
+                  "label": "Last Modified By",
+                  "layoutComponents": [
+                    {
+                      "apiName": "LastModifiedById",
+                      "componentType": "Field",
+                      "label": "Last Modified By ID"
+                    },
+                    {
+                      "apiName": "LastModifiedDate",
+                      "componentType": "Field",
+                      "label": "Last Modified Date"
+                    }
+                  ],
+                  "lookupIdApiName": "LastModifiedById",
+                  "required": false,
+                  "sortable": false,
+                  "uiBehavior": "Readonly"
+                }
+              ]
+            }
+          ],
+          "rows": 1,
+          "tabOrder": "TopDown",
+          "useHeading": false
+        }
+      ]
+    },
+    "list_info": {
+      "cloneable": true,
+      "createable": true,
+      "deletable": true,
+      "displayColumns": [
+        {
+          "fieldApiName": "Name",
+          "inlineEditAttributes": {
+            "012000000000000AAA": {
+              "editable": true,
+              "required": true
+            }
+          },
+          "label": "Name",
+          "lookupId": "Id",
+          "searchable": true,
+          "sortable": true
+        },
+        {
+          "fieldApiName": "Sort__c",
+          "inlineEditAttributes": {
+            "012000000000000AAA": {
+              "editable": false,
+              "required": false
+            }
+          },
+          "label": "L11 Sort",
+          "lookupId": null,
+          "searchable": false,
+          "sortable": true
+        }
+      ],
+      "filterLogicString": null,
+      "filteredByInfo": [
+        {
+          "fieldApiName": "Name",
+          "label": "Name",
+          "operandLabels": [
+            "L11"
+          ],
+          "operator": "StartsWith"
+        }
+      ],
+      "hasMassActions": true,
+      "inlineEditDetails": {
+        "message": null,
+        "state": "Enabled"
+      },
+      "label": "L11 Owned",
+      "listReference": {
+        "id": "[METADATA_OR_RECORD_ID]",
+        "listViewApiName": "FamilyL11Owned",
+        "objectApiName": "FamilyL11Child__c",
+        "type": "listView"
+      },
+      "listShares": [],
+      "objectApiNames": [
+        "FamilyL11Child__c"
+      ],
+      "orderedByInfo": [
+        {
+          "fieldApiName": "Name",
+          "isAscending": true,
+          "label": "Name"
+        }
+      ],
+      "scope": {
+        "apiName": "everything",
+        "entity": null,
+        "label": "All l11 childs",
+        "relatedEntity": null
+      },
+      "searchable": false,
+      "updateable": true,
+      "userPreferences": {
+        "columnWidths": {
+          "Name": -1,
+          "Sort__c": -1
+        },
+        "columnWrap": {
+          "Name": false,
+          "Sort__c": false
+        }
+      },
+      "visibility": "Public",
+      "visibilityEditable": true
+    },
+    "object_info": {
+      "apiName": "FamilyL11Child__c",
+      "associateEntityType": null,
+      "associateParentEntity": null,
+      "childRelationships": [
+        {
+          "childObjectApiName": "ApprovalSubmission",
+          "fieldName": "RelatedRecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ApprovalSubmissions"
+        },
+        {
+          "childObjectApiName": "ApprovalWorkItem",
+          "fieldName": "RelatedRecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ApprovalWorkItems"
+        },
+        {
+          "childObjectApiName": "AttachedContentDocument",
+          "fieldName": "LinkedEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "AttachedContentDocuments"
+        },
+        {
+          "childObjectApiName": "Attachment",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "Attachments"
+        },
+        {
+          "childObjectApiName": "CollaborationGroupRecord",
+          "fieldName": "RecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "RecordAssociatedGroups"
+        },
+        {
+          "childObjectApiName": "CombinedAttachment",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "CombinedAttachments"
+        },
+        {
+          "childObjectApiName": "ContactRequest",
+          "fieldName": "WhatId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ContactRequests"
+        },
+        {
+          "childObjectApiName": "ContentDocumentLink",
+          "fieldName": "LinkedEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ContentDocumentLinks"
+        },
+        {
+          "childObjectApiName": "DuplicateRecordItem",
+          "fieldName": "RecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "DuplicateRecordItems"
+        },
+        {
+          "childObjectApiName": "EntitySubscription",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FeedSubscriptionsForEntity"
+        },
+        {
+          "childObjectApiName": "FamilyL11Child__Share",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "Shares"
+        },
+        {
+          "childObjectApiName": "FinanceBalanceSnapshot",
+          "fieldName": "LegalEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FinanceBalanceSnapshots"
+        },
+        {
+          "childObjectApiName": "FinanceBalanceSnapshot",
+          "fieldName": "ReferenceEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FinanceBalanceSnapshots"
+        },
+        {
+          "childObjectApiName": "FinanceTransaction",
+          "fieldName": "DestinationEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "DestinationFinanceTransactions"
+        },
+        {
+          "childObjectApiName": "FinanceTransaction",
+          "fieldName": "LegalEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FinanceTransactions"
+        },
+        {
+          "childObjectApiName": "FinanceTransaction",
+          "fieldName": "ParentReferenceEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ParentFinanceTransactions"
+        },
+        {
+          "childObjectApiName": "FinanceTransaction",
+          "fieldName": "ReferenceEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FinanceTransactions"
+        },
+        {
+          "childObjectApiName": "FinanceTransaction",
+          "fieldName": "SourceEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "SourceFinanceTransactions"
+        },
+        {
+          "childObjectApiName": "FlowOrchestrationWorkItem",
+          "fieldName": "RelatedRecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FlowOrchestrationWorkItems"
+        },
+        {
+          "childObjectApiName": "Note",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "Notes"
+        },
+        {
+          "childObjectApiName": "NoteAndAttachment",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "NotesAndAttachments"
+        },
+        {
+          "childObjectApiName": "ProcessException",
+          "fieldName": "AttachedToId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ProcessExceptions"
+        },
+        {
+          "childObjectApiName": "ProcessInstance",
+          "fieldName": "TargetObjectId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ProcessInstances"
+        },
+        {
+          "childObjectApiName": "ProcessInstanceHistory",
+          "fieldName": "TargetObjectId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ProcessSteps"
+        },
+        {
+          "childObjectApiName": "RecordAction",
+          "fieldName": "RecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "RecordActions"
+        },
+        {
+          "childObjectApiName": "RecordActionHistory",
+          "fieldName": "ParentRecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "RecordActionHistories"
+        },
+        {
+          "childObjectApiName": "TopicAssignment",
+          "fieldName": "EntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "TopicAssignments"
+        },
+        {
+          "childObjectApiName": "UserDefinedLabelAssignment",
+          "fieldName": "ItemId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "UserDefinedLabelAssignments"
+        }
+      ],
+      "compactLayoutable": true,
+      "createable": true,
+      "custom": true,
+      "defaultRecordTypeId": "012000000000000AAA",
+      "deletable": true,
+      "dependentFields": {},
+      "feedEnabled": false,
+      "fields": {
+        "CloneSourceId": {
+          "apiName": "CloneSourceId",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "Reference",
+          "defaultValue": null,
+          "defaultedOnCreate": false,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Clone Source",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": true,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": false,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "CreatedById": {
+          "apiName": "CreatedById",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "Reference",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Created By ID",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": true,
+          "referenceTargetField": null,
+          "referenceToInfos": [
+            {
+              "apiName": "User",
+              "nameFields": [
+                "FirstName",
+                "LastName",
+                "Name"
+              ]
+            }
+          ],
+          "relationshipName": "CreatedBy",
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "CreatedDate": {
+          "apiName": "CreatedDate",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "DateTime",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Created Date",
+          "length": 0,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "Id": {
+          "apiName": "Id",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "String",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Record ID",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "IsDeleted": {
+          "apiName": "IsDeleted",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "Boolean",
+          "defaultValue": false,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Deleted",
+          "length": 0,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "LastModifiedById": {
+          "apiName": "LastModifiedById",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "Reference",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Last Modified By ID",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": true,
+          "referenceTargetField": null,
+          "referenceToInfos": [
+            {
+              "apiName": "User",
+              "nameFields": [
+                "FirstName",
+                "LastName",
+                "Name"
+              ]
+            }
+          ],
+          "relationshipName": "LastModifiedBy",
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "LastModifiedDate": {
+          "apiName": "LastModifiedDate",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "DateTime",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Last Modified Date",
+          "length": 0,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "Name": {
+          "apiName": "Name",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": true,
+          "custom": false,
+          "dataType": "String",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Name",
+          "length": 80,
+          "maskType": null,
+          "nameField": true,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": false,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": true
+        },
+        "OwnerId": {
+          "apiName": "OwnerId",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": true,
+          "custom": false,
+          "dataType": "Reference",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Owner ID",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": true,
+          "precision": 0,
+          "reference": true,
+          "referenceTargetField": null,
+          "referenceToInfos": [
+            {
+              "apiName": "Group",
+              "nameFields": [
+                "Name"
+              ]
+            },
+            {
+              "apiName": "User",
+              "nameFields": [
+                "FirstName",
+                "LastName",
+                "Name"
+              ]
+            }
+          ],
+          "relationshipName": "Owner",
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": true
+        },
+        "Parent__c": {
+          "apiName": "Parent__c",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": true,
+          "custom": true,
+          "dataType": "Reference",
+          "defaultValue": null,
+          "defaultedOnCreate": false,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "L11 Parent",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": true,
+          "referenceTargetField": null,
+          "referenceToInfos": [
+            {
+              "apiName": "FamilyL11Parent__c",
+              "nameFields": [
+                "Name"
+              ]
+            }
+          ],
+          "relationshipName": "Parent__r",
+          "required": false,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": true
+        },
+        "Sort__c": {
+          "apiName": "Sort__c",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": true,
+          "custom": true,
+          "dataType": "Double",
+          "defaultValue": null,
+          "defaultedOnCreate": false,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "L11 Sort",
+          "length": 0,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 6,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": false,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": true
+        },
+        "SystemModstamp": {
+          "apiName": "SystemModstamp",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "DateTime",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "System Modstamp",
+          "length": 0,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        }
+      },
+      "keyPrefix": "a06",
+      "label": "L11 Child",
+      "labelPlural": "L11 Childs",
+      "layoutable": true,
+      "mruEnabled": false,
+      "nameFields": [
+        "Name"
+      ],
+      "queryable": true,
+      "recordTypeInfos": {
+        "012000000000000AAA": {
+          "available": true,
+          "defaultRecordTypeMapping": true,
+          "master": true,
+          "name": "Master",
+          "recordTypeId": "012000000000000AAA"
+        }
+      },
+      "searchLayoutable": false,
+      "searchable": false,
+      "themeInfo": {
+        "color": "747E96",
+        "iconUrl": null
+      },
+      "updateable": true
+    },
+    "oracle": "Salesforce API 59.0 native observation"
+  },
+  "67.0": {
+    "conversion": "Credential-free input: native Full Edit field components and uiBehavior flattened into owned Layout XML. Fixture filename/section storage are local identifiers; no native metadata FullName or layout ID is inferred. Original captured runtime source remains unchanged.",
+    "fixture": "internal/lwc/compile/testdata/l11_native_layouts/api67/FamilyL11Child__c-Captured Full Edit.layout-meta.xml",
+    "fixture_sha256": "32ce1f78fe8486e72d4b027ec75357f4c72c440c45ec5af6b5e70524e8389159",
+    "layout": {
+      "id": "00h000000000001AAA",
+      "layoutType": "Full",
+      "mode": "Edit",
+      "objectApiName": "FamilyL11Child__c",
+      "recordTypeId": "012000000000000AAA",
+      "saveOptions": [],
+      "sections": [
+        {
+          "collapsible": false,
+          "columns": 2,
+          "heading": "Information",
+          "id": "01B000000000001EAA",
+          "layoutRows": [
+            {
+              "layoutItems": [
+                {
+                  "editableForNew": true,
+                  "editableForUpdate": true,
+                  "label": "Name",
+                  "layoutComponents": [
+                    {
+                      "apiName": "Name",
+                      "componentType": "Field",
+                      "label": "Name"
+                    }
+                  ],
+                  "lookupIdApiName": "Id",
+                  "required": true,
+                  "sortable": false,
+                  "uiBehavior": "Required"
+                },
+                {
+                  "editableForNew": false,
+                  "editableForUpdate": false,
+                  "label": "Owner",
+                  "layoutComponents": [
+                    {
+                      "apiName": "OwnerId",
+                      "componentType": "Field",
+                      "label": "Owner ID"
+                    }
+                  ],
+                  "lookupIdApiName": "OwnerId",
+                  "required": false,
+                  "sortable": false,
+                  "uiBehavior": "Edit"
+                }
+              ]
+            }
+          ],
+          "rows": 1,
+          "tabOrder": "TopDown",
+          "useHeading": false
+        },
+        {
+          "collapsible": false,
+          "columns": 2,
+          "heading": "System Information",
+          "id": "01B000000000002EAA",
+          "layoutRows": [
+            {
+              "layoutItems": [
+                {
+                  "editableForNew": false,
+                  "editableForUpdate": false,
+                  "label": "Created By",
+                  "layoutComponents": [
+                    {
+                      "apiName": "CreatedById",
+                      "componentType": "Field",
+                      "label": "Created By ID"
+                    },
+                    {
+                      "apiName": "CreatedDate",
+                      "componentType": "Field",
+                      "label": "Created Date"
+                    }
+                  ],
+                  "lookupIdApiName": "CreatedById",
+                  "required": false,
+                  "sortable": false,
+                  "uiBehavior": "Readonly"
+                },
+                {
+                  "editableForNew": false,
+                  "editableForUpdate": false,
+                  "label": "Last Modified By",
+                  "layoutComponents": [
+                    {
+                      "apiName": "LastModifiedById",
+                      "componentType": "Field",
+                      "label": "Last Modified By ID"
+                    },
+                    {
+                      "apiName": "LastModifiedDate",
+                      "componentType": "Field",
+                      "label": "Last Modified Date"
+                    }
+                  ],
+                  "lookupIdApiName": "LastModifiedById",
+                  "required": false,
+                  "sortable": false,
+                  "uiBehavior": "Readonly"
+                }
+              ]
+            }
+          ],
+          "rows": 1,
+          "tabOrder": "TopDown",
+          "useHeading": false
+        }
+      ]
+    },
+    "list_info": {
+      "cloneable": true,
+      "createable": true,
+      "deletable": true,
+      "displayColumns": [
+        {
+          "fieldApiName": "Name",
+          "inlineEditAttributes": {
+            "012000000000000AAA": {
+              "editable": true,
+              "required": true
+            }
+          },
+          "label": "Name",
+          "lookupId": "Id",
+          "searchable": true,
+          "sortable": true
+        },
+        {
+          "fieldApiName": "Sort__c",
+          "inlineEditAttributes": {
+            "012000000000000AAA": {
+              "editable": false,
+              "required": false
+            }
+          },
+          "label": "L11 Sort",
+          "lookupId": null,
+          "searchable": false,
+          "sortable": true
+        }
+      ],
+      "filterLogicString": null,
+      "filteredByInfo": [
+        {
+          "fieldApiName": "Name",
+          "label": "Name",
+          "operandLabels": [
+            "L11"
+          ],
+          "operator": "StartsWith"
+        }
+      ],
+      "hasMassActions": true,
+      "inlineEditDetails": {
+        "message": null,
+        "state": "Enabled"
+      },
+      "label": "L11 Owned",
+      "listReference": {
+        "id": "[METADATA_OR_RECORD_ID]",
+        "listViewApiName": "FamilyL11Owned",
+        "objectApiName": "FamilyL11Child__c",
+        "type": "listView"
+      },
+      "listShares": [],
+      "objectApiNames": [
+        "FamilyL11Child__c"
+      ],
+      "orderedByInfo": [
+        {
+          "fieldApiName": "Name",
+          "isAscending": true,
+          "label": "Name"
+        }
+      ],
+      "scope": {
+        "apiName": "everything",
+        "entity": null,
+        "label": "All l11 childs",
+        "relatedEntity": null
+      },
+      "searchable": false,
+      "updateable": true,
+      "userPreferences": {
+        "columnWidths": {
+          "Name": -1,
+          "Sort__c": -1
+        },
+        "columnWrap": {
+          "Name": false,
+          "Sort__c": false
+        }
+      },
+      "visibility": "Public",
+      "visibilityEditable": true
+    },
+    "object_info": {
+      "apiName": "FamilyL11Child__c",
+      "associateEntityType": null,
+      "associateParentEntity": null,
+      "childRelationships": [
+        {
+          "childObjectApiName": "ApprovalSubmission",
+          "fieldName": "RelatedRecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ApprovalSubmissions"
+        },
+        {
+          "childObjectApiName": "ApprovalWorkItem",
+          "fieldName": "RelatedRecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ApprovalWorkItems"
+        },
+        {
+          "childObjectApiName": "AttachedContentDocument",
+          "fieldName": "LinkedEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "AttachedContentDocuments"
+        },
+        {
+          "childObjectApiName": "Attachment",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "Attachments"
+        },
+        {
+          "childObjectApiName": "CollaborationGroupRecord",
+          "fieldName": "RecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "RecordAssociatedGroups"
+        },
+        {
+          "childObjectApiName": "CombinedAttachment",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "CombinedAttachments"
+        },
+        {
+          "childObjectApiName": "ContactRequest",
+          "fieldName": "WhatId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ContactRequests"
+        },
+        {
+          "childObjectApiName": "ContentDocumentLink",
+          "fieldName": "LinkedEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ContentDocumentLinks"
+        },
+        {
+          "childObjectApiName": "DuplicateRecordItem",
+          "fieldName": "RecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "DuplicateRecordItems"
+        },
+        {
+          "childObjectApiName": "EntitySubscription",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FeedSubscriptionsForEntity"
+        },
+        {
+          "childObjectApiName": "FamilyL11Child__Share",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "Shares"
+        },
+        {
+          "childObjectApiName": "FinanceBalanceSnapshot",
+          "fieldName": "LegalEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FinanceBalanceSnapshots"
+        },
+        {
+          "childObjectApiName": "FinanceBalanceSnapshot",
+          "fieldName": "ReferenceEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FinanceBalanceSnapshots"
+        },
+        {
+          "childObjectApiName": "FinanceTransaction",
+          "fieldName": "DestinationEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "DestinationFinanceTransactions"
+        },
+        {
+          "childObjectApiName": "FinanceTransaction",
+          "fieldName": "LegalEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FinanceTransactions"
+        },
+        {
+          "childObjectApiName": "FinanceTransaction",
+          "fieldName": "ParentReferenceEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ParentFinanceTransactions"
+        },
+        {
+          "childObjectApiName": "FinanceTransaction",
+          "fieldName": "ReferenceEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FinanceTransactions"
+        },
+        {
+          "childObjectApiName": "FinanceTransaction",
+          "fieldName": "SourceEntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "SourceFinanceTransactions"
+        },
+        {
+          "childObjectApiName": "FlowOrchestrationWorkItem",
+          "fieldName": "RelatedRecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "FlowOrchestrationWorkItems"
+        },
+        {
+          "childObjectApiName": "Note",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "Notes"
+        },
+        {
+          "childObjectApiName": "NoteAndAttachment",
+          "fieldName": "ParentId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "NotesAndAttachments"
+        },
+        {
+          "childObjectApiName": "ProcessException",
+          "fieldName": "AttachedToId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ProcessExceptions"
+        },
+        {
+          "childObjectApiName": "ProcessInstance",
+          "fieldName": "TargetObjectId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ProcessInstances"
+        },
+        {
+          "childObjectApiName": "ProcessInstanceHistory",
+          "fieldName": "TargetObjectId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "ProcessSteps"
+        },
+        {
+          "childObjectApiName": "RecordAction",
+          "fieldName": "RecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "RecordActions"
+        },
+        {
+          "childObjectApiName": "RecordActionHistory",
+          "fieldName": "ParentRecordId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "RecordActionHistories"
+        },
+        {
+          "childObjectApiName": "TopicAssignment",
+          "fieldName": "EntityId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "TopicAssignments"
+        },
+        {
+          "childObjectApiName": "UserDefinedLabelAssignment",
+          "fieldName": "ItemId",
+          "junctionIdListNames": [],
+          "junctionReferenceTo": [],
+          "relationshipName": "UserDefinedLabelAssignments"
+        }
+      ],
+      "compactLayoutable": true,
+      "createable": true,
+      "custom": true,
+      "defaultRecordTypeId": "012000000000000AAA",
+      "deletable": true,
+      "dependentFields": {},
+      "feedEnabled": false,
+      "fields": {
+        "CloneSourceId": {
+          "apiName": "CloneSourceId",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "Reference",
+          "defaultValue": null,
+          "defaultedOnCreate": false,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Clone Source",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": true,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": false,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "CreatedById": {
+          "apiName": "CreatedById",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "Reference",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Created By ID",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": true,
+          "referenceTargetField": null,
+          "referenceToInfos": [
+            {
+              "apiName": "User",
+              "nameFields": [
+                "FirstName",
+                "LastName",
+                "Name"
+              ]
+            }
+          ],
+          "relationshipName": "CreatedBy",
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "CreatedDate": {
+          "apiName": "CreatedDate",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "DateTime",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Created Date",
+          "length": 0,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "Id": {
+          "apiName": "Id",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "String",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Record ID",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "IsDeleted": {
+          "apiName": "IsDeleted",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "Boolean",
+          "defaultValue": false,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Deleted",
+          "length": 0,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "LastModifiedById": {
+          "apiName": "LastModifiedById",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "Reference",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Last Modified By ID",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": true,
+          "referenceTargetField": null,
+          "referenceToInfos": [
+            {
+              "apiName": "User",
+              "nameFields": [
+                "FirstName",
+                "LastName",
+                "Name"
+              ]
+            }
+          ],
+          "relationshipName": "LastModifiedBy",
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "LastModifiedDate": {
+          "apiName": "LastModifiedDate",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "DateTime",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Last Modified Date",
+          "length": 0,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        },
+        "Name": {
+          "apiName": "Name",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": true,
+          "custom": false,
+          "dataType": "String",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Name",
+          "length": 80,
+          "maskType": null,
+          "nameField": true,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": false,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": true
+        },
+        "OwnerId": {
+          "apiName": "OwnerId",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": true,
+          "custom": false,
+          "dataType": "Reference",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "Owner ID",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": true,
+          "precision": 0,
+          "reference": true,
+          "referenceTargetField": null,
+          "referenceToInfos": [
+            {
+              "apiName": "Group",
+              "nameFields": [
+                "Name"
+              ]
+            },
+            {
+              "apiName": "User",
+              "nameFields": [
+                "FirstName",
+                "LastName",
+                "Name"
+              ]
+            }
+          ],
+          "relationshipName": "Owner",
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": true
+        },
+        "Parent__c": {
+          "apiName": "Parent__c",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": true,
+          "custom": true,
+          "dataType": "Reference",
+          "defaultValue": null,
+          "defaultedOnCreate": false,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "L11 Parent",
+          "length": 18,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": true,
+          "referenceTargetField": null,
+          "referenceToInfos": [
+            {
+              "apiName": "FamilyL11Parent__c",
+              "nameFields": [
+                "Name"
+              ]
+            }
+          ],
+          "relationshipName": "Parent__r",
+          "required": false,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": true
+        },
+        "Sort__c": {
+          "apiName": "Sort__c",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": true,
+          "custom": true,
+          "dataType": "Double",
+          "defaultValue": null,
+          "defaultedOnCreate": false,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "L11 Sort",
+          "length": 0,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 6,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": false,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": true
+        },
+        "SystemModstamp": {
+          "apiName": "SystemModstamp",
+          "calculated": false,
+          "compound": false,
+          "compoundComponentName": null,
+          "compoundFieldName": null,
+          "controllerName": null,
+          "controllingFields": [],
+          "createable": false,
+          "custom": false,
+          "dataType": "DateTime",
+          "defaultValue": null,
+          "defaultedOnCreate": true,
+          "digits": 0,
+          "externalId": false,
+          "extraTypeInfo": null,
+          "filterable": true,
+          "filteredLookupInfo": null,
+          "highScaleNumber": false,
+          "htmlFormatted": false,
+          "inlineHelpText": null,
+          "label": "System Modstamp",
+          "length": 0,
+          "maskType": null,
+          "nameField": false,
+          "polymorphicForeignKey": false,
+          "precision": 0,
+          "reference": false,
+          "referenceTargetField": null,
+          "referenceToInfos": [],
+          "relationshipName": null,
+          "required": true,
+          "scale": 0,
+          "searchPrefilterable": false,
+          "sortable": true,
+          "unique": false,
+          "updateable": false
+        }
+      },
+      "keyPrefix": "a06",
+      "label": "L11 Child",
+      "labelPlural": "L11 Childs",
+      "layoutable": true,
+      "mruEnabled": false,
+      "nameFields": [
+        "Name"
+      ],
+      "queryable": true,
+      "recordTypeInfos": {
+        "012000000000000AAA": {
+          "available": true,
+          "defaultRecordTypeMapping": true,
+          "master": true,
+          "name": "Master",
+          "recordTypeId": "012000000000000AAA"
+        }
+      },
+      "searchLayoutable": false,
+      "searchable": false,
+      "themeInfo": {
+        "color": "747E96",
+        "iconUrl": null
+      },
+      "updateable": true
+    },
+    "oracle": "Salesforce API 67.0 native observation"
+  }
+}

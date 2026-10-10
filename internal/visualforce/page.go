@@ -2,6 +2,7 @@ package visualforce
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -38,13 +39,14 @@ type PageRenderRequest struct {
 }
 
 type PageRenderResult struct {
-	HTML        string
-	ViewState   string
-	RenderAs    string
-	RedirectURL string
-	Redirect    bool
-	Metrics     RenderMetrics
-	Error       *RenderError
+	HTML          string
+	ViewState     string
+	RenderAs      string
+	HeaderOptions *VisualforcePageHeaderOptions
+	RedirectURL   string
+	Redirect      bool
+	Metrics       RenderMetrics
+	Error         *RenderError
 }
 
 type RenderError struct {
@@ -53,6 +55,16 @@ type RenderError struct {
 	Line    int
 	Column  int
 	Expr    string
+}
+
+// PageRenderingServiceError is a rendering-profile rejection, rather than an
+// Apex controller exception or a component diagnostic.
+type PageRenderingServiceError struct {
+	Service string
+}
+
+func (e *PageRenderingServiceError) Error() string {
+	return fmt.Sprintf("Unsupported value %s for <apex:page renderAs> encountered.", e.Service)
 }
 
 func (e *RenderError) Error() string {
@@ -78,13 +90,15 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 	if err != nil {
 		return PageRenderResult{}, fmt.Errorf("parse markup: %w", err)
 	}
-	renderAs := pageRenderAs(tree)
 	machine := req.Machine
 	if machine == nil {
 		machine = vm.New(nil)
 	}
 	if req.Org != nil {
 		machine.Org = req.Org
+	}
+	if err := machine.LoadStandardSetListViews(req.Project.ListViewFiles); err != nil {
+		return PageRenderResult{}, err
 	}
 	namespace := strings.TrimSpace(req.Project.Namespace)
 	if namespace == "" && req.Org != nil {
@@ -98,67 +112,124 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 		pageURL = "/apex/" + req.PageName
 	}
 	machine.SetCurrentPageURL(pageURL)
+	defer machine.BindVisualforceStandardControllerReset(standardControllerResetter(machine, pageMeta, tree, namespace))()
 	if err := validateViewStateForPage(pageMeta, req.PageName, req.ViewState); err != nil {
 		return PageRenderResult{}, err
 	}
+	if req.ViewState != nil {
+		for _, name := range []string{viewStateVersionFieldName, viewStateMACFieldName, viewStateCSRFFieldName} {
+			if _, present := req.FormValues[name]; present {
+				if err := VerifyViewStateFormCSRF(*req.ViewState, req.FormValues); err != nil {
+					return PageRenderResult{}, err
+				}
+				break
+			}
+		}
+	}
 
 	savedPageMessages := viewStatePageMessages(req.ViewState)
-	controller, extensions, stdController, err := bootstrapControllers(machine, pageMeta, req.ViewState)
+	controller, extensions, stdController, releaseComponents, err := bootstrapCustomComponentPageControllers(machine, pageMeta, tree, req)
+	defer releaseComponents()
+	if err != nil {
+		return PageRenderResult{}, err
+	}
+	authorizedStandardFields := extendStandardControllerFields(machine, pageMeta, tree, namespace, &stdController)
+	exprCtx := &ExpressionContext{
+		VM:                       machine,
+		Controller:               controller,
+		Extensions:               extensions,
+		StandardController:       stdController,
+		AuthorizedStandardFields: authorizedStandardFields,
+		CurrentPage:              machine.CurrentPage(),
+		ProjectNamespace:         namespace,
+		Scope:                    NewScopeStack(),
+	}
+	formState, err := prepareFormLifecycle(tree, &req, machine, &controller, exprCtx)
 	if err != nil {
 		return PageRenderResult{}, err
 	}
 	allowedFormFields := VisualforceFormFieldNames(tree)
+	paramAction := req.Action
+	if strings.TrimSpace(paramAction) == "" {
+		paramAction = pageMeta.Action
+	}
+	paramAssignments, err := visualforceParamAssignments(tree, paramAction)
+	if err != nil {
+		return PageRenderResult{}, err
+	}
+	ordinaryFormValues := visualforceFormValuesWithoutParamAssignments(req.FormValues, paramAssignments)
 	if len(req.FormValues) > 0 {
-		savedPageMessages = mergePageMessages(savedPageMessages, applyFormValues(controller, req.FormValues, allowedFormFields))
-		savedPageMessages = mergePageMessages(savedPageMessages, applyStandardControllerFormValues(&stdController, req.FormValues, allowedFormFields, machine))
+		savedPageMessages = mergePageMessages(savedPageMessages, applyFormValues(controller, ordinaryFormValues, allowedFormFields))
+		savedPageMessages = mergePageMessages(savedPageMessages, applyStandardControllerFormValues(&stdController, ordinaryFormValues, allowedFormFields, machine))
+		controller, err = applyVisualforceParamAssignments(machine, controller, paramAssignments, req.FormValues)
+		if err != nil {
+			return PageRenderResult{}, err
+		}
 	}
 	actionParams := visualforceActionParams(req.FormValues, allowedFormFields)
+	exprCtx.Controller = controller
+	exprCtx.StandardController = stdController
 	machine.SetVisualforceActionInvoker(func(actionExpr string, actionPageURL string) (vm.Value, error) {
 		if strings.TrimSpace(actionPageURL) == "" {
 			actionPageURL = pageURL
 		}
 		actionName := actionMethodName(actionExpr)
-		value, result, err := invokeVisualforceAction(machine, controller, extensions, stdController, pageMeta, actionName, actionPageURL, actionParams)
+		value, result, err := invokeVisualforceAction(machine, controller, extensions, stdController, pageMeta, actionName, actionPageURL, actionParams, false)
 		if err != nil {
 			return vm.Null, err
 		}
 		if result.Error != nil {
-			return vm.Null, vm.UnsupportedFeature(result.Error.Message)
+			return vm.Null, visualforceCommandActionError(result.Error)
 		}
 		return value, nil
 	})
 	defer machine.ClearVisualforceActionInvoker()
 	var redirectURL string
 	var redirect bool
-	if strings.TrimSpace(req.Action) == "" && strings.TrimSpace(pageMeta.Action) != "" {
-		value, result, err := invokeVisualforceAction(machine, controller, extensions, stdController, pageMeta, actionMethodName(pageMeta.Action), pageURL, actionParams)
+	if (formState == nil || formState.allowAction) && strings.TrimSpace(req.Action) == "" && strings.TrimSpace(pageMeta.Action) != "" {
+		value, formulaAction, err := evaluateVisualforcePageAction(pageMeta.Action, exprCtx)
 		if err != nil {
 			return PageRenderResult{}, err
 		}
-		if result.Error != nil {
-			return PageRenderResult{}, vm.UnsupportedFeature(result.Error.Message)
-		}
-		if navURL, shouldRedirect, ok := pageReferenceNavigation(value); ok {
-			if shouldRedirect {
-				redirectURL = navURL
-				redirect = true
-			} else if targetPage := apexPageNameFromURL(navURL); targetPage != "" && !strings.EqualFold(targetPage, req.PageName) {
-				nextReq := req
-				nextReq.PageName = targetPage
-				nextReq.PageURL = navURL
-				nextReq.Action = ""
-				nextReq.FormValues = nil
-				nextReq.ViewState = nil
-				return RenderPage(nextReq)
+		if !formulaAction {
+			var result vm.UIInvocationResult
+			value, result, err = invokeVisualforceAction(machine, controller, extensions, stdController, pageMeta, actionMethodName(pageMeta.Action), pageURL, actionParams, true)
+			if err != nil {
+				return PageRenderResult{}, err
+			}
+			if result.Error != nil {
+				return PageRenderResult{}, visualforcePageActionError(pageMeta.Name, pageMeta.Action, result.Error)
 			}
 		}
-	} else if strings.TrimSpace(req.Action) != "" {
-		value, result, err := invokeVisualforceAction(machine, controller, extensions, stdController, pageMeta, actionMethodName(req.Action), pageURL, actionParams)
+		if navURL, shouldRedirect, ok := pageReferenceNavigation(value); ok {
+			if shouldRedirect {
+				redirectURL = navURL
+				redirect = true
+			} else if targetPage := apexPageNameFromURL(navURL); targetPage != "" && !strings.EqualFold(targetPage, req.PageName) {
+				nextReq := req
+				nextReq.PageName = targetPage
+				nextReq.PageURL = navURL
+				nextReq.Action = ""
+				nextReq.FormValues = nil
+				nextReq.ViewState = nil
+				return RenderPage(nextReq)
+			} else if targetPage := apexPageNameFromURL(navURL); strings.EqualFold(targetPage, req.PageName) {
+				machine.SetCurrentPageURL(navURL)
+			}
+		} else if formulaAction && value.Kind == vm.ValueString && strings.TrimSpace(value.Text) != "" {
+			redirectURL = value.Text
+			redirect = true
+		}
+	} else if (formState == nil || formState.allowAction) && strings.TrimSpace(req.Action) != "" {
+		value, result, err := invokeVisualforceAction(machine, controller, extensions, stdController, pageMeta, actionMethodName(req.Action), pageURL, actionParams, false)
 		if err != nil {
 			return PageRenderResult{}, err
 		}
 		if result.Error != nil {
-			return PageRenderResult{}, vm.UnsupportedFeature(result.Error.Message)
+			if node := visualforceActionComponent(tree, req.Action); node != nil {
+				return PageRenderResult{}, visualforceComponentActionError(pageMeta.Name, node.Attribute("action"), node.RawName, result.Error)
+			}
+			return PageRenderResult{}, visualforceCommandActionError(result.Error)
 		}
 		if navURL, shouldRedirect, ok := pageReferenceNavigation(value); ok {
 			if shouldRedirect {
@@ -172,19 +243,29 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 				nextReq.FormValues = nil
 				nextReq.ViewState = nil
 				return RenderPage(nextReq)
+			} else if targetPage := apexPageNameFromURL(navURL); strings.EqualFold(targetPage, req.PageName) {
+				machine.SetCurrentPageURL(navURL)
 			}
 		}
 	}
 	refreshStandardSetControllerExposure(&stdController, pageMeta.RecordSetVar)
-
-	exprCtx := &ExpressionContext{
-		VM:                 machine,
-		Controller:         controller,
-		Extensions:         extensions,
-		StandardController: stdController,
-		CurrentPage:        machine.CurrentPage(),
-		ProjectNamespace:   namespace,
+	exprCtx.Controller = controller
+	exprCtx.Extensions = extensions
+	exprCtx.StandardController = stdController
+	exprCtx.CurrentPage = machine.CurrentPage()
+	renderAs, err := pageRenderAs(tree, exprCtx)
+	if err != nil {
+		return PageRenderResult{}, err
 	}
+	headerOptions, err := EvaluateVisualforcePageHeaderOptions(tree, exprCtx)
+	if err != nil {
+		return PageRenderResult{}, err
+	}
+	exprCtx.escapeLiteralAmpersands = pageEscapesLiteralAmpersands(headerOptions, renderAs)
+	if err := validateLiteralFlowInputs(tree, req.Project); err != nil {
+		return PageRenderResult{}, err
+	}
+
 	metrics := RenderMetrics{ComponentCounts: make(map[string]int)}
 	renderCtx := &RenderContext{
 		VM:                 machine,
@@ -194,11 +275,12 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 		VFIndex:            &req.VFIndex,
 		Project:            req.Project,
 		Expression:         exprCtx,
-		Scope:              NewScopeStack(),
+		Scope:              exprCtx.Scope,
 		Defines:            make(map[string]*MarkupNode),
 		Metrics:            &metrics,
 		Debug:              req.Debug,
 		LightningBootstrap: req.LightningBootstrap,
+		formLifecycle:      formState,
 	}
 	rendered, err := RenderMarkupTree(tree, renderCtx)
 	if err != nil {
@@ -210,16 +292,31 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 	}
 	currentPageMessages := pageMessagesToStrings(machine)
 	rendered = injectViewStatePageMessages(rendered, missingPageMessages(savedPageMessages, currentPageMessages))
+	controllerValues := valueFieldsToViewStateValues(machine, pageMeta.Controller, controller)
+	controllerNullFields := omitViewStateNullFields(controllerValues)
+	extensionValues := extensionFieldsToViewStateValues(machine, pageMeta.Extensions, extensions)
+	var extensionNullFields [][]string
+	for i, fields := range extensionValues {
+		if names := omitViewStateNullFields(fields); len(names) != 0 {
+			if extensionNullFields == nil {
+				extensionNullFields = make([][]string, len(extensionValues))
+			}
+			extensionNullFields[i] = names
+		}
+	}
 	payload := ViewStatePayload{
-		Version:          CurrentViewStateVersion,
-		PageName:         req.PageName,
-		ControllerType:   pageMeta.Controller,
-		ControllerValues: valueFieldsToViewStateValues(machine, pageMeta.Controller, controller),
-		ControllerFields: valueFieldsToStrings(machine, pageMeta.Controller, controller),
-		ExtensionValues:  extensionFieldsToViewStateValues(machine, pageMeta.Extensions, extensions),
-		ExtensionFields:  extensionFieldsToStrings(machine, pageMeta.Extensions, extensions),
-		ComponentState:   map[string]string{},
-		PageMessages:     mergePageMessages(savedPageMessages, currentPageMessages),
+		Version:                 CurrentViewStateVersion,
+		PageName:                req.PageName,
+		ControllerType:          pageMeta.Controller,
+		ControllerValues:        controllerValues,
+		ControllerFields:        valueFieldsToStrings(machine, pageMeta.Controller, controller),
+		ControllerNullFields:    controllerNullFields,
+		ExtensionValues:         extensionValues,
+		ExtensionNullFields:     extensionNullFields,
+		ExtensionControllerRefs: extensionControllerReferences(controller, extensionValues),
+		ExtensionFields:         extensionFieldsToStrings(machine, pageMeta.Extensions, extensions),
+		ComponentState:          formComponentState(formState, req.ViewState),
+		PageMessages:            mergePageMessages(savedPageMessages, currentPageMessages),
 	}
 	if req.ViewState != nil {
 		payload.CSRF = req.ViewState.CSRF
@@ -231,11 +328,28 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 	if err != nil {
 		return PageRenderResult{}, err
 	}
-	if err := CheckVisualforceViewStateSize(len(encoded)); err != nil {
+	stateSize, err := encodedViewStateSize(encoded)
+	if err != nil {
+		return PageRenderResult{}, err
+	}
+	if err := CheckVisualforceViewStateSize(stateSize); err != nil {
 		return PageRenderResult{Metrics: metrics, Error: &RenderError{Message: err.Error(), File: pageMeta.File}}, err
 	}
 	finalHTML := InjectCSRF(InjectViewState(rendered, encoded), payload.CSRF)
-	return PageRenderResult{HTML: finalHTML, ViewState: encoded, RenderAs: renderAs, RedirectURL: redirectURL, Redirect: redirect, Metrics: metrics}, nil
+	return PageRenderResult{HTML: finalHTML, ViewState: encoded, RenderAs: renderAs, HeaderOptions: &headerOptions, RedirectURL: redirectURL, Redirect: redirect, Metrics: metrics}, nil
+}
+
+func evaluateVisualforcePageAction(action string, ctx *ExpressionContext) (vm.Value, bool, error) {
+	expr, err := parseExpression(actionMethodName(action))
+	if err != nil {
+		return vm.Null, false, nil
+	}
+	function, ok := expr.(visualforceFunctionExpr)
+	if !ok || !strings.EqualFold(function.name, "URLFOR") {
+		return vm.Null, false, nil
+	}
+	value, err := evaluateExpressionNode(expr, ctx)
+	return value, true, err
 }
 
 func validateViewStateForPage(page Page, pageName string, payload *ViewStatePayload) error {
@@ -251,7 +365,7 @@ func validateViewStateForPage(page Page, pageName string, payload *ViewStatePayl
 	return nil
 }
 
-func invokeVisualforceAction(machine *vm.VM, controller vm.Value, extensions []vm.Value, stdController vm.Value, page Page, actionName string, pageURL string, params map[string]string) (vm.Value, vm.UIInvocationResult, error) {
+func invokeVisualforceAction(machine *vm.VM, controller vm.Value, extensions []vm.Value, stdController vm.Value, page Page, actionName string, pageURL string, params map[string]string, pageAction bool) (vm.Value, vm.UIInvocationResult, error) {
 	if strings.TrimSpace(actionName) == "" {
 		return vm.Null, vm.UIInvocationResult{Success: true}, nil
 	}
@@ -260,9 +374,7 @@ func invokeVisualforceAction(machine *vm.VM, controller vm.Value, extensions []v
 		controller vm.Value
 		apply      func(vm.Value)
 	}
-	candidates := []actionCandidate{
-		{className: page.Controller, controller: controller, apply: func(updated vm.Value) { controller = updated }},
-	}
+	var candidates []actionCandidate
 	for i, extName := range page.Extensions {
 		if i < len(extensions) {
 			idx := i
@@ -275,6 +387,7 @@ func invokeVisualforceAction(machine *vm.VM, controller vm.Value, extensions []v
 			})
 		}
 	}
+	candidates = append(candidates, actionCandidate{className: page.Controller, controller: controller, apply: func(updated vm.Value) { controller = updated }})
 	if page.StandardController != "" {
 		className := "ApexPages.StandardController"
 		if strings.TrimSpace(stdController.Type) != "" {
@@ -294,7 +407,17 @@ func invokeVisualforceAction(machine *vm.VM, controller vm.Value, extensions []v
 		if strings.TrimSpace(candidate.className) == "" || candidate.controller.Kind != vm.ValueObject {
 			continue
 		}
-		value, updated, result, err := machine.InvokeVisualforceActionOnController(candidate.controller, candidate.className, actionName, pageURL, params)
+		methodName := actionName
+		if method, ok := visualforceControllerAction(machine, candidate.className, actionName); ok {
+			methodName = method.Name[strings.LastIndex(method.Name, ".")+1:]
+			// The native return-type errors were captured on <apex:page action>.
+			if pageAction {
+				if err := visualforcePageActionReturnType(method.ReturnType); err != nil {
+					return vm.Null, vm.UIInvocationResult{}, err
+				}
+			}
+		}
+		value, updated, result, err := machine.InvokeVisualforceActionOnController(candidate.controller, candidate.className, methodName, pageURL, params)
 		if err != nil {
 			return value, result, err
 		}
@@ -334,12 +457,121 @@ func visualforceActionCandidateMissing(result vm.UIInvocationResult) bool {
 		strings.HasPrefix(message, "Visualforce action requires ")
 }
 
+// Native action_casefold and action_ext_* cases resolve the first extension's
+// zero-argument method, using its declared spelling for VM invocation.
+func visualforceControllerAction(machine *vm.VM, className, name string) (vm.Method, bool) {
+	seen := map[string]bool{}
+	for className != "" && !seen[strings.ToLower(className)] {
+		seen[strings.ToLower(className)] = true
+		class, ok := visualforceVMClass(machine, className)
+		if !ok {
+			break
+		}
+		for _, method := range class.Methods {
+			shortName := method.Name[strings.LastIndex(method.Name, ".")+1:]
+			if strings.EqualFold(shortName, name) && !method.IsStatic && len(method.Params) == 0 {
+				return method, true
+			}
+		}
+		className = class.SuperClass
+	}
+	return vm.Method{}, false
+}
+
+func visualforcePageActionReturnType(returnType string) error {
+	switch strings.ToLower(returnType) {
+	case "string":
+		return fmt.Errorf("Formula Expression is required on the action attributes.")
+	case "integer":
+		return fmt.Errorf("Return type of an Apex action method must be a PageReference. Found: java.lang.Integer")
+	case "boolean":
+		return fmt.Errorf("Return type of an Apex action method must be a PageReference. Found: java.lang.Boolean")
+	}
+	return nil
+}
+
+type visualforceActionError struct {
+	page       string
+	expression string
+	component  string
+	cause      *vm.UIActionError
+}
+
+func visualforceActionComponent(node *MarkupNode, action string) *MarkupNode {
+	var found *MarkupNode
+	ambiguous := false
+	var visit func(*MarkupNode)
+	visit = func(node *MarkupNode) {
+		if node == nil {
+			return
+		}
+		// A page action runs on initial load, not as the submitted component.
+		// Method-only action requests cannot distinguish two matching buttons.
+		if expression := node.Attribute("action"); expression != "" &&
+			!(strings.EqualFold(node.Namespace, "apex") && strings.EqualFold(node.Name, "page")) &&
+			strings.EqualFold(actionMethodName(expression), actionMethodName(action)) {
+			if found != nil {
+				ambiguous = true
+			}
+			found = node
+		}
+		for _, child := range node.Children {
+			visit(child)
+		}
+	}
+	visit(node)
+	if ambiguous {
+		return nil
+	}
+	return found
+}
+
+func visualforcePageActionError(page, expression string, cause *vm.UIActionError) error {
+	return visualforceComponentActionError(page, expression, "apex:page", cause)
+}
+
+func visualforceComponentActionError(page, expression, component string, cause *vm.UIActionError) error {
+	if cause.Type == "UnsupportedFeature" {
+		return vm.UnsupportedFeature(cause.Message)
+	}
+	return &visualforceActionError{page: page, expression: expression, component: component, cause: cause}
+}
+
+// ActionDiagnostic retains the originating Apex location and the component's
+// actual expression. The cause separately preserves the message and full stack.
+func (err *visualforceActionError) ActionDiagnostic() string {
+	location, _, _ := strings.Cut(err.cause.StackTraceString(), "\n")
+	if location == "" {
+		return ""
+	}
+	return fmt.Sprintf("Error is in expression '%s' in component <%s> in page %s: %s",
+		err.expression, err.component, strings.ToLower(err.page), location)
+}
+
+func visualforceCommandActionError(cause *vm.UIActionError) error {
+	if cause.Type == "UnsupportedFeature" {
+		return vm.UnsupportedFeature(cause.Message)
+	}
+	return cause
+}
+
+func (err *visualforceActionError) Error() string {
+	if diagnostic := err.ActionDiagnostic(); diagnostic != "" {
+		return diagnostic + "\n" + err.cause.Message
+	}
+	return err.cause.Message
+}
+
+func (err *visualforceActionError) Unwrap() error {
+	return err.cause
+}
+
 func pageReferenceNavigation(value vm.Value) (string, bool, bool) {
 	if value.Kind != vm.ValueObject || !strings.EqualFold(value.Type, "PageReference") {
 		return "", false, false
 	}
-	urlValue, ok := value.Fields["url"]
-	if !ok || urlValue.Kind != vm.ValueString || strings.TrimSpace(urlValue.Text) == "" {
+	urlValue := vm.PageReferenceURL(value)
+	if urlValue.Kind != vm.ValueString || strings.TrimSpace(urlValue.Text) == "" {
 		return "", false, false
 	}
 	redirect := false
@@ -374,7 +606,7 @@ func RenderPageURL(machine *vm.VM, pageURL string, asPDF bool) (vm.Value, error)
 	if env.Project.Root == "" {
 		return vm.Null, vm.UnsupportedFeature("PageReference.getContent local Visualforce page rendering surface")
 	}
-	idx, err := LoadProject(env.Project)
+	idx, err := LoadProjectForRender(env.Project)
 	if err != nil {
 		return vm.Null, err
 	}
@@ -387,7 +619,7 @@ func RenderPageURL(machine *vm.VM, pageURL string, asPDF bool) (vm.Value, error)
 		PageURL:  pageURL,
 	})
 	if err != nil {
-		return vm.Null, err
+		return vm.Null, pageReferenceRenderError(err)
 	}
 	if asPDF || strings.EqualFold(strings.TrimSpace(result.RenderAs), "pdf") {
 		if err := CheckVisualforcePDFHTMLResponseSize(len(result.HTML)); err != nil {
@@ -403,6 +635,17 @@ func RenderPageURL(machine *vm.VM, pageURL string, asPDF bool) (vm.Value, error)
 		return vm.NewBlobValue(string(pdfBytes)), nil
 	}
 	return vm.NewBlobValue(result.HTML), nil
+}
+
+func pageReferenceRenderError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var runtimeErr *vm.RuntimeError
+	if errors.As(err, &runtimeErr) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+	return vm.NewExecutionException(err.Error())
 }
 
 func RenderPageForTest(machine *vm.VM, projectRoot, pageName string) (string, error) {
@@ -457,19 +700,37 @@ func apexPageNameFromURL(rawURL string) string {
 	return strings.Trim(rawURL[len("apex/"):], "/")
 }
 
-func pageRenderAs(root *MarkupNode) string {
-	if root == nil {
-		return ""
+func pageRenderAs(root *MarkupNode, ctx *ExpressionContext) (string, error) {
+	page := firstVisualforcePageNode(root)
+	if page == nil {
+		return "", nil
 	}
-	if root.Type == MarkupNodeElement && strings.EqualFold(root.Namespace, "apex") && strings.EqualFold(root.Name, "page") {
-		return strings.TrimSpace(root.Attribute("renderAs"))
-	}
-	for _, child := range root.Children {
-		if renderAs := pageRenderAs(child); renderAs != "" {
-			return renderAs
+	raw := page.Attribute("renderAs")
+	if strings.HasPrefix(raw, "{!") && findExpressionTemplateEnd(raw, 2) == len(raw)-1 {
+		expression, err := parseExpression(strings.TrimSpace(raw[2 : len(raw)-1]))
+		if err != nil {
+			return "", err
+		}
+		if global := unsupportedVisualforceGlobal(expression); global != "" {
+			return "", vm.NewUnsupportedFeatureError(fmt.Sprintf("%s: unsupported Visualforce global", global))
+		}
+		value, err := evaluateExpressionNode(expression, ctx)
+		if err != nil {
+			return "", err
+		}
+		switch value.Kind {
+		case vm.ValueBool:
+			return "", &PageRenderingServiceError{Service: value.String()}
+		case vm.ValueNull:
+			return "", nil
+		case vm.ValueString:
+			return strings.TrimSpace(value.Text), nil
+		default:
+			return strings.TrimSpace(value.String()), nil
 		}
 	}
-	return ""
+	value, err := RenderVisualforceRawText(raw, ctx)
+	return strings.TrimSpace(value), err
 }
 
 func bootstrapControllers(machine *vm.VM, page Page, saved *ViewStatePayload) (vm.Value, []vm.Value, vm.Value, error) {
@@ -487,12 +748,22 @@ func bootstrapControllers(machine *vm.VM, page Page, saved *ViewStatePayload) (v
 		} else if saved != nil && saved.ControllerFields != nil {
 			applyStringFields(&controller, saved.ControllerFields)
 		}
+		if saved != nil {
+			restoreViewStateNullFields(&controller, saved.ControllerNullFields)
+		}
 	}
 	if page.StandardController != "" {
 		if strings.TrimSpace(page.RecordSetVar) != "" {
-			stdController = standardSetController(machine, page.StandardController, page.RecordSetVar)
+			var err error
+			stdController, err = standardSetController(machine, page)
+			if err != nil {
+				return vm.Null, nil, vm.Null, err
+			}
 		} else {
-			record := standardControllerRecord(machine, page.StandardController)
+			record, err := standardControllerRecord(machine, page.StandardController)
+			if err != nil {
+				return vm.Null, nil, vm.Null, err
+			}
 			stdController = vm.Object("ApexPages.StandardController")
 			stdController.Fields["record"] = record
 		}
@@ -505,8 +776,14 @@ func bootstrapControllers(machine *vm.VM, page Page, saved *ViewStatePayload) (v
 		bindStandardSetControllerExtensionFields(machine, &ext, extName, stdController)
 		if saved != nil && i < len(saved.ExtensionValues) && saved.ExtensionValues[i] != nil {
 			applyValueFields(&ext, saved.ExtensionValues[i])
+			if i < len(saved.ExtensionControllerRefs) {
+				restoreExtensionControllerReferences(&ext, saved.ExtensionControllerRefs[i], controller)
+			}
 		} else if saved != nil && i < len(saved.ExtensionFields) && saved.ExtensionFields[i] != nil {
 			applyStringFields(&ext, saved.ExtensionFields[i])
+		}
+		if saved != nil && i < len(saved.ExtensionNullFields) {
+			restoreViewStateNullFields(&ext, saved.ExtensionNullFields[i])
 		}
 		extensions = append(extensions, ext)
 	}
@@ -547,38 +824,125 @@ func visualforceConstructorParamMatches(paramType string, value vm.Value) bool {
 	return strings.EqualFold(strings.TrimSpace(paramType), strings.TrimSpace(value.Type))
 }
 
-func standardSetController(machine *vm.VM, objectName, recordSetVar string) vm.Value {
-	records := standardSetControllerRecords(machine, objectName)
-	controller := vm.Object("ApexPages.StandardSetController")
-	controller.Fields["records"] = records
-	controller.Fields["selected"] = vm.List()
-	controller.Fields["pageSize"] = vm.Int(20)
-	controller.Fields["pageNumber"] = vm.Int(1)
-	exposeStandardSetControllerFields(&controller, recordSetVar)
-	return controller
+func standardSetController(machine *vm.VM, page Page) (vm.Value, error) {
+	records, err := standardSetControllerRecords(machine, page.StandardController)
+	if err != nil {
+		return vm.Null, err
+	}
+	filterFields, err := standardSetControllerPageFields(page)
+	if err != nil {
+		return vm.Null, err
+	}
+	controller := vm.NewVisualforceStandardSetController(records, page.StandardController, filterFields)
+	controller.Fields["__glade_record_set_var"] = vm.String(page.RecordSetVar)
+	exposeStandardSetControllerFields(&controller, page.RecordSetVar)
+	return controller, nil
 }
 
-func standardSetControllerRecords(machine *vm.VM, objectName string) vm.Value {
-	records := vm.List()
-	objectKey := strings.TrimSpace(objectName)
-	if machine == nil || machine.Org == nil || objectKey == "" {
-		return records
+// standardSetControllerPageFields retains the page's direct row bindings.
+// List-view display columns do not add queried fields to a native controller.
+func standardSetControllerPageFields(page Page) ([]string, error) {
+	markup, err := os.ReadFile(page.File)
+	if err != nil {
+		return nil, err
 	}
-	resolvedObject, ok := storage.ResolveObjectName(*machine.Org, objectKey)
-	if !ok {
-		return records
+	tree, err := ParseMarkupTree(string(markup))
+	if err != nil {
+		return nil, err
 	}
-	object := machine.Org.Objects[resolvedObject]
-	ids := make([]string, 0, len(object.Records))
-	for id := range object.Records {
-		ids = append(ids, string(id))
+	fields := []string{"Id"}
+	seen := map[string]bool{"id": true}
+	var visitExpr func(Expression, map[string]bool)
+	visitExpr = func(expr Expression, aliases map[string]bool) {
+		if parts, static := standardStaticFieldPath(expr); static {
+			if len(parts) == 2 && aliases[strings.ToLower(parts[0])] && !seen[strings.ToLower(parts[1])] {
+				fields = append(fields, parts[1])
+				seen[strings.ToLower(parts[1])] = true
+			}
+			return
+		}
+		switch value := expr.(type) {
+		case functionExpr:
+			for _, arg := range value.args {
+				visitExpr(arg, aliases)
+			}
+		case visualforceFunctionExpr:
+			for _, arg := range value.args {
+				visitExpr(arg, aliases)
+			}
+		case binaryExpr:
+			visitExpr(value.left, aliases)
+			visitExpr(value.right, aliases)
+		case unaryExpr:
+			visitExpr(value.value, aliases)
+		case indexExpr:
+			visitExpr(value.target, aliases)
+			visitExpr(value.key, aliases)
+		case memberExpr:
+			visitExpr(value.target, aliases)
+		case methodCallExpr:
+			visitExpr(value.target, aliases)
+			for _, arg := range value.args {
+				visitExpr(arg, aliases)
+			}
+		}
 	}
-	sort.Strings(ids)
-	values := make([]vm.Value, 0, len(ids))
-	for _, id := range ids {
-		values = append(values, vmValueFromStorageRecord(object.Records[storage.ID(id)]))
+	scan := func(raw string, aliases map[string]bool) {
+		for _, ref := range ExtractMergeReferences(raw) {
+			if expr, err := parseExpression(ref.Expression); err == nil {
+				visitExpr(expr, aliases)
+			}
+		}
 	}
-	return vm.List(values...)
+	var walk func(*MarkupNode, map[string]bool)
+	walk = func(node *MarkupNode, aliases map[string]bool) {
+		if node == nil {
+			return
+		}
+		// A nested iterator can shadow its parent's row variable. Keep the
+		// alias local to this subtree, including non-controller collections.
+		if variable := strings.ToLower(strings.TrimSpace(node.Attribute("var"))); variable != "" {
+			scope := make(map[string]bool, len(aliases)+1)
+			for name, bound := range aliases {
+				scope[name] = bound
+			}
+			scope[variable] = false
+			if strings.EqualFold(node.Namespace, "apex") && (strings.EqualFold(node.Name, "repeat") || strings.EqualFold(node.Name, "dataTable") || strings.EqualFold(node.Name, "pageBlockTable")) {
+				refs := ExtractMergeReferences(node.Attribute("value"))
+				if len(refs) == 1 {
+					if expr, err := parseExpression(refs[0].Expression); err == nil {
+						parts, static := standardStaticFieldPath(expr)
+						scope[variable] = static && len(parts) == 1 && strings.EqualFold(parts[0], page.RecordSetVar)
+					}
+				}
+			}
+			aliases = scope
+		}
+		scan(node.Text, aliases)
+		for _, raw := range node.Attributes {
+			scan(raw, aliases)
+		}
+		for _, child := range node.Children {
+			walk(child, aliases)
+		}
+	}
+	walk(tree, nil)
+	return fields, nil
+}
+
+func standardSetControllerRecords(machine *vm.VM, objectName string) (vm.Value, error) {
+	if machine == nil {
+		return vm.Null, fmt.Errorf("Visualforce set record read requires a VM")
+	}
+	records, err := machine.ReadVisualforceRecords(objectName)
+	if err != nil {
+		return vm.Null, err
+	}
+	values := make([]vm.Value, 0, len(records))
+	for _, record := range records {
+		values = append(values, vmValueFromStorageRecord(record))
+	}
+	return vm.List(values...), nil
 }
 
 func bindStandardSetControllerExtensionFields(machine *vm.VM, extension *vm.Value, extensionName string, stdController vm.Value) {
@@ -682,24 +1046,145 @@ func standardSetPageCount(controller, records vm.Value) int {
 	return pages
 }
 
-func standardControllerRecord(machine *vm.VM, objectName string) vm.Value {
+func standardControllerRecord(machine *vm.VM, objectName string) (vm.Value, error) {
 	objectKey := strings.TrimSpace(objectName)
 	record := vm.Object(objectKey)
 	if machine == nil || machine.Org == nil {
-		return record
+		return record, nil
 	}
 	resolvedObject, ok := storage.ResolveObjectName(*machine.Org, objectKey)
-	if !ok {
-		return record
+	if ok {
+		objectKey = resolvedObject
+		record = vm.Object(objectKey)
 	}
-	record = vm.Object(resolvedObject)
-	object := machine.Org.Objects[resolvedObject]
 	if recordID, ok := pageParameterString(machine.CurrentPage(), "id"); ok {
-		if _, stored, found := storage.LookupRecordByID(object.Records, storage.ID(recordID)); found {
-			return vmValueFromStorageRecord(stored)
+		stored, found, err := machine.ReadVisualforceRecord(objectKey, storage.ID(recordID))
+		if err != nil {
+			return vm.Null, fmt.Errorf("read Visualforce standard controller record: %w", err)
+		}
+		if found {
+			fields := []string{"Id"}
+			for field := range stored.Fields {
+				fields = append(fields, field)
+			}
+			return machine.MarkVisualforceRecordFields(vmValueFromStorageRecord(stored), fields), nil
 		}
 	}
-	return record
+	return record, nil
+}
+
+func standardControllerResetter(machine *vm.VM, page Page, tree *MarkupNode, namespace string) func(string) (vm.Value, error) {
+	if machine == nil || machine.Org == nil || page.StandardController == "" || strings.TrimSpace(page.RecordSetVar) != "" {
+		return nil
+	}
+	if _, hasID := pageParameterString(machine.CurrentPage(), "id"); !hasID {
+		return nil
+	}
+	objectName, ok := storage.ResolveObjectName(*machine.Org, page.StandardController)
+	if !ok {
+		return nil
+	}
+	return func(recordType string) (vm.Value, error) {
+		if !strings.EqualFold(recordType, objectName) {
+			return vm.Null, nil
+		}
+		record, err := standardControllerRecord(machine, objectName)
+		if err != nil {
+			return vm.Null, err
+		}
+		controller := vm.Object("ApexPages.StandardController")
+		controller.Fields["record"] = record
+		extendStandardControllerFields(machine, page, tree, namespace, &controller)
+		return controller.Fields["record"], nil
+	}
+}
+
+// extendStandardControllerFields exposes only direct page bindings authorized
+// by USER_MODE. Row reads remain separate, so absent and unshared rows provide
+// no field values; other readable fields on the page can still render.
+func extendStandardControllerFields(machine *vm.VM, page Page, tree *MarkupNode, namespace string, controller *vm.Value) map[string]storage.Value {
+	allowed := make(map[string]storage.Value)
+	if machine == nil || machine.Org == nil || controller == nil || controller.Kind != vm.ValueObject ||
+		strings.TrimSpace(page.RecordSetVar) != "" || page.StandardController == "" {
+		return allowed
+	}
+	record := controller.Fields["record"]
+	if record.Kind != vm.ValueObject {
+		return allowed
+	}
+	objectKey, ok := storage.ResolveObjectName(*machine.Org, page.StandardController)
+	if !ok {
+		return allowed
+	}
+	object := machine.Org.Objects[objectKey]
+	checked := make(map[string]bool)
+	var requested []string
+	for _, fieldName := range standardControllerDirectBindings(tree, page.StandardController, machine.Org) {
+		resolved, ok := storage.ResolveFieldName(object.Definition, namespace, fieldName)
+		if !ok || strings.EqualFold(resolved, "Name") || strings.EqualFold(resolved, "Id") {
+			continue
+		}
+		key := strings.ToLower(resolved)
+		if checked[key] {
+			continue
+		}
+		checked[key] = true
+		requested = append(requested, resolved)
+	}
+	if len(requested) == 0 {
+		return allowed
+	}
+	// Authorization is independent of row visibility. A missing or unshared
+	// row may render an empty input only for fields admitted by USER_MODE.
+	granted, err := machine.AuthorizeVisualforceRecordFields(objectKey, requested)
+	if err != nil {
+		granted = nil
+		for _, field := range requested {
+			if _, fieldErr := machine.AuthorizeVisualforceRecordFields(objectKey, []string{field}); fieldErr == nil {
+				granted = append(granted, field)
+			}
+		}
+	}
+	if len(granted) == 0 {
+		return allowed
+	}
+	for _, field := range granted {
+		allowed[strings.ToLower(field)] = storage.NullValue()
+	}
+	recordID, hasID := pageParameterString(machine.CurrentPage(), "id")
+	if !hasID {
+		return allowed
+	}
+	merge := func(projected storage.Record, fields []string) {
+		for _, field := range fields {
+			value, present := projected.GetField(field)
+			if !present {
+				continue
+			}
+			allowed[strings.ToLower(field)] = value
+			record.Fields[field] = vmValueFromStorageValue(value)
+			record = machine.MarkVisualforceRecordFields(record, []string{field})
+		}
+	}
+	projected, found, err := machine.ReadVisualforceRecordFields(objectKey, storage.ID(recordID), granted)
+	if err == nil && found {
+		merge(projected, granted)
+	} else if err != nil {
+		// A read failure must not admit the field without a successful
+		// projection; independently readable siblings can still render.
+		for _, field := range granted {
+			delete(allowed, strings.ToLower(field))
+			projected, found, fieldErr := machine.ReadVisualforceRecordFields(objectKey, storage.ID(recordID), []string{field})
+			if fieldErr == nil {
+				allowed[strings.ToLower(field)] = storage.NullValue()
+				if found {
+					merge(projected, []string{field})
+				}
+			}
+		}
+	}
+	controller.Fields["record"] = record
+	return allowed
 }
 
 func applyFormValues(controller vm.Value, values map[string]string, allowedFields map[string]bool) []string {
@@ -717,6 +1202,34 @@ func applyFormValues(controller vm.Value, values map[string]string, allowedField
 	return diagnostics
 }
 
+func applyVisualforceParamAssignments(machine *vm.VM, controller vm.Value, assignments []visualforceParamAssignment, values map[string]string) (vm.Value, error) {
+	for _, assignment := range assignments {
+		raw, supplied, err := visualforceParamSubmittedValue(values, assignment.SubmittedName)
+		if err != nil {
+			return controller, err
+		}
+		if !supplied {
+			continue
+		}
+		typeName, ok, err := machine.InstancePropertyType(controller, assignment.TargetName)
+		if err != nil {
+			return controller, fmt.Errorf("apex:param %s assignTo %s: %w", assignment.SubmittedName, assignment.TargetName, err)
+		}
+		if !ok {
+			return controller, fmt.Errorf("apex:param %s assignTo %s does not name a readable and writable controller property", assignment.SubmittedName, assignment.TargetName)
+		}
+		value, err := visualforceAssignmentValue(raw, typeName, assignment.SubmittedName)
+		if err != nil {
+			return controller, err
+		}
+		controller, err = machine.AssignInstanceProperty(controller, assignment.TargetName, value)
+		if err != nil {
+			return controller, fmt.Errorf("apex:param %s assignTo %s: %w", assignment.SubmittedName, assignment.TargetName, err)
+		}
+	}
+	return controller, nil
+}
+
 func applyStandardControllerFormValues(controller *vm.Value, values map[string]string, allowedFields map[string]bool, machine *vm.VM) []string {
 	if controller == nil || controller.Kind != vm.ValueObject || len(values) == 0 {
 		return nil
@@ -724,6 +1237,12 @@ func applyStandardControllerFormValues(controller *vm.Value, values map[string]s
 	record, ok := controller.Fields["record"]
 	if !ok || record.Kind != vm.ValueObject {
 		return nil
+	}
+	if pageID, hasID := pageParameterString(machine.CurrentPage(), "id"); hasID {
+		storedID := record.Fields["Id"].Fields["value"]
+		if storedID.Kind != vm.ValueString || storedID.Text != pageID {
+			return nil
+		}
 	}
 	if record.Fields == nil {
 		record.Fields = make(map[string]vm.Value)
@@ -897,6 +1416,68 @@ func applyValueFields(target *vm.Value, fields map[string]vm.Value) {
 	}
 }
 
+// Root nulls are omitted from the projected value maps, but their names must
+// survive so restoration can clear values supplied by a new constructor.
+// Nested nulls and collection metadata remain in the graph unchanged.
+func omitViewStateNullFields(fields map[string]vm.Value) []string {
+	var names []string
+	for name, value := range fields {
+		if value.Kind == vm.ValueNull {
+			names = append(names, name)
+			delete(fields, name)
+		}
+	}
+	sort.Strings(names)
+	return names
+}
+
+func restoreViewStateNullFields(target *vm.Value, names []string) {
+	if target == nil || target.Kind != vm.ValueObject || len(names) == 0 {
+		return
+	}
+	if target.Fields == nil {
+		target.Fields = make(map[string]vm.Value, len(names))
+	}
+	for _, name := range names {
+		target.Fields[name] = vm.Null
+	}
+}
+
+// Record only direct references to the actual primary controller. Type or
+// field equality cannot distinguish an alias from an independent instance.
+func extensionControllerReferences(controller vm.Value, extensions []map[string]vm.Value) [][]string {
+	if controller.Kind != vm.ValueObject || controller.Ref == 0 {
+		return nil
+	}
+	var references [][]string
+	for i, fields := range extensions {
+		for name, value := range fields {
+			if value.Kind != vm.ValueObject || value.Ref != controller.Ref {
+				continue
+			}
+			if references == nil {
+				references = make([][]string, len(extensions))
+			}
+			references[i] = append(references[i], name)
+		}
+		if references != nil {
+			sort.Strings(references[i])
+		}
+	}
+	return references
+}
+
+func restoreExtensionControllerReferences(extension *vm.Value, references []string, controller vm.Value) {
+	if controller.Kind != vm.ValueObject || extension == nil || extension.Kind != vm.ValueObject {
+		return
+	}
+	for _, name := range references {
+		if value, ok := extension.Fields[name]; ok && value.Kind == vm.ValueObject {
+			extension.Fields[name] = controller
+		}
+	}
+}
+
 func restoreViewStateValue(value vm.Value) vm.Value {
 	switch value.Kind {
 	case vm.ValueNull, vm.ValueInt, vm.ValueDecimal, vm.ValueBool, vm.ValueString, vm.ValueList, vm.ValueSet, vm.ValueMap, vm.ValueObject:
@@ -926,6 +1507,7 @@ func valueFieldsToStrings(machine *vm.VM, className string, value vm.Value) map[
 
 func valueFieldsToViewStateValues(machine *vm.VM, className string, value vm.Value) map[string]vm.Value {
 	out := make(map[string]vm.Value)
+	seen := make(map[uint64]vm.Value)
 	if value.Kind != vm.ValueObject {
 		return out
 	}
@@ -933,10 +1515,55 @@ func valueFieldsToViewStateValues(machine *vm.VM, className string, value vm.Val
 		if visualforceFieldIsTransient(machine, className, key) {
 			continue
 		}
-		if field.Kind == vm.ValueNull {
-			continue
+		out[key] = filterViewStateValue(machine, field, seen)
+	}
+	return out
+}
+
+// Keep explicit nulls and collection identity while removing transient members
+// throughout the saved graph. Copy containers so rendering the response never
+// changes the live controller or its aliases.
+func filterViewStateValue(machine *vm.VM, value vm.Value, seen map[uint64]vm.Value) vm.Value {
+	if value.Ref != 0 {
+		if saved, ok := seen[value.Ref]; ok {
+			return saved
 		}
-		out[key] = field
+	}
+	out := value
+	if value.Fields != nil {
+		out.Fields = make(map[string]vm.Value, len(value.Fields))
+	}
+	if value.List != nil {
+		out.List = make([]vm.Value, len(value.List))
+	}
+	if value.Set != nil {
+		out.Set = make([]vm.Value, len(value.Set))
+	}
+	if value.Map != nil {
+		out.Map = make(map[string]vm.Value, len(value.Map))
+	}
+	if value.MapKeys != nil {
+		out.MapKeys = make(map[string]vm.Value, len(value.MapKeys))
+	}
+	if value.Ref != 0 {
+		seen[value.Ref] = out
+	}
+	for key, field := range value.Fields {
+		if !visualforceFieldIsTransient(machine, value.Type, key) {
+			out.Fields[key] = filterViewStateValue(machine, field, seen)
+		}
+	}
+	for i, field := range value.List {
+		out.List[i] = filterViewStateValue(machine, field, seen)
+	}
+	for i, field := range value.Set {
+		out.Set[i] = filterViewStateValue(machine, field, seen)
+	}
+	for key, field := range value.Map {
+		out.Map[key] = filterViewStateValue(machine, field, seen)
+	}
+	for key, field := range value.MapKeys {
+		out.MapKeys[key] = filterViewStateValue(machine, field, seen)
 	}
 	return out
 }
@@ -1122,6 +1749,23 @@ func SetVMRenderEnvironment(machine *vm.VM, p project.Project) {
 	vmRenderEnvironmentMu.Lock()
 	defer vmRenderEnvironmentMu.Unlock()
 	vmRenderEnvironments[machine] = renderEnvironment{Project: p}
+}
+
+// ClearVMRenderEnvironment removes the render environment associated with a VM.
+func ClearVMRenderEnvironment(machine *vm.VM) {
+	if machine == nil {
+		return
+	}
+	vmRenderEnvironmentMu.Lock()
+	defer vmRenderEnvironmentMu.Unlock()
+	delete(vmRenderEnvironments, machine)
+}
+
+// VMRenderEnvironmentCountForTest reports the number of retained VM environments.
+func VMRenderEnvironmentCountForTest() int {
+	vmRenderEnvironmentMu.RLock()
+	defer vmRenderEnvironmentMu.RUnlock()
+	return len(vmRenderEnvironments)
 }
 
 func renderEnvironmentFromVM(machine *vm.VM) renderEnvironment {

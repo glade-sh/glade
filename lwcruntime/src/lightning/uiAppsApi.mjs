@@ -40,22 +40,34 @@ function navItemName(route = {}) {
   return route.tabName || route.pageName || route.objectApiName || route.component || route.label || route.url || "";
 }
 
+function hostURL(value) {
+  if (!value) return null;
+  // The host supplies real local routes/assets. Expose absolute URLs just as
+  // the native navigation API does, without embedding a deployment origin.
+  if (typeof window === "undefined") return value;
+  return new URL(value, window.location.href).href;
+}
+
 function navItemForRoute(route = {}) {
   const name = navItemName(route);
   return {
-    apiName: name,
     availableInClassic: false,
-    color: null,
-    content: null,
+    availableInLightning: true,
+    color: route.color || null,
+    content: hostURL(route.content),
     custom: !String(name).startsWith("standard-") && !String(name).startsWith("standard__"),
     developerName: name,
-    iconUrl: null,
-    id: name,
-    itemType: routeNavType(route),
+    iconUrl: hostURL(route.iconUrl),
+    id: null,
+    itemType: route.itemType || routeNavType(route),
     label: route.label || name,
     objectApiName: route.objectApiName || null,
-    pageReference: route.pageReference || null,
-    url: route.url || null,
+    objectLabel: route.objectLabel || null,
+    objectLabelPlural: route.objectLabelPlural || null,
+    pageReference: route.pageReference || (route.tabName
+      ? { type: "standard__navItemPage", attributes: { apiName: route.tabName }, state: {} }
+      : null),
+    standardType: route.standardType || null,
   };
 }
 
@@ -100,8 +112,19 @@ function menuItemsFromWorkbench(model = workbench()) {
   }];
 }
 
-function navItemsPayload() {
-  return { data: { navItems: navItemsFromWorkbench() }, error: undefined };
+function navItemsPayload(options = {}) {
+  let body;
+  if (typeof options.pageSize === "number" && (options.pageSize <= 0 || options.pageSize > 100)) {
+    body = { errorCode: "ILLEGAL_QUERY_PARAMETER_VALUE", id: "1156057470", message: "pageSize value must be greater than 0 and less than or equal to 100", statusCode: 400 };
+  } else if (typeof options.page === "number" && options.page < 0) {
+    body = { errorCode: "ILLEGAL_QUERY_PARAMETER_VALUE", id: "-1083006838", message: "page value must be greater than or equal to 0", statusCode: 400 };
+  }
+  if (body) return { data: undefined, error: { body, errorType: "fetchResponse", headers: {}, ok: false, status: 400, statusText: "Bad Request" } };
+  const names = Array.isArray(options.navItemNames) ? options.navItemNames : [];
+  const items = navItemsFromWorkbench().filter(item => names.includes(item.developerName));
+  const pageSize = typeof options.pageSize === "number" ? options.pageSize : 100;
+  const offset = (typeof options.page === "number" ? options.page : 0) * pageSize;
+  return { data: { navItems: items.slice(offset, offset + pageSize) }, error: undefined };
 }
 
 export function getNavItems(configOrCallback) {
@@ -109,17 +132,20 @@ export function getNavItems(configOrCallback) {
     this.dataCallback = configOrCallback;
     return;
   }
-  void configOrCallback;
-  return Promise.resolve({ navItems: navItemsFromWorkbench() });
+  const value = navItemsPayload(configOrCallback || {});
+  return value.error ? Promise.reject(value.error) : Promise.resolve(value.data);
 }
 
 getNavItems.prototype.connect = function connect() {
   if (typeof this.dataCallback === "function") {
-    this.dataCallback(navItemsPayload());
+    this.dataCallback(navItemsPayload(this.config));
   }
 };
 getNavItems.prototype.disconnect = function disconnect() {};
-getNavItems.prototype.update = getNavItems.prototype.connect;
+getNavItems.prototype.update = function update(options) {
+  this.config = options || {};
+  this.connect();
+};
 
 export function getAppMenuItems() {
   return Promise.resolve({ appMenuItems: menuItemsFromWorkbench() });

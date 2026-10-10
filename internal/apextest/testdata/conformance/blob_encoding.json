@@ -1,0 +1,1582 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "declarations": {},
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Blob x=Blob.valueOf(''); r=x.size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R002",
+      "code": "Blob x=Blob.valueOf(''); r=EncodingUtil.convertToHex(x);",
+      "expected": "",
+      "compile": false
+    },
+    {
+      "id": "R003",
+      "code": "Blob x=Blob.valueOf(''); r=JSON.serialize(x.toString());",
+      "expected": "\"\"",
+      "compile": false
+    },
+    {
+      "id": "R004",
+      "code": "Blob x=Blob.valueOf('a'); r=x.size();",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R005",
+      "code": "Blob x=Blob.valueOf('a'); r=EncodingUtil.convertToHex(x);",
+      "expected": "61",
+      "compile": false
+    },
+    {
+      "id": "R006",
+      "code": "Blob x=Blob.valueOf('a'); r=JSON.serialize(x.toString());",
+      "expected": "\"a\"",
+      "compile": false
+    },
+    {
+      "id": "R007",
+      "code": "Blob x=Blob.valueOf('ab'); r=x.size();",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R008",
+      "code": "Blob x=Blob.valueOf('ab'); r=EncodingUtil.convertToHex(x);",
+      "expected": "6162",
+      "compile": false
+    },
+    {
+      "id": "R009",
+      "code": "Blob x=Blob.valueOf('ab'); r=JSON.serialize(x.toString());",
+      "expected": "\"ab\"",
+      "compile": false
+    },
+    {
+      "id": "R010",
+      "code": "Blob x=Blob.valueOf('abc'); r=x.size();",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R011",
+      "code": "Blob x=Blob.valueOf('abc'); r=EncodingUtil.convertToHex(x);",
+      "expected": "616263",
+      "compile": false
+    },
+    {
+      "id": "R012",
+      "code": "Blob x=Blob.valueOf('abc'); r=JSON.serialize(x.toString());",
+      "expected": "\"abc\"",
+      "compile": false
+    },
+    {
+      "id": "R013",
+      "code": "Blob x=Blob.valueOf('Hello, world!'); r=x.size();",
+      "expected": "13",
+      "compile": false
+    },
+    {
+      "id": "R014",
+      "code": "Blob x=Blob.valueOf('Hello, world!'); r=EncodingUtil.convertToHex(x);",
+      "expected": "48656c6c6f2c20776f726c6421",
+      "compile": false
+    },
+    {
+      "id": "R015",
+      "code": "Blob x=Blob.valueOf('Hello, world!'); r=JSON.serialize(x.toString());",
+      "expected": "\"Hello, world!\"",
+      "compile": false
+    },
+    {
+      "id": "R016",
+      "code": "Blob x=Blob.valueOf(' '); r=x.size();",
+      "expected": "1",
+      "compile": false
+    },
+    {
+      "id": "R017",
+      "code": "Blob x=Blob.valueOf(' '); r=EncodingUtil.convertToHex(x);",
+      "expected": "20",
+      "compile": false
+    },
+    {
+      "id": "R018",
+      "code": "Blob x=Blob.valueOf(' '); r=JSON.serialize(x.toString());",
+      "expected": "\" \"",
+      "compile": false
+    },
+    {
+      "id": "R019",
+      "code": "Blob x=Blob.valueOf('a\\tb\\nc\\r'); r=x.size();",
+      "expected": "6",
+      "compile": false
+    },
+    {
+      "id": "R020",
+      "code": "Blob x=Blob.valueOf('a\\tb\\nc\\r'); r=EncodingUtil.convertToHex(x);",
+      "expected": "6109620a630d",
+      "compile": false
+    },
+    {
+      "id": "R021",
+      "code": "Blob x=Blob.valueOf('a\\tb\\nc\\r'); r=JSON.serialize(x.toString());",
+      "expected": "\"a\\tb\\nc\\r\"",
+      "compile": false
+    },
+    {
+      "id": "R022",
+      "code": "Blob x=Blob.valueOf('\\'\"\\\\'); r=x.size();",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R023",
+      "code": "Blob x=Blob.valueOf('\\'\"\\\\'); r=EncodingUtil.convertToHex(x);",
+      "expected": "27225c",
+      "compile": false
+    },
+    {
+      "id": "R024",
+      "code": "Blob x=Blob.valueOf('\\'\"\\\\'); r=JSON.serialize(x.toString());",
+      "expected": "\"'\\\"\\\\\"",
+      "compile": false
+    },
+    {
+      "id": "R025",
+      "code": "Blob x=Blob.valueOf('é'); r=x.size();",
+      "expected": "2",
+      "compile": false
+    },
+    {
+      "id": "R026",
+      "code": "Blob x=Blob.valueOf('é'); r=EncodingUtil.convertToHex(x);",
+      "expected": "c3a9",
+      "compile": false
+    },
+    {
+      "id": "R027",
+      "code": "Blob x=Blob.valueOf('é'); r=JSON.serialize(x.toString());",
+      "expected": "\"é\"",
+      "compile": false
+    },
+    {
+      "id": "R028",
+      "code": "Blob x=Blob.valueOf('€'); r=x.size();",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R029",
+      "code": "Blob x=Blob.valueOf('€'); r=EncodingUtil.convertToHex(x);",
+      "expected": "e282ac",
+      "compile": false
+    },
+    {
+      "id": "R030",
+      "code": "Blob x=Blob.valueOf('€'); r=JSON.serialize(x.toString());",
+      "expected": "\"€\"",
+      "compile": false
+    },
+    {
+      "id": "R031",
+      "code": "Blob x=Blob.valueOf('漢字'); r=x.size();",
+      "expected": "6",
+      "compile": false
+    },
+    {
+      "id": "R032",
+      "code": "Blob x=Blob.valueOf('漢字'); r=EncodingUtil.convertToHex(x);",
+      "expected": "e6bca2e5ad97",
+      "compile": false
+    },
+    {
+      "id": "R033",
+      "code": "Blob x=Blob.valueOf('漢字'); r=JSON.serialize(x.toString());",
+      "expected": "\"漢字\"",
+      "compile": false
+    },
+    {
+      "id": "R034",
+      "code": "Blob x=Blob.valueOf('😀'); r=x.size();",
+      "expected": "4",
+      "compile": false
+    },
+    {
+      "id": "R035",
+      "code": "Blob x=Blob.valueOf('😀'); r=EncodingUtil.convertToHex(x);",
+      "expected": "f09f9880",
+      "compile": false
+    },
+    {
+      "id": "R036",
+      "code": "Blob x=Blob.valueOf('😀'); r=JSON.serialize(x.toString());",
+      "expected": "\"😀\"",
+      "compile": false
+    },
+    {
+      "id": "R037",
+      "code": "Blob x=Blob.valueOf('é'); r=x.size();",
+      "expected": "3",
+      "compile": false
+    },
+    {
+      "id": "R038",
+      "code": "Blob x=Blob.valueOf('é'); r=EncodingUtil.convertToHex(x);",
+      "expected": "65cc81",
+      "compile": false
+    },
+    {
+      "id": "R039",
+      "code": "Blob x=Blob.valueOf('é'); r=JSON.serialize(x.toString());",
+      "expected": "\"é\"",
+      "compile": false
+    },
+    {
+      "id": "R040",
+      "code": "Blob x=Blob.valueOf('Aé€😀Z'); r=x.size();",
+      "expected": "11",
+      "compile": false
+    },
+    {
+      "id": "R041",
+      "code": "Blob x=Blob.valueOf('Aé€😀Z'); r=EncodingUtil.convertToHex(x);",
+      "expected": "41c3a9e282acf09f98805a",
+      "compile": false
+    },
+    {
+      "id": "R042",
+      "code": "Blob x=Blob.valueOf('Aé€😀Z'); r=JSON.serialize(x.toString());",
+      "expected": "\"Aé€😀Z\"",
+      "compile": false
+    },
+    {
+      "id": "R043",
+      "code": "String s='é'.repeat(255); Blob x=Blob.valueOf(s); r=String.valueOf(x.size())+'|'+(x.toString()==s);",
+      "expected": "510|true",
+      "compile": false
+    },
+    {
+      "id": "R044",
+      "code": "String s='é'.repeat(256); Blob x=Blob.valueOf(s); r=String.valueOf(x.size())+'|'+(x.toString()==s);",
+      "expected": "512|true",
+      "compile": false
+    },
+    {
+      "id": "R045",
+      "code": "String s='é'.repeat(1024); Blob x=Blob.valueOf(s); r=String.valueOf(x.size())+'|'+(x.toString()==s);",
+      "expected": "2048|true",
+      "compile": false
+    },
+    {
+      "id": "R046",
+      "code": "Blob x=EncodingUtil.convertFromHex('00'); r=JSON.serialize(x.toString());",
+      "expected": "\"\\u0000\"",
+      "compile": false
+    },
+    {
+      "id": "R047",
+      "code": "Blob x=EncodingUtil.convertFromHex('410042'); r=JSON.serialize(x.toString());",
+      "expected": "\"A\\u0000B\"",
+      "compile": false
+    },
+    {
+      "id": "R048",
+      "code": "Blob x=EncodingUtil.convertFromHex('7f'); r=JSON.serialize(x.toString());",
+      "expected": "\"\"",
+      "compile": false
+    },
+    {
+      "id": "R049",
+      "code": "Blob x=EncodingUtil.convertFromHex('c280'); r=JSON.serialize(x.toString());",
+      "expected": "\"\"",
+      "compile": false
+    },
+    {
+      "id": "R050",
+      "code": "Blob x=EncodingUtil.convertFromHex('dfbf'); r=JSON.serialize(x.toString());",
+      "expected": "\"߿\"",
+      "compile": false
+    },
+    {
+      "id": "R051",
+      "code": "Blob x=EncodingUtil.convertFromHex('e0a080'); r=JSON.serialize(x.toString());",
+      "expected": "\"ࠀ\"",
+      "compile": false
+    },
+    {
+      "id": "R052",
+      "code": "Blob x=EncodingUtil.convertFromHex('f0908080'); r=JSON.serialize(x.toString());",
+      "expected": "\"𐀀\"",
+      "compile": false
+    },
+    {
+      "id": "R053",
+      "code": "Blob x=EncodingUtil.convertFromHex('efbbbf41'); r=JSON.serialize(x.toString());",
+      "expected": "\"﻿A\"",
+      "compile": false
+    },
+    {
+      "id": "R054",
+      "code": "Blob x=EncodingUtil.convertFromHex('80'); r=JSON.serialize(x.toString());",
+      "expected": "EXC|System.StringException|BLOB is not a valid UTF-8 string",
+      "compile": false
+    },
+    {
+      "id": "R055",
+      "code": "Blob x=EncodingUtil.convertFromHex('c0af'); r=JSON.serialize(x.toString());",
+      "expected": "EXC|System.StringException|BLOB is not a valid UTF-8 string",
+      "compile": false
+    },
+    {
+      "id": "R056",
+      "code": "Blob x=EncodingUtil.convertFromHex('c3'); r=JSON.serialize(x.toString());",
+      "expected": "EXC|System.StringException|BLOB is not a valid UTF-8 string",
+      "compile": false
+    },
+    {
+      "id": "R057",
+      "code": "Blob x=EncodingUtil.convertFromHex('eda080'); r=JSON.serialize(x.toString());",
+      "expected": "EXC|System.StringException|BLOB is not a valid UTF-8 string",
+      "compile": false
+    },
+    {
+      "id": "R058",
+      "code": "Blob x=EncodingUtil.convertFromHex('f4908080'); r=JSON.serialize(x.toString());",
+      "expected": "EXC|System.StringException|BLOB is not a valid UTF-8 string",
+      "compile": false
+    },
+    {
+      "id": "R059",
+      "code": "Blob x=EncodingUtil.convertFromHex('ff'); r=JSON.serialize(x.toString());",
+      "expected": "EXC|System.StringException|BLOB is not a valid UTF-8 string",
+      "compile": false
+    },
+    {
+      "id": "R060",
+      "code": "String s=null; r=Blob.valueOf(s);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R061",
+      "code": "r=Blob.valueOf(null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R062",
+      "code": "Blob x=null; r=x.toString();",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R064",
+      "code": "String s=null; r=Blob.toPdf(s)!=null;",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R065",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex(''));",
+      "expected": "",
+      "compile": false
+    },
+    {
+      "id": "R066",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex('00'));",
+      "expected": "AA==",
+      "compile": false
+    },
+    {
+      "id": "R067",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex('0000'));",
+      "expected": "AAA=",
+      "compile": false
+    },
+    {
+      "id": "R068",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex('000000'));",
+      "expected": "AAAA",
+      "compile": false
+    },
+    {
+      "id": "R069",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex('ff'));",
+      "expected": "/w==",
+      "compile": false
+    },
+    {
+      "id": "R070",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex('ffff'));",
+      "expected": "//8=",
+      "compile": false
+    },
+    {
+      "id": "R071",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex('ffffff'));",
+      "expected": "////",
+      "compile": false
+    },
+    {
+      "id": "R072",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex('fbef'));",
+      "expected": "++8=",
+      "compile": false
+    },
+    {
+      "id": "R073",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex('48656c6c6f'));",
+      "expected": "SGVsbG8=",
+      "compile": false
+    },
+    {
+      "id": "R074",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex('c3a9'));",
+      "expected": "w6k=",
+      "compile": false
+    },
+    {
+      "id": "R075",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex('f09f9880'));",
+      "expected": "8J+YgA==",
+      "compile": false
+    },
+    {
+      "id": "R076",
+      "code": "r=EncodingUtil.base64Encode(EncodingUtil.convertFromHex('0001027f80feff'));",
+      "expected": "AAECf4D+/w==",
+      "compile": false
+    },
+    {
+      "id": "R077",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode(''));",
+      "expected": "",
+      "compile": false
+    },
+    {
+      "id": "R078",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Zg=='));",
+      "expected": "66",
+      "compile": false
+    },
+    {
+      "id": "R079",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Zm8='));",
+      "expected": "666f",
+      "compile": false
+    },
+    {
+      "id": "R080",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Zm9v'));",
+      "expected": "666f6f",
+      "compile": false
+    },
+    {
+      "id": "R081",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('AA=='));",
+      "expected": "00",
+      "compile": false
+    },
+    {
+      "id": "R082",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('/w=='));",
+      "expected": "ff",
+      "compile": false
+    },
+    {
+      "id": "R083",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('++8='));",
+      "expected": "fbef",
+      "compile": false
+    },
+    {
+      "id": "R084",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Zg'));",
+      "expected": "66",
+      "compile": false
+    },
+    {
+      "id": "R085",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Zg='));",
+      "expected": "66",
+      "compile": false
+    },
+    {
+      "id": "R086",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Zg==='));",
+      "expected": "66",
+      "compile": false
+    },
+    {
+      "id": "R087",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Z'));",
+      "expected": "",
+      "compile": false
+    },
+    {
+      "id": "R088",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Zg==\\n'));",
+      "expected": "66",
+      "compile": false
+    },
+    {
+      "id": "R089",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode(' Zg== '));",
+      "expected": "66",
+      "compile": false
+    },
+    {
+      "id": "R090",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Z g=='));",
+      "expected": "66",
+      "compile": false
+    },
+    {
+      "id": "R091",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Zg==junk'));",
+      "expected": "6608ee9e",
+      "compile": false
+    },
+    {
+      "id": "R092",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('!!!!'));",
+      "expected": "EXC|System.StringException|Unrecognized base64 character: !",
+      "compile": false
+    },
+    {
+      "id": "R093",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('_w=='));",
+      "expected": "EXC|System.StringException|Unrecognized base64 character: _",
+      "compile": false
+    },
+    {
+      "id": "R094",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('-w=='));",
+      "expected": "EXC|System.StringException|Unrecognized base64 character: -",
+      "compile": false
+    },
+    {
+      "id": "R095",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Zh=='));",
+      "expected": "66",
+      "compile": false
+    },
+    {
+      "id": "R096",
+      "code": "r=EncodingUtil.convertToHex(EncodingUtil.base64Decode('Zm9='));",
+      "expected": "666f",
+      "compile": false
+    },
+    {
+      "id": "R097",
+      "code": "Blob x=Blob.valueOf('a'.repeat(0)); String s=EncodingUtil.base64Encode(x); Blob y=EncodingUtil.base64Decode(s); r=String.valueOf(s.length())+'|'+y.size()+'|'+(x==y);",
+      "expected": "0|0|true",
+      "compile": false
+    },
+    {
+      "id": "R098",
+      "code": "Blob x=Blob.valueOf('a'.repeat(1)); String s=EncodingUtil.base64Encode(x); Blob y=EncodingUtil.base64Decode(s); r=String.valueOf(s.length())+'|'+y.size()+'|'+(x==y);",
+      "expected": "4|1|true",
+      "compile": false
+    },
+    {
+      "id": "R099",
+      "code": "Blob x=Blob.valueOf('a'.repeat(2)); String s=EncodingUtil.base64Encode(x); Blob y=EncodingUtil.base64Decode(s); r=String.valueOf(s.length())+'|'+y.size()+'|'+(x==y);",
+      "expected": "4|2|true",
+      "compile": false
+    },
+    {
+      "id": "R100",
+      "code": "Blob x=Blob.valueOf('a'.repeat(3)); String s=EncodingUtil.base64Encode(x); Blob y=EncodingUtil.base64Decode(s); r=String.valueOf(s.length())+'|'+y.size()+'|'+(x==y);",
+      "expected": "4|3|true",
+      "compile": false
+    },
+    {
+      "id": "R101",
+      "code": "Blob x=Blob.valueOf('a'.repeat(4)); String s=EncodingUtil.base64Encode(x); Blob y=EncodingUtil.base64Decode(s); r=String.valueOf(s.length())+'|'+y.size()+'|'+(x==y);",
+      "expected": "8|4|true",
+      "compile": false
+    },
+    {
+      "id": "R102",
+      "code": "Blob x=Blob.valueOf('a'.repeat(5)); String s=EncodingUtil.base64Encode(x); Blob y=EncodingUtil.base64Decode(s); r=String.valueOf(s.length())+'|'+y.size()+'|'+(x==y);",
+      "expected": "8|5|true",
+      "compile": false
+    },
+    {
+      "id": "R103",
+      "code": "Blob x=Blob.valueOf('a'.repeat(63)); String s=EncodingUtil.base64Encode(x); Blob y=EncodingUtil.base64Decode(s); r=String.valueOf(s.length())+'|'+y.size()+'|'+(x==y);",
+      "expected": "84|63|true",
+      "compile": false
+    },
+    {
+      "id": "R104",
+      "code": "Blob x=Blob.valueOf('a'.repeat(64)); String s=EncodingUtil.base64Encode(x); Blob y=EncodingUtil.base64Decode(s); r=String.valueOf(s.length())+'|'+y.size()+'|'+(x==y);",
+      "expected": "88|64|true",
+      "compile": false
+    },
+    {
+      "id": "R105",
+      "code": "Blob x=Blob.valueOf('a'.repeat(65)); String s=EncodingUtil.base64Encode(x); Blob y=EncodingUtil.base64Decode(s); r=String.valueOf(s.length())+'|'+y.size()+'|'+(x==y);",
+      "expected": "88|65|true",
+      "compile": false
+    },
+    {
+      "id": "R106",
+      "code": "Blob x=Blob.valueOf('a'.repeat(1024)); String s=EncodingUtil.base64Encode(x); Blob y=EncodingUtil.base64Decode(s); r=String.valueOf(s.length())+'|'+y.size()+'|'+(x==y);",
+      "expected": "1368|1024|true",
+      "compile": false
+    },
+    {
+      "id": "R107",
+      "code": "Blob x=null; r=EncodingUtil.base64Encode(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R108",
+      "code": "String x=null; r=EncodingUtil.base64Decode(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R109",
+      "code": "Blob x=EncodingUtil.convertFromHex(''); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "0|",
+      "compile": false
+    },
+    {
+      "id": "R110",
+      "code": "Blob x=EncodingUtil.convertFromHex('00'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "1|00",
+      "compile": false
+    },
+    {
+      "id": "R111",
+      "code": "Blob x=EncodingUtil.convertFromHex('01'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "1|01",
+      "compile": false
+    },
+    {
+      "id": "R112",
+      "code": "Blob x=EncodingUtil.convertFromHex('09'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "1|09",
+      "compile": false
+    },
+    {
+      "id": "R113",
+      "code": "Blob x=EncodingUtil.convertFromHex('0a'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "1|0a",
+      "compile": false
+    },
+    {
+      "id": "R114",
+      "code": "Blob x=EncodingUtil.convertFromHex('0A'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "1|0a",
+      "compile": false
+    },
+    {
+      "id": "R115",
+      "code": "Blob x=EncodingUtil.convertFromHex('ff'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "1|ff",
+      "compile": false
+    },
+    {
+      "id": "R116",
+      "code": "Blob x=EncodingUtil.convertFromHex('FF'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "1|ff",
+      "compile": false
+    },
+    {
+      "id": "R117",
+      "code": "Blob x=EncodingUtil.convertFromHex('aBcD'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "2|abcd",
+      "compile": false
+    },
+    {
+      "id": "R118",
+      "code": "Blob x=EncodingUtil.convertFromHex('00010203'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "4|00010203",
+      "compile": false
+    },
+    {
+      "id": "R119",
+      "code": "Blob x=EncodingUtil.convertFromHex('4A4B4C'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "3|4a4b4c",
+      "compile": false
+    },
+    {
+      "id": "R120",
+      "code": "Blob x=EncodingUtil.convertFromHex('c3a9'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "2|c3a9",
+      "compile": false
+    },
+    {
+      "id": "R121",
+      "code": "Blob x=EncodingUtil.convertFromHex('f09f9880'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "4|f09f9880",
+      "compile": false
+    },
+    {
+      "id": "R122",
+      "code": "Blob x=EncodingUtil.convertFromHex('007f80ff'); r=String.valueOf(x.size())+'|'+EncodingUtil.convertToHex(x);",
+      "expected": "4|007f80ff",
+      "compile": false
+    },
+    {
+      "id": "R123",
+      "code": "r=EncodingUtil.convertFromHex('0');",
+      "expected": "EXC|System.InvalidParameterValueException|input string must be an even number of characters long, but was 1",
+      "compile": false
+    },
+    {
+      "id": "R124",
+      "code": "r=EncodingUtil.convertFromHex('abc');",
+      "expected": "EXC|System.InvalidParameterValueException|input string must be an even number of characters long, but was 3",
+      "compile": false
+    },
+    {
+      "id": "R125",
+      "code": "r=EncodingUtil.convertFromHex('12345');",
+      "expected": "EXC|System.InvalidParameterValueException|input string must be an even number of characters long, but was 5",
+      "compile": false
+    },
+    {
+      "id": "R126",
+      "code": "r=EncodingUtil.convertFromHex('gg');",
+      "expected": "EXC|System.InvalidParameterValueException|Illegal hexadecimal character g at index 0",
+      "compile": false
+    },
+    {
+      "id": "R127",
+      "code": "r=EncodingUtil.convertFromHex('0g');",
+      "expected": "EXC|System.InvalidParameterValueException|Illegal hexadecimal character g at index 1",
+      "compile": false
+    },
+    {
+      "id": "R128",
+      "code": "r=EncodingUtil.convertFromHex('g0');",
+      "expected": "EXC|System.InvalidParameterValueException|Illegal hexadecimal character g at index 0",
+      "compile": false
+    },
+    {
+      "id": "R129",
+      "code": "r=EncodingUtil.convertFromHex('-1');",
+      "expected": "EXC|System.InvalidParameterValueException|Illegal hexadecimal character - at index 0",
+      "compile": false
+    },
+    {
+      "id": "R130",
+      "code": "r=EncodingUtil.convertFromHex('0x41');",
+      "expected": "EXC|System.InvalidParameterValueException|Illegal hexadecimal character x at index 1",
+      "compile": false
+    },
+    {
+      "id": "R131",
+      "code": "r=EncodingUtil.convertFromHex('41 42');",
+      "expected": "EXC|System.InvalidParameterValueException|input string must be an even number of characters long, but was 5",
+      "compile": false
+    },
+    {
+      "id": "R132",
+      "code": "r=EncodingUtil.convertFromHex(' 41');",
+      "expected": "EXC|System.InvalidParameterValueException|input string must be an even number of characters long, but was 3",
+      "compile": false
+    },
+    {
+      "id": "R133",
+      "code": "r=EncodingUtil.convertFromHex('41 ');",
+      "expected": "EXC|System.InvalidParameterValueException|input string must be an even number of characters long, but was 3",
+      "compile": false
+    },
+    {
+      "id": "R134",
+      "code": "r=EncodingUtil.convertFromHex('41\\n');",
+      "expected": "EXC|System.InvalidParameterValueException|input string must be an even number of characters long, but was 3",
+      "compile": false
+    },
+    {
+      "id": "R135",
+      "code": "r=EncodingUtil.convertFromHex('４１');",
+      "expected": "Blob[1]",
+      "compile": false
+    },
+    {
+      "id": "R136",
+      "code": "r=EncodingUtil.convertFromHex('éé');",
+      "expected": "EXC|System.InvalidParameterValueException|Illegal hexadecimal character é at index 0",
+      "compile": false
+    },
+    {
+      "id": "R137",
+      "code": "r=EncodingUtil.convertFromHex(null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R138",
+      "code": "String x=null; r=EncodingUtil.convertFromHex(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R139",
+      "code": "try { EncodingUtil.convertFromHex(null); r='returned'; } catch(NullPointerException e){r='NullPointerException|'+e.getMessage();}",
+      "expected": "NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R140",
+      "code": "r=EncodingUtil.convertFromHex('4A4B4C').toString();",
+      "expected": "JKL",
+      "compile": false
+    },
+    {
+      "id": "R141",
+      "code": "Blob x=null; r=EncodingUtil.convertToHex(x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R142",
+      "code": "r=EncodingUtil.urlEncode('AZaz09.-_','UTF-8');",
+      "expected": "AZaz09.-_",
+      "compile": false
+    },
+    {
+      "id": "R143",
+      "code": "r=EncodingUtil.urlEncode('*','UTF-8');",
+      "expected": "*",
+      "compile": false
+    },
+    {
+      "id": "R144",
+      "code": "r=EncodingUtil.urlEncode('~','UTF-8');",
+      "expected": "%7E",
+      "compile": false
+    },
+    {
+      "id": "R145",
+      "code": "r=EncodingUtil.urlEncode(' ','UTF-8');",
+      "expected": "+",
+      "compile": false
+    },
+    {
+      "id": "R146",
+      "code": "r=EncodingUtil.urlEncode('+','UTF-8');",
+      "expected": "%2B",
+      "compile": false
+    },
+    {
+      "id": "R147",
+      "code": "r=EncodingUtil.urlEncode('%','UTF-8');",
+      "expected": "%25",
+      "compile": false
+    },
+    {
+      "id": "R148",
+      "code": "r=EncodingUtil.urlEncode('/','UTF-8');",
+      "expected": "%2F",
+      "compile": false
+    },
+    {
+      "id": "R149",
+      "code": "r=EncodingUtil.urlEncode('?','UTF-8');",
+      "expected": "%3F",
+      "compile": false
+    },
+    {
+      "id": "R150",
+      "code": "r=EncodingUtil.urlEncode('&','UTF-8');",
+      "expected": "%26",
+      "compile": false
+    },
+    {
+      "id": "R151",
+      "code": "r=EncodingUtil.urlEncode('=','UTF-8');",
+      "expected": "%3D",
+      "compile": false
+    },
+    {
+      "id": "R152",
+      "code": "r=EncodingUtil.urlEncode(':','UTF-8');",
+      "expected": "%3A",
+      "compile": false
+    },
+    {
+      "id": "R153",
+      "code": "r=EncodingUtil.urlEncode('#','UTF-8');",
+      "expected": "%23",
+      "compile": false
+    },
+    {
+      "id": "R154",
+      "code": "r=EncodingUtil.urlEncode('@','UTF-8');",
+      "expected": "%40",
+      "compile": false
+    },
+    {
+      "id": "R155",
+      "code": "r=EncodingUtil.urlEncode('!','UTF-8');",
+      "expected": "%21",
+      "compile": false
+    },
+    {
+      "id": "R156",
+      "code": "r=EncodingUtil.urlEncode('$','UTF-8');",
+      "expected": "%24",
+      "compile": false
+    },
+    {
+      "id": "R157",
+      "code": "r=EncodingUtil.urlEncode('\\'','UTF-8');",
+      "expected": "%27",
+      "compile": false
+    },
+    {
+      "id": "R158",
+      "code": "r=EncodingUtil.urlEncode('(','UTF-8');",
+      "expected": "%28",
+      "compile": false
+    },
+    {
+      "id": "R159",
+      "code": "r=EncodingUtil.urlEncode(')','UTF-8');",
+      "expected": "%29",
+      "compile": false
+    },
+    {
+      "id": "R160",
+      "code": "r=EncodingUtil.urlEncode(',','UTF-8');",
+      "expected": "%2C",
+      "compile": false
+    },
+    {
+      "id": "R161",
+      "code": "r=EncodingUtil.urlEncode(';','UTF-8');",
+      "expected": "%3B",
+      "compile": false
+    },
+    {
+      "id": "R162",
+      "code": "r=EncodingUtil.urlEncode('[','UTF-8');",
+      "expected": "%5B",
+      "compile": false
+    },
+    {
+      "id": "R163",
+      "code": "r=EncodingUtil.urlEncode(']','UTF-8');",
+      "expected": "%5D",
+      "compile": false
+    },
+    {
+      "id": "R164",
+      "code": "r=EncodingUtil.urlEncode('\\\\','UTF-8');",
+      "expected": "%5C",
+      "compile": false
+    },
+    {
+      "id": "R165",
+      "code": "r=EncodingUtil.urlEncode('\"','UTF-8');",
+      "expected": "%22",
+      "compile": false
+    },
+    {
+      "id": "R166",
+      "code": "r=EncodingUtil.urlEncode('\\t','UTF-8');",
+      "expected": "%09",
+      "compile": false
+    },
+    {
+      "id": "R167",
+      "code": "r=EncodingUtil.urlEncode('\\n','UTF-8');",
+      "expected": "%0A",
+      "compile": false
+    },
+    {
+      "id": "R168",
+      "code": "r=EncodingUtil.urlEncode('\\r','UTF-8');",
+      "expected": "%0D",
+      "compile": false
+    },
+    {
+      "id": "R169",
+      "code": "r=EncodingUtil.urlEncode('é','UTF-8');",
+      "expected": "%C3%A9",
+      "compile": false
+    },
+    {
+      "id": "R170",
+      "code": "r=EncodingUtil.urlEncode('€','UTF-8');",
+      "expected": "%E2%82%AC",
+      "compile": false
+    },
+    {
+      "id": "R171",
+      "code": "r=EncodingUtil.urlEncode('😀','UTF-8');",
+      "expected": "%F0%9F%98%80",
+      "compile": false
+    },
+    {
+      "id": "R172",
+      "code": "r=EncodingUtil.urlEncode('a b+c%/~*','UTF-8');",
+      "expected": "a+b%2Bc%25%2F%7E*",
+      "compile": false
+    },
+    {
+      "id": "R173",
+      "code": "String s=EncodingUtil.urlEncode('*','UTF-8'); r=s=='*';",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R174",
+      "code": "String s=EncodingUtil.urlEncode('~','UTF-8'); r=s.equalsIgnoreCase('%7E');",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R175",
+      "code": "String s=EncodingUtil.urlEncode('AZaz09.-_','UTF-8'); r=s=='AZaz09.-_';",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R176",
+      "code": "String s=EncodingUtil.urlEncode(' ','UTF-8'); r=s=='+';",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R177",
+      "code": "String s=EncodingUtil.urlDecode('','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "",
+      "compile": false
+    },
+    {
+      "id": "R178",
+      "code": "String s=EncodingUtil.urlDecode('plain','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "706c61696e",
+      "compile": false
+    },
+    {
+      "id": "R179",
+      "code": "String s=EncodingUtil.urlDecode('+','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "20",
+      "compile": false
+    },
+    {
+      "id": "R180",
+      "code": "String s=EncodingUtil.urlDecode('%20','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "20",
+      "compile": false
+    },
+    {
+      "id": "R181",
+      "code": "String s=EncodingUtil.urlDecode('%2B','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "2b",
+      "compile": false
+    },
+    {
+      "id": "R182",
+      "code": "String s=EncodingUtil.urlDecode('%2b','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "2b",
+      "compile": false
+    },
+    {
+      "id": "R183",
+      "code": "String s=EncodingUtil.urlDecode('a+b%2Bc','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "6120622b63",
+      "compile": false
+    },
+    {
+      "id": "R184",
+      "code": "String s=EncodingUtil.urlDecode('%25','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "25",
+      "compile": false
+    },
+    {
+      "id": "R185",
+      "code": "String s=EncodingUtil.urlDecode('%2F','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "2f",
+      "compile": false
+    },
+    {
+      "id": "R186",
+      "code": "String s=EncodingUtil.urlDecode('%7e','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "7e",
+      "compile": false
+    },
+    {
+      "id": "R187",
+      "code": "String s=EncodingUtil.urlDecode('%7E','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "7e",
+      "compile": false
+    },
+    {
+      "id": "R188",
+      "code": "String s=EncodingUtil.urlDecode('%2A','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "2a",
+      "compile": false
+    },
+    {
+      "id": "R189",
+      "code": "String s=EncodingUtil.urlDecode('%00','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "00",
+      "compile": false
+    },
+    {
+      "id": "R190",
+      "code": "String s=EncodingUtil.urlDecode('%09%0A%0D','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "090a0d",
+      "compile": false
+    },
+    {
+      "id": "R191",
+      "code": "String s=EncodingUtil.urlDecode('%C3%A9','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "c3a9",
+      "compile": false
+    },
+    {
+      "id": "R192",
+      "code": "String s=EncodingUtil.urlDecode('%E2%82%AC','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "e282ac",
+      "compile": false
+    },
+    {
+      "id": "R193",
+      "code": "String s=EncodingUtil.urlDecode('%F0%9F%98%80','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "f09f9880",
+      "compile": false
+    },
+    {
+      "id": "R194",
+      "code": "String s=EncodingUtil.urlDecode('%','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "EXC|System.StringException|URLDecoder: Incomplete trailing escape (%) pattern",
+      "compile": false
+    },
+    {
+      "id": "R195",
+      "code": "String s=EncodingUtil.urlDecode('%2','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "EXC|System.StringException|URLDecoder: Incomplete trailing escape (%) pattern",
+      "compile": false
+    },
+    {
+      "id": "R196",
+      "code": "String s=EncodingUtil.urlDecode('%GG','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "EXC|System.StringException|URLDecoder: Illegal hex characters in escape (%) pattern - Error at index 0 in: \"GG\"",
+      "compile": false
+    },
+    {
+      "id": "R197",
+      "code": "String s=EncodingUtil.urlDecode('%u0041','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "EXC|System.StringException|URLDecoder: Illegal hex characters in escape (%) pattern - Error at index 0 in: \"u0\"",
+      "compile": false
+    },
+    {
+      "id": "R198",
+      "code": "String s=EncodingUtil.urlDecode('%FF','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "efbfbd",
+      "compile": false
+    },
+    {
+      "id": "R199",
+      "code": "String s=EncodingUtil.urlDecode('%C3','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "efbfbd",
+      "compile": false
+    },
+    {
+      "id": "R200",
+      "code": "String s=EncodingUtil.urlDecode('%C0%AF','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "efbfbdefbfbd",
+      "compile": false
+    },
+    {
+      "id": "R201",
+      "code": "String s=EncodingUtil.urlDecode('%ED%A0%80','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "efbfbd",
+      "compile": false
+    },
+    {
+      "id": "R202",
+      "code": "String s=EncodingUtil.urlDecode('a%20b+%2B','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "612062202b",
+      "compile": false
+    },
+    {
+      "id": "R203",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','UTF-8');",
+      "expected": "A%C3%A9%E2%82%AC%E6%BC%A2%F0%9F%98%80",
+      "compile": false
+    },
+    {
+      "id": "R204",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','UTF-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41e98082efbfbd",
+      "compile": false
+    },
+    {
+      "id": "R205",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','utf-8');",
+      "expected": "A%C3%A9%E2%82%AC%E6%BC%A2%F0%9F%98%80",
+      "compile": false
+    },
+    {
+      "id": "R206",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','utf-8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41e98082efbfbd",
+      "compile": false
+    },
+    {
+      "id": "R207",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','UTF8');",
+      "expected": "A%C3%A9%E2%82%AC%E6%BC%A2%F0%9F%98%80",
+      "compile": false
+    },
+    {
+      "id": "R208",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','UTF8'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41e98082efbfbd",
+      "compile": false
+    },
+    {
+      "id": "R209",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','US-ASCII');",
+      "expected": "A%3F%3F%3F%3F",
+      "compile": false
+    },
+    {
+      "id": "R210",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','US-ASCII'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41efbfbdefbfbdefbfbdefbfbd",
+      "compile": false
+    },
+    {
+      "id": "R211",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','ASCII');",
+      "expected": "A%3F%3F%3F%3F",
+      "compile": false
+    },
+    {
+      "id": "R212",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','ASCII'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41efbfbdefbfbdefbfbdefbfbd",
+      "compile": false
+    },
+    {
+      "id": "R213",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','ISO-8859-1');",
+      "expected": "A%E9%3F%3F%3F",
+      "compile": false
+    },
+    {
+      "id": "R214",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','ISO-8859-1'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41c3a9c280c282c2a0",
+      "compile": false
+    },
+    {
+      "id": "R215",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','Windows-1252');",
+      "expected": "A%E9%80%3F%3F",
+      "compile": false
+    },
+    {
+      "id": "R216",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','Windows-1252'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41c3a9e282ace2809ac2a0",
+      "compile": false
+    },
+    {
+      "id": "R217",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','UTF-16');",
+      "expected": "A%FE%FF%00%E9%20%AC%6F%22%D8%3D%DE%00",
+      "compile": false
+    },
+    {
+      "id": "R218",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','UTF-16'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41eea680e88aa0",
+      "compile": false
+    },
+    {
+      "id": "R219",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','UTF-16BE');",
+      "expected": "A%00%E9%20%AC%6F%22%D8%3D%DE%00",
+      "compile": false
+    },
+    {
+      "id": "R220",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','UTF-16BE'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41eea680e88aa0",
+      "compile": false
+    },
+    {
+      "id": "R221",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','UTF-16LE');",
+      "expected": "A%E9%00%AC%20%22%6F%3D%D8%00%DE",
+      "compile": false
+    },
+    {
+      "id": "R222",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','UTF-16LE'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41e883a9ea8282",
+      "compile": false
+    },
+    {
+      "id": "R223",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','Shift_JIS');",
+      "expected": "A%3F%3F%8A%BF%3F",
+      "compile": false
+    },
+    {
+      "id": "R224",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','Shift_JIS'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41e9a8bee38182",
+      "compile": false
+    },
+    {
+      "id": "R225",
+      "code": "r=EncodingUtil.urlEncode('Aé€漢😀','GB18030');",
+      "expected": "A%A8%A6%A2%E3%9D%68%94%39%FC%36",
+      "compile": false
+    },
+    {
+      "id": "R226",
+      "code": "String s=EncodingUtil.urlDecode('A%E9%80%82%A0','GB18030'); r=EncodingUtil.convertToHex(Blob.valueOf(s));",
+      "expected": "41e996abe58181",
+      "compile": false
+    },
+    {
+      "id": "R227",
+      "code": "r=EncodingUtil.urlEncode('abc','');",
+      "expected": "EXC|System.StringException|Encoding  is not supported",
+      "compile": false
+    },
+    {
+      "id": "R228",
+      "code": "r=EncodingUtil.urlDecode('abc','');",
+      "expected": "EXC|System.StringException|Encoding  is not supported",
+      "compile": false
+    },
+    {
+      "id": "R229",
+      "code": "r=EncodingUtil.urlEncode('abc','no-such-charset');",
+      "expected": "EXC|System.StringException|Encoding no-such-charset is not supported",
+      "compile": false
+    },
+    {
+      "id": "R230",
+      "code": "r=EncodingUtil.urlDecode('abc','no-such-charset');",
+      "expected": "EXC|System.StringException|Encoding no-such-charset is not supported",
+      "compile": false
+    },
+    {
+      "id": "R231",
+      "code": "r=EncodingUtil.urlEncode('abc',' UTF-8 ');",
+      "expected": "abc",
+      "compile": false
+    },
+    {
+      "id": "R232",
+      "code": "r=EncodingUtil.urlDecode('abc',' UTF-8 ');",
+      "expected": "abc",
+      "compile": false
+    },
+    {
+      "id": "R233",
+      "code": "r=EncodingUtil.urlEncode('abc','UTF_8');",
+      "expected": "abc",
+      "compile": false
+    },
+    {
+      "id": "R234",
+      "code": "r=EncodingUtil.urlDecode('abc','UTF_8');",
+      "expected": "abc",
+      "compile": false
+    },
+    {
+      "id": "R235",
+      "code": "String x=null; r=EncodingUtil.urlEncode(x,'UTF-8');",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R236",
+      "code": "String x=null; r=EncodingUtil.urlEncode('abc',x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R237",
+      "code": "String x=null; r=EncodingUtil.urlEncode(x,x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R238",
+      "code": "String x=null; r=EncodingUtil.urlEncode('',x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R239",
+      "code": "String x=null; r=EncodingUtil.urlEncode(x,'no-such-charset');",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R240",
+      "code": "String x=null; r=EncodingUtil.urlDecode(x,'UTF-8');",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R241",
+      "code": "String x=null; r=EncodingUtil.urlDecode('abc',x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R242",
+      "code": "String x=null; r=EncodingUtil.urlDecode(x,x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R243",
+      "code": "String x=null; r=EncodingUtil.urlDecode('',x);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "R244",
+      "code": "String x=null; r=EncodingUtil.urlDecode(x,'no-such-charset');",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false
+    },
+    {
+      "id": "C001",
+      "code": "Object r; r=Blob.valueOf(1); pq.out('C001', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void valueOf(Integer) from the type Blob",
+      "compile": true
+    },
+    {
+      "id": "C002",
+      "code": "Object r; r=Blob.valueOf(Blob.valueOf('a')); pq.out('C002', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void valueOf(Blob) from the type Blob",
+      "compile": true
+    },
+    {
+      "id": "C003",
+      "code": "Object r; r=Blob.valueOf(); pq.out('C003', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void valueOf() from the type Blob",
+      "compile": true
+    },
+    {
+      "id": "C005",
+      "code": "Object r; r=Blob.valueOf('a').size(1); pq.out('C005', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void size(Integer) from the type Blob",
+      "compile": true
+    },
+    {
+      "id": "C006",
+      "code": "Object r; r=Blob.valueOf('a').toString('UTF-8'); pq.out('C006', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void toString(String) from the type Blob",
+      "compile": true
+    },
+    {
+      "id": "C007",
+      "code": "Object r; r=Blob.toPdf(Blob.valueOf('a')); pq.out('C007', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void toPdf(Blob) from the type Blob",
+      "compile": true
+    },
+    {
+      "id": "C008",
+      "code": "Object r; r=Blob.toPdf(); pq.out('C008', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void toPdf() from the type Blob",
+      "compile": true
+    },
+    {
+      "id": "C009",
+      "code": "Object r; r=EncodingUtil.base64Encode('a'); pq.out('C009', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void base64Encode(String) from the type System.EncodingUtil",
+      "compile": true
+    },
+    {
+      "id": "C010",
+      "code": "Object r; r=EncodingUtil.base64Decode(Blob.valueOf('a')); pq.out('C010', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void base64Decode(Blob) from the type System.EncodingUtil",
+      "compile": true
+    },
+    {
+      "id": "C011",
+      "code": "Object r; r=EncodingUtil.convertToHex('a'); pq.out('C011', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void convertToHex(String) from the type System.EncodingUtil",
+      "compile": true
+    },
+    {
+      "id": "C012",
+      "code": "Object r; r=EncodingUtil.convertFromHex(41); pq.out('C012', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void convertFromHex(Integer) from the type System.EncodingUtil",
+      "compile": true
+    },
+    {
+      "id": "C013",
+      "code": "Object r; r=EncodingUtil.urlEncode('a'); pq.out('C013', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void urlEncode(String) from the type System.EncodingUtil",
+      "compile": true
+    },
+    {
+      "id": "C014",
+      "code": "Object r; r=EncodingUtil.urlDecode('a',1); pq.out('C014', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void urlDecode(String, Integer) from the type System.EncodingUtil",
+      "compile": true
+    },
+    {
+      "id": "C015",
+      "code": "Object r; r=EncodingUtil.urlEncode('a','UTF-8',true); pq.out('C015', r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void urlEncode(String, String, Boolean) from the type System.EncodingUtil",
+      "compile": true
+    },
+    {
+      "id": "C016",
+      "code": "Object r; Integer n=Blob.valueOf('é').size(); r=n; pq.out('C016', r);",
+      "expected": "2",
+      "compile": true
+    },
+    {
+      "id": "C017",
+      "code": "Object r; Blob x=EncodingUtil.base64Decode('YQ=='); r=x.size(); pq.out('C017', r);",
+      "expected": "1",
+      "compile": true
+    },
+    {
+      "id": "C018",
+      "code": "Object r; Blob x=EncodingUtil.convertFromHex('41'); r=x.toString(); pq.out('C018', r);",
+      "expected": "A",
+      "compile": true
+    },
+    {
+      "id": "C019",
+      "code": "Object r; String s=EncodingUtil.urlDecode('a+b','UTF-8'); r=s; pq.out('C019', r);",
+      "expected": "a b",
+      "compile": true
+    },
+    {
+      "id": "C020",
+      "code": "Object r; Blob x=EncodingUtil.base64Encode(Blob.valueOf('a')); r=x; pq.out('C020', r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Blob",
+      "compile": true
+    }
+  ],
+  "controls": []
+}

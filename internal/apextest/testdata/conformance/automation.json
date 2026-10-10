@@ -1,0 +1,2435 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "Declarations": {
+    "A43OracleEcho": "public class A43OracleEcho {\n @InvocableMethod(label='A43 Oracle Echo')\n public static List<String> echo(List<String> values) {\n  List<String> out=new List<String>();\n  for(String value:values) out.add(value==null?'nil':'echo:'+value);\n  return out;\n }\n}\n"
+  },
+  "Prelude": "",
+  "schema": {},
+  "Files": {
+    "force-app/main/default/settings/Apex.settings-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexSettings xmlns=\"http://soap.sforce.com/2006/04/metadata\"><enableApexApprovalLockUnlock>true</enableApexApprovalLockUnlock></ApexSettings>\n",
+    "force-app/main/default/quickActions/A43OracleContact.quickAction-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<QuickAction xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>A43 Oracle Contact</label><optionsCreateFeedItem>false</optionsCreateFeedItem><quickActionLayout><layoutSectionStyle>TwoColumnsLeftToRight</layoutSectionStyle><quickActionLayoutColumns><quickActionLayoutItems><emptySpace>false</emptySpace><field>Name</field><uiBehavior>Required</uiBehavior></quickActionLayoutItems></quickActionLayoutColumns><quickActionLayoutColumns><quickActionLayoutItems><emptySpace>false</emptySpace><field>Phone</field><uiBehavior>Edit</uiBehavior></quickActionLayoutItems></quickActionLayoutColumns></quickActionLayout><targetObject>Contact</targetObject><type>Create</type></QuickAction>\n",
+    "force-app/main/default/flows/A43OracleFlow.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n <apiVersion>62.0</apiVersion>\n <assignments><name>Echo</name><label>Echo</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>outputText</assignToReference><operator>Assign</operator><value><elementReference>inputText</elementReference></value></assignmentItems></assignments>\n <interviewLabel>A43 Oracle {!$Flow.CurrentDateTime}</interviewLabel><label>A43 Oracle Flow</label><processType>AutoLaunchedFlow</processType>\n <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Echo</targetReference></connector></start><status>Active</status>\n <variables><name>inputText</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>true</isOutput></variables>\n <variables><name>outputText</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>\n</Flow>\n"
+  },
+  "Cases": [
+    {
+      "ID": "R001",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); r=x.getComments();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R002",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); r=x.getNextApproverIds();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R003",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); r=x.getObjectId();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R004",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); r=x.getProcessDefinitionNameOrId();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R005",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); r=x.getSkipEntryCriteria();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R006",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); r=x.getSubmitterId();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R007",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setComments(null); r=x.getComments();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R008",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setComments(''); r=x.getComments();",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R009",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setComments('a'); r=x.getComments();",
+      "Expected": "a",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R010",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setComments('Approve'); r=x.getComments();",
+      "Expected": "Approve",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R011",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setComments('Reject'); r=x.getComments();",
+      "Expected": "Reject",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R012",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setComments('Remove'); r=x.getComments();",
+      "Expected": "Remove",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R013",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setComments('a\\nb'); r=x.getComments();",
+      "Expected": "a\nb",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R014",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setComments('é'); r=x.getComments();",
+      "Expected": "é",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R015",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setComments('  x  '); r=x.getComments();",
+      "Expected": "  x  ",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R016",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setNextApproverIds(null); List<Id> y=x.getNextApproverIds(); r=y==null?null:y.size();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R017",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setNextApproverIds(new List<Id>()); List<Id> y=x.getNextApproverIds(); r=y==null?null:y.size();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R018",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setNextApproverIds(new List<Id>{UserInfo.getUserId()}); List<Id> y=x.getNextApproverIds(); r=y==null?null:y.size();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R019",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setNextApproverIds(new List<Id>{null}); List<Id> y=x.getNextApproverIds(); r=y==null?null:y.size();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R020",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setNextApproverIds(new List<Id>{UserInfo.getUserId(),UserInfo.getUserId()}); List<Id> y=x.getNextApproverIds(); r=y==null?null:y.size();",
+      "Expected": "2",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R021",
+      "Code": "Approval.ProcessRequest x=new Approval.ProcessSubmitRequest(); x.setComments('base'); r=x.getComments();",
+      "Expected": "base",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R022",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); r=x.getComments();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R023",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); r=x.getNextApproverIds();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R024",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); r=x.getAction();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R025",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); r=x.getWorkitemId();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R026",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setComments(null); r=x.getComments();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R027",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setComments(''); r=x.getComments();",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R028",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setComments('a'); r=x.getComments();",
+      "Expected": "a",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R029",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setComments('Approve'); r=x.getComments();",
+      "Expected": "Approve",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R030",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setComments('Reject'); r=x.getComments();",
+      "Expected": "Reject",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R031",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setComments('Remove'); r=x.getComments();",
+      "Expected": "Remove",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R032",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setComments('a\\nb'); r=x.getComments();",
+      "Expected": "a\nb",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R033",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setComments('é'); r=x.getComments();",
+      "Expected": "é",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R034",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setComments('  x  '); r=x.getComments();",
+      "Expected": "  x  ",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R035",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setNextApproverIds(null); List<Id> y=x.getNextApproverIds(); r=y==null?null:y.size();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R036",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setNextApproverIds(new List<Id>()); List<Id> y=x.getNextApproverIds(); r=y==null?null:y.size();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R037",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setNextApproverIds(new List<Id>{UserInfo.getUserId()}); List<Id> y=x.getNextApproverIds(); r=y==null?null:y.size();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R038",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setNextApproverIds(new List<Id>{null}); List<Id> y=x.getNextApproverIds(); r=y==null?null:y.size();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R039",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setNextApproverIds(new List<Id>{UserInfo.getUserId(),UserInfo.getUserId()}); List<Id> y=x.getNextApproverIds(); r=y==null?null:y.size();",
+      "Expected": "2",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R040",
+      "Code": "Approval.ProcessRequest x=new Approval.ProcessWorkitemRequest(); x.setComments('base'); r=x.getComments();",
+      "Expected": "base",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R041",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setObjectId(null); r=x.getObjectId();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R042",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setProcessDefinitionNameOrId(null); r=x.getProcessDefinitionNameOrId();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R043",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setSubmitterId(null); r=x.getSubmitterId();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R044",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setObjectId(''); r=x.getObjectId();",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R045",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setProcessDefinitionNameOrId(''); r=x.getProcessDefinitionNameOrId();",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R046",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setSubmitterId(''); r=x.getSubmitterId();",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R047",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setObjectId('A43MissingProcess'); r=x.getObjectId();",
+      "Expected": "A43MissingProcess",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R048",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setProcessDefinitionNameOrId('A43MissingProcess'); r=x.getProcessDefinitionNameOrId();",
+      "Expected": "A43MissingProcess",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R049",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setSubmitterId('A43MissingProcess'); r=x.getSubmitterId();",
+      "Expected": "A43MissingProcess",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R050",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setObjectId('001000000000001'); r=x.getObjectId();",
+      "Expected": "001000000000001",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R051",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setProcessDefinitionNameOrId('001000000000001'); r=x.getProcessDefinitionNameOrId();",
+      "Expected": "001000000000001",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R052",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setSubmitterId('001000000000001'); r=x.getSubmitterId();",
+      "Expected": "001000000000001",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R053",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setObjectId('not-an-id'); r=x.getObjectId();",
+      "Expected": "not-an-id",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R054",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setProcessDefinitionNameOrId('not-an-id'); r=x.getProcessDefinitionNameOrId();",
+      "Expected": "not-an-id",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R055",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setSubmitterId('not-an-id'); r=x.getSubmitterId();",
+      "Expected": "not-an-id",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R056",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setSkipEntryCriteria(true); r=x.getSkipEntryCriteria();",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R057",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setSkipEntryCriteria(false); r=x.getSkipEntryCriteria();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R058",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setSkipEntryCriteria(null); r=x.getSkipEntryCriteria();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R059",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setAction(null); r=x.getAction();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R060",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setAction(''); r=x.getAction();",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R061",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setAction('Approve'); r=x.getAction();",
+      "Expected": "Approve",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R062",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setAction('Reject'); r=x.getAction();",
+      "Expected": "Reject",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R063",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setAction('Remove'); r=x.getAction();",
+      "Expected": "Remove",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R064",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setAction('approve'); r=x.getAction();",
+      "Expected": "approve",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R065",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setAction('Bogus'); r=x.getAction();",
+      "Expected": "Bogus",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R066",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setWorkitemId(null); r=x.getWorkitemId();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R067",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setWorkitemId(''); r=x.getWorkitemId();",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R068",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setWorkitemId('04i000000000001'); r=x.getWorkitemId();",
+      "Expected": "04i000000000001",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R069",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setWorkitemId('not-an-id'); r=x.getWorkitemId();",
+      "Expected": "not-an-id",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R070",
+      "Code": "Approval.ProcessResult x=new Approval.ProcessResult(); r=x.isSuccess();",
+      "Expected": "COMPILE_ERROR\tline 25: Type cannot be constructed: Approval.ProcessResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 25
+    },
+    {
+      "ID": "R071",
+      "Code": "Approval.ProcessResult x=new Approval.ProcessResult(); r=x.getErrors().size();",
+      "Expected": "COMPILE_ERROR\tline 25: Type cannot be constructed: Approval.ProcessResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 25
+    },
+    {
+      "ID": "R072",
+      "Code": "Approval.ProcessResult x=new Approval.ProcessResult(); r=x.getId();",
+      "Expected": "COMPILE_ERROR\tline 25: Type cannot be constructed: Approval.ProcessResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 25
+    },
+    {
+      "ID": "R073",
+      "Code": "Approval.LockResult x=new Approval.LockResult(); r=x.isSuccess();",
+      "Expected": "COMPILE_ERROR\tline 25: Type cannot be constructed: Approval.LockResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 25
+    },
+    {
+      "ID": "R074",
+      "Code": "Approval.LockResult x=new Approval.LockResult(); r=x.getErrors().size();",
+      "Expected": "COMPILE_ERROR\tline 25: Type cannot be constructed: Approval.LockResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 25
+    },
+    {
+      "ID": "R075",
+      "Code": "Approval.LockResult x=new Approval.LockResult(); r=x.getId();",
+      "Expected": "COMPILE_ERROR\tline 25: Type cannot be constructed: Approval.LockResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 25
+    },
+    {
+      "ID": "R076",
+      "Code": "Approval.UnlockResult x=new Approval.UnlockResult(); r=x.isSuccess();",
+      "Expected": "COMPILE_ERROR\tline 25: Type cannot be constructed: Approval.UnlockResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 25
+    },
+    {
+      "ID": "R077",
+      "Code": "Approval.UnlockResult x=new Approval.UnlockResult(); r=x.getErrors().size();",
+      "Expected": "COMPILE_ERROR\tline 25: Type cannot be constructed: Approval.UnlockResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 25
+    },
+    {
+      "ID": "R078",
+      "Code": "Approval.UnlockResult x=new Approval.UnlockResult(); r=x.getId();",
+      "Expected": "COMPILE_ERROR\tline 25: Type cannot be constructed: Approval.UnlockResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 25
+    },
+    {
+      "ID": "R079",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {r=Approval.isLocked(a.Id);} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R080",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {r=Approval.isLocked(a);} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R081",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {r=Approval.isLocked(new List<Id>{a.Id}).get(a.Id);} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R082",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {r=Approval.isLocked(new List<SObject>{a}).get(a.Id);} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "System.TypeException",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R083",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {Approval.LockResult x=Approval.lock(a.Id); r=x.isSuccess();} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R084",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {Approval.LockResult x=Approval.lock(a.Id); r=x.getId()==a.Id;} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R085",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {Approval.LockResult x=Approval.lock(a.Id); r=x.getErrors().size();} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R086",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {Approval.lock(a.Id); r=Approval.isLocked(a.Id);} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R087",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {Approval.lock(a.Id); r=Approval.lock(a.Id).isSuccess();} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R088",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {Approval.lock(a.Id); r=Approval.lock(a.Id).getErrors()[0].getStatusCode();} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "System.ListException",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R089",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {r=Approval.unlock(a.Id).isSuccess();} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R090",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {Approval.lock(a.Id); r=Approval.unlock(a.Id).isSuccess();} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R091",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {Approval.lock(a.Id); Approval.unlock(a.Id); r=Approval.isLocked(a.Id);} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R092",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {Approval.lock(a.Id); r=Approval.unlock(a.Id).getId()==a.Id;} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R093",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {Approval.lock(a.Id); r=Approval.unlock(a.Id).getErrors().size();} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R094",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {r=Approval.lock(new List<Id>{a.Id},false)[0].isSuccess();} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R095",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {r=Approval.lock(new List<SObject>{a},false)[0].isSuccess();} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "System.TypeException",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R096",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {r=Approval.unlock(new List<Id>{a.Id},false)[0].isSuccess();} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R097",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; try {r=Approval.unlock(new List<SObject>{a},false)[0].isSuccess();} catch(Exception e){r=e.getTypeName();}",
+      "Expected": "System.TypeException",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R098",
+      "Code": "r=Approval.isLocked((Id)null);",
+      "Expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R099",
+      "Code": "r=Approval.isLocked(new Account());",
+      "Expected": "EXC|System.StringException|Invalid id at index 0: null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R100",
+      "Code": "r=Approval.isLocked(new List<Id>()).size();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R101",
+      "Code": "r=Approval.isLocked((List<Id>)null);",
+      "Expected": "EXC|System.TypeException|List is null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R102",
+      "Code": "r=Approval.lock((Id)null);",
+      "Expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R103",
+      "Code": "r=Approval.unlock((Id)null);",
+      "Expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R104",
+      "Code": "r=Approval.lock(new List<Id>()).size();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R105",
+      "Code": "r=Approval.unlock(new List<Id>()).size();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R106",
+      "Code": "r=Approval.lock(new List<Id>{null},false).size();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R107",
+      "Code": "r=Approval.unlock(new List<Id>{null},false).size();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R108",
+      "Code": "r=Approval.lock(new Account());",
+      "Expected": "EXC|System.StringException|Invalid id at index 0: null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R109",
+      "Code": "r=Approval.unlock(new Account());",
+      "Expected": "EXC|System.StringException|Invalid id at index 0: null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R110",
+      "Code": "Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); Approval.ProcessResult y=Approval.process(x); r=y.isSuccess();",
+      "Expected": "EXC|System.DmlException|Process failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, missing required field: [objectId]: [objectId]",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R111",
+      "Code": "Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); Approval.ProcessResult y=Approval.process(x); r=y.isSuccess();",
+      "Expected": "EXC|System.DmlException|Process failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, missing required field: [workitemId]: [workitemId]",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R112",
+      "Code": "r=Approval.process(new List<Approval.ProcessRequest>()).size();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R113",
+      "Code": "r=Approval.process((Approval.ProcessRequest)null);",
+      "Expected": "EXC|System.ListException|DML statement found null SObject at position 0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R114",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setObjectId(a.Id); x.setProcessDefinitionNameOrId('A43MissingProcess'); try {r=Approval.process(x).isSuccess();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "System.DmlException",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R115",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>null}); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.FlowException|Interview not started",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R116",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>null}); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R117",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>''}); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.FlowException|Interview not started",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R118",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>''}); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R119",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>'hello'}); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.FlowException|Interview not started",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R120",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>'hello'}); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "hello",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R121",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>'é'}); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.FlowException|Interview not started",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R122",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>'é'}); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "é",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R123",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>'a\\nb'}); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.FlowException|Interview not started",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R124",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>'a\\nb'}); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "a\nb",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R125",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>42}); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.FlowException|Interview not started",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R126",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>42}); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "42",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R127",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>true}); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.FlowException|Interview not started",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R128",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>true}); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R129",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>new List<String>{'x'}}); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.FlowException|Interview not started",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R130",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>new List<String>{'x'}}); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R131",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>'stable'}); x.start(); r=x.getVariableValue('inputText');",
+      "Expected": "stable",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R132",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>'stable'}); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "stable",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R133",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>'stable'}); x.start(); r=x.getVariableValue('missing');",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R134",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>'stable'}); x.start(); r=x.getVariableValue('');",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R135",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'inputText'=>'stable'}); x.start(); r=x.getVariableValue('INPUTTEXT');",
+      "Expected": "stable",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R136",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',null); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.NullPointerException|Argument initialValues cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R137",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>()); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R138",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new Map<String,Object>{'unknown'=>'x'}); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R139",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview(null,new Map<String,Object>()); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.NullPointerException|Argument flowName cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R140",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('',new Map<String,Object>()); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.TypeException|Invalid type: ",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R141",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43MissingFlow',new Map<String,Object>()); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.TypeException|Invalid type: A43MissingFlow",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R142",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('a43oracleflow',new Map<String,Object>()); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R143",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview(null,'A43OracleFlow',new Map<String,Object>{'inputText'=>'namespaced'}); x.start(); r=x.getVariableValue('outputText');",
+      "Expected": "namespaced",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R144",
+      "Code": "Flow.Interview x=Flow.Interview.createInterview('A43MissingNamespace','A43OracleFlow',new Map<String,Object>()); r=x!=null;",
+      "Expected": "EXC|System.TypeException|Invalid type: A43MissingNamespace.A43OracleFlow",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R145",
+      "Code": "Flow.Interview x; r=x.getVariableValue('outputText');",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R146",
+      "Code": "Flow.Interview x; x.start(); r=true;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R147",
+      "Code": "r=A43OracleEcho.echo(new List<String>{null})[0];",
+      "Expected": "nil",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R148",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values',null); List<Invocable.Action.Result> ys=x.invoke(); r=ys.size();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R149",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values',null); List<Invocable.Action.Result> ys=x.invoke(); r=ys[0].isSuccess();",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R150",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values',null); List<Invocable.Action.Result> ys=x.invoke(); r=ys[0].getOutputParameters().get('output');",
+      "Expected": "nil",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R151",
+      "Code": "r=A43OracleEcho.echo(new List<String>{''})[0];",
+      "Expected": "echo:",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R152",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values',''); List<Invocable.Action.Result> ys=x.invoke(); r=ys.size();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R153",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values',''); List<Invocable.Action.Result> ys=x.invoke(); r=ys[0].isSuccess();",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R154",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values',''); List<Invocable.Action.Result> ys=x.invoke(); r=ys[0].getOutputParameters().get('output');",
+      "Expected": "echo:",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R155",
+      "Code": "r=A43OracleEcho.echo(new List<String>{'hello'})[0];",
+      "Expected": "echo:hello",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R156",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values','hello'); List<Invocable.Action.Result> ys=x.invoke(); r=ys.size();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R157",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values','hello'); List<Invocable.Action.Result> ys=x.invoke(); r=ys[0].isSuccess();",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R158",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values','hello'); List<Invocable.Action.Result> ys=x.invoke(); r=ys[0].getOutputParameters().get('output');",
+      "Expected": "echo:hello",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R159",
+      "Code": "r=A43OracleEcho.echo(new List<String>{'a\\nb'})[0];",
+      "Expected": "echo:a\nb",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R160",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values','a\\nb'); List<Invocable.Action.Result> ys=x.invoke(); r=ys.size();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R161",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values','a\\nb'); List<Invocable.Action.Result> ys=x.invoke(); r=ys[0].isSuccess();",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R162",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values','a\\nb'); List<Invocable.Action.Result> ys=x.invoke(); r=ys[0].getOutputParameters().get('output');",
+      "Expected": "echo:a\nb",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R163",
+      "Code": "r=A43OracleEcho.echo(new List<String>{'é'})[0];",
+      "Expected": "echo:é",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R164",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values','é'); List<Invocable.Action.Result> ys=x.invoke(); r=ys.size();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R165",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values','é'); List<Invocable.Action.Result> ys=x.invoke(); r=ys[0].isSuccess();",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R166",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('values','é'); List<Invocable.Action.Result> ys=x.invoke(); r=ys[0].getOutputParameters().get('output');",
+      "Expected": "echo:é",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R167",
+      "Code": "r=A43OracleEcho.echo(new List<String>()).size();",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R168",
+      "Code": "r=A43OracleEcho.echo(new List<String>{'a','b'});",
+      "Expected": "(echo:a, echo:b)",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R169",
+      "Code": "r=A43OracleEcho.echo(null);",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R170",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocations(new List<Map<String,Object>>{new Map<String,Object>{'values'=>'a'},new Map<String,Object>{'values'=>'b'}}); r=x.invoke().size();",
+      "Expected": "2",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R171",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocations(new List<Map<String,Object>>()); r=x.invoke().size();",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R172",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); r=x.invoke()[0].isSuccess();",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R173",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); x.setInvocationParameter('unknown','x'); r=x.invoke()[0].isSuccess();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R174",
+      "Code": "Invocable.Action x; r=x.invoke();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R175",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','A43MissingAction'); r=x.invoke();",
+      "Expected": "(Result:[action=Action:[apiVersion=null, invocations=({}), invokeFromLightningComponent=false, name=A43MissingAction, namespace=null, type=apex, version=null], errors=(Error:[code=MISSING_RECORD, message=Action name not found: A43MissingAction]), invocationParameters=(already output), outputParameters=null, success=false])",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R176",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('flow','A43MissingFlow'); r=x.invoke();",
+      "Expected": "(Result:[action=Action:[apiVersion=null, invocations=({}), invokeFromLightningComponent=false, name=A43MissingFlow, namespace=null, type=flow, version=null], errors=(Error:[code=MISSING_RECORD, message=Action name not found: A43MissingFlow]), invocationParameters=(already output), outputParameters=null, success=false])",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R177",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('missing','x'); r=x.invoke();",
+      "Expected": "EXC|System.TypeException|\"missing\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R178",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction(null,'x'); r=x.invoke();",
+      "Expected": "EXC|System.NullPointerException|Specify a type for the x custom invocable action.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R179",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex',null); r=x.invoke();",
+      "Expected": "EXC|System.NullPointerException|Specify a name for the apex custom invocable action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R180",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction(null); r=x.invoke();",
+      "Expected": "EXC|System.NullPointerException|Specify a type for the unknown custom invocable action.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R181",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction(''); r=x.invoke();",
+      "Expected": "EXC|System.TypeException|\"\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R182",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('A43MissingStandard'); r=x.invoke();",
+      "Expected": "EXC|System.TypeException|\"A43MissingStandard\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R183",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); r=x.getQuickActionName();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R184",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); r=x.getContextId();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R185",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); r=x.getRecord();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R186",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName(null); r=x.getQuickActionName();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R187",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName(''); r=x.getQuickActionName();",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R188",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); r=x.getQuickActionName();",
+      "Expected": "A43OracleContact",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R189",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43MissingAction'); r=x.getQuickActionName();",
+      "Expected": "A43MissingAction",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R190",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('é'); r=x.getQuickActionName();",
+      "Expected": "é",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R191",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setContextId(null); r=x.getContextId();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R192",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setContextId('001000000000001'); r=x.getContextId();",
+      "Expected": "001000000000001AAA",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R193",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setContextId('not-an-id'); r=x.getContextId();",
+      "Expected": "EXC|System.StringException|Invalid id: not-an-id",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R194",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setRecord(null); r=x.getRecord()==null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R195",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setRecord(new Contact(LastName='A43')); r=x.getRecord()==null;",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R196",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setRecord(new Account(Name='A43')); r=x.getRecord()==null;",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R197",
+      "Code": "QuickAction.QuickActionResult x=new QuickAction.QuickActionResult(); r=x.isSuccess();",
+      "Expected": "COMPILE_ERROR\tline 52: Type cannot be constructed: QuickAction.QuickActionResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 52
+    },
+    {
+      "ID": "R198",
+      "Code": "QuickAction.QuickActionResult x=new QuickAction.QuickActionResult(); r=x.getErrors().size();",
+      "Expected": "COMPILE_ERROR\tline 52: Type cannot be constructed: QuickAction.QuickActionResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 52
+    },
+    {
+      "ID": "R199",
+      "Code": "QuickAction.QuickActionResult x=new QuickAction.QuickActionResult(); r=x.getIds().size();",
+      "Expected": "COMPILE_ERROR\tline 52: Type cannot be constructed: QuickAction.QuickActionResult",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 52
+    },
+    {
+      "ID": "R200",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Contact(LastName='A43',FirstName='Echo')); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.isSuccess();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R201",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Contact(LastName='A43',FirstName='Echo')); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getErrors().size();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R202",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Contact(LastName='A43',FirstName='Echo')); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getIds().size();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R203",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Contact()); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.isSuccess();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "System.DmlException",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R204",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Contact()); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getErrors().size();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "System.DmlException",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R205",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Contact()); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getIds().size();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "System.DmlException",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R212",
+      "Code": "r=QuickAction.performQuickAction(null);",
+      "Expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R215",
+      "Code": "r=lxscheduler.GetAppointmentCandidatesInput.builder().build();",
+      "Expected": "COMPILE_ERROR\tline 12: Type is not visible: lxscheduler.GetAppointmentCandidatesInput",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 12
+    },
+    {
+      "ID": "R216",
+      "Code": "r=lxscheduler.GetAppointmentSlotsInput.builder().build();",
+      "Expected": "COMPILE_ERROR\tline 12: Type is not visible: lxscheduler.GetAppointmentSlotsInput",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 12
+    },
+    {
+      "ID": "R217",
+      "Code": "r=lxscheduler.SchedulerResources.getAppointmentCandidates(null);",
+      "Expected": "COMPILE_ERROR\tline 12: Type is not visible: lxscheduler.SchedulerResources",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 12
+    },
+    {
+      "ID": "R218",
+      "Code": "r=lxscheduler.SchedulerResources.getAppointmentSlots(null);",
+      "Expected": "COMPILE_ERROR\tline 12: Type is not visible: lxscheduler.SchedulerResources",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 12
+    },
+    {
+      "ID": "R219",
+      "Code": "r=FSL.ScheduleService.schedule(null,null);",
+      "Expected": "COMPILE_ERROR\tline 12: Variable does not exist: FSL.ScheduleService",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 12
+    },
+    {
+      "ID": "R220",
+      "Code": "KbManagement.PublishingService.publishArticle(null,false); r=true;",
+      "Expected": "COMPILE_ERROR\tline 12: Type is not visible: KbManagement.PublishingService",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 12
+    },
+    {
+      "ID": "R221",
+      "Code": "KbManagement.PublishingService.publishArticle('A43MissingArticle',false); r=true;",
+      "Expected": "COMPILE_ERROR\tline 12: Type is not visible: KbManagement.PublishingService",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 12
+    },
+    {
+      "ID": "R222",
+      "Code": "KbManagement.PublishingService.archiveOnlineArticle(null,null); r=true;",
+      "Expected": "COMPILE_ERROR\tline 12: Type is not visible: KbManagement.PublishingService",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 12
+    },
+    {
+      "ID": "R223",
+      "Code": "r=KbManagement.PublishingService.editOnlineArticle(null,false);",
+      "Expected": "COMPILE_ERROR\tline 12: Type is not visible: KbManagement.PublishingService",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 12
+    },
+    {
+      "ID": "R224",
+      "Code": "KbManagement.PublishingService.deleteDraftArticle(null); r=true;",
+      "Expected": "COMPILE_ERROR\tline 12: Type is not visible: KbManagement.PublishingService",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 12
+    },
+    {
+      "ID": "C001",
+      "Code": "Object r; lxscheduler.GetAppointmentCandidatesInput x; r=x==null; pq.out('C001',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Type is not visible: lxscheduler.GetAppointmentCandidatesInput",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C002",
+      "Code": "Object r; lxscheduler.GetAppointmentSlotsInput x; r=x==null; pq.out('C002',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Type is not visible: lxscheduler.GetAppointmentSlotsInput",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C003",
+      "Code": "Object r; lxscheduler.SkillRequirement x; r=x==null; pq.out('C003',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Type is not visible: lxscheduler.SkillRequirement",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C004",
+      "Code": "Object r; lxscheduler.WorkType x; r=x==null; pq.out('C004',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Type is not visible: lxscheduler.WorkType",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C005",
+      "Code": "Object r; FSL.ScheduleResult x; r=x==null; pq.out('C005',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: FSL.ScheduleResult",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C006",
+      "Code": "Object r; Type x=Type.forName('KbManagement.PublishingService'); r=x!=null; pq.out('C006',r);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C007",
+      "Code": "Object r; Approval.ProcessRequest x=new Approval.ProcessSubmitRequest(); r=x!=null; pq.out('C007',r);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C008",
+      "Code": "Object r; Approval.ProcessRequest x=new Approval.ProcessWorkitemRequest(); r=x!=null; pq.out('C008',r);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C009",
+      "Code": "Object r; Approval.ProcessRequest x=new Approval.ProcessRequest(); r=x; pq.out('C009',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Approval.ProcessRequest",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C010",
+      "Code": "Object r; Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setSkipEntryCriteria(1); pq.out('C010',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setSkipEntryCriteria(Integer) from the type Approval.ProcessSubmitRequest",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C011",
+      "Code": "Object r; Approval.ProcessSubmitRequest x=new Approval.ProcessSubmitRequest(); x.setNextApproverIds(new List<Integer>{1}); pq.out('C011',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setNextApproverIds(List<Integer>) from the type Approval.ProcessSubmitRequest",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C012",
+      "Code": "Object r; Approval.ProcessWorkitemRequest x=new Approval.ProcessWorkitemRequest(); x.setAction(true); pq.out('C012',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setAction(Boolean) from the type Approval.ProcessWorkitemRequest",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C013",
+      "Code": "Object r; r=Approval.isLocked(123); pq.out('C013',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void isLocked(Integer) from the type Approval",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C014",
+      "Code": "Object r; r=Approval.lock(123); pq.out('C014',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void lock(Integer) from the type Approval",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C015",
+      "Code": "Object r; r=Approval.unlock(123); pq.out('C015',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void unlock(Integer) from the type Approval",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C016",
+      "Code": "Object r; Flow.Interview x=new Flow.Interview(); r=x; pq.out('C016',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Abstract classes cannot be constructed: Flow.Interview",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C017",
+      "Code": "Object r; Flow.Interview x=Flow.Interview.createInterview(1,new Map<String,Object>()); r=x; pq.out('C017',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void createInterview(Integer, Map<String,Object>) from the type Flow.Interview",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C018",
+      "Code": "Object r; Flow.Interview x=Flow.Interview.createInterview('A43OracleFlow',new List<String>()); r=x; pq.out('C018',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void createInterview(String, List<String>) from the type Flow.Interview",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C019",
+      "Code": "Object r; Flow.Interview x; x.start(1); pq.out('C019',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void start(Integer) from the type Flow.Interview",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C020",
+      "Code": "Object r; Flow.Interview x; x.setVariableValue('x',1); pq.out('C020',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method is not visible: void Flow.Interview.setVariableValue(String, Object)",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C021",
+      "Code": "Object r; Invocable.Action x=new Invocable.Action(); r=x; pq.out('C021',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Constructor not defined: [Invocable.Action].<Constructor>()",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C022",
+      "Code": "Object r; Invocable.Action x=Invocable.Action.createCustomAction('apex','A43OracleEcho'); r=x!=null; pq.out('C022',r);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C023",
+      "Code": "Object r; Invocable.Action x; x.setInvocationParameter(1,1); pq.out('C023',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setInvocationParameter(Integer, Integer) from the type Invocable.Action",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C024",
+      "Code": "Object r; Invocable.Action x; x.setInvocations(new List<String>()); pq.out('C024',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setInvocations(List<String>) from the type Invocable.Action",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C025",
+      "Code": "Object r; Invocable.Action.Result x; Boolean b; if(x!=null) b=x.isSuccess(); r=x==null; pq.out('C025',r);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C026",
+      "Code": "Object r; Invocable.Action.Result x; Map<String,Object> y; if(x!=null) y=x.getOutputParameters(); r=x==null; pq.out('C026',r);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C027",
+      "Code": "Object r; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); r=x!=null; pq.out('C027',r);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C028",
+      "Code": "Object r; QuickAction.QuickActionRequest x; x.setRecord('x'); pq.out('C028',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setRecord(String) from the type QuickAction.QuickActionRequest",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C029",
+      "Code": "Object r; QuickAction.QuickActionRequest x; x.setContextId(123); pq.out('C029',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setContextId(Integer) from the type QuickAction.QuickActionRequest",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C030",
+      "Code": "Object r; QuickAction.QuickActionRequest x; x.setQuickActionName(true); pq.out('C030',r);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setQuickActionName(Boolean) from the type QuickAction.QuickActionRequest",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C031",
+      "Code": "Object r; QuickAction.QuickActionResult x; Database.Error[] y; if(x!=null) y=x.getErrors(); r=x==null; pq.out('C031',r);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C032",
+      "Code": "Object r; QuickAction.QuickActionResult x; Id[] y; if(x!=null) y=x.getIds(); r=x==null; pq.out('C032',r);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C033",
+      "Code": "Object r; Boolean executeHosted=false; if(executeHosted){Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(null); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.isSuccess();}catch(Exception e){r=e.getTypeName();}} r='COMPILE_ACCEPTED'; pq.out('C033',r);",
+      "Expected": "COMPILE_ACCEPTED",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C034",
+      "Code": "Object r; Boolean executeHosted=false; if(executeHosted){Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(null); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getErrors().size();}catch(Exception e){r=e.getTypeName();}} r='COMPILE_ACCEPTED'; pq.out('C034',r);",
+      "Expected": "COMPILE_ACCEPTED",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C035",
+      "Code": "Object r; Boolean executeHosted=false; if(executeHosted){Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(null); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getIds().size();}catch(Exception e){r=e.getTypeName();}} r='COMPILE_ACCEPTED'; pq.out('C035',r);",
+      "Expected": "COMPILE_ACCEPTED",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C036",
+      "Code": "Object r; Boolean executeHosted=false; if(executeHosted){Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Account(Name='Wrong')); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.isSuccess();}catch(Exception e){r=e.getTypeName();}} r='COMPILE_ACCEPTED'; pq.out('C036',r);",
+      "Expected": "COMPILE_ACCEPTED",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C037",
+      "Code": "Object r; Boolean executeHosted=false; if(executeHosted){Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Account(Name='Wrong')); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getErrors().size();}catch(Exception e){r=e.getTypeName();}} r='COMPILE_ACCEPTED'; pq.out('C037',r);",
+      "Expected": "COMPILE_ACCEPTED",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C038",
+      "Code": "Object r; Boolean executeHosted=false; if(executeHosted){Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Account(Name='Wrong')); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getIds().size();}catch(Exception e){r=e.getTypeName();}} r='COMPILE_ACCEPTED'; pq.out('C038',r);",
+      "Expected": "COMPILE_ACCEPTED",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C039",
+      "Code": "Object r; Boolean executeHosted=false; if(executeHosted){QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43MissingAction'); r=QuickAction.performQuickAction(x).isSuccess();} r='COMPILE_ACCEPTED'; pq.out('C039',r);",
+      "Expected": "COMPILE_ACCEPTED",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C040",
+      "Code": "Object r; Boolean executeHosted=false; if(executeHosted){QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43MissingAction'); x.setRecord(new Contact(LastName='A43')); r=QuickAction.performQuickAction(x).isSuccess();} r='COMPILE_ACCEPTED'; pq.out('C040',r);",
+      "Expected": "COMPILE_ACCEPTED",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S001",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction(null); r=x.getType();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S002",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction(''); r=x.getType();",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S003",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('emailSimple'); r=x.getType();",
+      "Expected": "emailSimple",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S004",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('chatterPost'); r=x.getType();",
+      "Expected": "chatterPost",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S005",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('localNoop'); r=x.getType();",
+      "Expected": "localNoop",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S006",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('flow'); r=x.getType();",
+      "Expected": "flow",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S007",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('apex'); r=x.getType();",
+      "Expected": "apex",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S008",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('arbitraryMissing'); r=x.getType();",
+      "Expected": "arbitraryMissing",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S009",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','MissingOwnedCallback'); r=x.getType();",
+      "Expected": "apex",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S010",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('flow','MissingOwnedCallback'); r=x.getType();",
+      "Expected": "flow",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S011",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('APEX','MissingOwnedCallback'); r=x.getType();",
+      "Expected": "APEX",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S012",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('emailSimple','MissingOwnedCallback'); r=x.getType();",
+      "Expected": "emailSimple",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S013",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('arbitraryMissing','MissingOwnedCallback'); r=x.getType();",
+      "Expected": "arbitraryMissing",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S014",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('localNoop'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"localNoop\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S015",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('arbitraryMissing'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"arbitraryMissing\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S016",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('emailSimple'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"emailSimple\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S017",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('chatterPost'); r=x.invoke()[0].isSuccess();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S018",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('APEX','MissingOwnedCallback'); r=x.invoke()[0].isSuccess();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S019",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('emailSimple','MissingOwnedCallback'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"emailSimple\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S020",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('arbitraryMissing','MissingOwnedCallback'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"arbitraryMissing\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S021",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('apex'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.NullPointerException|Specify a name for the apex custom invocable action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S022",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('flow'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.NullPointerException|Specify a name for the flow custom invocable action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S023",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('sendEmail'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"sendEmail\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S024",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('emailAlert'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"emailAlert\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S025",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('quickAction'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.NullPointerException|Specify a name for the quickAction custom invocable action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S026",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('submitForApproval'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"submitForApproval\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S027",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('process'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"process\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S028",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('outboundMessage'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"outboundMessage\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S029",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('customNotificationAction'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"customNotificationAction\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S030",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('postToChatter'); r=x.invoke()[0].isSuccess();",
+      "Expected": "EXC|System.TypeException|\"postToChatter\" isn't a valid action type.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S031",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','MissingOwnedCallback'); x.setInvocationParameter('values','native'); r=x.invoke();",
+      "Expected": "(Result:[action=Action:[apiVersion=null, invocations=({values=native}), invokeFromLightningComponent=false, name=MissingOwnedCallback, namespace=null, type=apex, version=null], errors=(Error:[code=MISSING_RECORD, message=Action name not found: MissingOwnedCallback]), invocationParameters=(already output), outputParameters=null, success=false])",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S032",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','MissingOwnedCallback'); x.setInvocationParameter('values','native'); r=x.invoke()[0];",
+      "Expected": "Result:[action=Action:[apiVersion=null, invocations=({values=native}), invokeFromLightningComponent=false, name=MissingOwnedCallback, namespace=null, type=apex, version=null], errors=(Error:[code=MISSING_RECORD, message=Action name not found: MissingOwnedCallback]), invocationParameters=(already output), outputParameters=null, success=false]",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S033",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('apex','MissingOwnedCallback'); x.setInvocationParameter('values','native'); r=x.invoke()[0].getErrors();",
+      "Expected": "(Error:[code=MISSING_RECORD, message=Action name not found: MissingOwnedCallback])",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S034",
+      "Code": "r=Invocable.Action.createStandardAction('apex');",
+      "Expected": "Action:[apiVersion=null, invocations=(), invokeFromLightningComponent=false, name=null, namespace=null, type=apex, version=null]",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S035",
+      "Code": "r=Invocable.Action.createStandardAction('flow');",
+      "Expected": "Action:[apiVersion=null, invocations=(), invokeFromLightningComponent=false, name=null, namespace=null, type=flow, version=null]",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S036",
+      "Code": "r=Invocable.Action.createStandardAction('quickAction');",
+      "Expected": "Action:[apiVersion=null, invocations=(), invokeFromLightningComponent=false, name=null, namespace=null, type=quickAction, version=null]",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S037",
+      "Code": "r=Invocable.Action.createStandardAction('chatterPost');",
+      "Expected": "Action:[apiVersion=null, invocations=(), invokeFromLightningComponent=false, name=null, namespace=null, type=chatterPost, version=null]",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S038",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('quickAction','MissingOwnedCallback'); r=x.invoke()[0].isSuccess();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S039",
+      "Code": "Invocable.Action x=Invocable.Action.createCustomAction('chatterPost','MissingOwnedCallback'); r=x.invoke()[0].isSuccess();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S040",
+      "Code": "Invocable.Action x=Invocable.Action.createStandardAction('CHATTERPOST'); r=x.invoke()[0].isSuccess();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "B033",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(null); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.isSuccess();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "",
+      "LocalBoundaryText": "unsupported call \"QuickAction.performQuickAction request record for Contact\""
+    },
+    {
+      "ID": "B034",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(null); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getErrors().size();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "",
+      "LocalBoundaryText": "unsupported call \"QuickAction.performQuickAction request record for Contact\""
+    },
+    {
+      "ID": "B035",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(null); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getIds().size();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "",
+      "LocalBoundaryText": "unsupported call \"QuickAction.performQuickAction request record for Contact\""
+    },
+    {
+      "ID": "B036",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Account(Name='Wrong')); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.isSuccess();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "",
+      "LocalBoundaryText": "unsupported call \"QuickAction.performQuickAction request record for Contact\""
+    },
+    {
+      "ID": "B037",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Account(Name='Wrong')); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getErrors().size();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "",
+      "LocalBoundaryText": "unsupported call \"QuickAction.performQuickAction request record for Contact\""
+    },
+    {
+      "ID": "B038",
+      "Code": "Account a=new Account(Name='A43Oracle'); insert a; QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43OracleContact'); x.setContextId(a.Id); x.setRecord(new Account(Name='Wrong')); try {QuickAction.QuickActionResult y=QuickAction.performQuickAction(x); r=y.getIds().size();}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "",
+      "LocalBoundaryText": "unsupported call \"QuickAction.performQuickAction request record for Contact\""
+    },
+    {
+      "ID": "B039",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43MissingAction'); r=QuickAction.performQuickAction(x).isSuccess();",
+      "Expected": "",
+      "LocalBoundaryText": "unsupported call \"QuickAction.performQuickAction hosted action A43MissingAction\""
+    },
+    {
+      "ID": "B040",
+      "Code": "QuickAction.QuickActionRequest x=new QuickAction.QuickActionRequest(); x.setQuickActionName('A43MissingAction'); x.setRecord(new Contact(LastName='A43')); r=QuickAction.performQuickAction(x).isSuccess();",
+      "Expected": "",
+      "LocalBoundaryText": "unsupported call \"QuickAction.performQuickAction hosted action A43MissingAction\""
+    }
+  ],
+  "Remaining": []
+}

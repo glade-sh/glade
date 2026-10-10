@@ -3,6 +3,7 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
+import { after } from "node:test";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -12,7 +13,7 @@ const ldsCachePath = path.join(repoRoot, "lwcruntime/src/shims/lds-cache.mjs");
 const sldsLoaderPath = path.join(repoRoot, "lwcruntime/src/slds/slds-loader.mjs");
 const sldsRootPath = path.join(repoRoot, "lwcruntime/src/slds");
 const diagnosticsPath = path.join(repoRoot, "lwcruntime/src/shell/diagnostics.mjs");
-const lwcToolchainNodeModules = path.join(repoRoot, "third_party/lwc/node_modules");
+const lwcToolchainNodeModules = path.join(process.env.GLADE_LWC_TOOLCHAIN_DIR || path.join(repoRoot, "third_party/lwc"), "node_modules");
 export const defaultSLDSHref = "/lightning/runtime/slds/design-system-2/dist/css/bundled/slds2.cosmos.css";
 
 export const salesforceImportMap = {
@@ -36,6 +37,12 @@ export function requireLWCToolchain(t) {
   }
   t.skip("run npm install in third_party/lwc");
   return false;
+}
+
+export function testTempDir(t, prefix) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  return dir;
 }
 
 export function compileFixture(fixtureRel, outDir) {
@@ -475,8 +482,9 @@ export function startLightningServer({
   pages = {},
   wireHandlers = {},
   shimConfig = {},
+  port = 0,
 }) {
-  const vendorRoot = path.join(repoRoot, "third_party/lwc/node_modules");
+  const vendorRoot = lwcToolchainNodeModules;
   const htmlPages = { ...pages };
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://localhost");
@@ -516,7 +524,7 @@ export function startLightningServer({
     res.end(fs.readFileSync(filePath));
   });
   return new Promise((resolve) => {
-    server.listen(0, "127.0.0.1", () => {
+    server.listen(port, "127.0.0.1", () => {
       const { port } = server.address();
       const handle = {
         port,
@@ -595,26 +603,80 @@ export function harnessHTML(baseURL, config, moduleScript) {
 </html>`;
 }
 
+// All helpers in this test process use the same source tree. Keep only the
+// executable shared; each server still owns its temporary state and cleanup.
+let devServerBuild;
+after(() => {
+  if (devServerBuild) {
+    fs.rmSync(devServerBuild.dir, { recursive: true, force: true });
+  }
+});
+
+function buildDevServerBinary(t) {
+  if (devServerBuild) {
+    return devServerBuild.binary;
+  }
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glade-browser-binary-"));
+  const binary = path.join(dir, process.platform === "win32" ? "glade.exe" : "glade");
+  try {
+    const build = spawnSync("go", ["build", "-o", binary, "./cmd/glade"], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    if (build.status !== 0) {
+      t.skip(`cannot build local glade binary: ${buildFailureSummary(build.stderr || build.stdout)}`);
+      return null;
+    }
+    devServerBuild = { dir, binary };
+    return binary;
+  } finally {
+    if (!devServerBuild) {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+}
+
 export async function startVisualforceDevServer(t, { projectRel, pagePath = "/apex/MultiWidgetHost" } = {}) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "glade-vf-server-"));
-  const binary = path.join(tmpDir, process.platform === "win32" ? "glade.exe" : "glade");
-  const build = spawnSync("go", ["build", "-o", binary, "./cmd/glade"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-  });
-  if (build.status !== 0) {
-    t.skip(`cannot build local glade binary: ${buildFailureSummary(build.stderr || build.stdout)}`);
+  let child;
+  let closing;
+  const close = () => closing ??= (async () => {
+    try {
+      await stopProcess(child);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  })();
+  t.after(close);
+  const binary = buildDevServerBinary(t);
+  if (!binary) {
     return null;
   }
 
   const readyFile = path.join(tmpDir, "ready.json");
-  const projectRoot = path.join(repoRoot, projectRel || ".");
-  const child = spawn(
+  const projectRoot = path.join(tmpDir, "project");
+  fs.cpSync(path.join(repoRoot, projectRel || "."), projectRoot, { recursive: true });
+  // Use the same stored, process-configured principal as the Go VF fixtures.
+  const principalID = "005000000000011";
+  fs.mkdirSync(path.join(projectRoot, "data"), { recursive: true });
+  fs.writeFileSync(path.join(projectRoot, "data", "browser-principal.json"), JSON.stringify({
+    version: "glade.storage.v1",
+    objects: [
+      { name: "User", records: [{ id: principalID, fields: {
+        Name: { kind: "string", string: "Visualforce Test User" },
+        ProfileId: { kind: "id", id: "00e000000000011" },
+      } }] },
+      { name: "Profile", records: [{ id: "00e000000000011", fields: {
+        Name: { kind: "string", string: "Visualforce Test User" },
+      } }] },
+    ],
+  }));
+  child = spawn(
     binary,
     ["dev", "vf", "--project", projectRoot, "--addr", "127.0.0.1:0", "--ready-file", readyFile],
     {
       cwd: repoRoot,
-      env: { ...process.env, GLADE_HOME: repoRoot },
+      env: { ...process.env, TMPDIR: tmpDir, TMP: tmpDir, TEMP: tmpDir, GLADE_HOME: repoRoot, GLADE_VISUALFORCE_HTML_USER_ID: principalID },
       stdio: ["ignore", "pipe", "pipe"],
     },
   );
@@ -633,10 +695,10 @@ export async function startVisualforceDevServer(t, { projectRel, pagePath = "/ap
     return {
       baseURL: ready.url,
       pages: ready.pages || [],
-      close: () => stopProcess(child),
+      close,
     };
   } catch (err) {
-    await stopProcess(child);
+    await close();
     throw err;
   }
 }
@@ -646,24 +708,29 @@ export async function startLWCDevServer(t, {
   pagePath = "/lwc/preview/component/c/contextProbe",
 } = {}) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "glade-lwc-server-"));
-  const binary = path.join(tmpDir, process.platform === "win32" ? "glade.exe" : "glade");
-  const build = spawnSync("go", ["build", "-o", binary, "./cmd/glade"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-  });
-  if (build.status !== 0) {
-    t.skip(`cannot build local glade binary: ${buildFailureSummary(build.stderr || build.stdout)}`);
+  let child;
+  let closing;
+  const close = () => closing ??= (async () => {
+    try {
+      await stopProcess(child);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  })();
+  t.after(close);
+  const binary = buildDevServerBinary(t);
+  if (!binary) {
     return null;
   }
 
   const readyFile = path.join(tmpDir, "ready.json");
   const projectRoot = path.join(repoRoot, projectRel || ".");
-  const child = spawn(
+  child = spawn(
     binary,
     ["dev", "lwc", "--project", projectRoot, "--addr", "127.0.0.1:0", "--ready-file", readyFile],
     {
       cwd: repoRoot,
-      env: { ...process.env, GLADE_HOME: repoRoot },
+      env: { ...process.env, TMPDIR: tmpDir, TMP: tmpDir, TEMP: tmpDir, GLADE_HOME: repoRoot },
       stdio: ["ignore", "pipe", "pipe"],
     },
   );
@@ -682,10 +749,10 @@ export async function startLWCDevServer(t, {
     return {
       baseURL: ready.url,
       routes: ready.routes || [],
-      close: () => stopProcess(child),
+      close,
     };
   } catch (err) {
-    await stopProcess(child);
+    await close();
     throw err;
   }
 }
@@ -736,7 +803,7 @@ async function waitForHTTP(url, child, readOutput) {
         await response.arrayBuffer();
         return;
       }
-      lastError = `HTTP ${response.status}`;
+      lastError = `HTTP ${response.status}: ${(await response.text()).slice(0, 500)}`;
     } catch (err) {
       lastError = err.message;
     }
@@ -746,7 +813,7 @@ async function waitForHTTP(url, child, readOutput) {
 }
 
 function stopProcess(child) {
-  if (!child || child.exitCode !== null) {
+  if (!child || child.exitCode !== null || child.signalCode !== null) {
     return Promise.resolve();
   }
   return new Promise((resolve) => {

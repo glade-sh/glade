@@ -1,0 +1,234 @@
+[
+  {
+    "id": "dom_style_class_conversion",
+    "first_differing_version": 62,
+    "observations": {
+      "59": {
+        "id": "dom_style_class_conversion",
+        "events": [],
+        "promiseIdentity": null,
+        "scriptCount": 0,
+        "style": {
+          "color": "rgb(3, 35, 77)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "display": "inline",
+          "visibility": "visible",
+          "position": "static",
+          "paddingTop": "0px",
+          "width": "auto",
+          "hook": "",
+          "loaded": "",
+          "className": "[object Object]",
+          "style": null
+        },
+        "baseButton": {
+          "internalVisible": false,
+          "background": null,
+          "declaredHook": ""
+        },
+        "console": []
+      },
+      "60": {
+        "id": "dom_style_class_conversion",
+        "events": [],
+        "promiseIdentity": null,
+        "scriptCount": 0,
+        "style": {
+          "color": "rgb(3, 35, 77)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "display": "inline",
+          "visibility": "visible",
+          "position": "static",
+          "paddingTop": "0px",
+          "width": "auto",
+          "hook": "",
+          "loaded": "",
+          "className": "[object Object]",
+          "style": null
+        },
+        "baseButton": {
+          "internalVisible": false,
+          "background": null,
+          "declaredHook": ""
+        },
+        "console": []
+      },
+      "61": {
+        "id": "dom_style_class_conversion",
+        "events": [],
+        "promiseIdentity": null,
+        "scriptCount": 0,
+        "style": {
+          "color": "rgb(3, 35, 77)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "display": "inline",
+          "visibility": "visible",
+          "position": "static",
+          "paddingTop": "0px",
+          "width": "auto",
+          "hook": "",
+          "loaded": "",
+          "className": "[object Object]",
+          "style": null
+        },
+        "baseButton": {
+          "internalVisible": false,
+          "background": null,
+          "declaredHook": ""
+        },
+        "console": []
+      },
+      "62": {
+        "id": "dom_style_class_conversion",
+        "events": [],
+        "promiseIdentity": null,
+        "scriptCount": 0,
+        "style": {
+          "color": "rgb(17, 34, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "display": "flex",
+          "visibility": "visible",
+          "position": "static",
+          "paddingTop": "0px",
+          "width": "37px",
+          "hook": "",
+          "loaded": "yes",
+          "className": "owned-target slds-grid",
+          "style": null
+        },
+        "baseButton": {
+          "internalVisible": false,
+          "background": null,
+          "declaredHook": ""
+        },
+        "console": []
+      },
+      "63": {
+        "id": "dom_style_class_conversion",
+        "events": [],
+        "promiseIdentity": null,
+        "scriptCount": 0,
+        "style": {
+          "color": "rgb(17, 34, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "display": "flex",
+          "visibility": "visible",
+          "position": "static",
+          "paddingTop": "0px",
+          "width": "37px",
+          "hook": "",
+          "loaded": "yes",
+          "className": "owned-target slds-grid",
+          "style": null
+        },
+        "baseButton": {
+          "internalVisible": false,
+          "background": null,
+          "declaredHook": ""
+        },
+        "console": []
+      },
+      "64": {
+        "id": "dom_style_class_conversion",
+        "events": [],
+        "promiseIdentity": null,
+        "scriptCount": 0,
+        "style": {
+          "color": "rgb(17, 34, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "display": "flex",
+          "visibility": "visible",
+          "position": "static",
+          "paddingTop": "0px",
+          "width": "37px",
+          "hook": "",
+          "loaded": "yes",
+          "className": "owned-target slds-grid",
+          "style": null
+        },
+        "baseButton": {
+          "internalVisible": false,
+          "background": null,
+          "declaredHook": ""
+        },
+        "console": []
+      },
+      "65": {
+        "id": "dom_style_class_conversion",
+        "events": [],
+        "promiseIdentity": null,
+        "scriptCount": 0,
+        "style": {
+          "color": "rgb(17, 34, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "display": "flex",
+          "visibility": "visible",
+          "position": "static",
+          "paddingTop": "0px",
+          "width": "37px",
+          "hook": "",
+          "loaded": "yes",
+          "className": "owned-target slds-grid",
+          "style": null
+        },
+        "baseButton": {
+          "internalVisible": false,
+          "background": null,
+          "declaredHook": ""
+        },
+        "console": []
+      },
+      "66": {
+        "id": "dom_style_class_conversion",
+        "events": [],
+        "promiseIdentity": null,
+        "scriptCount": 0,
+        "style": {
+          "color": "rgb(17, 34, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "display": "flex",
+          "visibility": "visible",
+          "position": "static",
+          "paddingTop": "0px",
+          "width": "37px",
+          "hook": "",
+          "loaded": "yes",
+          "className": "owned-target slds-grid",
+          "style": null
+        },
+        "baseButton": {
+          "internalVisible": false,
+          "background": null,
+          "declaredHook": ""
+        },
+        "console": []
+      },
+      "67": {
+        "id": "dom_style_class_conversion",
+        "events": [],
+        "promiseIdentity": null,
+        "scriptCount": 0,
+        "style": {
+          "color": "rgb(17, 34, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "display": "flex",
+          "visibility": "visible",
+          "position": "static",
+          "paddingTop": "0px",
+          "width": "37px",
+          "hook": "",
+          "loaded": "yes",
+          "className": "owned-target slds-grid",
+          "style": null
+        },
+        "baseButton": {
+          "internalVisible": false,
+          "background": null,
+          "declaredHook": ""
+        },
+        "console": []
+      }
+    },
+    "method": "native owned-output observations at APIs 59 through 67"
+  }
+]

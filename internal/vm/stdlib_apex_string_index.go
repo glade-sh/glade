@@ -152,8 +152,8 @@ func apexStringIndexForByteIndex(input string, targetByte int) (int, error) {
 func apexStringFromCharArray(values []Value) (string, error) {
 	units := make([]uint16, 0, len(values))
 	for _, item := range values {
-		if item.Kind != ValueInt || item.Int < 0 {
-			return "", fmt.Errorf("String.fromCharArray expects non-negative Integer UTF-16 units")
+		if item.Kind != ValueInt {
+			return "", fmt.Errorf("String.fromCharArray expects Integer UTF-16 units")
 		}
 		// Salesforce truncates each Integer to its low UTF-16 code unit.
 		units = append(units, uint16(item.Int&0xffff))

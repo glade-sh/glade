@@ -1,0 +1,2486 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "source": "Owned XML observations at API 62.0 and 67.0; floor and ceiling identical. Malformed QName controls Q001-Q015 and null-argument controls N001-N015 were observed at both APIs with identical results.",
+  "declarations": {},
+  "cases": [
+    {
+      "id": "R001",
+      "group": "document/root-rules",
+      "code": "try { Dom.Document d=new Dom.Document(); r=d.getRootElement(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R002",
+      "group": "document/root-rules",
+      "code": "try { Dom.Document d=new Dom.Document(); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R003",
+      "group": "document/root-rules",
+      "code": "try { Dom.Document d=new Dom.Document(); Dom.XmlNode x=d.createRootElement('first',null,null); r=String.valueOf(x.getName())+'|'+d.getRootElement().getName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "first|first",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R004",
+      "group": "document/root-rules",
+      "code": "try { Dom.Document d=new Dom.Document(); d.createRootElement('first',null,null); d.createRootElement('second',null,null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Root element already created",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R005",
+      "group": "document/root-rules",
+      "code": "try { Dom.Document d=new Dom.Document(); d.createRootElement('first',null,null); String e='none'; try{d.createRootElement('second',null,null);}catch(Exception z){e=z.getTypeName()+'|'+z.getMessage();} r=e+'|'+d.getRootElement().getName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "System.XmlException|Root element already created|first",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R006",
+      "group": "document/root-rules",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<first/>'); d.createRootElement('second',null,null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Root element already created",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R007",
+      "group": "document/root-rules",
+      "code": "try { Dom.Document d=new Dom.Document(); d.createRootElement('first',null,null); d.load('<second/>'); r=d.getRootElement().getName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Root element already created",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R008",
+      "group": "document/root-rules",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<first/>'); d.load('<second/>'); r=d.getRootElement().getName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Root element already created",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R009",
+      "group": "document/root-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); Dom.XmlNode x=d.createRootElement('root',null,null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R010",
+      "group": "document/root-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); Dom.XmlNode x=d.createRootElement('root','',''); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root xmlns=\"\" />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R011",
+      "group": "document/root-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); Dom.XmlNode x=d.createRootElement('root','urn:r','p'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><p:root xmlns:p=\"urn:r\" />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R012",
+      "group": "document/root-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); Dom.XmlNode x=d.createRootElement('root','urn:r',null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ns0:root xmlns:ns0=\"urn:r\" />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R013",
+      "group": "document/root-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); Dom.XmlNode x=d.createRootElement('',null,null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>< />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R014",
+      "group": "document/root-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); Dom.XmlNode x=d.createRootElement(null,null,null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R015",
+      "group": "document/root-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); Dom.XmlNode x=d.createRootElement('a:b',null,null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><a:b />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R016",
+      "group": "document/root-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); Dom.XmlNode x=d.createRootElement('1bad',null,null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><1bad />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R017",
+      "group": "document/root-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); Dom.XmlNode x=d.createRootElement('two words',null,null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><two words />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R018",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load(null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R019",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load(''); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Encountered premature end of XML: input contained no data",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R020",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load(' '); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Encountered premature end of XML: no more data available START_DOCUMENT seen  ... @1:1",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R021",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><r />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R022",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<?xml version=\"1.0\"?><r/>'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><r />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R023",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<a/><b/>'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Failed to parse XML due to: start tag not allowed in epilog but got b (position: END_TAG seen <a/><b... @1:6) ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R024",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Encountered premature end of XML: no more data available - expected end tag </r> to close start tag <r> from line 1, parser stopped on START_TAG seen <r>... @1:3",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R025",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r></s>'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Failed to parse XML due to: end tag name </s> must be the same as start tag <r> from line 1 (position: START_TAG seen <r></s>... @1:7) ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R026",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('text'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Failed to parse XML due to: only whitespace content allowed before start tag and not t (position: START_DOCUMENT seen t... @1:1) ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R027",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r a=\"1\" a=\"2\"/>'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Failed to parse XML due to: duplicated attributes :a and :a (position: START_DOCUMENT seen <r a=\"1\" a=\"2\"/>... @1:16) ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R028",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>&bogus;</r>'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><r>bogus</r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R029",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<p:r/>'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Failed to parse XML due to: could not determine namespace bound to element prefix p (position: START_DOCUMENT seen <p:r/>... @1:6) ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R030",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<!--c--><r/>'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><r />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R031",
+      "group": "document/load-normal-malformed",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>tail'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Failed to parse XML due to: in epilog non whitespace content is not allowed but got t (position: END_TAG seen <r/>t... @1:5) ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R032",
+      "group": "document/null-receiver",
+      "code": "try { Dom.Document d; r=d.getRootElement(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R033",
+      "group": "document/null-receiver",
+      "code": "try { Dom.Document d; r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R034",
+      "group": "document/null-receiver",
+      "code": "try { Dom.Document d; d.load('<r/>'); r=true; } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R035",
+      "group": "document/null-receiver",
+      "code": "try { Dom.Document d; r=d.createRootElement('r',null,null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R036",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); r=x.getName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R037",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespace(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R038",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespaceFor('p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R039",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespaceFor(null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R040",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); r=x.getPrefixFor('urn:p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R041",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R042",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<p:r xmlns:p=\"urn:p\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R043",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<p:r xmlns:p=\"urn:p\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespace(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "urn:p",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R044",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<p:r xmlns:p=\"urn:p\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespaceFor('p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "urn:p",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R045",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<p:r xmlns:p=\"urn:p\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespaceFor(null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R046",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<p:r xmlns:p=\"urn:p\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getPrefixFor('urn:p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "p",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R047",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<p:r xmlns:p=\"urn:p\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R048",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R049",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespace(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "urn:d",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R050",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespaceFor('p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R051",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespaceFor(null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R052",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getPrefixFor('urn:p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R053",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "1",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R054",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:p=\"urn:outer\"><p:c xmlns:p=\"urn:inner\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R055",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:p=\"urn:outer\"><p:c xmlns:p=\"urn:inner\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespace(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R056",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:p=\"urn:outer\"><p:c xmlns:p=\"urn:inner\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespaceFor('p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "urn:outer",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R057",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:p=\"urn:outer\"><p:c xmlns:p=\"urn:inner\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespaceFor(null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R058",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:p=\"urn:outer\"><p:c xmlns:p=\"urn:inner\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getPrefixFor('urn:p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R059",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:p=\"urn:outer\"><p:c xmlns:p=\"urn:inner\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "1",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R060",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c xmlns=\"\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R061",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c xmlns=\"\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespace(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "urn:d",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R062",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c xmlns=\"\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespaceFor('p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R063",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c xmlns=\"\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getNamespaceFor(null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R064",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c xmlns=\"\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getPrefixFor('urn:p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R065",
+      "group": "namespaces/root-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c xmlns=\"\"/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "1",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R066",
+      "group": "namespaces/child-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElement('c','urn:d')!=null; } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "true",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R067",
+      "group": "namespaces/child-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElement('c',null)!=null; } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "false",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R068",
+      "group": "namespaces/child-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements()[0].getNamespace(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "urn:d",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R069",
+      "group": "namespaces/child-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements()[0].getParent()==x; } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "true",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R070",
+      "group": "namespaces/child-resolution",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns=\"urn:d\"><c/></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElement('missing',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R071",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttribute('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "ns2:test",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R072",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "test",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R073",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "http://ns2",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R074",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttribute('plain',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "raw",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R075",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('plain',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "raw",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R076",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('plain',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R077",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttribute('missing',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R078",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('missing',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R079",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('missing',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R080",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttribute('example',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R081",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R082",
+      "group": "namespaces/QName-value",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\" plain=\"raw\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R083",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"test\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "test",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R084",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"test\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R085",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "test",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R086",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:test\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "http://ns2",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R087",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"unknown:test\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "unknown:test",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R088",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"unknown:test\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R089",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\":test\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": ":test",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R090",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\":test\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R091",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R092",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "http://ns2",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R093",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:a:b\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "a:b",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R094",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:a:b\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "http://ns2",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R095",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\" ns2:test \"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": " ns2:test ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R096",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\" ns2:test \"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R097",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:téšt\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "téšt",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R098",
+      "group": "namespaces/QName-value-boundary",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:téšt\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "http://ns2",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R099",
+      "group": "namespaces/attribute-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setNamespace('p','urn:p'); r=x.getNamespaceFor('p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "urn:p",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R100",
+      "group": "namespaces/attribute-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setAttribute('a','one'); x.setAttribute('a','two'); r=x.getAttribute('a',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "two",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R101",
+      "group": "namespaces/attribute-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setAttributeNs('a','p:v','urn:a','urn:v'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><r ns0:a=\"ns1:p:v\" xmlns:ns0=\"urn:a\" xmlns:ns1=\"urn:v\" />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R102",
+      "group": "namespaces/attribute-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setAttribute('a',null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal Argument: local part cannot be \"null\" when creating a QName",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R103",
+      "group": "namespaces/attribute-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setAttribute(null,'v'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R104",
+      "group": "namespaces/attribute-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setAttribute('a','<&\"'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><r a=\"&lt;&amp;&quot;\" />",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R105",
+      "group": "namespaces/attribute-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); r=x.removeAttribute('a',null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "false",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R106",
+      "group": "namespaces/attribute-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setAttribute('a','v'); r=String.valueOf(x.removeAttribute('a',null))+'|'+x.getAttributeCount(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "true|0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R107",
+      "group": "namespaces/attribute-index",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r a=\"v\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeKeyAt(-1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "UNCAUGHT|System.UnexpectedException: Got an unexpected error in callout : Index -1 out of bounds for length 1.",
+      "compile": false,
+      "uncaught": true
+    },
+    {
+      "id": "R108",
+      "group": "namespaces/attribute-index",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r a=\"v\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeKeyNsAt(-1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "UNCAUGHT|System.UnexpectedException: Got an unexpected error in callout : Index -1 out of bounds for length 1.",
+      "compile": false,
+      "uncaught": true
+    },
+    {
+      "id": "R109",
+      "group": "namespaces/attribute-index",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r a=\"v\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeKeyAt(0); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "a",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R110",
+      "group": "namespaces/attribute-index",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r a=\"v\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeKeyNsAt(0); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R111",
+      "group": "namespaces/attribute-index",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r a=\"v\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeKeyAt(1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal Argument: No attribute found at index 1",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R112",
+      "group": "namespaces/attribute-index",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r a=\"v\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeKeyNsAt(1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal Argument: No attribute found at index 1",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R113",
+      "group": "namespaces/attribute-index",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r a=\"v\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeKeyAt(null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R114",
+      "group": "namespaces/attribute-index",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r a=\"v\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeKeyNsAt(null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R115",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); r=x.getText(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R116",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildren().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R117",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R118",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>text</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getText(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "text",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R119",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>text</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildren().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "1",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R120",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>text</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R121",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]>c</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getText(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "ac",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R122",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]>c</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildren().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "2",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R123",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]>c</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R124",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r><![CDATA[a]]><![CDATA[b]]></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getText(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R125",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r><![CDATA[a]]><![CDATA[b]]></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildren().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R126",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r><![CDATA[a]]><![CDATA[b]]></r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R127",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<c>b</c>d</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getText(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "ad",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R128",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<c>b</c>d</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildren().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "3",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R129",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<c>b</c>d</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "1",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R130",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<!--c-->b</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getText(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "ab",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R131",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<!--c-->b</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildren().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "3",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R132",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<!--c-->b</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R133",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<?pi data?>b</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getText(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "ab",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R134",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<?pi data?>b</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildren().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "2",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R135",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<?pi data?>b</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R136",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r> &lt;&amp;&#65;&#x42; </r>'); Dom.XmlNode x=d.getRootElement(); r=x.getText(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": " <&AB ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R137",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r> &lt;&amp;&#65;&#x42; </r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildren().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "6",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R138",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r> &lt;&amp;&#65;&#x42; </r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R139",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r> \\n\\t </r>'); Dom.XmlNode x=d.getRootElement(); r=x.getText(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": " \\n\\t ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R140",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r> \\n\\t </r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildren().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "1",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R141",
+      "group": "text/DOM-CDATA-children",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r> \\n\\t </r>'); Dom.XmlNode x=d.getRootElement(); r=x.getChildElements().size(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "0",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R142",
+      "group": "text/DOM-addText",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.addTextNode(''); x.addTextNode('b'); r=x.getText()+'|'+d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "b|<?xml version=\"1.0\" encoding=\"UTF-8\"?><r>b</r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R143",
+      "group": "text/DOM-addText",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.addTextNode('a'); x.addTextNode('b'); r=x.getText()+'|'+d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "ab|<?xml version=\"1.0\" encoding=\"UTF-8\"?><r>ab</r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R144",
+      "group": "text/DOM-addText",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.addTextNode('<&>'); x.addTextNode('b'); r=x.getText()+'|'+d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<&>b|<?xml version=\"1.0\" encoding=\"UTF-8\"?><r>&lt;&amp;>b</r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R145",
+      "group": "text/DOM-addText",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.addTextNode('é漢字'); x.addTextNode('b'); r=x.getText()+'|'+d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "é漢字b|<?xml version=\"1.0\" encoding=\"UTF-8\"?><r>é漢字b</r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R146",
+      "group": "text/DOM-addText",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.addTextNode(null); x.addTextNode('b'); r=x.getText()+'|'+d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R147",
+      "group": "text/DOM-node-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]><!--c--><c>d</c>e</r>'); Dom.XmlNode x=d.getRootElement(); x.addCommentNode('comment'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><r>a<!--c--><c>d</c>e<!--comment--></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R148",
+      "group": "text/DOM-node-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]><!--c--><c>d</c>e</r>'); Dom.XmlNode x=d.getRootElement(); x.addCommentNode('bad--comment'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><r>a<!--c--><c>d</c>e<!--bad--comment--></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R149",
+      "group": "text/DOM-node-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]><!--c--><c>d</c>e</r>'); Dom.XmlNode x=d.getRootElement(); x.addChildElement('c',null,null).addTextNode('t'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><r>a<!--c--><c>d</c>e<c>t</c></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R150",
+      "group": "text/DOM-node-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]><!--c--><c>d</c>e</r>'); Dom.XmlNode x=d.getRootElement(); Dom.XmlNode c=x.addChildElement('c',null,null); r=x.removeChild(c); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "true",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R151",
+      "group": "text/DOM-node-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]><!--c--><c>d</c>e</r>'); Dom.XmlNode x=d.getRootElement(); r=x.removeChild(null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R152",
+      "group": "text/DOM-node-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]><!--c--><c>d</c>e</r>'); Dom.XmlNode x=d.getRootElement(); r=x.insertBefore(null,null); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R153",
+      "group": "text/DOM-node-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]><!--c--><c>d</c>e</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getNodeType(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "ELEMENT",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R154",
+      "group": "text/DOM-node-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]><!--c--><c>d</c>e</r>'); Dom.XmlNode x=d.getRootElement(); r=x.getParent(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R155",
+      "group": "text/DOM-node-mutation",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r>a<![CDATA[b]]><!--c--><c>d</c>e</r>'); Dom.XmlNode x=d.getRootElement(); List<String> s=new List<String>(); for(Dom.XmlNode n:x.getChildren()){s.add(String.valueOf(n.getNodeType())+':'+n.getText());} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "TEXT:a|COMMENT:c|ELEMENT:d|TEXT:e",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R156",
+      "group": "reader/event-trace",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r/>'); List<String> s=new List<String>(); Integer n=0; while(true){s.add(String.valueOf(x.getEventType())+':name='+x.hasName()+':text='+x.hasText()+':start='+x.isStartElement()+':end='+x.isEndElement()+':chars='+x.isCharacters()+':space='+x.isWhitespace()); if(!x.hasNext() || n++>40){break;} x.next();} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false|START_ELEMENT:name=true:text=false:start=true:end=false:chars=false:space=false|END_ELEMENT:name=true:text=false:start=false:end=true:chars=false:space=false|END_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R157",
+      "group": "reader/event-trace",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>text</r>'); List<String> s=new List<String>(); Integer n=0; while(true){s.add(String.valueOf(x.getEventType())+':name='+x.hasName()+':text='+x.hasText()+':start='+x.isStartElement()+':end='+x.isEndElement()+':chars='+x.isCharacters()+':space='+x.isWhitespace()); if(!x.hasNext() || n++>40){break;} x.next();} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false|START_ELEMENT:name=true:text=false:start=true:end=false:chars=false:space=false|CHARACTERS:name=false:text=true:start=false:end=false:chars=true:space=false|END_ELEMENT:name=true:text=false:start=false:end=true:chars=false:space=false|END_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R158",
+      "group": "reader/event-trace",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<?xml version=\"1.0\"?><r/>'); List<String> s=new List<String>(); Integer n=0; while(true){s.add(String.valueOf(x.getEventType())+':name='+x.hasName()+':text='+x.hasText()+':start='+x.isStartElement()+':end='+x.isEndElement()+':chars='+x.isCharacters()+':space='+x.isWhitespace()); if(!x.hasNext() || n++>40){break;} x.next();} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false|START_ELEMENT:name=true:text=false:start=true:end=false:chars=false:space=false|END_ELEMENT:name=true:text=false:start=false:end=true:chars=false:space=false|END_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R159",
+      "group": "reader/event-trace",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); List<String> s=new List<String>(); Integer n=0; while(true){s.add(String.valueOf(x.getEventType())+':name='+x.hasName()+':text='+x.hasText()+':start='+x.isStartElement()+':end='+x.isEndElement()+':chars='+x.isCharacters()+':space='+x.isWhitespace()); if(!x.hasNext() || n++>40){break;} x.next();} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false|START_ELEMENT:name=true:text=false:start=true:end=false:chars=false:space=false|END_ELEMENT:name=true:text=false:start=false:end=true:chars=false:space=false|END_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R160",
+      "group": "reader/event-trace",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>a<![CDATA[b]]>c<c>d</c>e</r>'); List<String> s=new List<String>(); Integer n=0; while(true){s.add(String.valueOf(x.getEventType())+':name='+x.hasName()+':text='+x.hasText()+':start='+x.isStartElement()+':end='+x.isEndElement()+':chars='+x.isCharacters()+':space='+x.isWhitespace()); if(!x.hasNext() || n++>40){break;} x.next();} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false|START_ELEMENT:name=true:text=false:start=true:end=false:chars=false:space=false|CHARACTERS:name=false:text=true:start=false:end=false:chars=true:space=false|CHARACTERS:name=false:text=true:start=false:end=false:chars=true:space=false|CHARACTERS:name=false:text=true:start=false:end=false:chars=true:space=false|START_ELEMENT:name=true:text=false:start=true:end=false:chars=false:space=false|CHARACTERS:name=false:text=true:start=false:end=false:chars=true:space=false|END_ELEMENT:name=true:text=false:start=false:end=true:chars=false:space=false|CHARACTERS:name=false:text=true:start=false:end=false:chars=true:space=false|END_ELEMENT:name=true:text=false:start=false:end=true:chars=false:space=false|END_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R161",
+      "group": "reader/event-trace",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r><!--c--><?pi data?> </r>'); List<String> s=new List<String>(); Integer n=0; while(true){s.add(String.valueOf(x.getEventType())+':name='+x.hasName()+':text='+x.hasText()+':start='+x.isStartElement()+':end='+x.isEndElement()+':chars='+x.isCharacters()+':space='+x.isWhitespace()); if(!x.hasNext() || n++>40){break;} x.next();} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false|START_ELEMENT:name=true:text=false:start=true:end=false:chars=false:space=false|COMMENT:name=false:text=true:start=false:end=false:chars=false:space=false|PROCESSING_INSTRUCTION:name=false:text=false:start=false:end=false:chars=false:space=false|CHARACTERS:name=false:text=true:start=false:end=false:chars=true:space=true|END_ELEMENT:name=true:text=false:start=false:end=true:chars=false:space=false|END_DOCUMENT:name=false:text=false:start=false:end=false:chars=false:space=false",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R162",
+      "group": "reader/malformed",
+      "code": "try { XmlStreamReader x=new XmlStreamReader(null); Integer n=0; while(x.hasNext() && n++<40){x.next();} r=x.getEventType(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R163",
+      "group": "reader/malformed",
+      "code": "try { XmlStreamReader x=new XmlStreamReader(''); Integer n=0; while(x.hasNext() && n++<40){x.next();} r=x.getEventType(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|ParseError at [row,col]:[1,1]\\nMessage: Premature end of file.",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R164",
+      "group": "reader/malformed",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>'); Integer n=0; while(x.hasNext() && n++<40){x.next();} r=x.getEventType(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|ParseError at [row,col]:[1,4]\\nMessage: XML document structures must start and end within the same entity.",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R165",
+      "group": "reader/malformed",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r></s>'); Integer n=0; while(x.hasNext() && n++<40){x.next();} r=x.getEventType(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|ParseError at [row,col]:[1,6]\\nMessage: The element type \"r\" must be terminated by the matching end-tag \"</r>\".",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R166",
+      "group": "reader/malformed",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<a/><b/>'); Integer n=0; while(x.hasNext() && n++<40){x.next();} r=x.getEventType(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|ParseError at [row,col]:[1,6]\\nMessage: The markup in the document following the root element must be well-formed.",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R167",
+      "group": "reader/malformed",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>&bad;</r>'); Integer n=0; while(x.hasNext() && n++<40){x.next();} r=x.getEventType(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|ParseError at [row,col]:[1,9]\\nMessage: The entity \"bad\" was referenced, but not declared.",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R168",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>a<![CDATA[b]]>c</r>'); x.setCoalescing(true); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_ELEMENT:r|text:abc|END_ELEMENT:r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R169",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>a<![CDATA[b]]><c>z</c>d<![CDATA[e]]>f</r>'); x.setCoalescing(true); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_ELEMENT:r|text:ab|START_ELEMENT:c|text:z|END_ELEMENT:c|text:def|END_ELEMENT:r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R170",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>plain</r>'); x.setCoalescing(true); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_ELEMENT:r|text:plain|END_ELEMENT:r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R171",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>a<!--c-->b</r>'); x.setCoalescing(true); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_ELEMENT:r|text:a|text:b|END_ELEMENT:r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R172",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>a<![CDATA[b]]>c</r>'); x.setCoalescing(false); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_ELEMENT:r|text:a|text:b|text:c|END_ELEMENT:r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R173",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>a<![CDATA[b]]><c>z</c>d<![CDATA[e]]>f</r>'); x.setCoalescing(false); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_ELEMENT:r|text:a|text:b|START_ELEMENT:c|text:z|END_ELEMENT:c|text:d|text:e|text:f|END_ELEMENT:r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R174",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>plain</r>'); x.setCoalescing(false); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_ELEMENT:r|text:plain|END_ELEMENT:r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R175",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>a<!--c-->b</r>'); x.setCoalescing(false); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_ELEMENT:r|text:a|text:b|END_ELEMENT:r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R176",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>a<![CDATA[b]]>c</r>'); x.setCoalescing(null); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R177",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>a<![CDATA[b]]><c>z</c>d<![CDATA[e]]>f</r>'); x.setCoalescing(null); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R178",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>plain</r>'); x.setCoalescing(null); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R179",
+      "group": "text/reader-coalescing",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>a<!--c-->b</r>'); x.setCoalescing(null); List<String> s=new List<String>(); Integer n=0; while(x.hasNext() && n++<40){x.next(); if(x.isCharacters()){s.add('text:'+x.getText());}else if(x.isStartElement() || x.isEndElement()){s.add(String.valueOf(x.getEventType())+':'+x.getLocalName());}} r=String.join(s,'|'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R180",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); r=x.getLocalName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R181",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getLocalName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R182",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); r=x.getText(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal State: Current state START_DOCUMENT is not among the statesCHARACTERS, COMMENT, CDATA, SPACE, ENTITY_REFERENCE, DTD valid for getText() ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R183",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getText(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal State: Current state START_ELEMENT is not among the statesCHARACTERS, COMMENT, CDATA, SPACE, ENTITY_REFERENCE, DTD valid for getText() ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R184",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); r=x.getNamespace(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R185",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getNamespace(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "urn:p",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R186",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); r=x.getPrefix(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R187",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getPrefix(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "p",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R188",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); r=x.getVersion(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R189",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getVersion(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R190",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); r=x.getAttributeCount(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal State: Current state is not among the states START_ELEMENT , ATTRIBUTEvalid for getAttributeCount()",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R191",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeCount(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "1",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R192",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); r=x.getNamespaceCount(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal State: Current event state is START_DOCUMENT is not among the states START_ELEMENT, END_ELEMENT, UNKNOWN_EVENT_TYPE, 13 valid for getNamespaceCount().",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R193",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getNamespaceCount(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "1",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R194",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); r=x.getPIData(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal State: Current state of the parser is START_DOCUMENT But Expected state is 3",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R195",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getPIData(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal State: Current state of the parser is START_ELEMENT But Expected state is 3",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R196",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); r=x.getPITarget(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal State: Current state of the parser is START_DOCUMENT But Expected state is 3",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R197",
+      "group": "reader/accessor-state",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getPITarget(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal State: Current state of the parser is START_ELEMENT But Expected state is 3",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R198",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeLocalName(-1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R199",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeLocalName(0); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "a",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R200",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeLocalName(1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R201",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeValueAt(-1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R202",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeValueAt(0); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "v",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R203",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeValueAt(1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R204",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeNamespace(-1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R205",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeNamespace(0); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R206",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeNamespace(1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R207",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getNamespacePrefix(-1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "xmlns",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R208",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getNamespacePrefix(0); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "p",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R209",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getNamespacePrefix(1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Cannot invoke \"String.equals(Object)\" because \"prefix\" is null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R210",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getNamespaceURIAt(-1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "http://www.w3.org/2000/xmlns/",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R211",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getNamespaceURIAt(0); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "urn:p",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R212",
+      "group": "reader/index-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getNamespaceURIAt(1); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R213",
+      "group": "reader/namespaces",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeValue(null,'a'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "v",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R214",
+      "group": "reader/namespaces",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getAttributeValue('urn:p','a'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R215",
+      "group": "reader/namespaces",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getNamespaceURI('p'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "urn:p",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R216",
+      "group": "reader/namespaces",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); r=x.getNamespaceURI('missing'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R217",
+      "group": "reader/namespaces",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); x.setNamespaceAware(false); r=x.getLocalName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R218",
+      "group": "reader/namespaces",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<p:r xmlns:p=\"urn:p\" a=\"v\"/>'); x.next(); x.setNamespaceAware(null); r=x.getLocalName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R219",
+      "group": "reader/nextTag",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r> <c/> </r>'); x.nextTag(); x.nextTag(); r=x.getEventType()+'|'+x.getLocalName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_ELEMENT|c",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R220",
+      "group": "reader/nextTag",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r>text<c/></r>'); x.nextTag(); x.nextTag(); r=x.getEventType()+'|'+x.getLocalName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|ParseError at [row,col]:[1,9]\\nMessage: found: CHARACTERS, expected START_ELEMENT or END_ELEMENT",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R221",
+      "group": "reader/nextTag",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r><!--c--><?pi v?><c/></r>'); x.nextTag(); x.nextTag(); r=x.getEventType()+'|'+x.getLocalName(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "START_ELEMENT|c",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R222",
+      "group": "reader/end-boundary",
+      "code": "try { XmlStreamReader x=new XmlStreamReader('<r/>'); while(x.hasNext()){x.next();} x.next(); r=x.getEventType(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "END_DOCUMENT",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R223",
+      "group": "reader/null-receiver",
+      "code": "try { XmlStreamReader x; r=x.hasNext(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R224",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R225",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R226",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartDocument('UTF-8','1.0'); x.writeStartElement(null,'r',null); x.writeEndDocument(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><r></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R227",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeEmptyElement(null,'r',null); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R228",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement('p','r','urn:p'); x.writeNamespace('p','urn:p'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<p:r xmlns:p=\"urn:p\"></p:r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R229",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.setDefaultNamespace('urn:d'); x.writeStartElement(null,'r','urn:d'); x.writeDefaultNamespace('urn:d'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r xmlns=\"urn:d\"></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R230",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeAttribute(null,null,'a','<&\"'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r a=\"&lt;&amp;&quot;\"></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R231",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeAttribute('p','urn:p','a','v'); x.writeNamespace('p','urn:p'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r p:a=\"v\" xmlns:p=\"urn:p\"></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R232",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeStartElement(null,'c',null); x.writeEndDocument(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r><c></c></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R233",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.close(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Stream already closed",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R234",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.close(); x.writeStartElement(null,'r',null); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Stream already closed",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R235",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|No element was found to write: ",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R236",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeEndDocument(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R237",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeAttribute(null,null,'a','v'); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Attribute not associated with any element",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R238",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeNamespace('p','urn:p'); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal State: Invalid state: start tag is not opened at writeNamespace(p, urn:p)",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R239",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCharacters('t'); x.writeAttribute(null,null,'a','v'); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Attribute not associated with any element",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R240",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeEmptyElement(null,'a',null); x.writeEmptyElement(null,'b',null); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<a/><b",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R241",
+      "group": "writer/output-state",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeProcessingInstruction('pi','data'); x.writeEmptyElement(null,'r',null); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<?pi data?><r",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R242",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCharacters(''); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R243",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCharacters('text'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r>text</r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R244",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCharacters('<&>'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r>&lt;&amp;&gt;</r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R245",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCharacters('é漢字'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r>é漢字</r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R246",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCharacters(null); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R247",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCharacters('a--b'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r>a--b</r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R248",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCData(''); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r><![CDATA[]]></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R249",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCData('text'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r><![CDATA[text]]></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R250",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCData('<&>'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r><![CDATA[<&>]]></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R251",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCData('é漢字'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r><![CDATA[é漢字]]></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R252",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCData(null); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R253",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeCData('a]]>b'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r><![CDATA[a]]>b]]></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R254",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeComment(''); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r><!----></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R255",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeComment('text'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r><!--text--></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R256",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeComment('<&>'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r><!--<&>--></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R257",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeComment('é漢字'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r><!--é漢字--></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R258",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeComment(null); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R259",
+      "group": "writer/text-CDATA-comment",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeComment('a--b'); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<r><!--a--b--></r>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R260",
+      "group": "writer/name-boundary",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,null,null); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R261",
+      "group": "writer/name-boundary",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'',null); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<></>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R262",
+      "group": "writer/name-boundary",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'a:b',null); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<a:b></a:b>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R263",
+      "group": "writer/name-boundary",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'two words',null); x.writeEndElement(); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<two words></two words>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R264",
+      "group": "conversion/writer-DOM-reader",
+      "code": "try { XmlStreamWriter w=new XmlStreamWriter(); w.writeStartElement(null,'r',null); w.writeCharacters('text'); w.writeEndElement(); String s=w.getXmlString(); Dom.Document d=new Dom.Document(); d.load(s); XmlStreamReader x=new XmlStreamReader(s); String t=''; while(x.hasNext()){x.next();if(x.isCharacters()){t+=x.getText();}} r=d.getRootElement().getText()+'|'+t; } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "text|text",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R265",
+      "group": "conversion/writer-DOM-reader",
+      "code": "try { XmlStreamWriter w=new XmlStreamWriter(); w.writeStartElement(null,'r',null); w.writeCharacters('<&>'); w.writeEndElement(); String s=w.getXmlString(); Dom.Document d=new Dom.Document(); d.load(s); XmlStreamReader x=new XmlStreamReader(s); String t=''; while(x.hasNext()){x.next();if(x.isCharacters()){t+=x.getText();}} r=d.getRootElement().getText()+'|'+t; } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "<&>|<&>",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R266",
+      "group": "conversion/writer-DOM-reader",
+      "code": "try { XmlStreamWriter w=new XmlStreamWriter(); w.writeStartElement(null,'r',null); w.writeCharacters('é漢字'); w.writeEndElement(); String s=w.getXmlString(); Dom.Document d=new Dom.Document(); d.load(s); XmlStreamReader x=new XmlStreamReader(s); String t=''; while(x.hasNext()){x.next();if(x.isCharacters()){t+=x.getText();}} r=d.getRootElement().getText()+'|'+t; } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "é漢字|é漢字",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "R267",
+      "group": "writer/null-receiver",
+      "code": "try { XmlStreamWriter x; r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "C001",
+      "group": "compile/type-overload",
+      "code": "Object r; Dom.Document d=new Dom.Document(); d.load(4); pq.out('C001',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void load(Integer) from the type dom.Document",
+      "compile": true,
+      "uncaught": false
+    },
+    {
+      "id": "C002",
+      "group": "compile/type-overload",
+      "code": "Object r; Dom.Document d=new Dom.Document(); d.createRootElement('r'); pq.out('C002',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void createRootElement(String) from the type dom.Document",
+      "compile": true,
+      "uncaught": false
+    },
+    {
+      "id": "C003",
+      "group": "compile/type-overload",
+      "code": "Object r; Dom.Document d=new Dom.Document(); d.createRootElement('r',null,null); String s=d.getRootElement(); pq.out('C003',r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from dom.XmlNode to String",
+      "compile": true,
+      "uncaught": false
+    },
+    {
+      "id": "C005",
+      "group": "compile/type-overload",
+      "code": "Object r; XmlStreamReader x=new XmlStreamReader(); pq.out('C005',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.XmlStreamReader].<Constructor>()",
+      "compile": true,
+      "uncaught": false
+    },
+    {
+      "id": "C006",
+      "group": "compile/type-overload",
+      "code": "Object r; XmlStreamReader x=new XmlStreamReader(4); pq.out('C006',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.XmlStreamReader].<Constructor>(Integer)",
+      "compile": true,
+      "uncaught": false
+    },
+    {
+      "id": "C007",
+      "group": "compile/type-overload",
+      "code": "Object r; XmlStreamReader x=new XmlStreamReader('<r/>'); x.setCoalescing('true'); pq.out('C007',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setCoalescing(String) from the type System.XmlStreamReader",
+      "compile": true,
+      "uncaught": false
+    },
+    {
+      "id": "C008",
+      "group": "compile/type-overload",
+      "code": "Object r; XmlStreamReader x=new XmlStreamReader('<r/>'); x.getAttributeValue(0); pq.out('C008',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getAttributeValue(Integer) from the type System.XmlStreamReader",
+      "compile": true,
+      "uncaught": false
+    },
+    {
+      "id": "C009",
+      "group": "compile/type-overload",
+      "code": "Object r; XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement('r'); pq.out('C009',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void writeStartElement(String) from the type System.XmlStreamWriter",
+      "compile": true,
+      "uncaught": false
+    },
+    {
+      "id": "C010",
+      "group": "compile/type-overload",
+      "code": "Object r; XmlStreamWriter x=new XmlStreamWriter(); x.writeAttribute('a','v'); pq.out('C010',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void writeAttribute(String, String) from the type System.XmlStreamWriter",
+      "compile": true,
+      "uncaught": false
+    },
+    {
+      "id": "C011",
+      "group": "compile/type-overload",
+      "code": "Object r; XmlStreamWriter x=new XmlStreamWriter(); x.writeCharacters(4); pq.out('C011',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void writeCharacters(Integer) from the type System.XmlStreamWriter",
+      "compile": true,
+      "uncaught": false
+    },
+    {
+      "id": "C012",
+      "group": "compile/type-overload",
+      "code": "Object r; XmlStreamWriter x=new XmlStreamWriter(); x.writeStartDocument('1.0'); pq.out('C012',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void writeStartDocument(String) from the type System.XmlStreamWriter",
+      "compile": true,
+      "uncaught": false
+    }
+  ],
+  "controls": [
+    {
+      "id": "Q001",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:two words\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttribute('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "ns2:two words",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q002",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:two words\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "two words",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q003",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:two words\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "http://ns2",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q004",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:1name\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttribute('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "ns2:1name",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q005",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:1name\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "1name",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q006",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:1name\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "http://ns2",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q007",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:two/name\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttribute('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "ns2:two/name",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q008",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:two/name\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "two/name",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q009",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:two/name\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "http://ns2",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q010",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:two:test\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttribute('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "ns2:two:test",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q011",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:two:test\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "two:test",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q012",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"ns2:two:test\"/>'); Dom.XmlNode x=d.getRootElement(); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "http://ns2",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q013",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"1ns:test\"/>'); Dom.XmlNode x=d.getRootElement(); x.setNamespace('1ns','urn:invalid-prefix'); r=x.getAttribute('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "1ns:test",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q014",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"1ns:test\"/>'); Dom.XmlNode x=d.getRootElement(); x.setNamespace('1ns','urn:invalid-prefix'); r=x.getAttributeValue('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "1ns:test",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "Q015",
+      "group": "namespaces/QName-malformed-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r xmlns:ns1=\"http://ns1\" xmlns:ns2=\"http://ns2\" ns1:example=\"1ns:test\"/>'); Dom.XmlNode x=d.getRootElement(); x.setNamespace('1ns','urn:invalid-prefix'); r=x.getAttributeValueNs('example','http://ns1'); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N001",
+      "group": "writer/null-argument-controls",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeEmptyElement(null,null,null); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N002",
+      "group": "writer/null-argument-controls",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeEmptyElement('p',null,'urn:p'); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N003",
+      "group": "writer/null-argument-controls",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeEmptyElement(null,null,null); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N004",
+      "group": "writer/null-argument-controls",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeAttribute(null,null,null,'v'); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N005",
+      "group": "writer/null-argument-controls",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeAttribute(null,null,'a',null); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 4 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N006",
+      "group": "writer/null-argument-controls",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeAttribute('p','urn:p',null,'v'); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N007",
+      "group": "writer/null-argument-controls",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeAttribute('p','urn:p','a',null); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 4 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N008",
+      "group": "writer/null-argument-controls",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeStartElement(null,'r',null); x.writeAttribute(null,null,null,null); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N009",
+      "group": "writer/null-argument-controls",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeAttribute(null,null,null,'v'); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N010",
+      "group": "writer/null-argument-controls",
+      "code": "try { XmlStreamWriter x=new XmlStreamWriter(); x.writeAttribute(null,null,'a',null); r=x.getXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 4 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N011",
+      "group": "namespaces/setAttributeNs-null-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setAttributeNs(null,'v','urn:a','urn:v'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N012",
+      "group": "namespaces/setAttributeNs-null-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setAttributeNs('a',null,'urn:a','urn:v'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal Argument: local part cannot be \"null\" when creating a QName",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N013",
+      "group": "namespaces/setAttributeNs-null-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setAttributeNs(null,'v',null,null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N014",
+      "group": "namespaces/setAttributeNs-null-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setAttributeNs('a',null,null,null); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.XmlException|Illegal Argument: local part cannot be \"null\" when creating a QName",
+      "compile": false,
+      "uncaught": false
+    },
+    {
+      "id": "N015",
+      "group": "namespaces/setAttributeNs-null-controls",
+      "code": "try { Dom.Document d=new Dom.Document(); d.load('<r/>'); Dom.XmlNode x=d.getRootElement(); x.setAttributeNs(null,null,'urn:a','urn:v'); r=d.toXmlString(); } catch(Exception xmlCaught) { r='EXC|'+xmlCaught.getTypeName()+'|'+xmlCaught.getMessage(); } if(r instanceof String){r=((String)r).replace('\\\\','\\\\\\\\').replace('\\r','\\\\r').replace('\\n','\\\\n').replace('\\t','\\\\t');}",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "uncaught": false
+    }
+  ],
+  "remaining": [
+    {
+      "id": "C004",
+      "group": "compile/type-overload",
+      "code": "Object r; Dom.XmlNode x=new Dom.XmlNode(); pq.out('C004',r);",
+      "expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: dom.XmlNode",
+      "compile": true,
+      "remainingReason": "type system: constructor applicability in semantic analysis admits Dom.XmlNode although Salesforce rejects construction."
+    }
+  ]
+}

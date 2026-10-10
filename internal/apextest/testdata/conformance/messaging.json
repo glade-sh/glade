@@ -1,0 +1,2345 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "Declarations": {
+    "A41": "public class A41 {\n public Integer seq=0;\n public String results(List<Messaging.SendEmailResult> xs) {\n  if(xs==null) return 'null';\n  List<String> out=new List<String>();\n  for(Messaging.SendEmailResult x:xs) {\n   if(x==null){out.add('null-result');continue;}\n   List<String> errors=new List<String>();\n   for(Messaging.SendEmailError e:x.getErrors()) errors.add(String.valueOf(e.getStatusCode())+'|'+e.getMessage()+'|'+String.valueOf(e.getFields())+'|target-null='+String.valueOf(e.getTargetObjectId()==null));\n   out.add(String.valueOf(x.isSuccess())+'|'+String.join(errors,';'));\n  }\n  return xs.size()+':'+String.join(out,'/');\n }\n public EmailTemplate template(String variant) {\n  String developerName='A41'+variant+'20261005';\n  return [SELECT Id FROM EmailTemplate WHERE DeveloperName=:developerName AND Folder.DeveloperName='A41MessagingOracle20261005'];\n }\n}",
+    "A41InboundOracle20261005": "public class A41InboundOracle20261005 implements Messaging.InboundEmailHandler {\n public Messaging.InboundEmailResult handleInboundEmail(Messaging.InboundEmail mail, Messaging.InboundEnvelope envelope) {\n  Messaging.InboundEmailResult result=new Messaging.InboundEmailResult();\n  result.success=mail!=null && envelope!=null;\n  result.message=mail==null?'no-mail':(envelope==null?'no-envelope':String.valueOf(mail.subject)+'|'+String.valueOf(envelope.toAddress));\n  return result;\n }\n}\n",
+    "A41TemplateQuery6220261007": "public class A41TemplateQuery6220261007 {\n public static Integer defaultQuery(){return [SELECT Id FROM EmailTemplate WHERE DeveloperName='A41Plain20261005' AND Folder.DeveloperName='A41MessagingOracle20261005'].size();}\n public static Integer userQuery(){return [SELECT Id FROM EmailTemplate WHERE DeveloperName='A41Plain20261005' AND Folder.DeveloperName='A41MessagingOracle20261005' WITH USER_MODE].size();}\n public static Integer systemQuery(){return [SELECT Id FROM EmailTemplate WHERE DeveloperName='A41Plain20261005' AND Folder.DeveloperName='A41MessagingOracle20261005' WITH SYSTEM_MODE].size();}\n}\n",
+    "A41TemplateQuery6720261007": "public class A41TemplateQuery6720261007 {\n public static Integer defaultQuery(){return [SELECT Id FROM EmailTemplate WHERE DeveloperName='A41Plain20261005' AND Folder.DeveloperName='A41MessagingOracle20261005'].size();}\n public static Integer userQuery(){return [SELECT Id FROM EmailTemplate WHERE DeveloperName='A41Plain20261005' AND Folder.DeveloperName='A41MessagingOracle20261005' WITH USER_MODE].size();}\n public static Integer systemQuery(){return [SELECT Id FROM EmailTemplate WHERE DeveloperName='A41Plain20261005' AND Folder.DeveloperName='A41MessagingOracle20261005' WITH SYSTEM_MODE].size();}\n}\n"
+  },
+  "Metadata": {
+    "force-app/main/default/email/A41MessagingOracle20261005/A41Merge20261005.email": "Hello {!Contact.LastName}",
+    "force-app/main/default/email/A41MessagingOracle20261005/A41Merge20261005.email-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<EmailTemplate xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n <available>true</available><encodingKey>UTF-8</encodingKey><name>A41Merge20261005</name><style>none</style><subject>A41 {!Contact.LastName}</subject><type>text</type>\n</EmailTemplate>\n",
+    "force-app/main/default/email/A41MessagingOracle20261005/A41Plain20261005.email": "A41 body",
+    "force-app/main/default/email/A41MessagingOracle20261005/A41Plain20261005.email-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<EmailTemplate xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n <available>true</available><encodingKey>UTF-8</encodingKey><name>A41Plain20261005</name><style>none</style><subject>A41 {!Contact.LastName}</subject><type>text</type>\n</EmailTemplate>\n",
+    "force-app/main/default/email/A41MessagingOracle20261005/A41Unicode20261005.email": "caf\u00e9 <tag>",
+    "force-app/main/default/email/A41MessagingOracle20261005/A41Unicode20261005.email-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<EmailTemplate xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n <available>true</available><encodingKey>UTF-8</encodingKey><name>A41Unicode20261005</name><style>none</style><subject>A41 {!Contact.LastName}</subject><type>text</type>\n</EmailTemplate>\n",
+    "force-app/main/default/email/A41MessagingOracle20261005.emailFolder-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<EmailFolder xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n <accessType>Public</accessType><name>A41 Messaging Oracle 20261005</name><publicFolderAccess>ReadWrite</publicFolderAccess>\n</EmailFolder>\n"
+  },
+  "Cases": [
+    {
+      "ID": "R001",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getSubject();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R002",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getPlainTextBody();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R003",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getHtmlBody();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R004",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getToAddresses();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R005",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getCcAddresses();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R006",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getBccAddresses();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R007",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getTargetObjectId();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R008",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getTemplateId();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R009",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getWhatId();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R010",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getFileAttachments();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R011",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getEntityAttachments();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R012",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getSaveAsActivity();",
+      "Expected": "true",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R013",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getUseSignature();",
+      "Expected": "true",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R014",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getBccSender();",
+      "Expected": "false",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R015",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getReplyTo();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R016",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getSenderDisplayName();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R017",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getCharset();",
+      "Expected": "null",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R018",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.getOptOutPolicy();",
+      "Expected": "SEND",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R019",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.isTreatBodiesAsTemplate();",
+      "Expected": "false",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R020",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); r=m.isTreatTargetObjectAsRecipient();",
+      "Expected": "true",
+      "Group": "message-dto/single-default",
+      "Compile": false
+    },
+    {
+      "ID": "R021",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setSubject(null); r=m.getSubject();",
+      "Expected": "null",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R022",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setSubject(''); r=m.getSubject();",
+      "Expected": "",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R023",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setSubject('A41 subject'); r=m.getSubject();",
+      "Expected": "A41 subject",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R024",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setSubject('line\\nnext'); r=m.getSubject();",
+      "Expected": "line\\nnext",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R025",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setPlainTextBody(null); r=m.getPlainTextBody();",
+      "Expected": "null",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R026",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setPlainTextBody(''); r=m.getPlainTextBody();",
+      "Expected": "",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R027",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setPlainTextBody('body'); r=m.getPlainTextBody();",
+      "Expected": "body",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R028",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setPlainTextBody('caf\u00e9 <tag>'); r=m.getPlainTextBody();",
+      "Expected": "caf\u00e9 <tag>",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R029",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setHtmlBody(null); r=m.getHtmlBody();",
+      "Expected": "null",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R030",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setHtmlBody(''); r=m.getHtmlBody();",
+      "Expected": "",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R031",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setHtmlBody('<b>A41</b>'); r=m.getHtmlBody();",
+      "Expected": "<b>A41</b>",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R032",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setCharset(null); r=m.getCharset();",
+      "Expected": "null",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R033",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setCharset('UTF-8'); r=m.getCharset();",
+      "Expected": "UTF-8",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R034",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setCharset('not-a-charset'); r=m.getCharset();",
+      "Expected": "not-a-charset",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R035",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setReplyTo(null); r=m.getReplyTo();",
+      "Expected": "null",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R036",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setReplyTo(''); r=m.getReplyTo();",
+      "Expected": "",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R037",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setReplyTo('reply@example.invalid'); r=m.getReplyTo();",
+      "Expected": "reply@example.invalid",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R038",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setReplyTo('not-an-address'); r=m.getReplyTo();",
+      "Expected": "not-an-address",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R039",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setSenderDisplayName(null); r=m.getSenderDisplayName();",
+      "Expected": "null",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R040",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setSenderDisplayName(''); r=m.getSenderDisplayName();",
+      "Expected": "",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R041",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setSenderDisplayName('A41 Sender'); r=m.getSenderDisplayName();",
+      "Expected": "A41 Sender",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R042",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setOptOutPolicy(null); r=m.getOptOutPolicy();",
+      "Expected": "null",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R043",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setOptOutPolicy('SEND'); r=m.getOptOutPolicy();",
+      "Expected": "SEND",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R044",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setOptOutPolicy('FILTER'); r=m.getOptOutPolicy();",
+      "Expected": "FILTER",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R045",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setOptOutPolicy('REJECT'); r=m.getOptOutPolicy();",
+      "Expected": "REJECT",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R046",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setOptOutPolicy('invalid'); r=m.getOptOutPolicy();",
+      "Expected": "EXC|System.HandledException|Invalid value invalid for property optOutPolicy",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R047",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEmailPriority(null); r=m.getEmailPriority();",
+      "Expected": "null",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R048",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEmailPriority('Highest'); r=m.getEmailPriority();",
+      "Expected": "Highest",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R049",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEmailPriority('Normal'); r=m.getEmailPriority();",
+      "Expected": "Normal",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R050",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEmailPriority('Lowest'); r=m.getEmailPriority();",
+      "Expected": "Lowest",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R051",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEmailPriority('invalid'); r=m.getEmailPriority();",
+      "Expected": "EXC|System.HandledException|Invalid value invalid for property emailPriority",
+      "Group": "message-dto/single-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R052",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setBccSender(true); r=m.getBccSender();",
+      "Expected": "true",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R053",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setBccSender(false); r=m.getBccSender();",
+      "Expected": "false",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R054",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setBccSender(null); r=m.getBccSender();",
+      "Expected": "EXC|System.NullPointerException|Cannot set property bccSender to NULL",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R055",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setSaveAsActivity(true); r=m.getSaveAsActivity();",
+      "Expected": "true",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R056",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setSaveAsActivity(false); r=m.getSaveAsActivity();",
+      "Expected": "false",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R057",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setSaveAsActivity(null); r=m.getSaveAsActivity();",
+      "Expected": "EXC|System.NullPointerException|Cannot set property saveAsActivity to NULL",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R058",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setUseSignature(true); r=m.getUseSignature();",
+      "Expected": "true",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R059",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setUseSignature(false); r=m.getUseSignature();",
+      "Expected": "false",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R060",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setUseSignature(null); r=m.getUseSignature();",
+      "Expected": "EXC|System.NullPointerException|Cannot set property useSignature to NULL",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R061",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTreatBodiesAsTemplate(true); r=m.isTreatBodiesAsTemplate();",
+      "Expected": "true",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R062",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTreatBodiesAsTemplate(false); r=m.isTreatBodiesAsTemplate();",
+      "Expected": "false",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R063",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTreatBodiesAsTemplate(null); r=m.isTreatBodiesAsTemplate();",
+      "Expected": "EXC|System.NullPointerException|Cannot set property treatBodiesAsTemplate to NULL",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R064",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTreatTargetObjectAsRecipient(true); r=m.isTreatTargetObjectAsRecipient();",
+      "Expected": "true",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R065",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTreatTargetObjectAsRecipient(false); r=m.isTreatTargetObjectAsRecipient();",
+      "Expected": "false",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R066",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTreatTargetObjectAsRecipient(null); r=m.isTreatTargetObjectAsRecipient();",
+      "Expected": "EXC|System.NullPointerException|Cannot set property treatTargetObjectAsRecipient to NULL",
+      "Group": "message-dto/boolean",
+      "Compile": false
+    },
+    {
+      "ID": "R067",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(null); r=m.getToAddresses();",
+      "Expected": "null",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R068",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>()); r=m.getToAddresses();",
+      "Expected": "()",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R069",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'one@example.invalid','two@example.invalid'}); r=m.getToAddresses();",
+      "Expected": "(one@example.invalid, two@example.invalid)",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R070",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{null}); r=m.getToAddresses();",
+      "Expected": "(null)",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R071",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setCcAddresses(null); r=m.getCcAddresses();",
+      "Expected": "null",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R072",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setCcAddresses(new List<String>()); r=m.getCcAddresses();",
+      "Expected": "()",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R073",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setCcAddresses(new List<String>{'one@example.invalid','two@example.invalid'}); r=m.getCcAddresses();",
+      "Expected": "(one@example.invalid, two@example.invalid)",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R074",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setCcAddresses(new List<String>{null}); r=m.getCcAddresses();",
+      "Expected": "(null)",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R075",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setBccAddresses(null); r=m.getBccAddresses();",
+      "Expected": "null",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R076",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setBccAddresses(new List<String>()); r=m.getBccAddresses();",
+      "Expected": "()",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R077",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setBccAddresses(new List<String>{'one@example.invalid','two@example.invalid'}); r=m.getBccAddresses();",
+      "Expected": "(one@example.invalid, two@example.invalid)",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R078",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setBccAddresses(new List<String>{null}); r=m.getBccAddresses();",
+      "Expected": "(null)",
+      "Group": "message-dto/addresses",
+      "Compile": false
+    },
+    {
+      "ID": "R079",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTargetObjectId(null); r=String.valueOf(m.getTargetObjectId());",
+      "Expected": "null",
+      "Group": "message-dto/ids",
+      "Compile": false
+    },
+    {
+      "ID": "R080",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTargetObjectId('001000000000001'); r=String.valueOf(m.getTargetObjectId());",
+      "Expected": "001000000000001AAA",
+      "Group": "message-dto/ids",
+      "Compile": false
+    },
+    {
+      "ID": "R081",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setWhatId(null); r=String.valueOf(m.getWhatId());",
+      "Expected": "null",
+      "Group": "message-dto/ids",
+      "Compile": false
+    },
+    {
+      "ID": "R082",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setWhatId('001000000000001'); r=String.valueOf(m.getWhatId());",
+      "Expected": "001000000000001AAA",
+      "Group": "message-dto/ids",
+      "Compile": false
+    },
+    {
+      "ID": "R083",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTemplateId(null); r=String.valueOf(m.getTemplateId());",
+      "Expected": "null",
+      "Group": "message-dto/ids",
+      "Compile": false
+    },
+    {
+      "ID": "R084",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTemplateId('001000000000001'); r=String.valueOf(m.getTemplateId());",
+      "Expected": "001000000000001AAA",
+      "Group": "message-dto/ids",
+      "Compile": false
+    },
+    {
+      "ID": "R085",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setOrgWideEmailAddressId(null); r=String.valueOf(m.getOrgWideEmailAddressId());",
+      "Expected": "null",
+      "Group": "message-dto/ids",
+      "Compile": false
+    },
+    {
+      "ID": "R086",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setOrgWideEmailAddressId('001000000000001'); r=String.valueOf(m.getOrgWideEmailAddressId());",
+      "Expected": "001000000000001AAA",
+      "Group": "message-dto/ids",
+      "Compile": false
+    },
+    {
+      "ID": "R087",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setInReplyTo('<a41@example.invalid>'); r=m.getInReplyTo();",
+      "Expected": "<a41@example.invalid>",
+      "Group": "message-dto/thread",
+      "Compile": false
+    },
+    {
+      "ID": "R088",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setReferences('<a41@example.invalid>'); r=m.getReferences();",
+      "Expected": "<a41@example.invalid>",
+      "Group": "message-dto/thread",
+      "Compile": false
+    },
+    {
+      "ID": "R089",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); List<String> xs=new List<String>{'one@example.invalid'}; m.setToAddresses(xs); xs.add('two@example.invalid'); r=m.getToAddresses().size();",
+      "Expected": "1",
+      "Group": "message-dto/alias",
+      "Compile": false
+    },
+    {
+      "ID": "R090",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'one@example.invalid'}); List<String> xs=m.getToAddresses(); xs.clear(); r=m.getToAddresses().size();",
+      "Expected": "0",
+      "Group": "message-dto/alias",
+      "Compile": false
+    },
+    {
+      "ID": "R091",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); Messaging.Email base=m; r=base instanceof Messaging.SingleEmailMessage;",
+      "Expected": "true",
+      "Group": "message-dto/conversion",
+      "Compile": false
+    },
+    {
+      "ID": "R092",
+      "Code": "r=a41.results(Messaging.sendEmail((List<Messaging.Email>)null));",
+      "Expected": "EXC|System.IllegalArgumentException|null is not a valid list.",
+      "Group": "send-results/collection-errors",
+      "Compile": false
+    },
+    {
+      "ID": "R093",
+      "Code": "r=a41.results(Messaging.sendEmail(new List<Messaging.Email>()));",
+      "Expected": "0:",
+      "Group": "send-results/collection-errors",
+      "Compile": false
+    },
+    {
+      "ID": "R094",
+      "Code": "r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{null},false));",
+      "Expected": "EXC|System.ListException|DML statement found null SObject at position 0",
+      "Group": "send-results/collection-errors",
+      "Compile": false
+    },
+    {
+      "ID": "R095",
+      "Code": "r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{new Messaging.SingleEmailMessage()},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.|()|target-null=true",
+      "Group": "send-results/collection-errors",
+      "Compile": false
+    },
+    {
+      "ID": "R096",
+      "Code": "r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{new Messaging.SingleEmailMessage()},true));",
+      "Expected": "EXC|System.EmailException|SendEmail failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Add a recipient (To, CC, or BCC) to send an email.: []",
+      "Group": "send-results/collection-errors",
+      "Compile": false
+    },
+    {
+      "ID": "R097",
+      "Code": "r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{new Messaging.MassEmailMessage()},false));",
+      "Expected": "1:false|UNKNOWN_EXCEPTION|Cannot read the array length because the return value of \"common.api.soap.wsdl.MassEmailMessage.getTargetObjectIds()\" is null|()|target-null=true",
+      "Group": "send-results/collection-errors",
+      "Compile": false
+    },
+    {
+      "ID": "R098",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'not-an-address'}); m.setPlainTextBody('A41'); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|INVALID_EMAIL_ADDRESS|Email address is invalid: not-an-address|(toAddresses, not-an-address)|target-null=true",
+      "Group": "send-results/invalid-address",
+      "Compile": false
+    },
+    {
+      "ID": "R099",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{''}); m.setPlainTextBody('A41'); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|INVALID_EMAIL_ADDRESS|Email address is invalid: |(toAddresses, )|target-null=true",
+      "Group": "send-results/invalid-address",
+      "Compile": false
+    },
+    {
+      "ID": "R100",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{null}); m.setPlainTextBody('A41'); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|INVALID_EMAIL_ADDRESS|Email address is invalid: null|(toAddresses, null)|target-null=true",
+      "Group": "send-results/invalid-address",
+      "Compile": false
+    },
+    {
+      "ID": "R101",
+      "Code": "r=a41.results(Messaging.sendEmail(new List<Messaging.Email>(),true));",
+      "Expected": "0:",
+      "Group": "send-results/empty-success",
+      "Compile": false
+    },
+    {
+      "ID": "R102",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); r=m.getSubject();",
+      "Expected": "null",
+      "Group": "message-dto/mass-default",
+      "Compile": false
+    },
+    {
+      "ID": "R103",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); r=m.getDescription();",
+      "Expected": "Mass Email (API)",
+      "Group": "message-dto/mass-default",
+      "Compile": false
+    },
+    {
+      "ID": "R104",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); r=m.getTargetObjectIds();",
+      "Expected": "null",
+      "Group": "message-dto/mass-default",
+      "Compile": false
+    },
+    {
+      "ID": "R105",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); r=m.getWhatIds();",
+      "Expected": "null",
+      "Group": "message-dto/mass-default",
+      "Compile": false
+    },
+    {
+      "ID": "R106",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); r=m.getTemplateId();",
+      "Expected": "null",
+      "Group": "message-dto/mass-default",
+      "Compile": false
+    },
+    {
+      "ID": "R107",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); r=m.getSaveAsActivity();",
+      "Expected": "true",
+      "Group": "message-dto/mass-default",
+      "Compile": false
+    },
+    {
+      "ID": "R108",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); r=m.getUseSignature();",
+      "Expected": "true",
+      "Group": "message-dto/mass-default",
+      "Compile": false
+    },
+    {
+      "ID": "R109",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setDescription(null); r=m.getDescription();",
+      "Expected": "Mass Email (API)",
+      "Group": "message-dto/mass-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R110",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setDescription('A41'); r=m.getDescription();",
+      "Expected": "A41",
+      "Group": "message-dto/mass-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R111",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setSubject(null); r=m.getSubject();",
+      "Expected": "null",
+      "Group": "message-dto/mass-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R112",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setSubject('A41'); r=m.getSubject();",
+      "Expected": "A41",
+      "Group": "message-dto/mass-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R113",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setReplyTo(null); r=m.getReplyTo();",
+      "Expected": "null",
+      "Group": "message-dto/mass-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R114",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setReplyTo('A41'); r=m.getReplyTo();",
+      "Expected": "A41",
+      "Group": "message-dto/mass-setter",
+      "Compile": false
+    },
+    {
+      "ID": "R115",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setTargetObjectIds(null); r=m.getTargetObjectIds();",
+      "Expected": "null",
+      "Group": "message-dto/mass-ids",
+      "Compile": false
+    },
+    {
+      "ID": "R116",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setTargetObjectIds(new List<Id>()); r=m.getTargetObjectIds();",
+      "Expected": "()",
+      "Group": "message-dto/mass-ids",
+      "Compile": false
+    },
+    {
+      "ID": "R117",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setTargetObjectIds(new List<Id>{'003000000000001',null}); r=m.getTargetObjectIds();",
+      "Expected": "(003000000000001AAA, null)",
+      "Group": "message-dto/mass-ids",
+      "Compile": false
+    },
+    {
+      "ID": "R118",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setWhatIds(null); r=m.getWhatIds();",
+      "Expected": "null",
+      "Group": "message-dto/mass-ids",
+      "Compile": false
+    },
+    {
+      "ID": "R119",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setWhatIds(new List<Id>()); r=m.getWhatIds();",
+      "Expected": "()",
+      "Group": "message-dto/mass-ids",
+      "Compile": false
+    },
+    {
+      "ID": "R120",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setWhatIds(new List<Id>{'003000000000001',null}); r=m.getWhatIds();",
+      "Expected": "(003000000000001AAA, null)",
+      "Group": "message-dto/mass-ids",
+      "Compile": false
+    },
+    {
+      "ID": "R121",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); r=a.getBody();",
+      "Expected": "null",
+      "Group": "attachments/default",
+      "Compile": false
+    },
+    {
+      "ID": "R122",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); r=a.getContentType();",
+      "Expected": "null",
+      "Group": "attachments/default",
+      "Compile": false
+    },
+    {
+      "ID": "R123",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); r=a.getFileName();",
+      "Expected": "null",
+      "Group": "attachments/default",
+      "Compile": false
+    },
+    {
+      "ID": "R124",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); r=a.getInline();",
+      "Expected": "false",
+      "Group": "attachments/default",
+      "Compile": false
+    },
+    {
+      "ID": "R125",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); r=a.getId();",
+      "Expected": "null",
+      "Group": "attachments/default",
+      "Compile": false
+    },
+    {
+      "ID": "R126",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setFileName(null); r=a.getFileName();",
+      "Expected": "null",
+      "Group": "attachments/validation",
+      "Compile": false
+    },
+    {
+      "ID": "R127",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setFileName(''); r=a.getFileName();",
+      "Expected": "",
+      "Group": "attachments/validation",
+      "Compile": false
+    },
+    {
+      "ID": "R128",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setFileName('a41.txt'); r=a.getFileName();",
+      "Expected": "a41.txt",
+      "Group": "attachments/validation",
+      "Compile": false
+    },
+    {
+      "ID": "R129",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setFileName('../caf\u00e9.txt'); r=a.getFileName();",
+      "Expected": "../caf\u00e9.txt",
+      "Group": "attachments/validation",
+      "Compile": false
+    },
+    {
+      "ID": "R130",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setContentType(null); r=a.getContentType();",
+      "Expected": "null",
+      "Group": "attachments/validation",
+      "Compile": false
+    },
+    {
+      "ID": "R131",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setContentType(''); r=a.getContentType();",
+      "Expected": "",
+      "Group": "attachments/validation",
+      "Compile": false
+    },
+    {
+      "ID": "R132",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setContentType('text/plain'); r=a.getContentType();",
+      "Expected": "text/plain",
+      "Group": "attachments/validation",
+      "Compile": false
+    },
+    {
+      "ID": "R133",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setInline(null); r=a.getInline();",
+      "Expected": "EXC|System.NullPointerException|Cannot set property inline to NULL",
+      "Group": "attachments/validation",
+      "Compile": false
+    },
+    {
+      "ID": "R134",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setInline(true); r=a.getInline();",
+      "Expected": "true",
+      "Group": "attachments/validation",
+      "Compile": false
+    },
+    {
+      "ID": "R135",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setInline(false); r=a.getInline();",
+      "Expected": "false",
+      "Group": "attachments/validation",
+      "Compile": false
+    },
+    {
+      "ID": "R136",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setBody(null); r=a.getBody()==null?null:EncodingUtil.convertToHex(a.getBody());",
+      "Expected": "null",
+      "Group": "attachments/blob-conversion",
+      "Compile": false
+    },
+    {
+      "ID": "R137",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setBody(Blob.valueOf('')); r=a.getBody()==null?null:EncodingUtil.convertToHex(a.getBody());",
+      "Expected": "",
+      "Group": "attachments/blob-conversion",
+      "Compile": false
+    },
+    {
+      "ID": "R138",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setBody(Blob.valueOf('A41')); r=a.getBody()==null?null:EncodingUtil.convertToHex(a.getBody());",
+      "Expected": "413431",
+      "Group": "attachments/blob-conversion",
+      "Compile": false
+    },
+    {
+      "ID": "R139",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setBody(EncodingUtil.convertFromHex('00FF')); r=a.getBody()==null?null:EncodingUtil.convertToHex(a.getBody());",
+      "Expected": "00ff",
+      "Group": "attachments/blob-conversion",
+      "Compile": false
+    },
+    {
+      "ID": "R140",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setFileAttachments(null); r=m.getFileAttachments()==null?null:m.getFileAttachments().size();",
+      "Expected": "null",
+      "Group": "attachments/file-list",
+      "Compile": false
+    },
+    {
+      "ID": "R141",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setFileAttachments(new List<Messaging.EmailFileAttachment>()); r=m.getFileAttachments()==null?null:m.getFileAttachments().size();",
+      "Expected": "0",
+      "Group": "attachments/file-list",
+      "Compile": false
+    },
+    {
+      "ID": "R142",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setFileAttachments(new List<Messaging.EmailFileAttachment>{new Messaging.EmailFileAttachment()}); r=m.getFileAttachments()==null?null:m.getFileAttachments().size();",
+      "Expected": "1",
+      "Group": "attachments/file-list",
+      "Compile": false
+    },
+    {
+      "ID": "R143",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setFileAttachments(new List<Messaging.EmailFileAttachment>{null}); r=m.getFileAttachments()==null?null:m.getFileAttachments().size();",
+      "Expected": "1",
+      "Group": "attachments/file-list",
+      "Compile": false
+    },
+    {
+      "ID": "R144",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEntityAttachments(null); r=m.getEntityAttachments();",
+      "Expected": "null",
+      "Group": "attachments/entity-list",
+      "Compile": false
+    },
+    {
+      "ID": "R145",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEntityAttachments(new List<String>()); r=m.getEntityAttachments();",
+      "Expected": "()",
+      "Group": "attachments/entity-list",
+      "Compile": false
+    },
+    {
+      "ID": "R146",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEntityAttachments(new List<String>{'069000000000001'}); r=m.getEntityAttachments();",
+      "Expected": "(069000000000001)",
+      "Group": "attachments/entity-list",
+      "Compile": false
+    },
+    {
+      "ID": "R147",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); a.setFileName('first.txt'); m.setFileAttachments(new List<Messaging.EmailFileAttachment>{a}); a.setFileName('second.txt'); r=m.getFileAttachments()[0].getFileName();",
+      "Expected": "second.txt",
+      "Group": "attachments/reference",
+      "Compile": false
+    },
+    {
+      "ID": "R148",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.subject;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R149",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.plainTextBody;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R150",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.htmlBody;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R151",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.fromAddress;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R152",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.fromName;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R153",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.replyTo;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R154",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.toAddresses;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R155",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.ccAddresses;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R156",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.inReplyTo;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R157",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.messageId;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R158",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.references;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R159",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.plainTextBodyIsTruncated;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R160",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.htmlBodyIsTruncated;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R161",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.headers;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R162",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.textAttachments;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R163",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); r=m.binaryAttachments;",
+      "Expected": "null",
+      "Group": "inbound-handler/default",
+      "Compile": false
+    },
+    {
+      "ID": "R164",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.subject=null; r=m.subject;",
+      "Expected": "null",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R165",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.subject='A41'; r=m.subject;",
+      "Expected": "A41",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R166",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.plainTextBody=null; r=m.plainTextBody;",
+      "Expected": "null",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R167",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.plainTextBody='A41'; r=m.plainTextBody;",
+      "Expected": "A41",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R168",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.htmlBody=null; r=m.htmlBody;",
+      "Expected": "null",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R169",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.htmlBody='A41'; r=m.htmlBody;",
+      "Expected": "A41",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R170",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.fromAddress=null; r=m.fromAddress;",
+      "Expected": "null",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R171",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.fromAddress='A41'; r=m.fromAddress;",
+      "Expected": "A41",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R172",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.replyTo=null; r=m.replyTo;",
+      "Expected": "null",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R173",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.replyTo='A41'; r=m.replyTo;",
+      "Expected": "A41",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R174",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.messageId=null; r=m.messageId;",
+      "Expected": "null",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R175",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.messageId='A41'; r=m.messageId;",
+      "Expected": "A41",
+      "Group": "inbound-handler/dto-write",
+      "Compile": false
+    },
+    {
+      "ID": "R176",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.plainTextBodyIsTruncated=true; r=m.plainTextBodyIsTruncated;",
+      "Expected": "true",
+      "Group": "inbound-handler/truncation",
+      "Compile": false
+    },
+    {
+      "ID": "R177",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.htmlBodyIsTruncated=true; r=m.htmlBodyIsTruncated;",
+      "Expected": "true",
+      "Group": "inbound-handler/truncation",
+      "Compile": false
+    },
+    {
+      "ID": "R178",
+      "Code": "Messaging.InboundEmail.Header x=new Messaging.InboundEmail.Header(); x.name='X-A41'; r=x.name;",
+      "Expected": "X-A41",
+      "Group": "inbound-handler/attachment-header-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R179",
+      "Code": "Messaging.InboundEmail.Header x=new Messaging.InboundEmail.Header(); x.value='v'; r=x.value;",
+      "Expected": "v",
+      "Group": "inbound-handler/attachment-header-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R180",
+      "Code": "Messaging.InboundEmail.BinaryAttachment x=new Messaging.InboundEmail.BinaryAttachment(); x.fileName='a41.bin'; r=x.fileName;",
+      "Expected": "a41.bin",
+      "Group": "inbound-handler/attachment-header-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R181",
+      "Code": "Messaging.InboundEmail.BinaryAttachment x=new Messaging.InboundEmail.BinaryAttachment(); x.mimeTypeSubType='application/octet-stream'; r=x.mimeTypeSubType;",
+      "Expected": "application/octet-stream",
+      "Group": "inbound-handler/attachment-header-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R182",
+      "Code": "Messaging.InboundEmail.TextAttachment x=new Messaging.InboundEmail.TextAttachment(); x.body='body'; r=x.body;",
+      "Expected": "body",
+      "Group": "inbound-handler/attachment-header-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R183",
+      "Code": "Messaging.InboundEmail.TextAttachment x=new Messaging.InboundEmail.TextAttachment(); x.bodyIsTruncated=true; r=x.bodyIsTruncated;",
+      "Expected": "true",
+      "Group": "inbound-handler/attachment-header-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R184",
+      "Code": "Messaging.InboundEmail.TextAttachment x=new Messaging.InboundEmail.TextAttachment(); x.charset='UTF-8'; r=x.charset;",
+      "Expected": "UTF-8",
+      "Group": "inbound-handler/attachment-header-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R185",
+      "Code": "Messaging.InboundEmailHandler h=new A41InboundOracle20261005(); Messaging.InboundEmailResult x=h.handleInboundEmail(null,null); r=String.valueOf(x.success)+'|'+x.message;",
+      "Expected": "false|no-mail",
+      "Group": "inbound-handler/interface-dispatch",
+      "Compile": false
+    },
+    {
+      "ID": "R186",
+      "Code": "Messaging.InboundEmailHandler h=new A41InboundOracle20261005(); Messaging.InboundEmailResult x=h.handleInboundEmail(new Messaging.InboundEmail(),null); r=String.valueOf(x.success)+'|'+x.message;",
+      "Expected": "false|no-envelope",
+      "Group": "inbound-handler/interface-dispatch",
+      "Compile": false
+    },
+    {
+      "ID": "R187",
+      "Code": "Messaging.InboundEmailHandler h=new A41InboundOracle20261005(); Messaging.InboundEmailResult x=h.handleInboundEmail(null,new Messaging.InboundEnvelope()); r=String.valueOf(x.success)+'|'+x.message;",
+      "Expected": "false|no-mail",
+      "Group": "inbound-handler/interface-dispatch",
+      "Compile": false
+    },
+    {
+      "ID": "R188",
+      "Code": "Messaging.InboundEmailHandler h=new A41InboundOracle20261005(); Messaging.InboundEmailResult x=h.handleInboundEmail(new Messaging.InboundEmail(),new Messaging.InboundEnvelope()); r=String.valueOf(x.success)+'|'+x.message;",
+      "Expected": "true|null|null",
+      "Group": "inbound-handler/interface-dispatch",
+      "Compile": false
+    },
+    {
+      "ID": "R189",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.subject='A41'; Messaging.InboundEnvelope e=new Messaging.InboundEnvelope(); e.toAddress='in@example.invalid'; Messaging.InboundEmailHandler h=new A41InboundOracle20261005(); r=h.handleInboundEmail(m,e).message;",
+      "Expected": "A41|in@example.invalid",
+      "Group": "inbound-handler/interface-dispatch",
+      "Compile": false
+    },
+    {
+      "ID": "R190",
+      "Code": "Messaging.InboundEmailResult x=new Messaging.InboundEmailResult(); r=x.success;",
+      "Expected": "true",
+      "Group": "inbound-handler/result-envelope-null",
+      "Compile": false
+    },
+    {
+      "ID": "R191",
+      "Code": "Messaging.InboundEmailResult x=new Messaging.InboundEmailResult(); r=x.message;",
+      "Expected": "null",
+      "Group": "inbound-handler/result-envelope-null",
+      "Compile": false
+    },
+    {
+      "ID": "R192",
+      "Code": "Messaging.InboundEmailResult x=new Messaging.InboundEmailResult(); x.success=false; x.message='rejected'; r=String.valueOf(x.success)+'|'+x.message;",
+      "Expected": "false|rejected",
+      "Group": "inbound-handler/result-envelope-null",
+      "Compile": false
+    },
+    {
+      "ID": "R193",
+      "Code": "Messaging.InboundEnvelope x=new Messaging.InboundEnvelope(); r=x.fromAddress;",
+      "Expected": "null",
+      "Group": "inbound-handler/result-envelope-null",
+      "Compile": false
+    },
+    {
+      "ID": "R194",
+      "Code": "Messaging.InboundEnvelope x=new Messaging.InboundEnvelope(); x.fromAddress='from@example.invalid'; x.toAddress='to@example.invalid'; r=x.fromAddress+'|'+x.toAddress;",
+      "Expected": "from@example.invalid|to@example.invalid",
+      "Group": "inbound-handler/result-envelope-null",
+      "Compile": false
+    },
+    {
+      "ID": "R195",
+      "Code": "Messaging.InboundEmailHandler h; r=h.handleInboundEmail(null,null);",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Group": "inbound-handler/result-envelope-null",
+      "Compile": false
+    },
+    {
+      "ID": "R196",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'a41@example.invalid'}); m.setSubject('A41'); m.setPlainTextBody('body'); m.setSaveAsActivity(false); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m,new Messaging.SingleEmailMessage()},false));",
+      "Expected": "2:true|/false|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.|()|target-null=true",
+      "Group": "send-results/all-or-nothing",
+      "Compile": false
+    },
+    {
+      "ID": "R197",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'a41@example.invalid'}); m.setSubject('A41'); m.setPlainTextBody('body'); m.setSaveAsActivity(false); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m,new Messaging.SingleEmailMessage()},true));",
+      "Expected": "EXC|System.EmailException|SendEmail failed. First exception on row 1; first error: REQUIRED_FIELD_MISSING, Add a recipient (To, CC, or BCC) to send an email.: []",
+      "Group": "send-results/all-or-nothing",
+      "Compile": false
+    },
+    {
+      "ID": "R198",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'a41@example.invalid'}); m.setSubject('A41'); m.setPlainTextBody('body'); m.setSaveAsActivity(false); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m,new Messaging.SingleEmailMessage()},null));",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Group": "send-results/all-or-nothing",
+      "Compile": false
+    },
+    {
+      "ID": "R199",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'a41@example.invalid'});r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Email body is required.|()|target-null=true",
+      "Group": "send-results/body-and-target-errors",
+      "Compile": false
+    },
+    {
+      "ID": "R200",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTargetObjectId('001000000000001');r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Email body is required.|()|target-null=false",
+      "Group": "send-results/body-and-target-errors",
+      "Compile": false
+    },
+    {
+      "ID": "R201",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>());r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.|()|target-null=true",
+      "Group": "send-results/body-and-target-errors",
+      "Compile": false
+    },
+    {
+      "ID": "R202",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTreatTargetObjectAsRecipient(false);r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.|()|target-null=true",
+      "Group": "send-results/body-and-target-errors",
+      "Compile": false
+    },
+    {
+      "ID": "R203",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setTargetObjectIds(new List<Id>{'003000000000001'}); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Missing template id.|()|target-null=true",
+      "Group": "send-results/mass-template-error",
+      "Compile": false
+    },
+    {
+      "ID": "R204",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'a41@example.invalid'}); m.setPlainTextBody('A41'); m.setSaveAsActivity(false); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:true|",
+      "Group": "send-results/single-result-success",
+      "Compile": false
+    },
+    {
+      "ID": "R205",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient',Email='a41@example.invalid'); insert contact; try{EmailTemplate t=a41.template('Plain'); Messaging.SingleEmailMessage m=Messaging.renderStoredEmailTemplate(t.Id,null,null); r=String.valueOf(m.getSubject())+'|'+String.valueOf(m.getPlainTextBody());}finally{delete contact;}",
+      "Expected": "A41 |A41 body",
+      "Group": "templates/stored-render",
+      "Compile": false
+    },
+    {
+      "ID": "R206",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient',Email='a41@example.invalid'); insert contact; try{EmailTemplate t=a41.template('Merge'); Messaging.SingleEmailMessage m=Messaging.renderStoredEmailTemplate(t.Id,null,null); r=String.valueOf(m.getSubject())+'|'+String.valueOf(m.getPlainTextBody());}finally{delete contact;}",
+      "Expected": "A41 |Hello ",
+      "Group": "templates/stored-render",
+      "Compile": false
+    },
+    {
+      "ID": "R207",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient',Email='a41@example.invalid'); insert contact; try{EmailTemplate t=a41.template('Unicode'); Messaging.SingleEmailMessage m=Messaging.renderStoredEmailTemplate(t.Id,null,null); r=String.valueOf(m.getSubject())+'|'+String.valueOf(m.getPlainTextBody());}finally{delete contact;}",
+      "Expected": "A41 |caf\u00e9 <tag>",
+      "Group": "templates/stored-render",
+      "Compile": false
+    },
+    {
+      "ID": "R208",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient',Email='a41@example.invalid'); insert contact; try{EmailTemplate t=a41.template('Plain'); Messaging.SingleEmailMessage m=Messaging.renderStoredEmailTemplate(t.Id,contact.Id,null); r=String.valueOf(m.getSubject())+'|'+String.valueOf(m.getPlainTextBody());}finally{delete contact;}",
+      "Expected": "A41 A41Recipient|A41 body",
+      "Group": "templates/stored-render",
+      "Compile": false
+    },
+    {
+      "ID": "R209",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient',Email='a41@example.invalid'); insert contact; try{EmailTemplate t=a41.template('Merge'); Messaging.SingleEmailMessage m=Messaging.renderStoredEmailTemplate(t.Id,contact.Id,null); r=String.valueOf(m.getSubject())+'|'+String.valueOf(m.getPlainTextBody());}finally{delete contact;}",
+      "Expected": "A41 A41Recipient|Hello A41Recipient",
+      "Group": "templates/stored-render",
+      "Compile": false
+    },
+    {
+      "ID": "R210",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient',Email='a41@example.invalid'); insert contact; try{EmailTemplate t=a41.template('Unicode'); Messaging.SingleEmailMessage m=Messaging.renderStoredEmailTemplate(t.Id,contact.Id,null); r=String.valueOf(m.getSubject())+'|'+String.valueOf(m.getPlainTextBody());}finally{delete contact;}",
+      "Expected": "A41 A41Recipient|caf\u00e9 <tag>",
+      "Group": "templates/stored-render",
+      "Compile": false
+    },
+    {
+      "ID": "R211",
+      "Code": "EmailTemplate t=a41.template('Plain'); Messaging.SingleEmailMessage m=Messaging.renderStoredEmailTemplate(t.Id,null,null,Messaging.AttachmentRetrievalOption.NONE,false); r=m.getPlainTextBody();",
+      "Expected": "A41 body",
+      "Group": "templates/attachment-option",
+      "Compile": false
+    },
+    {
+      "ID": "R212",
+      "Code": "EmailTemplate t=a41.template('Plain'); Messaging.SingleEmailMessage m=Messaging.renderStoredEmailTemplate(t.Id,null,null,Messaging.AttachmentRetrievalOption.METADATA_ONLY,false); r=m.getPlainTextBody();",
+      "Expected": "A41 body",
+      "Group": "templates/attachment-option",
+      "Compile": false
+    },
+    {
+      "ID": "R213",
+      "Code": "EmailTemplate t=a41.template('Plain'); Messaging.SingleEmailMessage m=Messaging.renderStoredEmailTemplate(t.Id,null,null,Messaging.AttachmentRetrievalOption.METADATA_WITH_BODY,false); r=m.getPlainTextBody();",
+      "Expected": "A41 body",
+      "Group": "templates/attachment-option",
+      "Compile": false
+    },
+    {
+      "ID": "R214",
+      "Code": "r=Messaging.renderStoredEmailTemplate(null,null,null);",
+      "Expected": "EXC|System.EmailTemplateRenderException|INVALID_ID_FIELD: The supplied templateId is not a valid EmailTemplate ID: null\\n",
+      "Group": "templates/null-invalid-render",
+      "Compile": false
+    },
+    {
+      "ID": "R215",
+      "Code": "r=Messaging.renderStoredEmailTemplate('00X000000000001',null,null);",
+      "Expected": "EXC|System.EmailTemplateRenderException|INVALID_CROSS_REFERENCE_KEY: invalid cross reference id\\n",
+      "Group": "templates/null-invalid-render",
+      "Compile": false
+    },
+    {
+      "ID": "R216",
+      "Code": "r=Messaging.renderStoredEmailTemplate('001000000000001',null,null);",
+      "Expected": "EXC|System.EmailTemplateRenderException|INVALID_ID_FIELD: The supplied templateId is not a valid EmailTemplate ID: 001000000000001\\n",
+      "Group": "templates/null-invalid-render",
+      "Compile": false
+    },
+    {
+      "ID": "R217",
+      "Code": "r=Messaging.renderStoredEmailTemplate(null,null,null,Messaging.AttachmentRetrievalOption.NONE);",
+      "Expected": "EXC|System.EmailTemplateRenderException|INVALID_ID_FIELD: The supplied templateId is not a valid EmailTemplate ID: null\\n",
+      "Group": "templates/null-invalid-render",
+      "Compile": false
+    },
+    {
+      "ID": "R218",
+      "Code": "r=Messaging.renderStoredEmailTemplate(null,null,null,Messaging.AttachmentRetrievalOption.NONE,true);",
+      "Expected": "EXC|System.EmailTemplateRenderException|INVALID_ID_FIELD: The supplied templateId is not a valid EmailTemplate ID: null\\n",
+      "Group": "templates/null-invalid-render",
+      "Compile": false
+    },
+    {
+      "ID": "R219",
+      "Code": "r=Messaging.AttachmentRetrievalOption.values();",
+      "Expected": "(NONE, METADATA_ONLY, METADATA_WITH_BODY)",
+      "Group": "templates/enumeration",
+      "Compile": false
+    },
+    {
+      "ID": "R220",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient',Email='a41@example.invalid'); insert contact; try{List<Messaging.RenderEmailTemplateBodyResult> xs=Messaging.renderEmailTemplate(contact.Id,null,new List<String>{'literal'}); List<String> out=new List<String>(); for(Messaging.RenderEmailTemplateBodyResult x:xs){out.add(String.valueOf(x.getSuccess())+'|'+String.valueOf(x.getMergedBody())+'|'+(x.getErrors()==null?'null':String.valueOf(x.getErrors().size())));} r=String.join(out,'/');}finally{delete contact;}",
+      "Expected": "true|literal|null",
+      "Group": "templates/merge-body-results",
+      "Compile": false
+    },
+    {
+      "ID": "R221",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient',Email='a41@example.invalid'); insert contact; try{List<Messaging.RenderEmailTemplateBodyResult> xs=Messaging.renderEmailTemplate(contact.Id,null,new List<String>{'Hello {!Contact.LastName}'}); List<String> out=new List<String>(); for(Messaging.RenderEmailTemplateBodyResult x:xs){out.add(String.valueOf(x.getSuccess())+'|'+String.valueOf(x.getMergedBody())+'|'+(x.getErrors()==null?'null':String.valueOf(x.getErrors().size())));} r=String.join(out,'/');}finally{delete contact;}",
+      "Expected": "true|Hello A41Recipient|null",
+      "Group": "templates/merge-body-results",
+      "Compile": false
+    },
+    {
+      "ID": "R222",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient',Email='a41@example.invalid'); insert contact; try{List<Messaging.RenderEmailTemplateBodyResult> xs=Messaging.renderEmailTemplate(contact.Id,null,new List<String>{'{!NoSuchType.Field}'}); List<String> out=new List<String>(); for(Messaging.RenderEmailTemplateBodyResult x:xs){out.add(String.valueOf(x.getSuccess())+'|'+String.valueOf(x.getMergedBody())+'|'+(x.getErrors()==null?'null':String.valueOf(x.getErrors().size())));} r=String.join(out,'/');}finally{delete contact;}",
+      "Expected": "true||null",
+      "Group": "templates/merge-body-results",
+      "Compile": false
+    },
+    {
+      "ID": "R223",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient',Email='a41@example.invalid'); insert contact; try{List<Messaging.RenderEmailTemplateBodyResult> xs=Messaging.renderEmailTemplate(contact.Id,null,new List<String>{null}); List<String> out=new List<String>(); for(Messaging.RenderEmailTemplateBodyResult x:xs){out.add(String.valueOf(x.getSuccess())+'|'+String.valueOf(x.getMergedBody())+'|'+(x.getErrors()==null?'null':String.valueOf(x.getErrors().size())));} r=String.join(out,'/');}finally{delete contact;}",
+      "Expected": "true|null|null",
+      "Group": "templates/merge-body-results",
+      "Compile": false
+    },
+    {
+      "ID": "R224",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTitle(null); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R225",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTitle(''); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R226",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTitle('A41'); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R227",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTitle('x'.repeat(250)); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R228",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTitle('x'.repeat(251)); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R229",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setBody(null); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R230",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setBody(''); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R231",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setBody('A41'); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R232",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setBody('x'.repeat(750)); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R233",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setBody('x'.repeat(751)); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R234",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetId(null); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R235",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetId('bad-id'); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R236",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetId('001000000000001'); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R237",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetPageRef(null); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R238",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetPageRef('not-json'); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R239",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetPageRef('{\"type\":\"standard__namedPage\",\"attributes\":{\"pageName\":\"home\"}}'); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R240",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setSenderId(null); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R241",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setSenderId('bad-id'); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R242",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setNotificationTypeId(null); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R243",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setNotificationTypeId('bad-id'); r='set';",
+      "Expected": "set",
+      "Group": "custom-notifications/setter-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R244",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.send(null); r='sent';",
+      "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "Group": "custom-notifications/send-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R245",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.send(new Set<String>()); r='sent';",
+      "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "Group": "custom-notifications/send-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R246",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.send(new Set<String>{'005000000000001'}); r='sent';",
+      "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "Group": "custom-notifications/send-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R247",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.send(new Set<String>{null}); r='sent';",
+      "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "Group": "custom-notifications/send-validation",
+      "Compile": false
+    },
+    {
+      "ID": "R248",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(null,null,'A41','body',null,null); r=n!=null;",
+      "Expected": "true",
+      "Group": "custom-notifications/constructor",
+      "Compile": false
+    },
+    {
+      "ID": "R249",
+      "Code": "Messaging.CustomNotification n; n.setTitle('A41'); r=n;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Group": "custom-notifications/null-receiver",
+      "Compile": false
+    },
+    {
+      "ID": "R250",
+      "Code": "Type t=Type.forName('RichMessaging','AuthRequestHandler'); r=t==null?null:t.getName();",
+      "Expected": "RichMessaging.AuthRequestHandler",
+      "Group": "richmessaging/type-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R251",
+      "Code": "Type t=Type.forName('RichMessaging','ProcessCatalogOrderHandler'); r=t==null?null:t.getName();",
+      "Expected": "RichMessaging.ProcessCatalogOrderHandler",
+      "Group": "richmessaging/type-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R252",
+      "Code": "Type t=Type.forName('RichMessaging','ProcessPaymentHandler'); r=t==null?null:t.getName();",
+      "Expected": "RichMessaging.ProcessPaymentHandler",
+      "Group": "richmessaging/type-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R253",
+      "Code": "Type t=Type.forName('RichMessaging','ProcessFormHandler'); r=t==null?null:t.getName();",
+      "Expected": "RichMessaging.ProcessFormHandler",
+      "Group": "richmessaging/type-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R254",
+      "Code": "Type t=Type.forName('RichMessaging','CatalogSection'); r=t==null?null:t.getName();",
+      "Expected": "RichMessaging.CatalogSection",
+      "Group": "richmessaging/type-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R255",
+      "Code": "Type t=Type.forName('RichMessaging','TimeSlotOption'); r=t==null?null:t.getName();",
+      "Expected": "RichMessaging.TimeSlotOption",
+      "Group": "richmessaging/type-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R256",
+      "Code": "Type t=Type.forName('RichMessaging','MessageDefinitionInputParameter'); r=t==null?null:t.getName();",
+      "Expected": "RichMessaging.MessageDefinitionInputParameter",
+      "Group": "richmessaging/type-shape",
+      "Compile": false
+    },
+    {
+      "ID": "R257",
+      "Code": "RichMessaging.AuthRequestResponse x=new RichMessaging.AuthRequestResponse('fake-token','A41-context','A41-provider'); r=String.valueOf(x.getAccessToken())+'|'+x.getContextRecordId()+'|'+x.getAuthProviderName();",
+      "Expected": "fake-token|A41-context|A41-provider",
+      "Group": "richmessaging/auth-request-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R258",
+      "Code": "RichMessaging.AuthRequestResponse x=new RichMessaging.AuthRequestResponse(null,null,null); r=String.valueOf(x.getAccessToken())+'|'+x.getContextRecordId()+'|'+x.getAuthProviderName();",
+      "Expected": "null|null|null",
+      "Group": "richmessaging/auth-request-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R259",
+      "Code": "RichMessaging.AuthRequestResult x=new RichMessaging.AuthRequestResult(new PageReference('/a41'),RichMessaging.AuthRequestResultStatus.DECLINED,Datetime.newInstanceGmt(2020,1,2,3,4,5)); r=x.redirectPageReference.getUrl()+'|'+x.resultStatus+'|'+x.expirationDateTime.formatGmt('yyyy-MM-dd HH:mm:ss');",
+      "Expected": "/a41|DECLINED|2020-01-02 03:04:05",
+      "Group": "richmessaging/auth-result-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R260",
+      "Code": "RichMessaging.AuthRequestResult x=new RichMessaging.AuthRequestResult(null,null,null); r=String.valueOf(x.resultStatus)+'|'+String.valueOf(x.expirationDateTime);",
+      "Expected": "null|null",
+      "Group": "richmessaging/auth-result-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R261",
+      "Code": "RichMessaging.CatalogSection x=new RichMessaging.CatalogSection(); x.title='A41'; x.productIds=new List<String>{'p1','p2'}; r=x.title+'|'+String.join(x.productIds,',');",
+      "Expected": "A41|p1,p2",
+      "Group": "richmessaging/catalog-dto",
+      "Compile": false,
+      "FloorExpected": "COMPILE_ERROR\tline 36: Type is not visible: RichMessaging.CatalogSection"
+    },
+    {
+      "ID": "R262",
+      "Code": "RichMessaging.CatalogSection x=new RichMessaging.CatalogSection('A41',new List<String>()); r=x.title+'|'+x.productIds.size();",
+      "Expected": "A41|0",
+      "Group": "richmessaging/catalog-dto",
+      "Compile": false,
+      "FloorExpected": "COMPILE_ERROR\tline 36: Type is not visible: RichMessaging.CatalogSection"
+    },
+    {
+      "ID": "R263",
+      "Code": "RichMessaging.MessageDefinitionInputParameter x=new RichMessaging.MessageDefinitionInputParameter(); x.name='A41'; r=x.name;",
+      "Expected": "A41",
+      "Group": "richmessaging/parameter-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R264",
+      "Code": "RichMessaging.MessageDefinitionInputParameter x=new RichMessaging.MessageDefinitionInputParameter(); x.textValue='text'; r=x.textValue;",
+      "Expected": "text",
+      "Group": "richmessaging/parameter-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R265",
+      "Code": "RichMessaging.MessageDefinitionInputParameter x=new RichMessaging.MessageDefinitionInputParameter(); x.booleanValue=false; r=x.booleanValue;",
+      "Expected": "false",
+      "Group": "richmessaging/parameter-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R266",
+      "Code": "RichMessaging.MessageDefinitionInputParameter x=new RichMessaging.MessageDefinitionInputParameter(); x.numberValue=1.5; r=x.numberValue;",
+      "Expected": "1.5",
+      "Group": "richmessaging/parameter-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R267",
+      "Code": "RichMessaging.MessageDefinitionInputParameter x=new RichMessaging.MessageDefinitionInputParameter(); x.dateValue=Date.newInstance(2020,1,2); r=x.dateValue;",
+      "Expected": "2020-01-02 00:00:00",
+      "Group": "richmessaging/parameter-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R268",
+      "Code": "RichMessaging.MessageDefinitionInputParameter x=new RichMessaging.MessageDefinitionInputParameter(); x.recordIdValue=null; r=x.recordIdValue;",
+      "Expected": "null",
+      "Group": "richmessaging/parameter-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R269",
+      "Code": "RichMessaging.TimeSlotOption x=new RichMessaging.TimeSlotOption(Datetime.newInstanceGmt(2020,1,2,3,4,5),(Integer)0); r=x.duration;",
+      "Expected": "0",
+      "Group": "richmessaging/time-slot-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R270",
+      "Code": "RichMessaging.TimeSlotOption x=new RichMessaging.TimeSlotOption(Datetime.newInstanceGmt(2020,1,2,3,4,5),(Integer)1); r=x.duration;",
+      "Expected": "1",
+      "Group": "richmessaging/time-slot-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R271",
+      "Code": "RichMessaging.TimeSlotOption x=new RichMessaging.TimeSlotOption(Datetime.newInstanceGmt(2020,1,2,3,4,5),(Integer)-1); r=x.duration;",
+      "Expected": "-1",
+      "Group": "richmessaging/time-slot-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R272",
+      "Code": "RichMessaging.TimeSlotOption x=new RichMessaging.TimeSlotOption(Datetime.newInstanceGmt(2020,1,2,3,4,5),(Integer)null); r=x.duration;",
+      "Expected": "null",
+      "Group": "richmessaging/time-slot-dto",
+      "Compile": false
+    },
+    {
+      "ID": "R273",
+      "Code": "Type t=Type.forName('RichMessaging','AuthRequestHandler'); r=t.newInstance();",
+      "Expected": "EXC|System.TypeException|RichMessaging.AuthRequestHandler cannot be constructed",
+      "Group": "richmessaging/hosted-boundary",
+      "Compile": false
+    },
+    {
+      "ID": "R274",
+      "Code": "Type t=Type.forName('RichMessaging','ProcessCatalogOrderHandler'); r=t.newInstance();",
+      "Expected": "EXC|System.TypeException|RichMessaging.ProcessCatalogOrderHandler cannot be constructed",
+      "Group": "richmessaging/hosted-boundary",
+      "Compile": false
+    },
+    {
+      "ID": "R275",
+      "Code": "Type t=Type.forName('RichMessaging','ProcessPaymentHandler'); r=t.newInstance();",
+      "Expected": "EXC|System.TypeException|RichMessaging.ProcessPaymentHandler cannot be constructed",
+      "Group": "richmessaging/hosted-boundary",
+      "Compile": false
+    },
+    {
+      "ID": "R276",
+      "Code": "Type t=Type.forName('RichMessaging','ProcessFormHandler'); r=t.newInstance();",
+      "Expected": "EXC|System.TypeException|RichMessaging.ProcessFormHandler cannot be constructed",
+      "Group": "richmessaging/hosted-boundary",
+      "Compile": false
+    },
+    {
+      "ID": "C001",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<Integer>{1}); pq.out('C001','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setToAddresses(List<Integer>) from the type Messaging.SingleEmailMessage",
+      "Group": "message-dto/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void setToAddresses(List<Integer>) from the type Messaging.SingleEmailMessage"
+    },
+    {
+      "ID": "C002",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setSaveAsActivity('true'); pq.out('C002','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setSaveAsActivity(String) from the type Messaging.SingleEmailMessage",
+      "Group": "message-dto/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void setSaveAsActivity(String) from the type Messaging.SingleEmailMessage"
+    },
+    {
+      "ID": "C003",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.MassEmailMessage(); pq.out('C003','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Messaging.MassEmailMessage to Messaging.SingleEmailMessage",
+      "Group": "message-dto/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Illegal assignment from Messaging.MassEmailMessage to Messaging.SingleEmailMessage"
+    },
+    {
+      "ID": "C004",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setPlainTextBody('x'); pq.out('C004','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setPlainTextBody(String) from the type Messaging.MassEmailMessage",
+      "Group": "message-dto/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void setPlainTextBody(String) from the type Messaging.MassEmailMessage"
+    },
+    {
+      "ID": "C005",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setTargetObjectId(42); pq.out('C005','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setTargetObjectId(Integer) from the type Messaging.SingleEmailMessage",
+      "Group": "message-dto/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void setTargetObjectId(Integer) from the type Messaging.SingleEmailMessage"
+    },
+    {
+      "ID": "C006",
+      "Code": "Messaging.EmailFileAttachment a=new Messaging.EmailFileAttachment(); a.setBody('text'); pq.out('C006','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setBody(String) from the type Messaging.EmailFileAttachment",
+      "Group": "attachments/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void setBody(String) from the type Messaging.EmailFileAttachment"
+    },
+    {
+      "ID": "C007",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setFileAttachments(new List<Blob>()); pq.out('C007','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setFileAttachments(List<Blob>) from the type Messaging.SingleEmailMessage",
+      "Group": "attachments/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void setFileAttachments(List<Blob>) from the type Messaging.SingleEmailMessage"
+    },
+    {
+      "ID": "C008",
+      "Code": "Messaging.sendEmail(new List<String>()); pq.out('C008','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void sendEmail(List<String>) from the type Messaging",
+      "Group": "send-results/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void sendEmail(List<String>) from the type Messaging"
+    },
+    {
+      "ID": "C009",
+      "Code": "Messaging.SendEmailResult x=new Messaging.SendEmailResult(); pq.out('C009','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Messaging.SendEmailResult",
+      "Group": "send-results/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Type cannot be constructed: Messaging.SendEmailResult"
+    },
+    {
+      "ID": "C010",
+      "Code": "Messaging.SendEmailError x=new Messaging.SendEmailError(); pq.out('C010','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Messaging.SendEmailError",
+      "Group": "send-results/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Type cannot be constructed: Messaging.SendEmailError"
+    },
+    {
+      "ID": "C011",
+      "Code": "Messaging.renderStoredEmailTemplate(null,null); pq.out('C011','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void renderStoredEmailTemplate(NULL, NULL) from the type Messaging",
+      "Group": "templates/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void renderStoredEmailTemplate(NULL, NULL) from the type Messaging"
+    },
+    {
+      "ID": "C012",
+      "Code": "Messaging.renderStoredEmailTemplate(null,null,null,'NONE'); pq.out('C012','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void renderStoredEmailTemplate(NULL, NULL, NULL, String) from the type Messaging",
+      "Group": "templates/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void renderStoredEmailTemplate(NULL, NULL, NULL, String) from the type Messaging"
+    },
+    {
+      "ID": "C013",
+      "Code": "Messaging.InboundEmailHandler h=new Messaging.InboundEmailHandler(); pq.out('C013','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Messaging.InboundEmailHandler",
+      "Group": "inbound-handler/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Type cannot be constructed: Messaging.InboundEmailHandler"
+    },
+    {
+      "ID": "C014",
+      "Code": "Messaging.InboundEmailHandler h; if(false){Boolean x=h.handleInboundEmail(null,null);} pq.out('C014','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Messaging.InboundEmailResult to Boolean",
+      "Group": "inbound-handler/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Illegal assignment from Messaging.InboundEmailResult to Boolean"
+    },
+    {
+      "ID": "C015",
+      "Code": "Messaging.InboundEmailHandler h=new A41InboundOracle20261005(); pq.out('C015','compiled');",
+      "Expected": "compiled",
+      "Group": "inbound-handler/compile",
+      "Compile": true
+    },
+    {
+      "ID": "C016",
+      "Code": "Messaging.InboundEmail m=new Messaging.InboundEmail(); m.htmlBodyIsTruncated='true'; pq.out('C016','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Boolean",
+      "Group": "inbound-handler/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Illegal assignment from String to Boolean"
+    },
+    {
+      "ID": "C017",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.send(new List<String>()); pq.out('C017','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void send(List<String>) from the type Messaging.CustomNotification",
+      "Group": "custom-notifications/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void send(List<String>) from the type Messaging.CustomNotification"
+    },
+    {
+      "ID": "C018",
+      "Code": "RichMessaging.AuthRequestHandler h; if(false){RichMessaging.AuthRequestResult x=h.handleAuthRequest(null);} pq.out('C018','compiled');",
+      "Expected": "compiled",
+      "Group": "richmessaging/native-interface",
+      "Compile": true
+    },
+    {
+      "ID": "C019",
+      "Code": "RichMessaging.ProcessFormHandler h; if(false){Id x=h.processFormRequest(null);} pq.out('C019','compiled');",
+      "Expected": "compiled",
+      "Group": "richmessaging/native-interface",
+      "Compile": true,
+      "FloorExpected": "COMPILE_ERROR\tline 6: Type is not visible: RichMessaging.ProcessFormHandler"
+    },
+    {
+      "ID": "C020",
+      "Code": "RichMessaging.AuthRequestHandler h=new RichMessaging.AuthRequestHandler(); pq.out('C020','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: RichMessaging.AuthRequestHandler",
+      "Group": "richmessaging/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Type cannot be constructed: RichMessaging.AuthRequestHandler"
+    },
+    {
+      "ID": "C021",
+      "Code": "RichMessaging.MessageDefinitionInputParameter x=new RichMessaging.MessageDefinitionInputParameter(); x.booleanValue=1; pq.out('C021','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Boolean",
+      "Group": "richmessaging/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Illegal assignment from Integer to Boolean"
+    },
+    {
+      "ID": "C022",
+      "Code": "RichMessaging.TimeSlotOption x=new RichMessaging.TimeSlotOption('tomorrow',1); pq.out('C022','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Constructor not defined: [RichMessaging.TimeSlotOption].<Constructor>(String, Integer)",
+      "Group": "richmessaging/compile",
+      "Compile": true,
+      "NativeDiagnostic": "Constructor not defined: [RichMessaging.TimeSlotOption].<Constructor>(String, Integer)"
+    }
+  ],
+  "Controls": [
+    {
+      "ID": "M001",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setOptOutPolicy(''); r=m.getOptOutPolicy();",
+      "Expected": "EXC|System.HandledException|Invalid value  for property optOutPolicy",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M002",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setOptOutPolicy('send'); r=m.getOptOutPolicy();",
+      "Expected": "SEND",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M003",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setOptOutPolicy('FILTER'); r=m.getOptOutPolicy();",
+      "Expected": "FILTER",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M004",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setOptOutPolicy('REJECT'); r=m.getOptOutPolicy();",
+      "Expected": "REJECT",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M005",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEmailPriority(''); r=m.getEmailPriority();",
+      "Expected": "EXC|System.HandledException|Invalid value  for property emailPriority",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M006",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEmailPriority('High'); r=m.getEmailPriority();",
+      "Expected": "High",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M007",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEmailPriority('Low'); r=m.getEmailPriority();",
+      "Expected": "Low",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M008",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEmailPriority('normal'); r=m.getEmailPriority();",
+      "Expected": "Normal",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M009",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setEmailPriority('1'); r=m.getEmailPriority();",
+      "Expected": "EXC|System.HandledException|Invalid value 1 for property emailPriority",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M010",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); List<String> xs=new List<String>{'one@example.invalid'}; m.setCcAddresses(xs); xs.add('two@example.invalid'); r=m.getCcAddresses().size();",
+      "Expected": "1",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M011",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); List<String> xs=new List<String>{'one@example.invalid'}; m.setBccAddresses(xs); xs.add('two@example.invalid'); r=m.getBccAddresses().size();",
+      "Expected": "1",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M012",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'bad'}); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Email body is required.|()|target-null=true",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M013",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{null}); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Email body is required.|()|target-null=true",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M014",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setCcAddresses(new List<String>{'bad'}); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Email body is required.|()|target-null=true",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M015",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setCcAddresses(new List<String>{null}); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Email body is required.|()|target-null=true",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M016",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setBccAddresses(new List<String>{'bad'}); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Email body is required.|()|target-null=true",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M017",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setBccAddresses(new List<String>{null}); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Email body is required.|()|target-null=true",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M018",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setTargetObjectIds(new List<Id>()); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Missing template id.|()|target-null=true",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M019",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setTargetObjectIds(new List<Id>()); m.setTemplateId('00X000000000001'); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|REQUIRED_FIELD_MISSING|Missing target object ids (contact, lead or user)|()|target-null=true",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M020",
+      "Code": "Messaging.MassEmailMessage m=new Messaging.MassEmailMessage(); m.setTemplateId('00X000000000001'); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|UNKNOWN_EXCEPTION|Cannot read the array length because the return value of \"common.api.soap.wsdl.MassEmailMessage.getTargetObjectIds()\" is null|()|target-null=true",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M021",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetId('001000000000001'); n.send(new Set<String>{'005000000000001'}); r='sent';",
+      "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M022",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetPageRef('{\"type\":\"standard__namedPage\",\"attributes\":{\"pageName\":\"home\"}}'); n.send(new Set<String>{'005000000000001'}); r='sent';",
+      "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M023",
+      "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetId('000000000000000'); n.send(new Set<String>{'005000000000001'}); r='sent';",
+      "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M025",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient'); insert contact; try{r=Messaging.renderEmailTemplate(null,null,new List<String>{'Hello {!Contact.LastName}','{!Unknown.Field}','{!notclosed'});}finally{delete contact;}",
+      "Expected": "(Messaging.RenderEmailTemplateBodyResult[getErrors=null;getMergedBody=Hello ;getSuccess=true;], Messaging.RenderEmailTemplateBodyResult[getErrors=null;getMergedBody=;getSuccess=true;], Messaging.RenderEmailTemplateBodyResult[getErrors=null;getMergedBody={!notclosed;getSuccess=true;])",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M026",
+      "Code": "Contact contact=new Contact(LastName='A41Recipient'); insert contact; try{r=Messaging.renderEmailTemplate(contact.Id,null,new List<String>{'Hello {!Contact.LastName}','{!Unknown.Field}','{!notclosed'});}finally{delete contact;}",
+      "Expected": "(Messaging.RenderEmailTemplateBodyResult[getErrors=null;getMergedBody=Hello A41Recipient;getSuccess=true;], Messaging.RenderEmailTemplateBodyResult[getErrors=null;getMergedBody=;getSuccess=true;], Messaging.RenderEmailTemplateBodyResult[getErrors=null;getMergedBody={!notclosed;getSuccess=true;])",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M027",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'not-an-address'}); m.setPlainTextBody('body'); m.setTargetObjectId('001000000000001'); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|INVALID_TYPE_FOR_OPERATION|Only User, Contact, Lead, or Person objects are allowed for targetObjectId: 001000000000001.|(targetObjectId, 001000000000001AAA)|target-null=false;INVALID_EMAIL_ADDRESS|Email address is invalid: not-an-address|(toAddresses, not-an-address)|target-null=false",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M028",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'a41@example.invalid'}); m.setPlainTextBody('body'); m.setTargetObjectId('001000000000001'); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|INVALID_TYPE_FOR_OPERATION|Only User, Contact, Lead, or Person objects are allowed for targetObjectId: 001000000000001.|(targetObjectId, 001000000000001AAA)|target-null=false",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "M029",
+      "Code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage(); m.setToAddresses(new List<String>{'Name <a41@example.invalid>'}); m.setPlainTextBody('body'); m.setTargetObjectId('001000000000001'); r=a41.results(Messaging.sendEmail(new List<Messaging.Email>{m},false));",
+      "Expected": "1:false|INVALID_TYPE_FOR_OPERATION|Only User, Contact, Lead, or Person objects are allowed for targetObjectId: 001000000000001.|(targetObjectId, 001000000000001AAA)|target-null=false",
+      "Group": "messaging/adjacent-control"
+    },
+    {
+      "ID": "T001",
+      "Code": "r=A41TemplateQuery6220261007.defaultQuery();",
+      "Expected": "1",
+      "Group": "messaging/template-class-version"
+    },
+    {
+      "ID": "T003",
+      "Code": "r=A41TemplateQuery6220261007.systemQuery();",
+      "Expected": "1",
+      "Group": "messaging/template-class-version"
+    },
+    {
+      "ID": "T006",
+      "Code": "r=A41TemplateQuery6720261007.systemQuery();",
+      "Expected": "1",
+      "Group": "messaging/template-class-version"
+    }
+  ],
+  "HostedControls": [
+    {
+      "ID": "M024",
+      "Expected": "EXC|System.HandledException|Invalid parameter value for: recipientIds",
+      "Reason": "native test-context observation excludes hosted delivery; local configured sends raise UnsupportedOperationException"
+    }
+  ],
+  "RowRanges": {
+    "all": "R001-R249/C001-C017"
+  },
+  "DeclarationAPIVersions": {
+    "A41": "62.0",
+    "A41InboundOracle20261005": "62.0",
+    "A41TemplateQuery6220261007": "62.0",
+    "A41TemplateQuery6720261007": "67.0"
+  },
+  "CarriedControls": [
+    {
+      "ID": "T004",
+      "Code": "r=A41TemplateQuery6720261007.defaultQuery();",
+      "Expected": "1",
+      "Group": "messaging/template-class-version",
+      "Owner": "security access / security access",
+      "Reason": "API 67 default USER_MODE rejects Folder.DeveloperName on the non-Folder polymorphic FolderId targets; native query returns one template."
+    }
+  ]
+}

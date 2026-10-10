@@ -22,6 +22,7 @@ func (a *Analyzer) checkDeclarationContracts(index typesys.Index) []diagnostic.D
 		if declarationFromParsedSource(typ) {
 			diagnostics = append(diagnostics, declarationModifierDiagnostics(typ)...)
 			diagnostics = append(diagnostics, memberModifierDiagnostics(typ)...)
+			diagnostics = append(diagnostics, lifecycleGlobalFieldDiagnostics(index, typ)...)
 		}
 		diagnostics = append(diagnostics, memberIdentityDiagnostics(typ)...)
 	}
@@ -57,6 +58,9 @@ func declarationIdentityDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnos
 func declarationModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	mods := typ.Modifiers
+	if typ.Kind == apexast.DeclarationClass && typ.NestingDepth > 0 && hasModifier(mods, "protected") {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range, "protected is not allowed on classes"))
+	}
 
 	if typ.NestingDepth == 0 {
 		hasPrivate := hasModifier(mods, "private")
@@ -68,11 +72,14 @@ func declarationModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnos
 				fmt.Sprintf("top-level %s %q must be public or global", typ.Kind, typ.Name)))
 		}
 	}
-	if typ.NestingDepth > 1 && (typ.Kind == apexast.DeclarationClass || typ.Kind == apexast.DeclarationInterface) {
+	if typ.NestingDepth > 1 && (typ.Kind == apexast.DeclarationClass || typ.Kind == apexast.DeclarationInterface || typ.Kind == apexast.DeclarationEnum) {
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
 			fmt.Sprintf("type %q nests deeper than one inner level", typ.Name)))
 	}
 	if typ.Kind == apexast.DeclarationClass {
+		if hasModifier(mods, "transient") {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range, "transient is not allowed on classes"))
+		}
 		if hasModifier(mods, "static") {
 			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
 				fmt.Sprintf("class %q cannot be declared static", typ.Name)))
@@ -115,7 +122,7 @@ func memberIdentityDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
 		case apexast.DeclarationMethod:
 			key := memberSignatureKey(member)
 			if previous, ok := methodKeys[key]; ok {
-				diagnostics = append(diagnostics, duplicateMemberDiagnostic(typ, member, previous.Kind))
+				diagnostics = append(diagnostics, remoteActionDuplicateMethodDiagnostic(typ, member, previous))
 				continue
 			}
 			methodKeys[key] = member
@@ -134,6 +141,11 @@ func memberIdentityDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
 func memberModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, member := range typ.Members {
+		// Named C009/C011/C012/C043 reject inner static fields/properties;
+		// enum constants remain accepted synthesized static fields (C029).
+		if typ.NestingDepth > 0 && typ.Kind != apexast.DeclarationEnum && hasModifier(member.Modifiers, "static") && (member.Kind == apexast.DeclarationField || member.Kind == apexast.DeclarationProperty) {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range, "static can only be used on fields of a top level type"))
+		}
 		switch member.Kind {
 		case apexast.DeclarationMethod:
 			diagnostics = append(diagnostics, methodContractDiagnostics(typ, member)...)
@@ -154,6 +166,9 @@ func memberModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
 func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymbol) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	mods := member.Modifiers
+	if hasModifier(mods, "transient") {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range, "transient is not allowed on methods"))
+	}
 	abstract := hasModifier(mods, "abstract")
 	virtual := hasModifier(mods, "virtual")
 	override := hasModifier(mods, "override")
@@ -164,7 +179,7 @@ func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymb
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
 			fmt.Sprintf("method %q cannot be both abstract and virtual", member.Name)))
 	}
-	if abstract && override {
+	if abstract && override && !isObjectOverrideSignature(member) {
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
 			fmt.Sprintf("method %q cannot be both abstract and override", member.Name)))
 	}
@@ -185,8 +200,7 @@ func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymb
 			fmt.Sprintf("inner type %q cannot declare a static method %q", typ.Name, member.Name)))
 	}
 	if static && hasModifier(mods, "protected") {
-		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
-			fmt.Sprintf("protected method %q cannot be static", member.Name)))
+		diagnostics = append(diagnostics, remoteActionProtectedMethodDiagnostics(typ, member)...)
 	}
 	if hasModifier(mods, "global") && !hasModifier(typ.Modifiers, "global") {
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
@@ -365,4 +379,37 @@ func declarationVisibilityRank(modifiers []string) int {
 	default:
 		return 0
 	}
+}
+
+// C048's global field requires a global owner and enclosing class. Anonymous
+// declarations use their implicit non-global owner in anonymous_declarations.go.
+func lifecycleGlobalFieldDiagnostics(index typesys.Index, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
+	if typ.Kind != apexast.DeclarationClass || typ.NestingDepth == 0 || !hasModifier(typ.Modifiers, "global") {
+		return nil
+	}
+	global := true
+	for owner := typ.OwnerName; global && owner != ""; {
+		found := false
+		for _, parent := range index.Types {
+			if strings.EqualFold(parent.Name, owner) {
+				global = hasModifier(parent.Modifiers, "global")
+				owner = parent.OwnerName
+				found = true
+				break
+			}
+		}
+		if !found {
+			break
+		}
+	}
+	if global {
+		return nil
+	}
+	var diagnostics []diagnostic.Diagnostic
+	for _, member := range typ.Members {
+		if member.Kind == apexast.DeclarationField && hasModifier(member.Modifiers, "global") {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range, "Enclosing type for global fields in apex classes must be declared as global"))
+		}
+	}
+	return diagnostics
 }

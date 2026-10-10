@@ -57,13 +57,13 @@ func (p *exprParser) parseEquality() (Expression, error) {
 	}
 	for {
 		switch {
-		case p.matchOperator("=="):
+		case p.matchOperator("=="), p.matchOperator("="):
 			right, err := p.parseCompare()
 			if err != nil {
 				return nil, err
 			}
 			left = binaryExpr{op: "==", left: left, right: right}
-		case p.matchOperator("!="):
+		case p.matchOperator("!="), p.matchOperator("<>"):
 			right, err := p.parseCompare()
 			if err != nil {
 				return nil, err
@@ -81,6 +81,10 @@ func (p *exprParser) parseCompare() (Expression, error) {
 		return nil, err
 	}
 	for {
+		p.skipSpace()
+		if strings.HasPrefix(p.source[p.pos:], "<>") {
+			return left, nil
+		}
 		switch {
 		case p.matchOperator(">="):
 			right, err := p.parseAdd()
@@ -119,6 +123,12 @@ func (p *exprParser) parseAdd() (Expression, error) {
 	}
 	for {
 		switch {
+		case p.matchOperator("&"):
+			right, err := p.parseMultiply()
+			if err != nil {
+				return nil, err
+			}
+			left = binaryExpr{op: "&", left: left, right: right}
 		case p.matchOperator("+"):
 			right, err := p.parseMultiply()
 			if err != nil {
@@ -138,20 +148,20 @@ func (p *exprParser) parseAdd() (Expression, error) {
 }
 
 func (p *exprParser) parseMultiply() (Expression, error) {
-	left, err := p.parseUnary()
+	left, err := p.parsePower()
 	if err != nil {
 		return nil, err
 	}
 	for {
 		switch {
 		case p.matchOperator("*"):
-			right, err := p.parseUnary()
+			right, err := p.parsePower()
 			if err != nil {
 				return nil, err
 			}
 			left = binaryExpr{op: "*", left: left, right: right}
 		case p.matchOperator("/"):
-			right, err := p.parseUnary()
+			right, err := p.parsePower()
 			if err != nil {
 				return nil, err
 			}
@@ -162,7 +172,29 @@ func (p *exprParser) parseMultiply() (Expression, error) {
 	}
 }
 
+func (p *exprParser) parsePower() (Expression, error) {
+	left, err := p.parseUnary()
+	if err != nil {
+		return nil, err
+	}
+	if p.matchOperator("^") {
+		right, err := p.parsePower()
+		if err != nil {
+			return nil, err
+		}
+		return binaryExpr{op: "^", left: left, right: right}, nil
+	}
+	return left, nil
+}
+
 func (p *exprParser) parseUnary() (Expression, error) {
+	if p.matchOperator("-") {
+		value, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		return unaryExpr{op: "-", value: value}, nil
+	}
 	if p.matchOperator("!") {
 		value, err := p.parseUnary()
 		if err != nil {
@@ -250,10 +282,43 @@ func (p *exprParser) parseVisualforcePrimary() (Expression, error) {
 	}
 	p.pos = save
 	ch := p.source[p.pos]
+	if ch == '[' {
+		return p.parseURLForParameters()
+	}
 	if isAlpha(ch) || ch == '_' || ch == '$' {
 		return p.parseVisualforceIdentifierOrCall()
 	}
 	return p.parsePrimary()
+}
+
+func (p *exprParser) parseURLForParameters() (Expression, error) {
+	p.pos++
+	params := parameterMapExpr{}
+	for {
+		p.skipSpace()
+		if p.pos < len(p.source) && p.source[p.pos] == ']' {
+			p.pos++
+			return params, nil
+		}
+		name := p.readIdent()
+		if name == "" || !p.matchOperator("=") {
+			return nil, fmt.Errorf("expected URLFOR parameter assignment")
+		}
+		value, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		params.names = append(params.names, name)
+		params.values = append(params.values, value)
+		p.skipSpace()
+		if p.pos < len(p.source) && p.source[p.pos] == ',' {
+			p.pos++
+			continue
+		}
+		if p.pos >= len(p.source) || p.source[p.pos] != ']' {
+			return nil, fmt.Errorf("missing ']' in URLFOR parameters")
+		}
+	}
 }
 
 func (p *exprParser) parseVisualforceIdentifierOrCall() (Expression, error) {
@@ -299,7 +364,9 @@ func (p *exprParser) parseNumber() (Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		return literalExpr{value: vm.Decimal(parsed)}, nil
+		value := vm.Decimal(parsed)
+		value.Text = p.source[start:p.pos]
+		return literalExpr{value: value}, nil
 	}
 	parsed, err := strconv.ParseInt(p.source[start:p.pos], 10, 64)
 	if err != nil {
@@ -310,6 +377,9 @@ func (p *exprParser) parseNumber() (Expression, error) {
 
 func (p *exprParser) matchOperator(op string) bool {
 	p.skipSpace()
+	if op == "&" && strings.HasPrefix(p.source[p.pos:], "&&") {
+		return false
+	}
 	if p.pos+len(op) > len(p.source) || p.source[p.pos:p.pos+len(op)] != op {
 		return false
 	}

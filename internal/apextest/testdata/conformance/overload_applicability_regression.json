@@ -1,0 +1,542 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "nativeCaptureStatus": "native anonymous and named observations captured",
+  "runtimePrelude": "\nclass BaseValue {}\nclass NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n",
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Id value='001000000000001'; r=new OverloadProbe().bare(value,null);",
+      "compile": false
+    },
+    {
+      "id": "R002",
+      "code": "String value='001000000000001'; r=new OverloadProbe().bare(value,null);",
+      "compile": false
+    },
+    {
+      "id": "R003",
+      "code": "NarrowValue left=new NarrowValue(); BaseValue right=new LeafValue(); r=new OverloadProbe().choose(left,right);",
+      "compile": false
+    },
+    {
+      "id": "R004",
+      "code": "NarrowValue left=new NarrowValue(); BaseValue right=null; r=new OverloadProbe().choose(left,right);",
+      "compile": false
+    },
+    {
+      "id": "R005",
+      "code": "NarrowValue left=new NarrowValue(); BaseValue right=new LeafValue(); r=new OverloadProbe().choose(left,(LeafValue)right);",
+      "compile": false
+    },
+    {
+      "id": "R006",
+      "code": "r=new NarrowValue().chooseHeld();",
+      "compile": false
+    },
+    {
+      "id": "R007",
+      "code": "Map<Id,List<String>> rows=null; r=new OverloadProbe().nullOnly(rows);",
+      "compile": false
+    },
+    {
+      "id": "R008",
+      "code": "List<String> value=null; r=new OverloadProbe().sequence(value);",
+      "compile": false
+    },
+    {
+      "id": "C001",
+      "code": "class BaseValue {} class NarrowValue extends BaseValue {} class LeafValue extends NarrowValue {} class OverloadProbe { public String choose(NarrowValue left,BaseValue right){return 'narrow-base';} public String choose(BaseValue left,LeafValue right){return 'base-leaf';} } Object r=new OverloadProbe().choose(new NarrowValue(),new LeafValue()); pq.out('C001',r);",
+      "compile": true
+    },
+    {
+      "id": "C002",
+      "code": "class OverloadProbe { public String choose(String left,Object right){return 'string-object';} public String choose(Object left,String right){return 'object-string';} } Object r=new OverloadProbe().choose('left','right'); pq.out('C002',r);",
+      "compile": true
+    },
+    {
+      "id": "C003",
+      "code": "class OverloadProbe { public String choose(String left,Object right){return 'string-object';} public String choose(Object left,String right){return 'object-string';} } Object r=new OverloadProbe().choose(null,null); pq.out('C003',r);",
+      "compile": true
+    },
+    {
+      "id": "C004",
+      "code": "class OverloadProbe { public String choose(Integer value,Object label){return 'integer-object';} public String choose(Long value,String label){return 'long-string';} } Object r=new OverloadProbe().choose(1,'one'); pq.out('C004',r);",
+      "compile": true
+    },
+    {
+      "id": "C005",
+      "code": "\nclass BaseValue {}\nclass NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\nObject r=new OverloadProbe().nullOnly(null); pq.out('C005',r);",
+      "compile": true
+    },
+    {
+      "id": "C006",
+      "code": "\nclass BaseValue {}\nclass NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\nObject value='value'; Object r=new OverloadProbe().stringOnly(value); pq.out('C006',r);",
+      "compile": true
+    },
+    {
+      "id": "C007",
+      "code": "class OverloadProbe { public String sequence(Object value){return 'Object';} public String sequence(List<String> value){return 'List<String>';} } Object r=new OverloadProbe().sequence(null); pq.out('C007',r);",
+      "compile": true
+    }
+  ],
+  "nativeObservations": [
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R001",
+      "observed": "id-map"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R001",
+      "observed": "id-map",
+      "className": "CRT625d2c7ff4c537R001",
+      "source": "@IsTest private class CRT625d2c7ff4c537R001 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R001(){\nObject r;\ntry {\nId value='001000000000001'; r=new OverloadProbe().bare(value,null);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R001|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R002",
+      "observed": "string-class"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R002",
+      "observed": "string-class",
+      "className": "CRT625d2c7ff4c537R002",
+      "source": "@IsTest private class CRT625d2c7ff4c537R002 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R002(){\nObject r;\ntry {\nString value='001000000000001'; r=new OverloadProbe().bare(value,null);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R002|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R003",
+      "observed": "base-base"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R003",
+      "observed": "base-base",
+      "className": "CRT625d2c7ff4c537R003",
+      "source": "@IsTest private class CRT625d2c7ff4c537R003 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R003(){\nObject r;\ntry {\nNarrowValue left=new NarrowValue(); BaseValue right=new LeafValue(); r=new OverloadProbe().choose(left,right);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R003|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R004",
+      "observed": "base-base"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R004",
+      "observed": "base-base",
+      "className": "CRT625d2c7ff4c537R004",
+      "source": "@IsTest private class CRT625d2c7ff4c537R004 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R004(){\nObject r;\ntry {\nNarrowValue left=new NarrowValue(); BaseValue right=null; r=new OverloadProbe().choose(left,right);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R004|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R005",
+      "observed": "narrow-leaf"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R005",
+      "observed": "narrow-leaf",
+      "className": "CRT625d2c7ff4c537R005",
+      "source": "@IsTest private class CRT625d2c7ff4c537R005 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R005(){\nObject r;\ntry {\nNarrowValue left=new NarrowValue(); BaseValue right=new LeafValue(); r=new OverloadProbe().choose(left,(LeafValue)right);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R005|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R006",
+      "observed": "base-base"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R006",
+      "observed": "base-base",
+      "className": "CRT625d2c7ff4c537R006",
+      "source": "@IsTest private class CRT625d2c7ff4c537R006 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R006(){\nObject r;\ntry {\nr=new NarrowValue().chooseHeld();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R006|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R007",
+      "observed": "map"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R007",
+      "observed": "map",
+      "className": "CRT625d2c7ff4c537R007",
+      "source": "@IsTest private class CRT625d2c7ff4c537R007 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R007(){\nObject r;\ntry {\nMap<Id,List<String>> rows=null; r=new OverloadProbe().nullOnly(rows);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R007|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R008",
+      "observed": "List<String>"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R008",
+      "observed": "List<String>",
+      "className": "CRT625d2c7ff4c537R008",
+      "source": "@IsTest private class CRT625d2c7ff4c537R008 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R008(){\nObject r;\ntry {\nList<String> value=null; r=new OverloadProbe().sequence(value);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R008|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "C001",
+      "observed": "COMPILE_ERROR\tline 6: Ambiguous method signature: void choose(NarrowValue, LeafValue)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass BaseValue {} class NarrowValue extends BaseValue {} class LeafValue extends NarrowValue {} class OverloadProbe { public String choose(NarrowValue left,BaseValue right){return 'narrow-base';} public String choose(BaseValue left,LeafValue right){return 'base-leaf';} } Object r=new OverloadProbe().choose(new NarrowValue(),new LeafValue()); pq.out('C001',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "C001",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void choose(CRT625d2c7ff4c537C001.NarrowValue, CRT625d2c7ff4c537C001.LeafValue)",
+      "className": "CRT625d2c7ff4c537C001",
+      "source": "@IsTest private class CRT625d2c7ff4c537C001 {\nvirtual class BaseValue {} virtual class NarrowValue extends BaseValue {} class LeafValue extends NarrowValue {} class OverloadProbe { public String choose(NarrowValue left,BaseValue right){return 'narrow-base';} public String choose(BaseValue left,LeafValue right){return 'base-leaf';} } \n@IsTest static void C001(){\nObject r=new OverloadProbe().choose(new NarrowValue(),new LeafValue()); \nSystem.assert(false,'P|C001|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "C002",
+      "observed": "COMPILE_ERROR\tline 6: Ambiguous method signature: void choose(String, String)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass OverloadProbe { public String choose(String left,Object right){return 'string-object';} public String choose(Object left,String right){return 'object-string';} } Object r=new OverloadProbe().choose('left','right'); pq.out('C002',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "C002",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void choose(String, String)",
+      "className": "CRT625d2c7ff4c537C002",
+      "source": "@IsTest private class CRT625d2c7ff4c537C002 {\nclass OverloadProbe { public String choose(String left,Object right){return 'string-object';} public String choose(Object left,String right){return 'object-string';} } \n@IsTest static void C002(){\nObject r=new OverloadProbe().choose('left','right'); \nSystem.assert(false,'P|C002|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "C003",
+      "observed": "COMPILE_ERROR\tline 6: Ambiguous method signature: void choose(NULL, NULL)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass OverloadProbe { public String choose(String left,Object right){return 'string-object';} public String choose(Object left,String right){return 'object-string';} } Object r=new OverloadProbe().choose(null,null); pq.out('C003',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "C003",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void choose(NULL, NULL)",
+      "className": "CRT625d2c7ff4c537C003",
+      "source": "@IsTest private class CRT625d2c7ff4c537C003 {\nclass OverloadProbe { public String choose(String left,Object right){return 'string-object';} public String choose(Object left,String right){return 'object-string';} } \n@IsTest static void C003(){\nObject r=new OverloadProbe().choose(null,null); \nSystem.assert(false,'P|C003|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "C004",
+      "observed": "COMPILE_ERROR\tline 6: Ambiguous method signature: void choose(Integer, String)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass OverloadProbe { public String choose(Integer value,Object label){return 'integer-object';} public String choose(Long value,String label){return 'long-string';} } Object r=new OverloadProbe().choose(1,'one'); pq.out('C004',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "C004",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void choose(Integer, String)",
+      "className": "CRT625d2c7ff4c537C004",
+      "source": "@IsTest private class CRT625d2c7ff4c537C004 {\nclass OverloadProbe { public String choose(Integer value,Object label){return 'integer-object';} public String choose(Long value,String label){return 'long-string';} } \n@IsTest static void C004(){\nObject r=new OverloadProbe().choose(1,'one'); \nSystem.assert(false,'P|C004|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "C005",
+      "observed": "COMPILE_ERROR\tline 27: Ambiguous method signature: void nullOnly(NULL)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\n\nclass BaseValue {}\nclass NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\nObject r=new OverloadProbe().nullOnly(null); pq.out('C005',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "C005",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void nullOnly(NULL)",
+      "className": "CRT625d2c7ff4c537C005",
+      "source": "@IsTest private class CRT625d2c7ff4c537C005 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void C005(){\nObject r=new OverloadProbe().nullOnly(null); \nSystem.assert(false,'P|C005|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "C006",
+      "observed": "COMPILE_ERROR\tline 27: Method does not exist or incorrect signature: void stringOnly(Object) from the type OverloadProbe",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\n\nclass BaseValue {}\nclass NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\nObject value='value'; Object r=new OverloadProbe().stringOnly(value); pq.out('C006',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "C006",
+      "observed": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void stringOnly(Object) from the type CRT625d2c7ff4c537C006.OverloadProbe",
+      "className": "CRT625d2c7ff4c537C006",
+      "source": "@IsTest private class CRT625d2c7ff4c537C006 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void C006(){\nObject value='value'; Object r=new OverloadProbe().stringOnly(value); \nSystem.assert(false,'P|C006|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "C007",
+      "observed": "COMPILE_ERROR\tline 6: Ambiguous method signature: void sequence(NULL)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass OverloadProbe { public String sequence(Object value){return 'Object';} public String sequence(List<String> value){return 'List<String>';} } Object r=new OverloadProbe().sequence(null); pq.out('C007',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "C007",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void sequence(NULL)",
+      "className": "CRT625d2c7ff4c537C007",
+      "source": "@IsTest private class CRT625d2c7ff4c537C007 {\nclass OverloadProbe { public String sequence(Object value){return 'Object';} public String sequence(List<String> value){return 'List<String>';} } \n@IsTest static void C007(){\nObject r=new OverloadProbe().sequence(null); \nSystem.assert(false,'P|C007|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R001",
+      "observed": "id-map"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R001",
+      "observed": "id-map",
+      "className": "CRT67eba70286ed33R001",
+      "source": "@IsTest private class CRT67eba70286ed33R001 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R001(){\nObject r;\ntry {\nId value='001000000000001'; r=new OverloadProbe().bare(value,null);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R001|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R002",
+      "observed": "string-class"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R002",
+      "observed": "string-class",
+      "className": "CRT67eba70286ed33R002",
+      "source": "@IsTest private class CRT67eba70286ed33R002 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R002(){\nObject r;\ntry {\nString value='001000000000001'; r=new OverloadProbe().bare(value,null);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R002|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R003",
+      "observed": "base-base"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R003",
+      "observed": "base-base",
+      "className": "CRT67eba70286ed33R003",
+      "source": "@IsTest private class CRT67eba70286ed33R003 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R003(){\nObject r;\ntry {\nNarrowValue left=new NarrowValue(); BaseValue right=new LeafValue(); r=new OverloadProbe().choose(left,right);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R003|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R004",
+      "observed": "base-base"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R004",
+      "observed": "base-base",
+      "className": "CRT67eba70286ed33R004",
+      "source": "@IsTest private class CRT67eba70286ed33R004 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R004(){\nObject r;\ntry {\nNarrowValue left=new NarrowValue(); BaseValue right=null; r=new OverloadProbe().choose(left,right);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R004|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R005",
+      "observed": "narrow-leaf"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R005",
+      "observed": "narrow-leaf",
+      "className": "CRT67eba70286ed33R005",
+      "source": "@IsTest private class CRT67eba70286ed33R005 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R005(){\nObject r;\ntry {\nNarrowValue left=new NarrowValue(); BaseValue right=new LeafValue(); r=new OverloadProbe().choose(left,(LeafValue)right);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R005|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R006",
+      "observed": "base-base"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R006",
+      "observed": "base-base",
+      "className": "CRT67eba70286ed33R006",
+      "source": "@IsTest private class CRT67eba70286ed33R006 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R006(){\nObject r;\ntry {\nr=new NarrowValue().chooseHeld();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R006|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R007",
+      "observed": "map"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R007",
+      "observed": "map",
+      "className": "CRT67eba70286ed33R007",
+      "source": "@IsTest private class CRT67eba70286ed33R007 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R007(){\nObject r;\ntry {\nMap<Id,List<String>> rows=null; r=new OverloadProbe().nullOnly(rows);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R007|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R008",
+      "observed": "List<String>"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R008",
+      "observed": "List<String>",
+      "className": "CRT67eba70286ed33R008",
+      "source": "@IsTest private class CRT67eba70286ed33R008 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void R008(){\nObject r;\ntry {\nList<String> value=null; r=new OverloadProbe().sequence(value);\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R008|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "C001",
+      "observed": "COMPILE_ERROR\tline 6: Ambiguous method signature: void choose(NarrowValue, LeafValue)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass BaseValue {} class NarrowValue extends BaseValue {} class LeafValue extends NarrowValue {} class OverloadProbe { public String choose(NarrowValue left,BaseValue right){return 'narrow-base';} public String choose(BaseValue left,LeafValue right){return 'base-leaf';} } Object r=new OverloadProbe().choose(new NarrowValue(),new LeafValue()); pq.out('C001',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "C001",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void choose(CRT67eba70286ed33C001.NarrowValue, CRT67eba70286ed33C001.LeafValue)",
+      "className": "CRT67eba70286ed33C001",
+      "source": "@IsTest private class CRT67eba70286ed33C001 {\nvirtual class BaseValue {} virtual class NarrowValue extends BaseValue {} class LeafValue extends NarrowValue {} class OverloadProbe { public String choose(NarrowValue left,BaseValue right){return 'narrow-base';} public String choose(BaseValue left,LeafValue right){return 'base-leaf';} } \n@IsTest static void C001(){\nObject r=new OverloadProbe().choose(new NarrowValue(),new LeafValue()); \nSystem.assert(false,'P|C001|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "C002",
+      "observed": "COMPILE_ERROR\tline 6: Ambiguous method signature: void choose(String, String)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass OverloadProbe { public String choose(String left,Object right){return 'string-object';} public String choose(Object left,String right){return 'object-string';} } Object r=new OverloadProbe().choose('left','right'); pq.out('C002',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "C002",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void choose(String, String)",
+      "className": "CRT67eba70286ed33C002",
+      "source": "@IsTest private class CRT67eba70286ed33C002 {\nclass OverloadProbe { public String choose(String left,Object right){return 'string-object';} public String choose(Object left,String right){return 'object-string';} } \n@IsTest static void C002(){\nObject r=new OverloadProbe().choose('left','right'); \nSystem.assert(false,'P|C002|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "C003",
+      "observed": "COMPILE_ERROR\tline 6: Ambiguous method signature: void choose(NULL, NULL)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass OverloadProbe { public String choose(String left,Object right){return 'string-object';} public String choose(Object left,String right){return 'object-string';} } Object r=new OverloadProbe().choose(null,null); pq.out('C003',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "C003",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void choose(NULL, NULL)",
+      "className": "CRT67eba70286ed33C003",
+      "source": "@IsTest private class CRT67eba70286ed33C003 {\nclass OverloadProbe { public String choose(String left,Object right){return 'string-object';} public String choose(Object left,String right){return 'object-string';} } \n@IsTest static void C003(){\nObject r=new OverloadProbe().choose(null,null); \nSystem.assert(false,'P|C003|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "C004",
+      "observed": "COMPILE_ERROR\tline 6: Ambiguous method signature: void choose(Integer, String)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass OverloadProbe { public String choose(Integer value,Object label){return 'integer-object';} public String choose(Long value,String label){return 'long-string';} } Object r=new OverloadProbe().choose(1,'one'); pq.out('C004',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "C004",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void choose(Integer, String)",
+      "className": "CRT67eba70286ed33C004",
+      "source": "@IsTest private class CRT67eba70286ed33C004 {\nclass OverloadProbe { public String choose(Integer value,Object label){return 'integer-object';} public String choose(Long value,String label){return 'long-string';} } \n@IsTest static void C004(){\nObject r=new OverloadProbe().choose(1,'one'); \nSystem.assert(false,'P|C004|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "C005",
+      "observed": "COMPILE_ERROR\tline 27: Ambiguous method signature: void nullOnly(NULL)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\n\nclass BaseValue {}\nclass NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\nObject r=new OverloadProbe().nullOnly(null); pq.out('C005',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "C005",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void nullOnly(NULL)",
+      "className": "CRT67eba70286ed33C005",
+      "source": "@IsTest private class CRT67eba70286ed33C005 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void C005(){\nObject r=new OverloadProbe().nullOnly(null); \nSystem.assert(false,'P|C005|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "C006",
+      "observed": "COMPILE_ERROR\tline 27: Method does not exist or incorrect signature: void stringOnly(Object) from the type OverloadProbe",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\n\nclass BaseValue {}\nclass NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\nObject value='value'; Object r=new OverloadProbe().stringOnly(value); pq.out('C006',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "C006",
+      "observed": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void stringOnly(Object) from the type CRT67eba70286ed33C006.OverloadProbe",
+      "className": "CRT67eba70286ed33C006",
+      "source": "@IsTest private class CRT67eba70286ed33C006 {\n\nvirtual class BaseValue {}\nvirtual class NarrowValue extends BaseValue {\n public BaseValue held;\n public String chooseHeld() {\n  held = new LeafValue();\n  return new OverloadProbe().choose(this, held);\n }\n}\nclass LeafValue extends NarrowValue {}\nclass OverloadProbe {\n public String bare(Id value, Map<Id,List<String>> rows) { return 'id-map'; }\n public String bare(String value, NarrowValue rows) { return 'string-class'; }\n public String choose(NarrowValue left, LeafValue right) { return 'narrow-leaf'; }\n public String choose(BaseValue left, BaseValue right) { return 'base-base'; }\n public String nullOnly(Map<Id,List<String>> rows) { return 'map'; }\n public String nullOnly(NarrowValue rows) { return 'class'; }\n public String stringOnly(String value) { return 'string-only'; }\n public String sequence(Object value) { return 'Object'; }\n public String sequence(List<String> value) { return 'List<String>'; }\n}\n\n@IsTest static void C006(){\nObject value='value'; Object r=new OverloadProbe().stringOnly(value); \nSystem.assert(false,'P|C006|'+String.valueOf(r));\n}\n}\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "C007",
+      "observed": "COMPILE_ERROR\tline 6: Ambiguous method signature: void sequence(NULL)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass OverloadProbe { public String sequence(Object value){return 'Object';} public String sequence(List<String> value){return 'List<String>';} } Object r=new OverloadProbe().sequence(null); pq.out('C007',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "C007",
+      "observed": "COMPILE_ERROR\tAmbiguous method signature: void sequence(NULL)",
+      "className": "CRT67eba70286ed33C007",
+      "source": "@IsTest private class CRT67eba70286ed33C007 {\nclass OverloadProbe { public String sequence(Object value){return 'Object';} public String sequence(List<String> value){return 'List<String>';} } \n@IsTest static void C007(){\nObject r=new OverloadProbe().sequence(null); \nSystem.assert(false,'P|C007|'+String.valueOf(r));\n}\n}\n"
+    }
+  ],
+  "preservedNativeFixture": "type_system.json",
+  "preservedNativeRejections": [
+    "C009",
+    "C010",
+    "R167",
+    "R168",
+    "R169",
+    "R170",
+    "R171"
+  ],
+  "preservedNativeControls": [
+    "R142",
+    "R143",
+    "R144",
+    "R154",
+    "R156",
+    "R160",
+    "R164",
+    "R165",
+    "R166"
+  ]
+}

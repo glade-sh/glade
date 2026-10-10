@@ -701,6 +701,13 @@ func TestProtocolWiringV1ExactSelectorsReturnStructuredFailures(t *testing.T) {
 			wantMessage:    `no test method matched --class "WarmOneTest" --method "missingMethod"`,
 			wantDetailPart: `no exact test method named "missingMethod"`,
 		},
+		{
+			name:           "missing class-file entry",
+			classes:        []string{"WarmOneTest", "MissingTest"},
+			wantCaseName:   "missing test class",
+			wantMessage:    `no test class matched --class-file entry "MissingTest"`,
+			wantDetailPart: `explicitly requested name "MissingTest"`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

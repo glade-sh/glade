@@ -1,0 +1,38 @@
+{
+  "APIVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "Declarations": {
+    "Flow": "public class Flow {\n    public class Interview {\n        public void start(Integer value) {}\n        public void setVariableValue(String name, Object value) {}\n    }\n}\n",
+    "lxscheduler": "public class lxscheduler {\n    public class GetAppointmentCandidatesInput {\n        public GetAppointmentCandidatesInput builder() { return this; }\n    }\n}\n",
+    "P": "public class P { public void out(String id, Object value) {} }\n"
+  },
+  "Cases": [
+    {
+      "ID": "H001",
+      "Code": "Flow.Interview x=new Flow.Interview(); pq.out('H001','ACCEPTED');",
+      "Expected": "ACCEPTED"
+    },
+    {
+      "ID": "H002",
+      "Code": "Flow.Interview x=new Flow.Interview(); x.start(1); pq.out('H002','ACCEPTED');",
+      "Expected": "ACCEPTED"
+    },
+    {
+      "ID": "H003",
+      "Code": "Flow.Interview x=new Flow.Interview(); x.setVariableValue('x',1); pq.out('H003','ACCEPTED');",
+      "Expected": "ACCEPTED"
+    },
+    {
+      "ID": "H004",
+      "Code": "lxscheduler.GetAppointmentCandidatesInput x; pq.out('H004','ACCEPTED');",
+      "Expected": "ACCEPTED"
+    },
+    {
+      "ID": "H005",
+      "Code": "lxscheduler.GetAppointmentCandidatesInput x=new lxscheduler.GetAppointmentCandidatesInput(); x.builder().builder(); pq.out('H005','ACCEPTED');",
+      "Expected": "ACCEPTED"
+    }
+  ]
+}

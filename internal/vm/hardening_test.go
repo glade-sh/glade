@@ -54,12 +54,24 @@ System.assertEquals('Attempt to de-reference a null object', message);
 	})
 }
 
-func TestNullIntegerArithmeticTreatsNullOperandAsZero(t *testing.T) {
+func TestNullIntegerArithmeticThrowsCatchableException(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer i = null;
-Integer value = i + 1;
-System.assertEquals(1, value);
-value += i;
+Boolean caught = false;
+try {
+  Integer value = i + 1;
+} catch (NullPointerException e) {
+  caught = true;
+}
+System.assert(caught);
+Integer value = 1;
+caught = false;
+try {
+  value += i;
+} catch (NullPointerException e) {
+  caught = true;
+}
+System.assert(caught);
 System.assertEquals(1, value);
 `)
 	if err != nil {
@@ -70,13 +82,27 @@ System.assertEquals(1, value);
 	}
 }
 
-func TestNullDecimalArithmeticTreatsNullOperandAsZero(t *testing.T) {
+// The compound-assignment check covers the shared local evaluator; direct
+// binary arithmetic is covered by the API40 Salesforce proof regression.
+func TestNullDecimalArithmeticThrowsCatchableException(t *testing.T) {
 	program, err := CompileAnonymous(`
 Decimal d = null;
-Decimal value = d + 2;
+Boolean caught = false;
+try {
+  Decimal value = d + 2;
+} catch (NullPointerException e) {
+  caught = true;
+}
+System.assert(caught);
+Decimal value = 2;
+caught = false;
+try {
+  value *= d;
+} catch (NullPointerException e) {
+  caught = true;
+}
+System.assert(caught);
 System.assertEquals(2, value);
-value *= d;
-System.assertEquals(0, value);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -130,7 +156,7 @@ System.assertEquals(10, total);
 func TestSOQLForUpdateDoesNotPersistApprovalLock(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');
-Account locked = [SELECT Id FROM Account WHERE Name = 'Acme' FOR UPDATE LIMIT 1];
+Account locked = [SELECT Id FROM Account WHERE Name = 'Acme' LIMIT 1 FOR UPDATE];
 System.assertEquals(false, Approval.isLocked(locked.Id));
 `)
 	if err != nil {

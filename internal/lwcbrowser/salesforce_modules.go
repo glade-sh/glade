@@ -1,6 +1,7 @@
 package lwcbrowser
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -10,6 +11,7 @@ import (
 )
 
 // SalesforceImportMap returns import-map entries for @salesforce/* and lightning/* modules.
+// uiGraphqlApi preserves the additional spelling admitted by the native compiler.
 func SalesforceImportMap() map[string]string {
 	imports := map[string]string{
 		"@glade/shell/app":                      "/lightning/runtime/shell/app.js",
@@ -76,6 +78,7 @@ func SalesforceImportMap() map[string]string {
 		"lightning/graphql":                     "/lightning/runtime/lightning/graphql.js",
 		"lightning/uiAppsApi":                   "/lightning/runtime/lightning/uiAppsApi.js",
 		"lightning/uiGraphQLApi":                "/lightning/runtime/lightning/uiGraphQLApi.js",
+		"lightning/uiGraphqlApi":                "/lightning/runtime/lightning/uiGraphQLApi.js",
 		"lightning/uiLearningPlatformApi":       "/lightning/runtime/lightning/uiLearningPlatformApi.js",
 		"lightning/uiLayoutApi":                 "/lightning/shims/lightning/uiLayoutApi.js",
 		"lightning/uiListApi":                   "/lightning/shims/lightning/uiListApi.js",
@@ -491,11 +494,9 @@ export default configProviderService;
 }
 
 func ConfirmModuleJS() string {
-	return `export default class LightningConfirm {
-  static open(options = {}) {
-    window.dispatchEvent(new CustomEvent("gladeconfirm", { detail: options, bubbles: true, composed: true }));
-    return Promise.resolve(true);
-  }
+	return `import { openFeedback } from "/lightning/runtime/shell/overlay.js";
+export default class LightningConfirm {
+  static open(options = {}) { return openFeedback("confirm", options); }
 }
 `
 }
@@ -776,8 +777,9 @@ export function decodeDefaultFieldValues(value = "") {
 }
 
 func CustomPermissionModuleJS(name string) string {
-	return fmt.Sprintf(`export const permissionName = %q;
-export default true;
+	return fmt.Sprintf(`import { readCustomPermission } from "/lightning/runtime/shims/user-permission.js";
+export const permissionName = %q;
+export default readCustomPermission(permissionName);
 `, strings.TrimSuffix(strings.TrimSpace(name), ".js"))
 }
 
@@ -843,8 +845,13 @@ export default { moduleName, supportTier, isAvailable, invoke };
 
 func ActionsModuleJS() string {
 	return `export class CloseActionScreenEvent extends CustomEvent {
-  constructor() {
-    super("closeactionscreen", { bubbles: true, composed: true });
+  constructor(options = {}) {
+    super("lightning__actionsclosescreen", {
+      bubbles: options.bubbles,
+      composed: options.composed,
+      cancelable: options.cancelable,
+      detail: options.detail,
+    });
   }
 }
 `
@@ -853,53 +860,188 @@ func ActionsModuleJS() string {
 func FlowSupportModuleJS() string {
 	return `export class FlowAttributeChangeEvent extends CustomEvent {
   constructor(attributeName, value) {
-    super("flowattributechange", { bubbles: true, composed: true, detail: { attributeName, value } });
+    super("lightning__flowattributechange", { bubbles: true, composed: true, detail: { property: attributeName, value } });
   }
 }
-function flowNavigationEvent(type) {
+function flowNavigationEvent(navigationTarget) {
   return class extends CustomEvent {
     constructor() {
-      super(type, { bubbles: true, composed: true });
+      super("lightning__flownavigation", { bubbles: true, composed: true, detail: { navigationTarget } });
     }
   };
 }
-export const FlowNavigationNextEvent = flowNavigationEvent("flownavigationnext");
-export const FlowNavigationBackEvent = flowNavigationEvent("flownavigationback");
-export const FlowNavigationPauseEvent = flowNavigationEvent("flownavigationpause");
-export const FlowNavigationFinishEvent = flowNavigationEvent("flownavigationfinish");
+export const FlowNavigationNextEvent = flowNavigationEvent("NEXT");
+export const FlowNavigationBackEvent = flowNavigationEvent("BACK");
+export const FlowNavigationPauseEvent = flowNavigationEvent("PAUSE");
+export const FlowNavigationFinishEvent = flowNavigationEvent("FINISH");
 `
 }
 
 func RefreshModuleJS() string {
 	return `const handlers = new Map();
 const containers = new Map();
+const registrations = new Map();
+const documentRoots = new WeakMap();
+const detachedRoot = { children: [] };
+let nextRefreshHandle = 1;
+// Captured named status bindings are undefined; refreshes resolve to 1 or 2.
+export const RefreshComplete = undefined;
+export const RefreshCompleteWithError = undefined;
+export const RefreshError = undefined;
 export class RefreshEvent extends CustomEvent {
   constructor() {
-    super("lightning__refresh", { bubbles: true, composed: true });
+    super("lightning__refresh", { bubbles: true, composed: true, cancelable: true });
   }
 }
-export function registerRefreshHandler(element, handler) {
-  handlers.set(element, handler);
-  return { element, handler };
+function hostElement(context) {
+  return context && (context.template?.host || context.hostElement || context);
 }
-export function unregisterRefreshHandler(element) {
-  handlers.delete(element && element.element || element);
+function parentElement(element) {
+  return element && (element.parentElement || element.parentNode || element.host);
 }
-export function registerRefreshContainer(element, callback) {
-  containers.set(element, callback);
-  return { element, callback };
+function contains(ancestor, element) {
+  for (let current = element; current; current = parentElement(current)) {
+    if (current === ancestor) return true;
+  }
+  return false;
 }
-export function unregisterRefreshContainer(element) {
-  containers.delete(element && element.element || element);
+function refreshRoot(element) {
+  const document = element.ownerDocument;
+  if (!document) return detachedRoot;
+  let root = documentRoots.get(document);
+  if (!root) {
+    root = { children: [] };
+    documentRoots.set(document, root);
+    // A hosted page remains a refresh view when it has no owned container.
+    // Container listeners consume events before this default view receives them.
+    document.addEventListener("lightning__refresh", (event) => {
+      event.stopPropagation();
+      refreshChildren(root.children.slice());
+    });
+  }
+  return root;
 }
-export async function __gladeDispatchRefresh(root) {
-  const results = [];
-  for (const [element, handler] of handlers) {
-    if (!root || root === element || (root.contains && root.contains(element))) {
-      results.push(await handler());
+function encloses(node, element, kind) {
+  if (node.element === element) return node.kind === "container" && kind === "handler";
+  return contains(node.element, element);
+}
+function register(context, callback, kind) {
+  const element = hostElement(context);
+  if (!element || typeof element.addEventListener !== "function" || typeof element.dispatchEvent !== "function") {
+    throw new Error("Invalid contextElement. Must be an HTMLElement or LightningElement.");
+  }
+  if (typeof callback !== "function") {
+    throw new Error("Invalid providerMethod. Must be of type Function.");
+  }
+  const registry = kind === "handler" ? handlers : containers;
+  // Direct duplicate controls reject both the same and a fresh provider.
+  if (registry.has(element)) {
+    throw new Error("Invalid duplicate element registration. Element cannot be registered multiple times as a container or handler.");
+  }
+  let parent = refreshRoot(element);
+  for (;;) {
+    const ancestor = parent.children.find((node) => encloses(node, element, kind));
+    if (!ancestor) break;
+    parent = ancestor;
+  }
+  const node = { element, callback, kind, handle: nextRefreshHandle++, parent, children: [], active: true };
+  // New registrations precede their peers. An ancestor registered after its
+  // descendants adopts them in insertion order (the reverse-order controls).
+  for (const child of parent.children.slice()) {
+    if (encloses(node, child.element, child.kind)) {
+      parent.children.splice(parent.children.indexOf(child), 1);
+      node.children.unshift(child);
+      child.parent = node;
     }
   }
-  return results;
+  parent.children.unshift(node);
+  registry.set(element, node);
+  registrations.set(node.handle, node);
+  if (kind === "container") {
+    node.listener = (event) => {
+      event.stopPropagation();
+      refreshContainer(node);
+    };
+    element.addEventListener("lightning__refresh", node.listener);
+  }
+  return node.handle;
+}
+function unregister(value, kind) {
+  const registry = kind === "handler" ? handlers : containers;
+  const node = typeof value === "number" ? registrations.get(value)
+    : registry.get(hostElement(value && value.element || value));
+  if (!node) return;
+  node.active = false;
+  registrations.delete(node.handle);
+  (node.kind === "handler" ? handlers : containers).delete(node.element);
+  if (node.listener) node.element.removeEventListener("lightning__refresh", node.listener);
+  const siblings = node.parent.children;
+  siblings.splice(siblings.indexOf(node), 1);
+  // Retain these children on the removed node for an already running refresh.
+  // The live tree promotes them ahead of the remaining peers for later events.
+  siblings.unshift(...node.children);
+  for (const child of node.children) child.parent = node.parent;
+}
+export function registerRefreshHandler(element, handler) {
+  return register(element, handler, "handler");
+}
+export function unregisterRefreshHandler(handle) {
+  unregister(handle, "handler");
+}
+export function registerRefreshContainer(element, callback) {
+  return register(element, callback, "container");
+}
+export function unregisterRefreshContainer(handle) {
+  unregister(handle, "container");
+}
+function refreshContainer(node) {
+  const children = node.children.slice();
+  let resolveStatus;
+  const status = new Promise((resolve) => { resolveStatus = resolve; });
+  const callback = node.callback;
+  try {
+    callback(status);
+  } catch {
+    // A throwing container does not start its handlers (callback_throw).
+    return Promise.resolve(2);
+  }
+  Promise.resolve().then(() => refreshChildren(children)).then(resolveStatus);
+  return status;
+}
+function refreshChildren(nodes) {
+  // Start sibling handlers together. Schedule ready branches in separate
+  // microtask turns, without waiting for a sibling's pending descendants.
+  let readyBranches = Promise.resolve();
+  const visits = nodes.map((node) => {
+    if (!node.active) return 1;
+    if (node.kind === "container") return refreshContainer(node);
+    const children = node.children.slice();
+    const handler = node.callback;
+    let result;
+    try {
+      result = handler();
+      if (!result || typeof result.then !== "function") return 2;
+    } catch {
+      return 2;
+    }
+    return Promise.resolve(result).then((value) => {
+      if (value === false) return 2;
+      return new Promise((resolve) => {
+        readyBranches = readyBranches.then(() => {
+          refreshChildren(children).then(resolve);
+        });
+      });
+    }, () => 2);
+  });
+  return Promise.all(visits).then((statuses) => statuses.includes(2) ? 2 : 1);
+}
+export function __gladeDispatchRefresh(context) {
+  if (!context) return refreshChildren(detachedRoot.children.slice());
+  const element = hostElement(context);
+  const container = containers.get(element);
+  if (container) return refreshChildren(container.children.slice());
+  const handler = handlers.get(element);
+  return refreshChildren(handler ? [handler] : []);
 }
 `
 }
@@ -936,7 +1078,7 @@ func UserModuleJS(property, userID string) string {
 		if strings.TrimSpace(userID) == "" {
 			userID = "005000000000001"
 		}
-		return defaultExportJS(userID)
+		return defaultExportJS(salesforceUserID(userID))
 	case "isGuest":
 		return `import { readCommunityContext } from "/lightning/runtime/shims/community.js";
 function readGuest() {
@@ -949,14 +1091,55 @@ export default readGuest();
 	}
 }
 
+// The user virtual module exports the case-safe 18-character ID. Preserve
+// existing 18-character IDs and unsupported inputs rather than coercing them.
+func salesforceUserID(id string) string {
+	if len(id) != 15 || storage.ValidateID(storage.ID(id)) != nil {
+		return id
+	}
+	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
+	var suffix strings.Builder
+	for chunk := 0; chunk < 3; chunk++ {
+		mask := 0
+		for bit := 0; bit < 5; bit++ {
+			ch := id[chunk*5+bit]
+			if ch >= 'A' && ch <= 'Z' {
+				mask |= 1 << bit
+			}
+		}
+		suffix.WriteByte(alphabet[mask])
+	}
+	return id + suffix.String()
+}
+
+// Community/site virtual modules are Experience Builder imports. User guest
+// status and quiet context readers retain their standalone behavior.
+const experienceContextGuardJS = `let experienceContext = {};
+try {
+  const node = typeof document === "undefined" ? null : document.getElementById("glade-lwc-context");
+  experienceContext = node ? JSON.parse(node.textContent || "{}").community || {} : {};
+} catch (_) {}
+if (!experienceContext.site && !experienceContext.siteId && !experienceContext.networkId) {
+  const error = new Error("EXPERIENCE_BUILDER_CONTEXT_REQUIRED");
+  error.code = "EXPERIENCE_BUILDER_CONTEXT_REQUIRED";
+  throw error;
+}
+`
+
+// Owned black-box API 59/67 observations of common internationalization values.
+// This is configuration data, not Salesforce implementation source.
+//
+//go:embed salesforce_i18n_data.json
+var salesforceI18nData []byte
+
 func CommunityModuleJS(property string) string {
 	switch property {
 	case "basePath":
-		return `import { readCommunityValue } from "/lightning/runtime/shims/community.js";
+		return experienceContextGuardJS + `import { readCommunityValue } from "/lightning/runtime/shims/community.js";
 export default readCommunityValue("basePath", "/s");
 `
 	case "Id":
-		return `import { readCommunityValue } from "/lightning/runtime/shims/community.js";
+		return experienceContextGuardJS + `import { readCommunityValue } from "/lightning/runtime/shims/community.js";
 export default readCommunityValue("networkId", "");
 `
 	case "Name":
@@ -975,11 +1158,11 @@ export default readCommunityValue("url", "");
 func SiteModuleJS(property string) string {
 	switch property {
 	case "Id":
-		return `import { readSiteId } from "/lightning/runtime/shims/site.js";
+		return experienceContextGuardJS + `import { readSiteId } from "/lightning/runtime/shims/site.js";
 export default readSiteId();
 `
 	case "activeLanguages":
-		return `import { readActiveLanguages } from "/lightning/runtime/shims/site.js";
+		return experienceContextGuardJS + `import { readActiveLanguages } from "/lightning/runtime/shims/site.js";
 export default readActiveLanguages();
 `
 	default:
@@ -988,23 +1171,54 @@ export default readActiveLanguages();
 }
 
 func I18nModuleJS(property string) string {
+	if property == "timeZone" {
+		return `function readTimeZone() {
+  if (typeof document === "undefined") return "UTC";
+  try {
+    const node = document.getElementById("glade-lwc-context");
+    const context = node ? JSON.parse(node.textContent || "{}") : {};
+    return context.i18n?.timeZone || context.timeZone || "UTC";
+  } catch (_) { return "UTC"; }
+}
+export default readTimeZone();
+`
+	}
+	if property == "common.calendarData" || property == "common.digits" {
+		var values map[string]json.RawMessage
+		if err := json.Unmarshal(salesforceI18nData, &values); err == nil {
+			return "export default " + string(values[property]) + ";\n"
+		}
+	}
+	switch property {
+	case "numberingSystem", "number.exponential", "number.superscriptingExponent", "number.timeSeparator":
+		return "export default undefined;\n"
+	}
 	values := map[string]any{
 		"currency":                  "USD",
 		"dateTime.mediumDateFormat": "MMM d, yyyy",
 		"dateTime.mediumTimeFormat": "h:mm:ss a",
 		"dateTime.shortDateFormat":  "M/d/yyyy",
+		"dateTime.longDateFormat":   "MMMM d, yyyy",
+		"dateTime.shortTimeFormat":  "h:mm a",
+		"dateTime.longTimeFormat":   "h:mm:ss a z",
+		"defaultCalendar":           "gregorian",
+		"defaultNumberingSystem":    "latn",
 		"dir":                       "ltr",
 		"firstDayOfWeek":            1,
 		"isEasternNameStyle":        false,
 		"lang":                      "en-US",
 		"locale":                    "en-US",
-		"number.currencyFormat":     "¤#,##0.00;(¤#,##0.00)",
+		"number.currencyFormat":     "¤#,##0.00",
 		"number.currencySymbol":     "$",
 		"number.decimalSeparator":   ".",
 		"number.groupingSeparator":  ",",
 		"number.numberFormat":       "#,##0.###",
 		"number.percentFormat":      "#,##0%",
-		"timeZone":                  "UTC",
+		"number.plusSign":           "+",
+		"number.minusSign":          "-",
+		"number.perMilleSign":       "‰",
+		"number.infinity":           "∞",
+		"number.nan":                "NaN",
 	}
 	value, ok := values[property]
 	if !ok {
@@ -1017,8 +1231,8 @@ func SchemaFieldModuleJS(objectName, fieldName string) string {
 	return fmt.Sprintf(`const token = {
   fieldApiName: %q,
   objectApiName: %q,
-  toString() { return %q; },
 };
+Object.defineProperty(token, "toString", {value() { return %q; }});
 export default token;
 `, fieldName, objectName, objectName+"."+fieldName)
 }
@@ -1054,7 +1268,7 @@ export default channel;
 func NavigationModuleJS() string {
 	return `import {
   CurrentPageReferenceAdapter,
-  generateUrl,
+  generatePageReferenceUrl as generateUrl,
   navigate,
 } from "/lightning/runtime/shell/navigation-service.js";
 
@@ -1078,8 +1292,8 @@ export const navigationDiagnosticCodes = ["GLADELWC040", "GLADELWC041", "GLADELW
 export const CurrentPageReference = CurrentPageReferenceAdapter;
 export function NavigationMixin(Base) {
   return class extends Base {
-    [NavigationMixin.Navigate](pageReference) {
-      navigate(pageReference).catch(() => undefined);
+    [NavigationMixin.Navigate](pageReference, replace) {
+      navigate(pageReference, { replace }).catch(() => undefined);
     }
     [NavigationMixin.GenerateUrl](pageReference) {
       return generateUrl(pageReference);
@@ -1094,37 +1308,171 @@ export default NavigationMixin;
 
 func PlatformWorkspaceAPIModuleJS() string {
 	return `// GLADELWC072 glade-lwc-workbench activeRoute
+import * as workspace from "/lightning/runtime/shell/workspace-service.js";
 export {
   EnclosingTabId,
   IsConsoleNavigation,
   closeTab,
   configureWorkspace,
   disableTabClose,
-  focusTab,
-  getAllTabInfo,
-  getFocusedTabInfo,
-  getTabInfo,
-  isConsoleNavigation,
-  openSubtab,
-  openTab,
   refreshTab,
   setTabHighlighted,
   setTabIcon,
-  setTabLabel,
   workspaceDiagnosticCodes,
 } from "/lightning/runtime/shell/workspace-service.js";
+function unsupported(method) {
+  return new Error("Error: API " + "\x60" + method + "\x60" + " is not currently supported in this application.");
+}
+async function requireConsole(method) {
+  if (!await workspace.isConsoleNavigation()) throw unsupported(method);
+}
+export async function getFocusedTabInfo() {
+  await requireConsole("getFocusedTabInfo");
+  return workspace.getFocusedTabInfo();
+}
+export async function getAllTabInfo() {
+  await requireConsole("getAllTabInfo");
+  return workspace.getAllTabInfo();
+}
+export async function getTabInfo(tabId) {
+  if (tabId == null) throw new Error("error: unable to get info for a tab - missing tabId");
+  await requireConsole("getTabInfo");
+  return workspace.getTabInfo(tabId);
+}
+export async function focusTab(tabId) {
+  if (tabId == null) throw new Error("error: unable to focus a tab - missing tabId");
+  await requireConsole("focusTab");
+  return workspace.focusTab(tabId);
+}
+export async function setTabLabel(tabId, label) {
+  if (tabId == null || label == null) throw new Error("error: unable to set label to a tab - missing tabId or label");
+  await requireConsole("setTabLabel");
+  return workspace.setTabLabel(tabId, label);
+}
+export async function openTab(options = {}) {
+  if (!await workspace.isConsoleNavigation()) {
+    if (options?.pageReference?.type === "standard__navItemPage") return null;
+    throw unsupported("openTab");
+  }
+  return workspace.openTab(options);
+}
+export async function openSubtab(parentTabId, options = {}) {
+  if (parentTabId == null) throw new Error("error: unable to open a subtab - missing parent tab id");
+  if (!await workspace.isConsoleNavigation()) {
+    if (options?.pageReference?.type === "standard__navItemPage") return null;
+    throw unsupported("openSubtab");
+  }
+  return workspace.openSubtab(parentTabId, options);
+}
 `
 }
 
 func UIRecordAPIModuleJS() string {
-	return `import { createFetchWireAdapter, createGetRecordWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+	return objectMetadataConfigJS() + `import { createFetchWireAdapter, createGetRecordWireAdapter } from "/lightning/shims/core/wire-adapter.js";
 import {
-  getRecordNotifyChange,
-  notifyRecordUpdateAvailable,
+  getRecordNotifyChange as notifyLegacyLDSCache,
+  ldsCacheKey,
+  writeLDSCache,
+  notifyRecordUpdateAvailable as notifyLDSCache,
   refreshApex,
 } from "/lightning/shims/core/lds-cache.mjs";
-export { getRecordNotifyChange, notifyRecordUpdateAvailable, refreshApex };
-export const getRecord = createGetRecordWireAdapter();
+export { refreshApex };
+export function notifyRecordUpdateAvailable(items) {
+  const notifications = items.map((item) => item);
+  invalidateNotifiedRecords(notifications);
+  return notifyLDSCache(notifications);
+}
+export function getRecordNotifyChange(items = []) {
+  invalidateNotifiedRecords(items);
+  return notifyLegacyLDSCache(items);
+}
+function invalidateNotifiedRecords(items) {
+  const ids = new Set();
+  for (const item of Array.isArray(items) ? items : [items]) {
+    const id = typeof item === "string" ? item : item?.recordId;
+    if (typeof id === "string" && id.trim()) ids.add(id.trim());
+  }
+  // A refresh replaces only the active selection. Fields seeded by creation
+  // but absent from that selection must remain stale until fetched again.
+  for (const id of ids) invalidateRecordReads(id);
+}
+// Keep wire configuration suppression and delivery semantics, while the LDS
+// surface supplies layout selection and its field-level record cache.
+const records = new Map();
+const recordCacheKeys = new Map();
+function rememberRecord(data, mutation = false) {
+  if (!data?.id || !data.fields) return;
+  const key = data.id.slice(0, 15);
+  const prior = records.get(key);
+  const staleFields = new Set(prior?.staleFields);
+  for (const name of Object.keys(data.fields)) staleFields.delete(name);
+  records.set(key, {
+    data: {...prior?.data, ...data, fields: {...prior?.data.fields, ...data.fields}},
+    retainedFields: mutation ? Object.keys(data.fields) : prior?.retainedFields,
+    staleFields,
+  });
+}
+// Update responses may contain unwrapped fields and omit fields cleared by
+// DML. Invalidate read values while keeping the retained selection used for
+// validation, then let notifications/read requests provision fresh wrappers.
+function invalidateRecordReads(recordId) {
+  const id = String(recordId).slice(0, 15);
+  const prior = records.get(id);
+  if (prior) records.set(id, {...prior, staleFields: new Set(Object.keys(prior.data.fields))});
+  for (const key of recordCacheKeys.get(id) || []) writeLDSCache(key, undefined);
+  recordCacheKeys.delete(id);
+}
+function createLDSGetRecordAdapter() {
+  const Parent = createGetRecordWireAdapter();
+  function RecordAdapter(callback) {
+    Parent.call(this, value => {
+      if (value?.error?.status === 404 && this.body?.recordId) records.delete(String(this.body.recordId).slice(0, 15));
+      rememberRecord(value?.data);
+      callback(value);
+    });
+  }
+  RecordAdapter.prototype = Object.create(Parent.prototype);
+  RecordAdapter.prototype.constructor = RecordAdapter;
+  RecordAdapter.prototype.refresh = function(options = {}) {
+    if (this.body) {
+      const body = {...this.body};
+      if (this.config?.layoutTypes !== undefined) body.layoutTypes = this.config.layoutTypes;
+      if (this.config?.modes !== undefined) body.modes = this.config.modes;
+      const cached = records.get(String(body.recordId).slice(0, 15));
+      // Qualification is validated by the server for a cache miss. A field
+      // already held for this record is selected by name, as in the cold/primed
+      // native controls; an uncached cross-object field remains an error.
+      if (cached) body.fields = body.fields.map(ref => {
+        const dot = ref.indexOf(".");
+        const name = ref.slice(dot + 1);
+        return dot >= 0 && Object.hasOwn(cached.data.fields, name) ? cached.data.apiName + "." + name : ref;
+      });
+      if (cached?.retainedFields) body.retainedFields = cached.retainedFields;
+      this.body = body;
+      const key = ldsCacheKey("/lightning/wire/getRecord", body);
+      if (key !== this.cacheKey) this.pending += 1;
+      this.cacheKey = key;
+      const id = String(body.recordId).slice(0, 15);
+      if (!recordCacheKeys.has(id)) recordCacheKeys.set(id, new Set());
+      recordCacheKeys.get(id).add(key);
+      // Native createRecord seeds fields before its promise settles. Publishing
+      // a complete known selection through the shared cache makes a subsequent
+      // configuration switch synchronous and retires any pending old request.
+      // Forced notifications still reach the server and replace stale fields.
+      if (cached && !options.force && body.fields.length && !body.layoutTypes?.length) {
+        const refs = [...body.fields, ...(body.optionalFields || [])];
+        const names = refs.map(ref => ref.slice(ref.indexOf(".") + 1));
+        if (refs.every(ref => ref.startsWith(cached.data.apiName + ".")) && names.every(name => Object.hasOwn(cached.data.fields, name) && !cached.staleFields.has(name))) {
+          const fields = Object.fromEntries(names.map(name => [name, cached.data.fields[name]]));
+          writeLDSCache(key, {data: {...cached.data, fields}, error: undefined});
+        }
+      }
+    }
+    return Parent.prototype.refresh.call(this, options);
+  };
+  return RecordAdapter;
+}
+export const getRecord = createLDSGetRecordAdapter();
 export const getRecordUi = createFetchWireAdapter("/lightning/wire/getRecordUi", (config) => {
   const recordIds = config && config.recordIds || [];
   if (!recordIds.length) {
@@ -1142,7 +1490,7 @@ export const getRecordUi = createFetchWireAdapter("/lightning/wire/getRecordUi",
 });
 export const getRecords = createFetchWireAdapter("/lightning/wire/getRecords", (config) => {
   const records = config && config.records || [];
-  if (!records.length) {
+  if (!records.length || records.some((record) => !record?.recordIds?.length || record.recordIds.some((id) => !validRecordId(id)))) {
     return null;
   }
   return {
@@ -1154,16 +1502,16 @@ export const getRecords = createFetchWireAdapter("/lightning/wire/getRecords", (
   };
 });
 export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => {
-  const apiName = objectApiName(config && config.objectApiName);
+  const apiName = metadataObjectApiName(config && config.objectApiName);
   return apiName ? { objectApiName: apiName } : null;
 });
 export const getObjectInfos = createFetchWireAdapter("/lightning/wire/getObjectInfos", (config) => {
-  const objectApiNames = (config && config.objectApiNames || []).map(objectApiName).filter(Boolean);
-  return objectApiNames.length ? { objectApiNames } : null;
+  const objectApiNames = metadataObjectApiNames(config && config.objectApiNames);
+  return objectApiNames ? { objectApiNames } : null;
 });
 export const getRecordCreateDefaults = createFetchWireAdapter("/lightning/wire/getRecordCreateDefaults", (config) => {
-  const apiName = objectApiName(config && config.objectApiName);
-  if (!apiName) {
+  const apiName = metadataObjectApiName(config && config.objectApiName);
+  if (!apiName || (config.formFactor !== undefined && typeof config.formFactor !== "string")) {
     return null;
   }
   return compactBody({
@@ -1174,9 +1522,9 @@ export const getRecordCreateDefaults = createFetchWireAdapter("/lightning/wire/g
   });
 });
 export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPicklistValues", (config) => {
-  const apiName = objectApiName(config && config.objectApiName);
+  const apiName = metadataObjectApiName(config && config.objectApiName);
   const fieldName = fieldApiName(config && config.fieldApiName);
-  if (!fieldName || !(config && config.recordTypeId) || (!apiName && !fieldName.includes("."))) {
+  if (typeof fieldName !== "string" || !fieldName || !metadataRecordTypeId(config && config.recordTypeId)) {
     return null;
   }
   return compactBody({
@@ -1186,8 +1534,8 @@ export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPick
   });
 });
 export const getPicklistValuesByRecordType = createFetchWireAdapter("/lightning/wire/getPicklistValuesByRecordType", (config) => {
-  const apiName = objectApiName(config && config.objectApiName);
-  if (!apiName || !(config && config.recordTypeId)) {
+  const apiName = metadataObjectApiName(config && config.objectApiName);
+  if (!apiName || !metadataRecordTypeId(config && config.recordTypeId)) {
     return null;
   }
   return {
@@ -1260,6 +1608,9 @@ function post(endpoint, body) {
     body: JSON.stringify(body || {})
   }).then((response) => response.json()).then((result) => {
     if (result && result.error) {
+      if (result.error.errorType === "fetchResponse") {
+        throw result.error;
+      }
       const err = new Error(result.error.message || "Lightning Data Service request failed");
       err.body = result.error;
       throw err;
@@ -1271,17 +1622,27 @@ export function createRecord(recordInput) {
   return post("/lightning/wire/createRecord", {
     apiName: recordInput && (recordInput.apiName || recordInput.objectApiName),
     fields: recordInput && recordInput.fields || {}
-  }).then((data) => notifyRecordUpdateAvailable(notificationItems(data)).then(() => data));
+  }).then((data) => { rememberRecord(data, true); return notifyLDSCache(notificationItems(data)).then(() => data); });
 }
-export function updateRecord(recordInput) {
+export function updateRecord(recordInput, clientOptions) {
   const recordId = recordInput && recordInput.fields && recordInput.fields.Id;
+  if (!validRecordId(recordId)) {
+    return Promise.reject(new Error("Invalid recordInput"));
+  }
   return post("/lightning/wire/updateRecord", {
-    fields: recordInput && recordInput.fields || {}
-  }).then((data) => notifyRecordUpdateAvailable(notificationItems(data, recordId)).then(() => data));
+    fields: recordInput.fields,
+    ifUnmodifiedSince: clientOptions && clientOptions.ifUnmodifiedSince
+  }).then((data) => { invalidateRecordReads(recordId); return notifyRecordUpdateAvailable(notificationItems(data, recordId)).then(() => data); });
 }
 export function deleteRecord(recordId) {
+  if (!validRecordId(recordId)) {
+    return Promise.reject(new Error('Invalid config for "deleteRecord"'));
+  }
   return post("/lightning/wire/deleteRecord", { recordId })
-    .then((data) => notifyRecordUpdateAvailable(notificationItems(data, recordId)).then(() => data));
+    .then((data) => { invalidateRecordReads(recordId); records.delete(recordId.slice(0, 15)); return notifyRecordUpdateAvailable(notificationItems(data, recordId)).then(() => undefined); });
+}
+function validRecordId(value) {
+  return typeof value === "string" && /^(?:[a-zA-Z0-9]{15}|[a-zA-Z0-9]{18})$/.test(value);
 }
 export async function __gladeRecordPickerSearch(config = {}) {
   return post("/lightning/wire/recordPickerSearch", config);
@@ -1290,24 +1651,20 @@ export function generateRecordInputForCreate(record, objectInfo) {
   const fields = recordFields(record, objectInfo, "createable");
   delete fields.Id;
   return {
-    apiName: record && (record.apiName || record.objectApiName),
+    apiName: record.apiName,
     fields
   };
 }
 export function generateRecordInputForUpdate(record, objectInfo) {
   const fields = recordFields(record, objectInfo, "updateable");
-  const id = record && (record.id || record.recordId || fieldValue(record.fields && record.fields.Id));
-  if (id !== undefined && id !== null) {
-    fields.Id = id;
-  }
-  return { fields };
+  fields.Id = record.id;
+  return { apiName: undefined, fields };
 }
 export function createRecordInputFilteredByEditedFields(recordInput, originalRecord) {
-  const sourceFields = recordInput && recordInput.fields || {};
-  const out = {};
+  const sourceFields = recordInput.fields;
+  const out = { Id: originalRecord.id };
   for (const [name, value] of Object.entries(sourceFields)) {
     if (name === "Id") {
-      out[name] = value;
       continue;
     }
     const original = originalRecord && originalRecord.fields && originalRecord.fields[name];
@@ -1315,21 +1672,39 @@ export function createRecordInputFilteredByEditedFields(recordInput, originalRec
       out[name] = value;
     }
   }
-  return Object.assign({}, recordInput || {}, { fields: out });
+  return { apiName: recordInput.apiName, fields: out };
 }
 export function getFieldValue(record, field) {
-  const name = typeof field === "string" ? field.split(".").pop() : field && field.fieldApiName;
-  const value = record && record.fields && record.fields[name];
-  return value ? value.value : undefined;
+  return recordFieldValue(record, field, "value");
 }
 export function getFieldDisplayValue(record, field) {
-  const name = typeof field === "string" ? field.split(".").pop() : field && field.fieldApiName;
-  const value = record && record.fields && record.fields[name];
-  return value ? value.displayValue : undefined;
+  return recordFieldValue(record, field, "displayValue");
+}
+function recordFieldValue(record, field, property) {
+  let names;
+  if (typeof field === "string") {
+    const dot = field.indexOf(".");
+    if (dot < 0) {
+      throw new TypeError("Value does not include an object API name.");
+    }
+    names = field.slice(dot + 1).split(".");
+  } else {
+    names = field && field.fieldApiName ? field.fieldApiName.split(".") : [undefined];
+  }
+  let value = record;
+  for (let index = 0; index < names.length; index++) {
+    if (value && value.fields) {
+      value = value.fields[names[index]];
+      if (value && Object.prototype.hasOwnProperty.call(value, "value")) {
+        value = value[index === names.length - 1 ? property : "value"];
+      }
+    }
+  }
+  return value;
 }
 function recordFields(record, objectInfo, accessProperty) {
   const fields = {};
-  const source = record && record.fields || {};
+  const source = record.fields;
   for (const [name, wrapped] of Object.entries(source)) {
     if (name === "Id" && accessProperty === "createable") {
       continue;
@@ -1337,8 +1712,8 @@ function recordFields(record, objectInfo, accessProperty) {
     if (!fieldAllows(objectInfo, name, accessProperty)) {
       continue;
     }
-    const value = fieldValue(wrapped);
-    if (!recordInputValueSupported(value)) {
+    const value = wrapped.value;
+    if (value === undefined || !recordInputValueSupported(value)) {
       continue;
     }
     fields[name] = value;
@@ -1346,12 +1721,11 @@ function recordFields(record, objectInfo, accessProperty) {
   return fields;
 }
 function fieldAllows(objectInfo, name, accessProperty) {
-  const fields = objectInfo && objectInfo.fields || {};
-  const field = fields[name];
-  if (!field) {
+  if (!objectInfo) {
     return true;
   }
-  return field[accessProperty] !== false;
+  const field = (objectInfo.fields || {})[name];
+  return !!field && field[accessProperty] === true;
 }
 function fieldValue(value) {
   if (value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "value")) {
@@ -1383,30 +1757,23 @@ function collectId(ids, value) {
 }
 
 func UIListAPIModuleJS() string {
-	return `export const getListUi = class GetListUiUnsupportedAdapter {
-  constructor(dataCallback) {
-    this.dataCallback = dataCallback;
-  }
-  connect() {}
-  disconnect() {}
-  update() {
-    this.dataCallback({
-      data: undefined,
-      error: {
-        code: "GLADELWC050",
-        message: "GLADELWC050 getListUi unsupported locally; use getRelatedListRecords or local SOQL-backed Apex"
-      }
-    });
-  }
-};
+	return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+export const getListUi = createFetchWireAdapter("/lightning/wire/getListUi", (config = {}) => {
+  if (typeof config.objectApiName !== "string" ||
+      (config.listViewApiName != null && typeof config.listViewApiName !== "string")) return null;
+  return Object.fromEntries(Object.entries(config).filter(([, value]) => value !== undefined));
+});
 `
 }
 
 func UILayoutAPIModuleJS() string {
-	return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+	return objectMetadataConfigJS() + `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
 export const getLayout = createFetchWireAdapter("/lightning/wire/getLayout", (config) => {
-  const apiName = objectApiName(config && config.objectApiName);
-  if (!apiName) {
+  const apiName = metadataObjectApiName(config && config.objectApiName);
+  if (!apiName || !["Full", "Compact"].includes(config.layoutType) || !["Create", "Edit", "View"].includes(config.mode)) {
+    return null;
+  }
+  if (config.recordTypeId != null && !metadataRecordTypeId(config.recordTypeId)) {
     return null;
   }
   return compactBody({
@@ -1436,19 +1803,19 @@ function compactBody(body) {
 }
 
 func UIObjectInfoAPIModuleJS() string {
-	return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+	return objectMetadataConfigJS() + `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
 export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => {
-  const apiName = objectApiName(config && config.objectApiName);
+  const apiName = metadataObjectApiName(config && config.objectApiName);
   return apiName ? { objectApiName: apiName } : null;
 });
 export const getObjectInfos = createFetchWireAdapter("/lightning/wire/getObjectInfos", (config) => {
-  const objectApiNames = (config && config.objectApiNames || []).map(objectApiName).filter(Boolean);
-  return objectApiNames.length ? { objectApiNames } : null;
+  const objectApiNames = metadataObjectApiNames(config && config.objectApiNames);
+  return objectApiNames ? { objectApiNames } : null;
 });
 export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPicklistValues", (config) => {
-  const apiName = objectApiName(config && config.objectApiName);
+  const apiName = metadataObjectApiName(config && config.objectApiName);
   const fieldName = fieldApiName(config && config.fieldApiName);
-  if (!fieldName || !(config && config.recordTypeId) || (!apiName && !fieldName.includes("."))) {
+  if (typeof fieldName !== "string" || !fieldName || !metadataRecordTypeId(config && config.recordTypeId)) {
     return null;
   }
   return compactBody({
@@ -1458,8 +1825,8 @@ export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPick
   });
 });
 export const getPicklistValuesByRecordType = createFetchWireAdapter("/lightning/wire/getPicklistValuesByRecordType", (config) => {
-  const apiName = objectApiName(config && config.objectApiName);
-  if (!apiName || !(config && config.recordTypeId)) {
+  const apiName = metadataObjectApiName(config && config.objectApiName);
+  if (!apiName || !metadataRecordTypeId(config && config.recordTypeId)) {
     return null;
   }
   return {
@@ -1494,10 +1861,31 @@ function compactBody(body) {
 	`
 }
 
+// These validators belong to the UI metadata adapters. Record and relationship
+// adapters retain their own configuration rules.
+func objectMetadataConfigJS() string {
+	return `function metadataObjectApiName(value) {
+  const name = objectApiName(value);
+  return typeof name === "string" && name.length ? name : undefined;
+}
+function metadataObjectApiNames(value) {
+  const values = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+  const names = values.map(metadataObjectApiName);
+  if (!names.length || names.some((name) => name === undefined)) {
+    return null;
+  }
+  return [...new Set(names)];
+}
+function metadataRecordTypeId(value) {
+  return typeof value === "string" && /^012[A-Za-z0-9]{12}(?:[A-Za-z0-9]{3})?$/.test(value);
+}
+`
+}
+
 func UIRelatedListAPIModuleJS() string {
 	return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
 export const getRelatedListRecords = createFetchWireAdapter("/lightning/wire/getRelatedListRecords", (config) => {
-  if (!(config && config.parentRecordId) || !config.relatedListId) {
+  if (!recordConfig(config) || !config.relatedListId) {
     return null;
   }
   return compactBody({
@@ -1507,9 +1895,39 @@ export const getRelatedListRecords = createFetchWireAdapter("/lightning/wire/get
     optionalFields: normalizeFields(config && config.optionalFields),
     sortBy: normalizeFields(config && config.sortBy),
     pageSize: config && config.pageSize,
-    pageToken: config && config.pageToken
+    pageToken: config && config.pageToken,
+    where: config && config.where
   });
 });
+export const getRelatedListCount = createFetchWireAdapter("/lightning/wire/getRelatedListCount", (config) => {
+  if (!recordConfig(config) || !config.relatedListId) return null;
+  return compactBody({
+    parentRecordId: config.parentRecordId,
+    relatedListId: config.relatedListId,
+    maxCount: typeof config.maxCount === "number" ? config.maxCount : undefined
+  });
+});
+export const getRelatedListInfo = createFetchWireAdapter("/lightning/wire/getRelatedListInfo", (config) => {
+  if (!objectConfig(config) || !config.relatedListId) return null;
+  return compactBody({ ...config, fields: normalizeFields(config.fields), optionalFields: normalizeFields(config.optionalFields) });
+});
+export const getRelatedListsInfo = createFetchWireAdapter("/lightning/wire/getRelatedListsInfo", (config) => {
+  return objectConfig(config) ? compactBody(config) : null;
+});
+export const getRelatedListRecordsBatch = createFetchWireAdapter("/lightning/wire/getRelatedListRecordsBatch", (config) => {
+  if (!recordConfig(config) || !Array.isArray(config.relatedListParameters)) return null;
+  return compactBody(config);
+});
+export const getRelatedListInfoBatch = createFetchWireAdapter("/lightning/wire/getRelatedListInfoBatch", (config) => {
+  if (!objectConfig(config) || !Array.isArray(config.relatedListNames)) return null;
+  return compactBody(config);
+});
+function recordConfig(config) {
+  return config && typeof config.parentRecordId === "string" && /^[a-zA-Z0-9]{15}(?:[a-zA-Z0-9]{3})?$/.test(config.parentRecordId);
+}
+function objectConfig(config) {
+  return config && typeof config.parentObjectApiName === "string" && config.parentObjectApiName.length > 0;
+}
 function normalizeFields(fields) {
   return (fields || []).map((field) => {
     if (field && typeof field === "object") {
@@ -1536,7 +1954,14 @@ export { recordToast };
 export const SHOW_TOAST_EVENT_NAME = "lightning__showtoast";
 export class ShowToastEvent extends CustomEvent {
   constructor(detail = {}) {
-    super("lightning__showtoast", { bubbles: true, composed: true, cancelable: true, detail });
+    // Snapshot before super so a throwing option getter throws synchronously.
+    // Shell listeners consume the captured public envelope without a private
+    // channel that changes its delivered message or variant.
+    const options = { ...detail };
+    super("lightning__showtoast", {
+      bubbles: true, composed: true, cancelable: true,
+      detail: { label: options.title ?? "" },
+    });
   }
 }
 export default ShowToastEvent;
@@ -1544,38 +1969,90 @@ export default ShowToastEvent;
 }
 
 func PlatformResourceLoaderModuleJS() string {
-	return `function appendOnce(tag, attr, url) {
-  if (!url) {
-    return Promise.reject(new Error("resource URL is required"));
+	return `const resourceLoads = new WeakMap();
+const resourceScripts = new Set();
+let scriptErrorsBound = false;
+function bindResourceScriptErrors() {
+  if (scriptErrorsBound || typeof window === "undefined") return;
+  scriptErrorsBound = true;
+  window.addEventListener("error", event => {
+    // Only execution errors from scripts loaded through this API cross this
+    // boundary. Ordinary application errors and failed DOM loads are intact.
+    if (!resourceScripts.has(event.filename)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    console.error("Script error.", null);
+  }, true);
+}
+function findTrackedLoad(tag, url) {
+  // A matching element from another loader is not evidence of completion.
+  for (const el of document.querySelectorAll(tag)) {
+    const load = resourceLoads.get(el);
+    if (load && load.url === url) {
+      // Native calls share only an in-flight promise. Once settled, a new
+      // promise retains the result without starting another resource load.
+      if (load.state === "fulfilled") return Promise.resolve();
+      if (load.state === "rejected") return Promise.reject(load.error);
+      return load.promise;
+    }
   }
-  const selector = tag + "[" + attr + "=\"" + url + "\"]";
-  if (document.querySelector(selector)) {
-    return Promise.resolve();
+}
+function appendOnce(tag, attr, url) {
+  // Resolve relative, empty and converted inputs before assigning the DOM
+  // property. In particular, an empty link href otherwise never settles.
+  url = new URL(String(url), document.baseURI).href;
+  const existing = findTrackedLoad(tag, url);
+  if (existing) {
+    return Promise.resolve(existing);
   }
-  return new Promise((resolve, reject) => {
-    const el = document.createElement(tag);
+  const load = { url, state: "pending", promise: null, error: null };
+  const el = document.createElement(tag);
+  if (tag === "script") {
+    bindResourceScriptErrors();
+    resourceScripts.add(url);
+  }
+  load.promise = new Promise((resolve, reject) => {
+    if (tag === "link") el.rel = "stylesheet";
     el[attr] = url;
-    el.onload = () => resolve();
-    el.onerror = () => reject(new Error("failed to load resource: " + url));
+    el.onload = () => {
+      if (load.state !== "pending") return;
+      load.state = "fulfilled";
+      resolve();
+    };
+    el.onerror = () => {
+      if (load.state !== "pending") return;
+      load.state = "rejected";
+      load.error = new Error("lightning/platformResourceLoader encountered an error loading '" + url + "'.");
+      if (tag === "script") {
+        // Captured sources have inner scheme http and path /not-found.
+        // Map their origin to the local document without losing that path.
+        const unavailableSource = new URL("/not-found", document.baseURI);
+        unavailableSource.protocol = "http:";
+        // Failed native script requests reach an unavailable blob before
+        // rejecting. Let the browser report that failure, without replacing
+        // or fabricating its HTTP diagnostic. Styles use their original URL.
+        // A consumed script element does not start a second request when its
+        // src changes. The captured blob request needs a fresh element.
+        const unavailableScript = document.createElement("script");
+        unavailableScript.src = "blob:" + unavailableSource.href;
+        document.head.appendChild(unavailableScript);
+      }
+      reject(load.error);
+    };
     document.head.appendChild(el);
   });
+  // Retain settled failures as well as successes while the element exists.
+  resourceLoads.set(el, load);
+  return load.promise;
 }
 export function loadScript(_self, url) {
-  return appendOnce("script", "src", url);
+  // The native script URL conversion throws synchronously for null/undefined;
+  // the built-in conversion also preserves number and object string inputs.
+  const converted = String.prototype.split.call(url, undefined)[0];
+  return appendOnce("script", "src", converted);
 }
 export function loadStyle(_self, url) {
-  const selector = "link[href=\"" + url + "\"]";
-  if (document.querySelector(selector)) {
-    return Promise.resolve();
-  }
-  return new Promise((resolve, reject) => {
-    const el = document.createElement("link");
-    el.rel = "stylesheet";
-    el.href = url;
-    el.onload = () => resolve();
-    el.onerror = () => reject(new Error("failed to load resource: " + url));
-    document.head.appendChild(el);
-  });
+  return appendOnce("link", "href", url);
 }
 `
 }

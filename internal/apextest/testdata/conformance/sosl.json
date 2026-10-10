@@ -1,0 +1,2281 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "source": "Owned SOSL/Search observations and inline controls at API 62.0 and 67.0. Nonempty RETURNING controls Q001-Q048 use an owned project that seeds four Account records.",
+  "captureLimitations": {
+    "R100": "Dynamic RETURNING filter with an undeclared bind: no transport row; inline compiler diagnostic captured instead.",
+    "R101": "Dynamic RETURNING Name filter with a Boolean bind: no transport row; inline compiler diagnostic captured instead.",
+    "R154": "WITH NETWORK single-ID runtime unavailable to the transport; native inline compile acceptance only.",
+    "R155": "WITH NETWORK IN runtime unavailable to the transport; native inline compile acceptance only.",
+    "R210": "SearchResults.get(null) runtime unavailable to the transport; native method/null-argument type acceptance only."
+  },
+  "absorbedRows": {
+    "knowledge-articles": [
+      "R166",
+      "R167",
+      "R168",
+      "R169",
+      "R170",
+      "R171",
+      "R172",
+      "R173",
+      "R174",
+      "R175",
+      "R176",
+      "R177",
+      "R178",
+      "R179",
+      "R180",
+      "R181",
+      "R182",
+      "R183",
+      "C034",
+      "C035",
+      "C036",
+      "C037"
+    ]
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R002",
+      "code": "List<List<SObject>> x=Search.query('FIND {A35ORACLEQXV20261005} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R003",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005*} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R004",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracl?} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R005",
+      "code": "List<List<SObject>> x=Search.query('FIND {*a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R006",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35*oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R007",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35?oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R008",
+      "code": "List<List<SObject>> x=Search.query('FIND {\"a35 oracle\"} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R009",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35 OR oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R010",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35 AND oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R011",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35 AND NOT oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R012",
+      "code": "List<List<SObject>> x=Search.query('FIND {(a35 OR oracle) AND probe} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R013",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35 & oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|line 1:10 mismatched character '&' expecting '}'",
+      "compile": false
+    },
+    {
+      "id": "R014",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35 | oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|line 1:10 mismatched character '|' expecting '}'",
+      "compile": false
+    },
+    {
+      "id": "R015",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35 + oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|line 1:10 mismatched character '+' expecting '}'",
+      "compile": false
+    },
+    {
+      "id": "R016",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35 -oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|line 1:10 mismatched character '-' expecting '}'",
+      "compile": false
+    },
+    {
+      "id": "R017",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\*oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R018",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\?oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R019",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\&oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R020",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\|oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R021",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\(oracle\\\\)} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R022",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\{oracle\\\\}} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R023",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\[oracle\\\\]} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R024",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\^oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R025",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\~oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R026",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\:oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R027",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\!oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R028",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\\"oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R029",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\\\\\oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R030",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35\\\\\\'oracle} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R031",
+      "code": "List<List<SObject>> x=Search.query('FIND {café} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R032",
+      "code": "List<List<SObject>> x=Search.query('FIND {日本語} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R033",
+      "code": "List<List<SObject>> x=Search.query('FIND {a} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: a",
+      "compile": false
+    },
+    {
+      "id": "R034",
+      "code": "List<List<SObject>> x=Search.query('FIND {} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: ",
+      "compile": false
+    },
+    {
+      "id": "R035",
+      "code": "List<List<SObject>> x=Search.query('FIND { } RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: ",
+      "compile": false
+    },
+    {
+      "id": "R036",
+      "code": "List<List<SObject>> x=Search.query('FIND {*} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: *",
+      "compile": false
+    },
+    {
+      "id": "R037",
+      "code": "List<List<SObject>> x=Search.query('FIND {?} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: ?",
+      "compile": false
+    },
+    {
+      "id": "R038",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35 AND} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R039",
+      "code": "List<List<SObject>> x=Search.query('FIND {(a35} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R040",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35)} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R041",
+      "code": "List<List<SObject>> x=Search.query('FIND \\'a35oracleqxv20261005\\' RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R042",
+      "code": "List<List<SObject>> x=Search.query('FIND \\'\\' RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: ",
+      "compile": false
+    },
+    {
+      "id": "R043",
+      "code": "List<List<SObject>> x=Search.query('FIND \\' \\' RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: ",
+      "compile": false
+    },
+    {
+      "id": "R044",
+      "code": "List<List<SObject>> x=Search.query('FIND \\'a35\\\\\\'oracle\\' RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R045",
+      "code": "List<List<SObject>> x=Search.query('FIND \\'a35\\\\\\\\oracle\\' RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R046",
+      "code": "List<List<SObject>> x=Search.query('FIND \\'\"a35 oracle\"\\' RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R047",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} IN ALL FIELDS RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R048",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} IN NAME FIELDS RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R049",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} IN EMAIL FIELDS RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R050",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} IN PHONE FIELDS RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R051",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} IN SIDEBAR FIELDS RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R052",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} IN BOGUS FIELDS RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|Invalid IN fields group: BOGUS",
+      "compile": false
+    },
+    {
+      "id": "R053",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} IN ALL RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: RETURNING",
+      "compile": false
+    },
+    {
+      "id": "R054",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} IN NAME RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: RETURNING",
+      "compile": false
+    },
+    {
+      "id": "R055",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} IN FIELDS RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|expecting a field or entity name, found 'FIELDS'",
+      "compile": false
+    },
+    {
+      "id": "R056",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} IN  RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|expecting a field or entity name, found 'RETURNING'",
+      "compile": false
+    },
+    {
+      "id": "R057",
+      "code": "String term=null; List<List<SObject>> x=[FIND :term IN ALL FIELDS RETURNING Account(Id WHERE Id=null)]; r=x[0].size();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false
+    },
+    {
+      "id": "R058",
+      "code": "String term=''; List<List<SObject>> x=[FIND :term IN ALL FIELDS RETURNING Account(Id WHERE Id=null)]; r=x[0].size();",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: ",
+      "compile": false
+    },
+    {
+      "id": "R059",
+      "code": "String term=' '; List<List<SObject>> x=[FIND :term IN ALL FIELDS RETURNING Account(Id WHERE Id=null)]; r=x[0].size();",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: ",
+      "compile": false
+    },
+    {
+      "id": "R060",
+      "code": "String term='a35oracleqxv20261005'; List<List<SObject>> x=[FIND :term IN ALL FIELDS RETURNING Account(Id WHERE Id=null)]; r=x[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R061",
+      "code": "String term=String.valueOf(12); List<List<SObject>> x=[FIND :term IN ALL FIELDS RETURNING Account(Id WHERE Id=null)]; r=x[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R062",
+      "code": "String term=String.valueOf(true); List<List<SObject>> x=[FIND :term IN ALL FIELDS RETURNING Account(Id WHERE Id=null)]; r=x[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R063",
+      "code": "Object term=null; String text='FIND {'+String.valueOf(term)+'} RETURNING Account(Id WHERE Id=null)'; r=Search.query(text)[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R064",
+      "code": "Object term=12; String text='FIND {'+String.valueOf(term)+'} RETURNING Account(Id WHERE Id=null)'; r=Search.query(text)[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R065",
+      "code": "Object term=12L; String text='FIND {'+String.valueOf(term)+'} RETURNING Account(Id WHERE Id=null)'; r=Search.query(text)[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R066",
+      "code": "Object term=true; String text='FIND {'+String.valueOf(term)+'} RETURNING Account(Id WHERE Id=null)'; r=Search.query(text)[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R067",
+      "code": "Object term=Date.newInstance(2026,10,5); String text='FIND {'+String.valueOf(term)+'} RETURNING Account(Id WHERE Id=null)'; r=Search.query(text)[0].size();",
+      "expected": "EXC|System.QueryException|line 1:10 mismatched character '-' expecting '}'",
+      "compile": false
+    },
+    {
+      "id": "R068",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account'); r=x.size()==1 && x[0]!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R069",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account()'); r=x.size()==1 && x[0]!=null;",
+      "expected": "EXC|System.QueryException|unexpected token: ')'",
+      "compile": false
+    },
+    {
+      "id": "R070",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R071",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R072",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Contact(Id,LastName WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R073",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Lead(Id,Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R074",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null),Contact(Id WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0|0",
+      "compile": false
+    },
+    {
+      "id": "R075",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Contact(Id WHERE Id=null),Account(Id WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0|0",
+      "compile": false
+    },
+    {
+      "id": "R076",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null),Contact(Id WHERE Id=null),Lead(Id WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0|0|0",
+      "compile": false
+    },
+    {
+      "id": "R077",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name,Phone,AnnualRevenue WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R078",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Contact(Id,LastName,Account.Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R079",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Contact(Id,AccountId,Account.Name WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R080",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Id WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|duplicate field selected: Id",
+      "compile": false
+    },
+    {
+      "id": "R081",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,NoSuchA35Field__c WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|No such column 'NoSuchA35Field__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false
+    },
+    {
+      "id": "R082",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING NoSuchA35Object__c(Id)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|sObject type 'nosucha35object__c' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false
+    },
+    {
+      "id": "R083",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING User(Id WHERE Id=null)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R084",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (Name=\\'Alpha\\'))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R085",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (Name LIKE \\'A%\\'))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R086",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (Name!=null))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R087",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (Phone=null))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R088",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (AnnualRevenue=0))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R089",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (AnnualRevenue>12.5))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R090",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (NumberOfEmployees>=1))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R091",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (Name IN (\\'Alpha\\',\\'Beta\\')))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R092",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (NOT (Name=\\'Alpha\\')))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R093",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND ((Name=\\'Alpha\\' OR Name=\\'Beta\\')))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R094",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (Name=\\'Bob\\\\\\'s Shop\\'))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R095",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (Name=\\'C:\\\\\\\\Trail\\'))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R096",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (Id=:sid))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R097",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (Name=:name))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R098",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (AnnualRevenue=:amount))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R099",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (Id IN :ids))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R100",
+      "code": "r=[FIND 'a35oracleqxv20261005' RETURNING Account(Id WHERE Id=null AND Id=:unknownA35Bind)][0].size();",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: unknownA35Bind",
+      "compile": false
+    },
+    {
+      "id": "R101",
+      "code": "Boolean wrong=true; r=[FIND 'a35oracleqxv20261005' RETURNING Account(Id WHERE Id=null AND Name=:wrong)][0].size();",
+      "expected": "COMPILE_ERROR\tline 6: Invalid bind expression type of Boolean for column of type String",
+      "compile": false
+    },
+    {
+      "id": "R102",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (AnnualRevenue=\\'abc\\'))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|value of filter criterion for field 'AnnualRevenue' must be of type double and should not be enclosed in quotes",
+      "compile": false
+    },
+    {
+      "id": "R103",
+      "code": "Id sid=null; String name='Alpha'; Decimal amount=12.5; Set<Id> ids=new Set<Id>(); Boolean wrong=true;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null AND (Name===null))'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: '==='",
+      "compile": false
+    },
+    {
+      "id": "R104",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null ORDER BY Name)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R105",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null ORDER BY Name ASC)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R106",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null ORDER BY Name DESC)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R107",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null ORDER BY Name ASC NULLS FIRST)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R108",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null ORDER BY Name DESC NULLS LAST)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R109",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null ORDER BY AnnualRevenue DESC,Name ASC)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R110",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null ORDER BY Name DESC NULLS FIRST,Id ASC)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R111",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null ORDER BY Id)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R112",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null ORDER BY NoSuchA35Field__c)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|No such column 'NoSuchA35Field__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false
+    },
+    {
+      "id": "R113",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null ORDER BY Name NULLS MIDDLE)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: 'MIDDLE'",
+      "compile": false
+    },
+    {
+      "id": "R114",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null LIMIT 0)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R115",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null LIMIT 1)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R116",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null LIMIT 2000)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R117",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null LIMIT 2001)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|Maximum entity limit is 2000",
+      "compile": false
+    },
+    {
+      "id": "R118",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null LIMIT -1)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|Limit must be a non-negative value",
+      "compile": false
+    },
+    {
+      "id": "R119",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null LIMIT 1.5)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|expecting a colon, found '1.5'",
+      "compile": false
+    },
+    {
+      "id": "R120",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null OFFSET 0)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R121",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null OFFSET 1)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R122",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null OFFSET 2000)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R123",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null OFFSET 2001)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|SOSL offset should be between 0 and 2000",
+      "compile": false
+    },
+    {
+      "id": "R124",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null OFFSET -1)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|SOSL offset should be between 0 and 2000",
+      "compile": false
+    },
+    {
+      "id": "R125",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null LIMIT 1 OFFSET 0)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R126",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null LIMIT 1 OFFSET 1)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R127",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null OFFSET 0 LIMIT 1)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|expecting a right parentheses, found 'LIMIT'",
+      "compile": false
+    },
+    {
+      "id": "R128",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null ORDER BY Name LIMIT 2 OFFSET 1)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R129",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null LIMIT :lim)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R130",
+      "code": "Integer lim=1; Integer off=0;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null OFFSET :off)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R131",
+      "code": "Integer n=1;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) LIMIT 0'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R132",
+      "code": "Integer n=1;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) LIMIT 1'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R133",
+      "code": "Integer n=1;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) LIMIT 2000'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R134",
+      "code": "Integer n=1;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) LIMIT 2001'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|maximum limit of search results is 2000",
+      "compile": false
+    },
+    {
+      "id": "R135",
+      "code": "Integer n=1;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) LIMIT -1'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|expecting a colon, found '-'",
+      "compile": false
+    },
+    {
+      "id": "R136",
+      "code": "Integer n=1;List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) LIMIT :n'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R137",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SPELL_CORRECTION=true'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R138",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SPELL_CORRECTION=false'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R139",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SPELL_CORRECTION=null'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|Invalid WITH SPELL_CORRECTION clause",
+      "compile": false
+    },
+    {
+      "id": "R140",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SPELL_CORRECTION=1'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: '1'",
+      "compile": false
+    },
+    {
+      "id": "R141",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH HIGHLIGHT'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R142",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SNIPPET'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R143",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SNIPPET(TARGET_LENGTH=50)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R144",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SNIPPET(TARGET_LENGTH=0)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R145",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SNIPPET(TARGET_LENGTH=-1)'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|expecting a number, found '-'",
+      "compile": false
+    },
+    {
+      "id": "R146",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH METADATA=LABELS'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: 'LABELS'",
+      "compile": false
+    },
+    {
+      "id": "R147",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH METADATA=BOGUS'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: 'BOGUS'",
+      "compile": false
+    },
+    {
+      "id": "R148",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH USER_MODE'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R150",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SECURITY_ENFORCED'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|Invalid WITH SECURITY_ENFORCED clause",
+      "compile": false
+    },
+    {
+      "id": "R151",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH DIVISION=0'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: '0'",
+      "compile": false
+    },
+    {
+      "id": "R152",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH DIVISION=\\'Global\\''); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|divisions are not enabled",
+      "compile": false
+    },
+    {
+      "id": "R153",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH DIVISION=null'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|Invalid WITH DIVISION clause",
+      "compile": false
+    },
+    {
+      "id": "R154",
+      "code": "if(false){List<List<SObject>> x=[FIND 'a35oracleqxv20261005' RETURNING Account(Id WHERE Id=null) WITH NETWORK='0DB000000000001'];} r='COMPILE_ACCEPTED';",
+      "expected": "COMPILE_ACCEPTED",
+      "compile": false
+    },
+    {
+      "id": "R155",
+      "code": "if(false){List<List<SObject>> x=[FIND 'a35oracleqxv20261005' RETURNING Account(Id WHERE Id=null) WITH NETWORK IN ('0DB000000000001')];} r='COMPILE_ACCEPTED';",
+      "expected": "COMPILE_ACCEPTED",
+      "compile": false
+    },
+    {
+      "id": "R156",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH NETWORK=null'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|NULL cannot be used for WITH NETWORK clause",
+      "compile": false
+    },
+    {
+      "id": "R157",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH PricebookId=\\'01s000000000001\\''); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|PricebookId filter can only be applied to 'Product2' search",
+      "compile": false
+    },
+    {
+      "id": "R158",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH DATA CATEGORY A35Missing__c AT A35Missing__c'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|The category group name is not valid for the entities you are searching: A35Missing",
+      "compile": false
+    },
+    {
+      "id": "R159",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH DATA CATEGORY A35Missing__c ABOVE A35Missing__c'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|The category group name is not valid for the entities you are searching: A35Missing",
+      "compile": false
+    },
+    {
+      "id": "R160",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH DATA CATEGORY A35Missing__c BELOW A35Missing__c'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|The category group name is not valid for the entities you are searching: A35Missing",
+      "compile": false
+    },
+    {
+      "id": "R161",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH DATA CATEGORY A35Missing__c ABOVE_OR_BELOW A35Missing__c'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SearchException|The category group name is not valid for the entities you are searching: A35Missing",
+      "compile": false
+    },
+    {
+      "id": "R162",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH BOGUS'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|Invalid WITH BOGUS clause",
+      "compile": false
+    },
+    {
+      "id": "R163",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SPELL_CORRECTION=false WITH SPELL_CORRECTION=true'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|Duplicate WITH SPELL_CORRECTION clause",
+      "compile": false
+    },
+    {
+      "id": "R164",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH HIGHLIGHT WITH SNIPPET'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R165",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SNIPPET WITH SPELL_CORRECTION=false'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R166",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|sObject type 'knowledgearticleversion' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false,
+      "reason": "Captured unavailable KnowledgeArticleVersion rejection only; hosted UPDATE acceptance/effects remain excluded.",
+      "attachedOrg": true
+    },
+    {
+      "id": "R167",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT'); r=x!=null;",
+      "expected": "EXC|System.QueryException|sObject type 'knowledgearticleversion' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false,
+      "reason": "Captured unavailable KnowledgeArticleVersion rejection only; hosted UPDATE acceptance/effects remain excluded.",
+      "attachedOrg": true
+    },
+    {
+      "id": "R168",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE TRACKING'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|sObject type 'knowledgearticleversion' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false,
+      "reason": "Captured unavailable KnowledgeArticleVersion rejection only; hosted UPDATE acceptance/effects remain excluded.",
+      "attachedOrg": true
+    },
+    {
+      "id": "R169",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE TRACKING'); r=x!=null;",
+      "expected": "EXC|System.QueryException|sObject type 'knowledgearticleversion' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false,
+      "reason": "Captured unavailable KnowledgeArticleVersion rejection only; hosted UPDATE acceptance/effects remain excluded.",
+      "attachedOrg": true
+    },
+    {
+      "id": "R170",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT,TRACKING'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|sObject type 'knowledgearticleversion' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false,
+      "reason": "Captured unavailable KnowledgeArticleVersion rejection only; hosted UPDATE acceptance/effects remain excluded.",
+      "attachedOrg": true
+    },
+    {
+      "id": "R171",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT,TRACKING'); r=x!=null;",
+      "expected": "EXC|System.QueryException|sObject type 'knowledgearticleversion' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false,
+      "reason": "Captured unavailable KnowledgeArticleVersion rejection only; hosted UPDATE acceptance/effects remain excluded.",
+      "attachedOrg": true
+    },
+    {
+      "id": "R172",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE TRACKING,VIEWSTAT'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|sObject type 'knowledgearticleversion' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false,
+      "reason": "Captured unavailable KnowledgeArticleVersion rejection only; hosted UPDATE acceptance/effects remain excluded.",
+      "attachedOrg": true
+    },
+    {
+      "id": "R173",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE TRACKING,VIEWSTAT'); r=x!=null;",
+      "expected": "EXC|System.QueryException|sObject type 'knowledgearticleversion' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false,
+      "reason": "Captured unavailable KnowledgeArticleVersion rejection only; hosted UPDATE acceptance/effects remain excluded.",
+      "attachedOrg": true
+    },
+    {
+      "id": "R174",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT TRACKING'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: TRACKING",
+      "compile": false
+    },
+    {
+      "id": "R175",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT TRACKING'); r=x!=null;",
+      "expected": "EXC|System.QueryException|unexpected token: TRACKING",
+      "compile": false
+    },
+    {
+      "id": "R176",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE BOGUS'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|The update option is invalid.",
+      "compile": false
+    },
+    {
+      "id": "R177",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE BOGUS'); r=x!=null;",
+      "expected": "EXC|System.QueryException|The update option is invalid.",
+      "compile": false
+    },
+    {
+      "id": "R178",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT UPDATE VIEWSTAT'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: UPDATE",
+      "compile": false
+    },
+    {
+      "id": "R179",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT UPDATE VIEWSTAT'); r=x!=null;",
+      "expected": "EXC|System.QueryException|unexpected token: UPDATE",
+      "compile": false
+    },
+    {
+      "id": "R180",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT trailing'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: trailing",
+      "compile": false
+    },
+    {
+      "id": "R181",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT trailing'); r=x!=null;",
+      "expected": "EXC|System.QueryException|unexpected token: trailing",
+      "compile": false
+    },
+    {
+      "id": "R182",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT LIMIT 1'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: LIMIT",
+      "compile": false
+    },
+    {
+      "id": "R183",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus=\\'Online\\' AND Language=\\'en_US\\' AND Id=null) UPDATE VIEWSTAT LIMIT 1'); r=x!=null;",
+      "expected": "EXC|System.QueryException|unexpected token: LIMIT",
+      "compile": false
+    },
+    {
+      "id": "R184",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) UPDATE VIEWSTAT'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|Only KnowledgeArticle and KnowledgeArticleVersion support UPDATE VIEWSTAT.",
+      "compile": false
+    },
+    {
+      "id": "R185",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) UPDATE TRACKING'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|Only KnowledgeArticle and KnowledgeArticleVersion support UPDATE TRACKING.",
+      "compile": false
+    },
+    {
+      "id": "R186",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) UPDATE VIEWSTAT,TRACKING'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.QueryException|Only KnowledgeArticle and KnowledgeArticleVersion support UPDATE VIEWSTAT.",
+      "compile": false
+    },
+    {
+      "id": "R187",
+      "code": "String text=null; r=Search.query(text)!=null;",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R188",
+      "code": "String text=''; r=Search.query(text)!=null;",
+      "expected": "EXC|System.QueryException|Entities should be explictly specified in SOSL call in Apex",
+      "compile": false
+    },
+    {
+      "id": "R189",
+      "code": "String text=' '; r=Search.query(text)!=null;",
+      "expected": "EXC|System.QueryException|Entities should be explictly specified in SOSL call in Apex",
+      "compile": false
+    },
+    {
+      "id": "R190",
+      "code": "String text='FIND'; r=Search.query(text)!=null;",
+      "expected": "EXC|System.QueryException|expecting a string literal, found '<EOF>'",
+      "compile": false
+    },
+    {
+      "id": "R191",
+      "code": "String text='SELECT Id FROM Account'; r=Search.query(text)!=null;",
+      "expected": "EXC|System.QueryException|unexpected token: SELECT",
+      "compile": false
+    },
+    {
+      "id": "R192",
+      "code": "String text='FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'; r=Search.query(text)!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R193",
+      "code": "r=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)',AccessLevel.USER_MODE)!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R195",
+      "code": "r=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)',null)!=null;",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R196",
+      "code": "String text=null; r=Search.find(text)!=null;",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R197",
+      "code": "String text=''; r=Search.find(text)!=null;",
+      "expected": "EXC|System.QueryException|Entities should be explictly specified in SOSL call in Apex",
+      "compile": false
+    },
+    {
+      "id": "R198",
+      "code": "String text=' '; r=Search.find(text)!=null;",
+      "expected": "EXC|System.QueryException|Entities should be explictly specified in SOSL call in Apex",
+      "compile": false
+    },
+    {
+      "id": "R199",
+      "code": "String text='FIND'; r=Search.find(text)!=null;",
+      "expected": "EXC|System.QueryException|expecting a string literal, found '<EOF>'",
+      "compile": false
+    },
+    {
+      "id": "R200",
+      "code": "String text='SELECT Id FROM Account'; r=Search.find(text)!=null;",
+      "expected": "EXC|System.QueryException|unexpected token: SELECT",
+      "compile": false
+    },
+    {
+      "id": "R201",
+      "code": "String text='FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'; r=Search.find(text)!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R202",
+      "code": "r=Search.find('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)',AccessLevel.USER_MODE)!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R204",
+      "code": "r=Search.find('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)',null)!=null;",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R205",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'); List<Search.SearchResult> rows=x.get('Account'); r=rows==null?'null':String.valueOf(rows.size());",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R206",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'); List<Search.SearchResult> rows=x.get('account'); r=rows==null?'null':String.valueOf(rows.size());",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "R207",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'); List<Search.SearchResult> rows=x.get('Contact'); r=rows==null?'null':String.valueOf(rows.size());",
+      "expected": "EXC|System.NoDataFoundException|You are trying to retrieve a SObject type that was not part of the search query [Contact]",
+      "compile": false
+    },
+    {
+      "id": "R208",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'); List<Search.SearchResult> rows=x.get('NoSuchA35Object__c'); r=rows==null?'null':String.valueOf(rows.size());",
+      "expected": "EXC|System.NoDataFoundException|You are trying to retrieve a SObject type that was not part of the search query [NoSuchA35Object__c]",
+      "compile": false
+    },
+    {
+      "id": "R209",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'); List<Search.SearchResult> rows=x.get(''); r=rows==null?'null':String.valueOf(rows.size());",
+      "expected": "EXC|System.NoDataFoundException|You are trying to retrieve a SObject type that was not part of the search query []",
+      "compile": false
+    },
+    {
+      "id": "R210",
+      "code": "Search.SearchResults x; if(false){List<Search.SearchResult> rows=x.get(null);} r='TYPE_ACCEPTED';",
+      "expected": "TYPE_ACCEPTED",
+      "compile": false
+    },
+    {
+      "id": "R211",
+      "code": "Object x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'); r=x instanceof List<List<SObject>>;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R212",
+      "code": "Object x=Search.find('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'); r=x instanceof Search.SearchResults;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R213",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005}'); Boolean valid=x!=null; for(List<SObject> bucket:x){valid=valid && bucket!=null;} r=valid;",
+      "expected": "EXC|System.QueryException|Entities should be explictly specified in SOSL call in Apex",
+      "compile": false
+    },
+    {
+      "id": "R214",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)'); x[0].add(new Account(Name='Local shape')); r=x[0][0].get('Name');",
+      "expected": "Local shape",
+      "compile": false
+    },
+    {
+      "id": "R215",
+      "code": "Search.SearchResults x=Search.find('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SNIPPET'); List<Search.SearchResult> rows=x.get('Account'); r=rows!=null && rows.isEmpty();",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R216",
+      "code": "Search.SuggestionResults x=Search.suggest(null,'Account',null); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R217",
+      "code": "Search.SuggestionResults x=Search.suggest('','Account',null); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "EXC|System.SearchException|Your search term must have 3 or more characters",
+      "compile": false
+    },
+    {
+      "id": "R218",
+      "code": "Search.SuggestionResults x=Search.suggest(' ','Account',null); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "EXC|System.SearchException|Your search term must have 3 or more characters",
+      "compile": false
+    },
+    {
+      "id": "R219",
+      "code": "Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',null); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R220",
+      "code": "Search.SuggestionResults x=Search.suggest('a35*','Account',null); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R221",
+      "code": "Search.SuggestionResults x=Search.suggest('a35?','Account',null); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R222",
+      "code": "Search.SuggestionResults x=Search.suggest('\"a35 oracle\"','Account',null); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R223",
+      "code": "Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',null); Boolean valid=x!=null; for(Search.SuggestionResult row:x.getSuggestionResults()){valid=valid && row.getSObject()!=null;} r=valid;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R224",
+      "code": "Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Contact',null); Boolean valid=x!=null; for(Search.SuggestionResult row:x.getSuggestionResults()){valid=valid && row.getSObject()!=null;} r=valid;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R225",
+      "code": "Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Lead',null); Boolean valid=x!=null; for(Search.SuggestionResult row:x.getSuggestionResults()){valid=valid && row.getSObject()!=null;} r=valid;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R226",
+      "code": "Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','NoSuchA35Object__c',null); Boolean valid=x!=null; for(Search.SuggestionResult row:x.getSuggestionResults()){valid=valid && row.getSObject()!=null;} r=valid;",
+      "expected": "EXC|System.SearchException|sobject has an invalid value",
+      "compile": false
+    },
+    {
+      "id": "R227",
+      "code": "Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','',null); Boolean valid=x!=null; for(Search.SuggestionResult row:x.getSuggestionResults()){valid=valid && row.getSObject()!=null;} r=valid;",
+      "expected": "EXC|System.SearchException|sobject has an invalid value",
+      "compile": false
+    },
+    {
+      "id": "R228",
+      "code": "Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005',null,null); Boolean valid=x!=null; for(Search.SuggestionResult row:x.getSuggestionResults()){valid=valid && row.getSObject()!=null;} r=valid;",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R229",
+      "code": "Search.SuggestionOption opts=new Search.SuggestionOption(); opts.setLimit(null); Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',opts); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R230",
+      "code": "Search.SuggestionOption opts=new Search.SuggestionOption(); opts.setLimit(-1); Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',opts); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "EXC|System.SearchException|limit must be greater than or equal to 1",
+      "compile": false
+    },
+    {
+      "id": "R231",
+      "code": "Search.SuggestionOption opts=new Search.SuggestionOption(); opts.setLimit(0); Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',opts); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "EXC|System.SearchException|limit must be greater than or equal to 1",
+      "compile": false
+    },
+    {
+      "id": "R232",
+      "code": "Search.SuggestionOption opts=new Search.SuggestionOption(); opts.setLimit(1); Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',opts); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R233",
+      "code": "Search.SuggestionOption opts=new Search.SuggestionOption(); opts.setLimit(5); Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',opts); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R234",
+      "code": "Search.SuggestionOption opts=new Search.SuggestionOption(); opts.setLimit(100); Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',opts); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R235",
+      "code": "Search.SuggestionOption opts=new Search.SuggestionOption(); opts.setLimit(2000); Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',opts); r=x!=null && x.getSuggestionResults()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R236",
+      "code": "Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',null,AccessLevel.USER_MODE); r=x!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R238",
+      "code": "Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',null,null); r=x!=null;",
+      "expected": "EXC|System.NullPointerException|Argument 4 cannot be null",
+      "compile": false
+    },
+    {
+      "id": "R239",
+      "code": "Object x=Search.suggest('a35oracleqxv20261005','Account',null).hasMoreResults(); r=x instanceof Boolean;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R240",
+      "code": "Search.SuggestionOption opts=new Search.SuggestionOption(); opts.setFilter(null); r=Search.suggest('a35oracleqxv20261005','Account',opts)!=null;",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false
+    },
+    {
+      "id": "C001",
+      "code": "try { Object r=[FIND 'a35oracleqxv20261005' RETURNING Account(Id WHERE Id=null)][0].size(); pq.out('C001',r); } catch(Exception e) { pq.err('C001',e); }",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C002",
+      "code": "try { Object r=[FIND {a35oracleqxv20261005} RETURNING Account(Id WHERE Id=null)][0].size(); pq.out('C002',r); } catch(Exception e) { pq.err('C002',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token '{'.",
+      "compile": true,
+      "parserDiagnostic": true
+    },
+    {
+      "id": "C003",
+      "code": "try { Object r=[FIND '' RETURNING Account(Id WHERE Id=null)][0].size(); pq.out('C003',r); } catch(Exception e) { pq.err('C003',e); }",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: ",
+      "compile": true
+    },
+    {
+      "id": "C004",
+      "code": "try { Object r=[FIND RETURNING Account(Id WHERE Id=null)][0].size(); pq.out('C004',r); } catch(Exception e) { pq.err('C004',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Unexpected token 'RETURNING'.",
+      "compile": true,
+      "parserDiagnostic": true
+    },
+    {
+      "id": "C005",
+      "code": "try { Integer term=12; Object r=[FIND :term RETURNING Account(Id WHERE Id=null)][0].size(); pq.out('C005',r); } catch(Exception e) { pq.err('C005',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Specified search expression cannot be converted to string",
+      "compile": true
+    },
+    {
+      "id": "C006",
+      "code": "try { Boolean term=true; Object r=[FIND :term RETURNING Account(Id WHERE Id=null)][0].size(); pq.out('C006',r); } catch(Exception e) { pq.err('C006',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Specified search expression cannot be converted to string",
+      "compile": true
+    },
+    {
+      "id": "C007",
+      "code": "try { Object r=[FIND :a35Unknown RETURNING Account(Id WHERE Id=null)][0].size(); pq.out('C007',r); } catch(Exception e) { pq.err('C007',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: a35Unknown",
+      "compile": true
+    },
+    {
+      "id": "C008",
+      "code": "try { Object r=[FIND 'a35' IN NAME FIELDS RETURNING Account(Id WHERE Id=null)][0].size(); pq.out('C008',r); } catch(Exception e) { pq.err('C008',e); }",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C009",
+      "code": "try { Object r=[FIND 'a35' IN BOGUS FIELDS RETURNING Account(Id WHERE Id=null)][0].size(); pq.out('C009',r); } catch(Exception e) { pq.err('C009',e); }",
+      "expected": "EXC|System.SearchException|Invalid IN fields group: BOGUS",
+      "compile": true
+    },
+    {
+      "id": "C010",
+      "code": "try { Object r=[FIND 'a35' RETURNING Account(Id WHERE Id=null ORDER BY Name DESC NULLS LAST LIMIT 1 OFFSET 0)][0].size(); pq.out('C010',r); } catch(Exception e) { pq.err('C010',e); }",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C011",
+      "code": "try { Object r=[FIND 'a35' RETURNING Account(Id WHERE Id=null OFFSET -1)][0].size(); pq.out('C011',r); } catch(Exception e) { pq.err('C011',e); }",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C012",
+      "code": "try { Object r=[FIND 'a35' RETURNING Account(NoSuchA35Field__c WHERE Id=null)][0].size(); pq.out('C012',r); } catch(Exception e) { pq.err('C012',e); }",
+      "expected": "COMPILE_ERROR\tline 6:  FIND 'a35' RETURNING Account(NoSuchA35Field__c WHERE Id=null)                              ^ ERROR at Row:1:Column:30 No such column 'NoSuchA35Field__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please referenc",
+      "compile": true
+    },
+    {
+      "id": "C013",
+      "code": "try { Object r=[FIND 'a35' RETURNING Account(Id WHERE Id=null),Account(Id WHERE Id=null)].size(); pq.out('C013',r); } catch(Exception e) { pq.err('C013',e); }",
+      "expected": "1",
+      "compile": true
+    },
+    {
+      "id": "C014",
+      "code": "try { String n='Alpha'; Object r=[FIND 'a35' RETURNING Account(Id WHERE Id=null AND Name=:n)][0].size(); pq.out('C014',r); } catch(Exception e) { pq.err('C014',e); }",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C015",
+      "code": "try { Integer n=1; Object r=[FIND 'a35' RETURNING Account(Id WHERE Id=null LIMIT :n)][0].size(); pq.out('C015',r); } catch(Exception e) { pq.err('C015',e); }",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C016",
+      "code": "try { Object r=[FIND 'a35' RETURNING Account(Id WHERE Id=null) WITH USER_MODE][0].size(); pq.out('C016',r); } catch(Exception e) { pq.err('C016',e); }",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C018",
+      "code": "try { Object r=[FIND 'a35' RETURNING Account(Id WHERE Id=null) WITH SPELL_CORRECTION=false][0].size(); pq.out('C018',r); } catch(Exception e) { pq.err('C018',e); }",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C019",
+      "code": "try { Object r=[FIND 'a35' RETURNING Account(Id WHERE Id=null) WITH SNIPPET][0].size(); pq.out('C019',r); } catch(Exception e) { pq.err('C019',e); }",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C020",
+      "code": "try { Object r=Search.query(12); pq.out('C020',r); } catch(Exception e) { pq.err('C020',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void query(Integer) from the type Search",
+      "compile": true
+    },
+    {
+      "id": "C021",
+      "code": "try { Object r=Search.find(true); pq.out('C021',r); } catch(Exception e) { pq.err('C021',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void find(Boolean) from the type Search",
+      "compile": true
+    },
+    {
+      "id": "C022",
+      "code": "try { Object r=Search.query(null,true); pq.out('C022',r); } catch(Exception e) { pq.err('C022',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void query(NULL, Boolean) from the type Search",
+      "compile": true
+    },
+    {
+      "id": "C023",
+      "code": "try { Object r=Search.find(null,12); pq.out('C023',r); } catch(Exception e) { pq.err('C023',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void find(NULL, Integer) from the type Search",
+      "compile": true
+    },
+    {
+      "id": "C024",
+      "code": "try { Object r=Search.suggest('a35','Account',12); pq.out('C024',r); } catch(Exception e) { pq.err('C024',e); }",
+      "expected": "EXC|System.TypeException|Third parameters should be an object of type Search.SuggestionOption",
+      "compile": true
+    },
+    {
+      "id": "C025",
+      "code": "try { Object r=Search.suggest('a35','Account'); pq.out('C025',r); } catch(Exception e) { pq.err('C025',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void suggest(String, String) from the type Search",
+      "compile": true
+    },
+    {
+      "id": "C026",
+      "code": "try { Search.SearchResults x=Search.query(null); Object r=x; pq.out('C026',r); } catch(Exception e) { pq.err('C026',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from List<List<SObject>> to Search.SearchResults",
+      "compile": true
+    },
+    {
+      "id": "C027",
+      "code": "try { List<List<SObject>> x=Search.find(null); Object r=x; pq.out('C027',r); } catch(Exception e) { pq.err('C027',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Search.SearchResults to List<List<SObject>>",
+      "compile": true
+    },
+    {
+      "id": "C028",
+      "code": "try { Search.SuggestionOption x=new Search.SuggestionOption(); Object r=x!=null; pq.out('C028',r); } catch(Exception e) { pq.err('C028',e); }",
+      "expected": "true",
+      "compile": true
+    },
+    {
+      "id": "C029",
+      "code": "try { Search.SuggestionOption x=new Search.SuggestionOption(); x.setLimit('1'); Object r=x; pq.out('C029',r); } catch(Exception e) { pq.err('C029',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setLimit(String) from the type Search.SuggestionOption",
+      "compile": true
+    },
+    {
+      "id": "C030",
+      "code": "try { Search.SearchResult x=new Search.SearchResult(); Object r=x.getSObject(); pq.out('C030',r); } catch(Exception e) { pq.err('C030',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [Search.SearchResult].<Constructor>()",
+      "compile": true
+    },
+    {
+      "id": "C031",
+      "code": "try { Search.SearchResults x=new Search.SearchResults(); Object r=x.get('Account'); pq.out('C031',r); } catch(Exception e) { pq.err('C031',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [Search.SearchResults].<Constructor>()",
+      "compile": true
+    },
+    {
+      "id": "C032",
+      "code": "try { Search.SuggestionResult x=new Search.SuggestionResult(); Object r=x.getSObject(); pq.out('C032',r); } catch(Exception e) { pq.err('C032',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [Search.SuggestionResult].<Constructor>()",
+      "compile": true
+    },
+    {
+      "id": "C033",
+      "code": "try { Search.SuggestionResults x=new Search.SuggestionResults(); Object r=x.getSuggestionResults(); pq.out('C033',r); } catch(Exception e) { pq.err('C033',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [Search.SuggestionResults].<Constructor>()",
+      "compile": true
+    },
+    {
+      "id": "C037",
+      "code": "try { Object r=[FIND 'a35' RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus='Online' AND Language='en_US' AND Id=null) UPDATE VIEWSTAT trailing].size(); pq.out('C037',r); } catch(Exception e) { pq.err('C037',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Extra ']', at 'trailing'.",
+      "compile": true,
+      "parserDiagnostic": true
+    }
+  ],
+  "controls": [
+    {
+      "id": "L001",
+      "code": "r=Search.query('FIND {Acme NOT West} RETURNING Account(Id WHERE Id=null)')[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "L002",
+      "code": "r=Search.query('FIND \\'\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: ",
+      "compile": false
+    },
+    {
+      "id": "L003",
+      "code": "r=Search.query('FIND \\'AND Alpha\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "L004",
+      "code": "r=Search.query('FIND \\'Alpha OR\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "L005",
+      "code": "r=Search.query('FIND \\'Alpha AND OR Beta\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "L006",
+      "code": "r=Search.query('FIND \\'()\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: ()",
+      "compile": false
+    },
+    {
+      "id": "L007",
+      "code": "r=Search.query('FIND \\'(Alpha\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "L008",
+      "code": "r=Search.query('FIND \\'Alpha)\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "L009",
+      "code": "r=Search.query('FIND \\'Alpha OR ()\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "L010",
+      "code": "r=Search.query('FIND \\'\"Alpha Beta\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "L011",
+      "code": "r=Search.query('FIND \\'Alpha NOT Beta\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "L012",
+      "code": "r=Search.query('FIND \\'NOT Alpha\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "L013",
+      "code": "r=Search.query('FIND \"\" RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "EXC|System.QueryException|line 1:5 no viable alternative at character '\"'",
+      "compile": false
+    },
+    {
+      "id": "L014",
+      "code": "r=Search.query('FIND \\'\"\"\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: \"\"",
+      "compile": false
+    },
+    {
+      "id": "L015",
+      "code": "r=Search.query('FIND \\'* \"\"\\' RETURNING Contact(Id WHERE Id=null)')[0].size();",
+      "expected": "EXC|System.SearchException|search term must be longer than one character: * \"\"",
+      "compile": false
+    },
+    {
+      "id": "L016",
+      "code": "r=Search.query('FIND {Needle} IN ALL FIELDS WITH DATA CATEGORY Products ABOVE Hardware RETURNING Contact(Id)')[0].size();",
+      "expected": "EXC|System.QueryException|unexpected token: RETURNING",
+      "compile": false
+    },
+    {
+      "id": "N001",
+      "code": "r=[FIND 'a35' RETURNING Account(Id WHERE Id=null OFFSET -2)][0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "N002",
+      "code": "r=[FIND 'a35' RETURNING Account(Id WHERE Id=null OFFSET -2001)][0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "N003",
+      "code": "r=[FIND 'a35' RETURNING Account(Id WHERE Id=null OFFSET 2001)][0].size();",
+      "expected": "EXC|System.SearchException|SOSL offset should be between 0 and 2000",
+      "compile": false
+    },
+    {
+      "id": "N004",
+      "code": "r=[FIND 'a35' IN X FIELDS RETURNING Account(Id WHERE Id=null)][0].size();",
+      "expected": "EXC|System.SearchException|Invalid IN fields group: X",
+      "compile": false
+    },
+    {
+      "id": "N006",
+      "code": "r=[FIND 'a35' RETURNING Account(Id WHERE Id=null OFFSET 0)][0].size();",
+      "expected": "0",
+      "compile": false
+    },
+    {
+      "id": "N005",
+      "code": "try { Object r=[FIND 'a35' RETURNING Account(Id WHERE Id=null LIMIT -1)][0].size(); pq.out('N005',r); } catch(Exception e) { pq.err('N005',e); }",
+      "expected": "COMPILE_ERROR\tline 6: Limit must be a non-negative value",
+      "compile": true,
+      "parserDiagnostic": true
+    },
+    {
+      "id": "Q001",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|B|C|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q002",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (AccountNumber=\\'B\\')) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|C|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q003",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Phone=\\'blocked\\')) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|C|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q004",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (NumberOfEmployees>15)) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "B",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q005",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (NumberOfEmployees=null)) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "B|C",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q006",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Phone=\\'blocked\\' OR NumberOfEmployees>15)) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q007",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (NOT (Phone=\\'blocked\\'))) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "B",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q008",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Phone=\\'blocked\\') OR NumberOfEmployees=null) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "EXC|System.QueryException|expecting a right parentheses, found 'OR'",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q009",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' ORDER BY NumberOfEmployees ASC NULLS FIRST,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|D|B|C",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q010",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' ORDER BY NumberOfEmployees ASC NULLS LAST,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "B|C|A|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q011",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' ORDER BY NumberOfEmployees DESC NULLS FIRST,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|D|C|B",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q012",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' ORDER BY NumberOfEmployees DESC NULLS LAST,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "C|B|A|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q013",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' ORDER BY Phone ASC NULLS FIRST,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|D|B|C",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q014",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' ORDER BY Phone ASC NULLS LAST,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "B|C|A|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q015",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' ORDER BY Phone DESC NULLS FIRST,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|D|C|B",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q016",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' ORDER BY Phone DESC NULLS LAST,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "C|B|A|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q017",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Phone=\\'blocked\\')) ORDER BY NumberOfEmployees DESC NULLS LAST,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "C|A|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q018",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (NumberOfEmployees=null)) ORDER BY NumberOfEmployees DESC NULLS FIRST,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "C|B",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q019",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' ORDER BY NumberOfEmployees ASC,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|D|B|C",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q020",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' ORDER BY NumberOfEmployees DESC,Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|D|C|B",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q021",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (NumberOfEmployees<15)) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "C",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q022",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (NumberOfEmployees<=10)) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "C",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q023",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (NumberOfEmployees>=20)) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "B",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q024",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Phone>\\'c\\')) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|B|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q025",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Phone<\\'c\\')) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "C",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q026",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (NumberOfEmployees>null)) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "EXC|System.QueryException|invalid operator",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q027",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Phone LIKE \\'b%\\')) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|C|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q028",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Phone IN (\\'blocked\\'))) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|C|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q029",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (NumberOfEmployees IN (10))) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|C|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q030",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND ((NOT (Phone=\\'blocked\\')) OR NumberOfEmployees=null) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|C|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q031",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Phone=\\'blocked\\') AND NumberOfEmployees=null) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "EXC|System.QueryException|expecting a right parentheses, found 'AND'",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q032",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND ((NOT (Phone=\\'blocked\\')) AND NumberOfEmployees=null) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q033",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NumberOfEmployees=null OR NOT (Phone=\\'blocked\\')) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "EXC|System.QueryException|unexpected token: 'NOT'",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q034",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Phone=\\'blocked\\' AND NumberOfEmployees>15)) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|B|C|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q035",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (NumberOfEmployees>15 AND AccountNumber=\\'B\\')) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|B|C|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q036",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (NumberOfEmployees>15 OR AccountNumber=\\'A\\')) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "B",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q037",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NumberOfEmployees>null) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "EXC|System.QueryException|invalid operator",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q038",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NumberOfEmployees<null) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "EXC|System.QueryException|invalid operator",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q039",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NumberOfEmployees>=null) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "EXC|System.QueryException|invalid operator",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q040",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NumberOfEmployees<=null) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "EXC|System.QueryException|invalid operator",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q041",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Site>\\'c\\')) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|B|C|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q042",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (Site<\\'c\\')) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q043",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (AnnualRevenue>15)) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q044",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NOT (AnnualRevenue<15)) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q045",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (Phone<=\\'c\\') ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "A|B|D",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q046",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (Phone>=\\'c\\') ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "C",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q047",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NumberOfEmployees>15) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "C",
+      "compile": false,
+      "resultData": true
+    },
+    {
+      "id": "Q048",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35review20261006qxv} IN NAME FIELDS RETURNING Account(Id,AccountNumber,Phone,NumberOfEmployees WHERE Name LIKE \\'a35review20261006qxv%\\' AND (NumberOfEmployees<=15) ORDER BY Name ASC)'); List<String> labels=new List<String>(); for(SObject row:x[0]){labels.add((String)row.get('AccountNumber'));} r=String.join(labels,'|');",
+      "expected": "B",
+      "compile": false,
+      "resultData": true
+    }
+  ],
+  "remaining": [
+    {
+      "id": "R149",
+      "code": "List<List<SObject>> x=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null) WITH SYSTEM_MODE'); List<String> sizes=new List<String>(); for(List<SObject> bucket:x){sizes.add(String.valueOf(bucket.size()));} r=String.join(sizes,'|');",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "compile": false,
+      "owner": "security access",
+      "reason": "Anonymous SYSTEM_MODE security rejection is owned by security access; named execution needs its own observation."
+    },
+    {
+      "id": "R194",
+      "code": "r=Search.query('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)',AccessLevel.SYSTEM_MODE)!=null;",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "compile": false,
+      "owner": "security access",
+      "reason": "Anonymous SYSTEM_MODE security rejection is owned by security access; named execution needs its own observation."
+    },
+    {
+      "id": "R203",
+      "code": "r=Search.find('FIND {a35oracleqxv20261005} RETURNING Account(Id,Name WHERE Id=null)',AccessLevel.SYSTEM_MODE)!=null;",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "compile": false,
+      "owner": "security access",
+      "reason": "Anonymous SYSTEM_MODE security rejection is owned by security access; named execution needs its own observation."
+    },
+    {
+      "id": "R237",
+      "code": "Search.SuggestionResults x=Search.suggest('a35oracleqxv20261005','Account',null,AccessLevel.SYSTEM_MODE); r=x!=null;",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "compile": false,
+      "owner": "security access",
+      "reason": "Anonymous SYSTEM_MODE security rejection is owned by security access; named execution needs its own observation."
+    },
+    {
+      "id": "C017",
+      "code": "try { Object r=[FIND 'a35' RETURNING Account(Id WHERE Id=null) WITH SYSTEM_MODE][0].size(); pq.out('C017',r); } catch(Exception e) { pq.err('C017',e); }",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+      "compile": true,
+      "owner": "security access",
+      "reason": "Anonymous SYSTEM_MODE security rejection is owned by security access; named execution needs its own observation."
+    },
+    {
+      "id": "C034",
+      "code": "try { Object r=[FIND 'a35' RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus='Online' AND Language='en_US' AND Id=null) UPDATE VIEWSTAT].size(); pq.out('C034',r); } catch(Exception e) { pq.err('C034',e); }",
+      "expected": "COMPILE_ERROR\tline 6: sObject type 'knowledgearticleversion' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": true,
+      "reason": "Unavailable KnowledgeArticleVersion rejects at compile time natively but Glade raises the same diagnostic as a runtime QueryException; hosted UPDATE acceptance/effects are separate and unproved.",
+      "owner": "automation"
+    },
+    {
+      "id": "C035",
+      "code": "try { Object r=[FIND 'a35' RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus='Online' AND Language='en_US' AND Id=null) UPDATE TRACKING].size(); pq.out('C035',r); } catch(Exception e) { pq.err('C035',e); }",
+      "expected": "COMPILE_ERROR\tline 6: sObject type 'knowledgearticleversion' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": true,
+      "reason": "Unavailable KnowledgeArticleVersion rejects at compile time natively but Glade raises the same diagnostic as a runtime QueryException; hosted UPDATE acceptance/effects are separate and unproved.",
+      "owner": "automation"
+    },
+    {
+      "id": "C036",
+      "code": "try { Object r=[FIND 'a35' RETURNING KnowledgeArticleVersion(Id WHERE PublishStatus='Online' AND Language='en_US' AND Id=null) UPDATE VIEWSTAT,TRACKING].size(); pq.out('C036',r); } catch(Exception e) { pq.err('C036',e); }",
+      "expected": "COMPILE_ERROR\tline 6: sObject type 'knowledgearticleversion' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": true,
+      "reason": "Unavailable KnowledgeArticleVersion rejects at compile time natively but Glade raises the same diagnostic as a runtime QueryException; hosted UPDATE acceptance/effects are separate and unproved.",
+      "owner": "automation"
+    }
+  ],
+  "declarations": {
+    "A35ResultFixture": "public class A35ResultFixture {\n public static List<Account> records(){\n  List<Account> rows=[SELECT Id,Name,AccountNumber,Phone,NumberOfEmployees FROM Account WHERE Name LIKE 'a35review20261006qxv%' ORDER BY Name];\n  if(rows.isEmpty()){\n   rows=new List<Account>{\n    new Account(Name='a35review20261006qxv Alpha',AccountNumber='A',Phone=null,NumberOfEmployees=null),\n    new Account(Name='a35review20261006qxv Beta',AccountNumber='B',Phone='blocked',NumberOfEmployees=10),\n    new Account(Name='a35review20261006qxv Gamma',AccountNumber='C',Phone='clear',NumberOfEmployees=20),\n    new Account(Name='a35review20261006qxv Zeta',AccountNumber='D',Phone=null,NumberOfEmployees=null)\n   };\n   insert rows;\n  }\n  System.assert(rows.size()==4,'A35 result fixture requires exactly four records');\n  return rows;\n }\n public static List<Id> ids(){\n  List<Id> result=new List<Id>();\n  for(Account row:records()){result.add(row.Id);}\n  return result;\n }\n}\n"
+  },
+  "resultPrelude": "A35ResultFixture.records();\nif(Test.isRunningTest()){Test.setFixedSearchResults(A35ResultFixture.ids());}\n",
+  "declarationApiVersions": {
+    "A35ResultFixture": "62.0"
+  },
+  "unavailableObjects": [
+    "KnowledgeArticleVersion"
+  ],
+  "hostedLimitations": [
+    "KnowledgeArticleVersion hosted UPDATE VIEWSTAT/TRACKING acceptance and effects are unproved on the captured org; R166-R173 assert unavailable-object runtime rejection, while C034-C036 carry compile-versus-runtime phase differences to A43."
+  ],
+  "shadowControls": [
+    {
+      "id": "S001",
+      "code": "r=new Search.SearchResult()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "S002",
+      "code": "r=new Search.SearchResults()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "S003",
+      "code": "r=new Search.SuggestionResult()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "S004",
+      "code": "r=new Search.SuggestionResults()!=null;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "S005",
+      "code": "Search.SuggestionOption x=new Search.SuggestionOption(); r=x.setLimit('control');",
+      "expected": "source-limit:control",
+      "compile": false
+    },
+    {
+      "id": "S006",
+      "code": "r=Search.query(7);",
+      "expected": "source-query:7",
+      "compile": false
+    },
+    {
+      "id": "S007",
+      "code": "r=Search.find(true);",
+      "expected": "source-find:true",
+      "compile": false
+    },
+    {
+      "id": "S008",
+      "code": "r=Search.suggest(9);",
+      "expected": "source-suggest:9",
+      "compile": false
+    }
+  ],
+  "shadowDeclarations": {
+    "Search": "public class Search {\n public class SearchResult { public SearchResult() {} }\n public class SearchResults { public SearchResults() {} }\n public class SuggestionResult { public SuggestionResult() {} }\n public class SuggestionResults { public SuggestionResults() {} }\n public class SuggestionOption {\n  public SuggestionOption() {}\n  public String setLimit(String value) { return 'source-limit:'+value; }\n }\n public static String query(Integer value) { return 'source-query:'+value; }\n public static String find(Boolean value) { return 'source-find:'+value; }\n public static String suggest(Integer value) { return 'source-suggest:'+value; }\n}\n"
+  },
+  "shadowDeclarationApiVersions": {
+    "Search": "62.0"
+  }
+}

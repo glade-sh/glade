@@ -11,6 +11,7 @@ import (
 
 func TestRenderEnvironmentConcurrentAccess(t *testing.T) {
 	machine := vm.New(nil)
+	defer ClearVMRenderEnvironment(machine)
 	var wg sync.WaitGroup
 	for i := 0; i < 32; i++ {
 		wg.Add(2)

@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/automation"
 	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/orgimport"
@@ -613,6 +614,7 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 		_ = store.Close()
 		return nil, storage.OrgState{}, err
 	}
+	storedDomainURL := org.DomainURL
 	if len(org.Objects) == 0 {
 		if hasBinding {
 			org = projectOrg
@@ -622,6 +624,9 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 				_ = store.Close()
 				return nil, storage.OrgState{}, err
 			}
+		}
+		if storedDomainURL != "" {
+			org.DomainURL = storedDomainURL
 		}
 		storage.EnsureDeterministicPlatformData(&org)
 		if err := store.Save(org); err != nil {
@@ -641,10 +646,21 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 			return nil, storage.OrgState{}, err
 		}
 	}
+	// Seed old saved orgs only when they have no explicit canonical origin.
+	if hasBinding && org.DomainURL == "" && projectOrg.DomainURL != "" {
+		org.DomainURL = projectOrg.DomainURL
+		if err := store.Save(org); err != nil {
+			_ = store.Close()
+			return nil, storage.OrgState{}, err
+		}
+	}
 	return store, org, nil
 }
 
 func projectOrgAndDBBinding(root string) (storage.OrgState, storage.ProjectBinding, bool, error) {
+	if _, err := project.OrgDomainURL(root); err != nil {
+		return storage.OrgState{}, storage.ProjectBinding{}, false, err
+	}
 	if root == "." && !currentDirIsGladeProjectRoot() {
 		return storage.OrgState{}, storage.ProjectBinding{}, false, nil
 	}
@@ -712,6 +728,9 @@ func validateDBProjectBinding(store *storage.SQLiteStore, dbPath, root string, e
 func refreshDBProjectSchema(store *storage.SQLiteStore, dbPath, root string, current, projectOrg storage.OrgState, binding storage.ProjectBinding) (storage.OrgState, error) {
 	refreshed := projectOrg.Clone()
 	refreshed.OrgID = current.OrgID
+	if current.DomainURL != "" {
+		refreshed.DomainURL = current.DomainURL
+	}
 	refreshed.SystemTimestampBase = current.SystemTimestampBase
 	refreshed.SystemTimestampSequence = current.SystemTimestampSequence
 	if dropped := droppedRefreshRecordCounts(current, refreshed); len(dropped) > 0 {
@@ -795,6 +814,9 @@ func sameCleanPath(left, right string) bool {
 }
 
 func orgForProject(root string) (storage.OrgState, error) {
+	if _, err := project.OrgDomainURL(root); err != nil {
+		return storage.OrgState{}, err
+	}
 	p, index, err := loadProjectIndex(root)
 	if err != nil {
 		if root == "." {
@@ -807,6 +829,11 @@ func orgForProject(root string) (storage.OrgState, error) {
 
 func orgStateFromIndex(root string, p project.Project, index typesys.Index) (storage.OrgState, error) {
 	org := storage.NewOrgState()
+	domainURL, err := storage.NormalizeOrgDomainURL(p.OrgDomainURL)
+	if err != nil {
+		return storage.OrgState{}, err
+	}
+	org.DomainURL = domainURL
 	org.APIVersion = storage.DefaultRESTAPIVersion
 	org.Namespace = index.Project.Namespace
 	registry := sobject.BuildDescribeRegistry(gladeschema.Schema{Objects: append([]gladeschema.Object(nil), index.Objects...)})
@@ -827,6 +854,7 @@ func orgStateFromIndex(root string, p project.Project, index typesys.Index) (sto
 	}
 	storage.EnsureDeterministicPlatformData(&org)
 	storage.ApplyOrgShape(&org, project.OrgShapeFeatures(root))
+	apextest.ApplyProjectPermissionSets(&org, p)
 	return org, nil
 }
 

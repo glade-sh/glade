@@ -1,0 +1,2189 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "Declarations": {
+    "A36": "public class A36 {\n public String errors(List<Database.Error> es){\n  List<String> xs=new List<String>();\n  for(Database.Error e:es) xs.add(String.valueOf(e.getStatusCode())+':'+String.join(e.getFields(),','));\n  return String.join(xs,';');\n }\n public String save(Database.SaveResult s){return s.isSuccess()+'|'+(s.getId()!=null)+'|'+errors(s.getErrors());}\n public String up(Database.UpsertResult s){return s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null)+'|'+errors(s.getErrors());}\n public String del(Database.DeleteResult s){return s.isSuccess()+'|'+(s.getId()!=null)+'|'+errors(s.getErrors());}\n public String undel(Database.UndeleteResult s){return s.isSuccess()+'|'+(s.getId()!=null)+'|'+errors(s.getErrors());}\n public String merged(Database.MergeResult s){return s.isSuccess()+'|'+(s.getId()!=null)+'|'+errors(s.getErrors());}\n public String converted(Database.LeadConvertResult s){return s.isSuccess()+'|'+(s.getLeadId()!=null)+'|'+(s.getAccountId()!=null)+'|'+(s.getContactId()!=null)+'|'+(s.getOpportunityId()!=null)+'|'+errors(s.getErrors());}\n}"
+  },
+  "Prelude": "A36 a36=new A36();",
+  "schema": {
+    "objects": [
+      {
+        "name": "Account",
+        "fields": [
+          {
+            "name": "Id",
+            "type": "Id"
+          },
+          {
+            "name": "A36External__c",
+            "label": "A36 External",
+            "type": "Text",
+            "length": 80,
+            "externalId": true,
+            "required": false,
+            "unique": false
+          }
+        ]
+      },
+      {
+        "name": "Contact",
+        "fields": [
+          {
+            "name": "Id",
+            "type": "Id"
+          }
+        ]
+      },
+      {
+        "name": "Lead",
+        "fields": [
+          {
+            "name": "Id",
+            "type": "Id"
+          }
+        ]
+      },
+      {
+        "name": "Case",
+        "fields": [
+          {
+            "name": "Id",
+            "type": "Id"
+          }
+        ]
+      }
+    ]
+  },
+  "Cases": [
+    {
+      "ID": "R001",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x; r=x.Id!=null;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R002",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x; r=x.Id.getSObjectType()==Account.SObjectType;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R003",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x; x.Name='Changed'; update x; r=[SELECT Name FROM Account WHERE Id=:x.Id].Name;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "Changed",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R004",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x; Account patch=new Account(Id=x.Id); patch.Name='Patch'; update patch; r=[SELECT Name FROM Account WHERE Id=:x.Id].Name;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "Patch",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R005",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x; delete x; r=[SELECT COUNT() FROM Account WHERE Id=:x.Id];} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R006",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x; Id old=x.Id; delete x; r=x.Id==old;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R007",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');List<Account> xs=new List<Account>{x}; insert xs; r=xs[0].Id!=null;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R008",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');SObject s=x; insert s; r=s.Id==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R009",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Contact x=new Contact(LastName='A36');insert x; r=x.Id!=null;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R010",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Contact x=new Contact(LastName='A36');insert x; r=x.Id.getSObjectType()==Contact.SObjectType;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R011",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Contact x=new Contact(LastName='A36');insert x; x.LastName='Changed'; update x; r=[SELECT LastName FROM Contact WHERE Id=:x.Id].LastName;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "Changed",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R012",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Contact x=new Contact(LastName='A36');insert x; Contact patch=new Contact(Id=x.Id); patch.LastName='Patch'; update patch; r=[SELECT LastName FROM Contact WHERE Id=:x.Id].LastName;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "Patch",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R013",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Contact x=new Contact(LastName='A36');insert x; delete x; r=[SELECT COUNT() FROM Contact WHERE Id=:x.Id];} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R014",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Contact x=new Contact(LastName='A36');insert x; Id old=x.Id; delete x; r=x.Id==old;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R015",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Contact x=new Contact(LastName='A36');List<Contact> xs=new List<Contact>{x}; insert xs; r=xs[0].Id!=null;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R016",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Contact x=new Contact(LastName='A36');SObject s=x; insert s; r=s.Id==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R017",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead x=new Lead(LastName='A36',Company='A36');insert x; r=x.Id!=null;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R018",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead x=new Lead(LastName='A36',Company='A36');insert x; r=x.Id.getSObjectType()==Lead.SObjectType;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R019",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead x=new Lead(LastName='A36',Company='A36');insert x; x.LastName='Changed'; update x; r=[SELECT LastName FROM Lead WHERE Id=:x.Id].LastName;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "Changed",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R020",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead x=new Lead(LastName='A36',Company='A36');insert x; Lead patch=new Lead(Id=x.Id); patch.LastName='Patch'; update patch; r=[SELECT LastName FROM Lead WHERE Id=:x.Id].LastName;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "Patch",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R021",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead x=new Lead(LastName='A36',Company='A36');insert x; delete x; r=[SELECT COUNT() FROM Lead WHERE Id=:x.Id];} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R022",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead x=new Lead(LastName='A36',Company='A36');insert x; Id old=x.Id; delete x; r=x.Id==old;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R023",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead x=new Lead(LastName='A36',Company='A36');List<Lead> xs=new List<Lead>{x}; insert xs; r=xs[0].Id!=null;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R024",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead x=new Lead(LastName='A36',Company='A36');SObject s=x; insert s; r=s.Id==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R025",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');Database.SaveResult s=Database.insert(x); r=a36.save(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R026",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');Database.SaveResult s=Database.insert(x); r=s.getId()==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R027",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');Database.SaveResult s=Database.insert(x); r=s.getErrors().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R028",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');Database.SaveResult s=Database.insert(x,true); r=a36.save(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R029",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');Database.SaveResult s=Database.insert(x,true); r=s.getId()==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R030",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');Database.SaveResult s=Database.insert(x,true); r=s.getErrors().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R031",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');Database.SaveResult s=Database.insert(x,false); r=a36.save(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R032",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');Database.SaveResult s=Database.insert(x,false); r=s.getId()==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R033",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');Database.SaveResult s=Database.insert(x,false); r=s.getErrors().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R034",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36-A'),new Account(Name='A36-B')};Database.SaveResult[] ss=Database.insert(xs,false); r=ss.size()+'|'+(ss[0].getId()==xs[0].Id)+'|'+(ss[1].getId()==xs[1].Id);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "2|true|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R035",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x;Database.SaveResult s=Database.update(x); r=a36.save(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R036",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x;Database.SaveResult s=Database.update(x); r=s.getId()==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R037",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x;Database.SaveResult s=Database.update(x); r=s.getErrors().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R038",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x;Database.SaveResult s=Database.update(x,true); r=a36.save(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R039",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x;Database.SaveResult s=Database.update(x,true); r=s.getId()==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R040",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x;Database.SaveResult s=Database.update(x,true); r=s.getErrors().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R041",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x;Database.SaveResult s=Database.update(x,false); r=a36.save(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R042",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x;Database.SaveResult s=Database.update(x,false); r=s.getId()==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R043",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36');insert x;Database.SaveResult s=Database.update(x,false); r=s.getErrors().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R044",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36-A'),new Account(Name='A36-B')};insert xs;Database.SaveResult[] ss=Database.update(xs,false); r=ss.size()+'|'+(ss[0].getId()==xs[0].Id)+'|'+(ss[1].getId()==xs[1].Id);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "2|true|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R045",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>(); Database.SaveResult[] ss=Database.insert(xs,true); r=ss.size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R046",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>(); Database.SaveResult[] ss=Database.insert(xs,false); r=ss.size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R047",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=null;Database.insert(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R048",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> x=null;Database.insert(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R049",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> x=new List<Account>{null};Database.insert(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R050",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>(); Database.SaveResult[] ss=Database.update(xs,true); r=ss.size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R051",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>(); Database.SaveResult[] ss=Database.update(xs,false); r=ss.size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R052",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=null;Database.update(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R053",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> x=null;Database.update(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R054",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> x=new List<Account>{null};Database.update(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R055",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>(); Database.UpsertResult[] ss=Database.upsert(xs,true); r=ss.size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R056",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>(); Database.UpsertResult[] ss=Database.upsert(xs,false); r=ss.size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R057",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=null;Database.upsert(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R058",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> x=null;Database.upsert(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R059",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> x=new List<Account>{null};Database.upsert(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R060",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>(); Database.DeleteResult[] ss=Database.delete(xs,true); r=ss.size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R061",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>(); Database.DeleteResult[] ss=Database.delete(xs,false); r=ss.size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R062",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=null;Database.delete(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R063",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> x=null;Database.delete(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R064",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> x=new List<Account>{null};Database.delete(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R065",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>(); Database.UndeleteResult[] ss=Database.undelete(xs,true); r=ss.size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R066",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>(); Database.UndeleteResult[] ss=Database.undelete(xs,false); r=ss.size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R067",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=null;Database.undelete(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R068",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> x=null;Database.undelete(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R069",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> x=new List<Account>{null};Database.undelete(x,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R070",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36',A36External__c='one');Database.UpsertResult s=Database.upsert(x,Account.A36External__c,true); r=a36.up(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R071",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36',A36External__c=null);Database.UpsertResult s=Database.upsert(x,Account.A36External__c,true); r=a36.up(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|MISSING_ARGUMENT|()",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R072",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36',A36External__c='');Database.UpsertResult s=Database.upsert(x,Account.A36External__c,true); r=a36.up(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|MISSING_ARGUMENT|()",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R073",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36',A36External__c='one'); insert a; Account x=new Account(Name='Changed',A36External__c='one');Database.UpsertResult s=Database.upsert(x,Account.A36External__c,true); r=a36.up(s)+'|'+(s.getId()==a.Id)+'|'+[SELECT Name FROM Account WHERE Id=:a.Id].Name;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|false|true||true|Changed",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R074",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {insert new List<Account>{new Account(Name='A36-A',A36External__c='duplicate'),new Account(Name='A36-B',A36External__c='duplicate')}; Account x=new Account(Name='Changed',A36External__c='duplicate'); Database.UpsertResult s=Database.upsert(x,Account.A36External__c,true); r=a36.up(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|DUPLICATE_EXTERNAL_ID|(A36External__c)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R075",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36',A36External__c='one');Database.UpsertResult s=Database.upsert(x,Account.A36External__c,false); r=a36.up(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R076",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36',A36External__c=null);Database.UpsertResult s=Database.upsert(x,Account.A36External__c,false); r=a36.up(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|false|false|MISSING_ARGUMENT:",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R077",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36',A36External__c='');Database.UpsertResult s=Database.upsert(x,Account.A36External__c,false); r=a36.up(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|false|false|MISSING_ARGUMENT:",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R078",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36',A36External__c='one'); insert a; Account x=new Account(Name='Changed',A36External__c='one');Database.UpsertResult s=Database.upsert(x,Account.A36External__c,false); r=a36.up(s)+'|'+(s.getId()==a.Id)+'|'+[SELECT Name FROM Account WHERE Id=:a.Id].Name;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|false|true||true|Changed",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R079",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {insert new List<Account>{new Account(Name='A36-A',A36External__c='duplicate'),new Account(Name='A36-B',A36External__c='duplicate')}; Account x=new Account(Name='Changed',A36External__c='duplicate'); Database.UpsertResult s=Database.upsert(x,Account.A36External__c,false); r=a36.up(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|false|false|DUPLICATE_EXTERNAL_ID:A36External__c",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R080",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36',A36External__c='statement'); upsert x A36External__c; r=x.Id!=null;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R081",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36',A36External__c='statement'); insert a; Account x=new Account(Name='Changed',A36External__c='statement'); upsert x A36External__c; r=x.Id==a.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R082",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); upsert x; Id old=x.Id; x.Name='Changed'; upsert x; r=x.Id==old;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R083",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36',A36External__c='existing'); insert a; List<Account> xs=new List<Account>{new Account(Name='Changed',A36External__c='existing'),new Account(Name='New',A36External__c='new')}; Database.UpsertResult[] ss=Database.upsert(xs,Account.A36External__c,false); r=a36.up(ss[0])+';'+a36.up(ss[1]);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|false|true|;true|true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R084",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); Database.UpsertResult s=Database.upsert(x); r=a36.up(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R085",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Database.UpsertResult s=Database.upsert(x); r=a36.up(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|false|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R086",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); Database.upsert(x,Account.Name,false); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 56: Invalid field for upsert, must be an External Id custom or standard indexed field: Name",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 56
+    },
+    {
+      "ID": "R087",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Database.DeleteResult s=Database.delete(x,true); r=a36.del(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R088",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Database.DeleteResult s=Database.delete(x,true); r=s.getId()==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R089",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Database.DeleteResult s=Database.delete(x,true); r=s.getErrors().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R090",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; delete x; Database.UndeleteResult s=Database.undelete(x,true); r=a36.undel(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R091",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; delete x; Database.UndeleteResult s=Database.undelete(x,true); r=s.getId()==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R092",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; delete x; Database.UndeleteResult s=Database.undelete(x,true); r=[SELECT COUNT() FROM Account WHERE Id=:x.Id];} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R093",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Database.DeleteResult s=Database.delete(x,false); r=a36.del(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R094",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Database.DeleteResult s=Database.delete(x,false); r=s.getId()==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R095",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Database.DeleteResult s=Database.delete(x,false); r=s.getErrors().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R096",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; delete x; Database.UndeleteResult s=Database.undelete(x,false); r=a36.undel(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R097",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; delete x; Database.UndeleteResult s=Database.undelete(x,false); r=s.getId()==x.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R098",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; delete x; Database.UndeleteResult s=Database.undelete(x,false); r=[SELECT COUNT() FROM Account WHERE Id=:x.Id];} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R099",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; delete x; undelete x; r=[SELECT Name FROM Account WHERE Id=:x.Id].Name;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "A36",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R100",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; delete x; r=[SELECT IsDeleted FROM Account WHERE Id=:x.Id ALL ROWS].IsDeleted;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R101",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; delete x; undelete x; r=[SELECT IsDeleted FROM Account WHERE Id=:x.Id ALL ROWS].IsDeleted;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R102",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36-A'),new Account(Name='A36-B')}; insert xs; delete xs; Database.UndeleteResult[] ss=Database.undelete(xs,false); r=ss.size()+'|'+a36.undel(ss[0])+';'+a36.undel(ss[1]);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R103",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Database.UndeleteResult s=Database.undelete(x,false); r=a36.undel(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|true|UNDELETE_FAILED:",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R104",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; delete x; Database.DeleteResult s=Database.delete(x,false); r=a36.del(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|true|ENTITY_IS_DELETED:",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R105",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; Database.MergeResult s=Database.merge(a,b,true); r=a36.merged(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R106",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; Database.MergeResult s=Database.merge(a,b,true); r=s.getId()==a.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R107",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; Database.MergeResult s=Database.merge(a,b,true); r=s.getMergedRecordIds().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R108",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; Database.MergeResult s=Database.merge(a,b,true); r=s.getMergedRecordIds().contains(b.Id);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R109",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; Database.MergeResult s=Database.merge(a,b,true); r=s.getUpdatedRelatedIds().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R110",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; Database.MergeResult s=Database.merge(a,b,false); r=a36.merged(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R111",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; Database.MergeResult s=Database.merge(a,b,false); r=s.getId()==a.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R112",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; Database.MergeResult s=Database.merge(a,b,false); r=s.getMergedRecordIds().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R113",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; Database.MergeResult s=Database.merge(a,b,false); r=s.getMergedRecordIds().contains(b.Id);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R114",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; Database.MergeResult s=Database.merge(a,b,false); r=s.getUpdatedRelatedIds().size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R115",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; merge a b; r=[SELECT COUNT() FROM Account WHERE Id=:b.Id];} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R116",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; merge a b; r=[SELECT Name FROM Account WHERE Id=:a.Id].Name;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "A36-Master",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R117",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36-Master'); Account b=new Account(Name='A36-Loser'); insert new List<Account>{a,b}; Contact c=new Contact(LastName='A36',AccountId=b.Id); insert c; Database.MergeResult s=Database.merge(a,b,false); r=s.getUpdatedRelatedIds().contains(c.Id)+'|'+([SELECT AccountId FROM Contact WHERE Id=:c.Id].AccountId==a.Id);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R118",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36'); insert a; Database.MergeResult s=Database.merge(a,a,false); r=a36.merged(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|true|INVALID_ID_FIELD:",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R119",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36'); Account b=new Account(Name='A36'); Database.MergeResult s=Database.merge(a,b,false); r=a36.merged(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.StringException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R120",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,false); r=ss.size()+'|'+a36.save(ss[0])+';'+a36.save(ss[1]);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "2|true|true|;false|false|REQUIRED_FIELD_MISSING:Name",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R121",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,false); r=(xs[0].Id!=null)+'|'+(xs[1].Id==null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R122",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,false); r=ss[1].getErrors()[0].getStatusCode();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "REQUIRED_FIELD_MISSING",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R123",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,false); r=ss[1].getErrors()[0].getFields();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "(Name)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R124",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,false); r=ss[1].getErrors()[0].getMessage().contains('Name');} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R125",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,true); r=ss.size()+'|'+a36.save(ss[0])+';'+a36.save(ss[1]);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|REQUIRED_FIELD_MISSING|(Name)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R126",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,true); r=(xs[0].Id!=null)+'|'+(xs[1].Id==null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|REQUIRED_FIELD_MISSING|(Name)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R127",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,true); r=ss[1].getErrors()[0].getStatusCode();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|REQUIRED_FIELD_MISSING|(Name)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R128",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,true); r=ss[1].getErrors()[0].getFields();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|REQUIRED_FIELD_MISSING|(Name)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R129",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,true); r=ss[1].getErrors()[0].getMessage().contains('Name');} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|REQUIRED_FIELD_MISSING|(Name)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R130",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36'); insert a;List<Account> xs=new List<Account>{a,new Account(Name='Missing ID')}; Database.SaveResult[] ss=Database.update(xs,false); r=a36.save(ss[0])+';'+a36.save(ss[1]);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|;false|false|MISSING_ARGUMENT:",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R131",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36'); insert a;List<Account> xs=new List<Account>{a,new Account()}; Database.DeleteResult[] ss=Database.delete(xs,false); r=a36.del(ss[0])+';'+a36.del(ss[1]);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R132",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36'); insert a; delete a;List<Account> xs=new List<Account>{a,new Account()}; Database.UndeleteResult[] ss=Database.undelete(xs,false); r=a36.undel(ss[0])+';'+a36.undel(ss[1]);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.StringException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R133",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36'); insert a;List<Account> xs=new List<Account>{a,new Account()}; Database.UpsertResult[] ss=Database.upsert(xs,false); r=a36.up(ss[0])+';'+a36.up(ss[1]);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|false|true|;false|true|false|REQUIRED_FIELD_MISSING:Name",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R134",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {try {insert new Account();} catch(DmlException e){r=e.getNumDml();}} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R135",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {try {insert new Account();} catch(DmlException e){r=e.getDmlIndex(0);}} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R136",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {try {insert new Account();} catch(DmlException e){r=e.getDmlStatusCode(0);}} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "REQUIRED_FIELD_MISSING",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R137",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {try {insert new Account();} catch(DmlException e){r=e.getDmlType(0);}} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "REQUIRED_FIELD_MISSING",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R138",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {try {insert new Account();} catch(DmlException e){r=e.getDmlId(0)==null;}} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R139",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {try {insert new Account();} catch(DmlException e){r=e.getDmlFields(0);}} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "(Name)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R140",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {try {insert new Account();} catch(DmlException e){r=e.getDmlFieldNames(0);}} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "(Name)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R141",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {try {insert new Account();} catch(DmlException e){r=e.getDmlMessage(0).contains('Name');}} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R142",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {try {insert new Account();} catch(DmlException e){r=e.getTypeName();}} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "System.DmlException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R143",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; try{insert xs;}catch(DmlException e){r=e.getDmlIndex(0)+'|'+[SELECT COUNT() FROM Account WHERE Id=:xs[0].Id];}} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "1|0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R144",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; x.Name=null; Database.SaveResult s=Database.update(x,false); r=a36.save(s)+'|'+[SELECT Name FROM Account WHERE Id=:x.Id].Name;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|true|REQUIRED_FIELD_MISSING:Name|A36",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R145",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); update x; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|MISSING_ARGUMENT|()",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R146",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); delete x; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R147",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); undelete x; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.StringException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R148",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; insert x; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|INVALID_FIELD_FOR_INSERT_UPDATE|(Id)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R149",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Database.SaveResult[] ss=Database.update(new List<Account>{x,x},false); r=ss.size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R150",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(); Database.SaveResult s=Database.insert(x,false); r=s.getId()==null;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R151",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); r=o.optAllOrNone;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R152",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); r=o.allowFieldTruncation;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R153",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); r=o.assignmentRuleHeader.useDefaultRule;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R154",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); r=o.assignmentRuleHeader.assignmentRuleId;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R155",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); r=o.emailHeader.triggerAutoResponseEmail;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R156",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); r=o.emailHeader.triggerOtherEmail;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R157",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); r=o.emailHeader.triggerUserEmail;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R158",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); r=o.duplicateRuleHeader.allowSave;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R159",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); r=o.duplicateRuleHeader.includeRecordDetails;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 29: Variable does not exist: includeRecordDetails",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 29
+    },
+    {
+      "ID": "R160",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); r=o.duplicateRuleHeader.runAsCurrentUser;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R161",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); r=o.localeOptions.language;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 30: Variable does not exist: language",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 30
+    },
+    {
+      "ID": "R162",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.optAllOrNone=true; r=o.optAllOrNone;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R163",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.optAllOrNone=false; r=o.optAllOrNone;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R164",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.optAllOrNone=null; r=o.optAllOrNone;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R165",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=true; r=o.allowFieldTruncation;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R166",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=false; r=o.allowFieldTruncation;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R167",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.assignmentRuleHeader.useDefaultRule=true; r=o.assignmentRuleHeader.useDefaultRule;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R168",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.assignmentRuleHeader.useDefaultRule=false; r=o.assignmentRuleHeader.useDefaultRule;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R169",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.emailHeader.triggerAutoResponseEmail=true; r=o.emailHeader.triggerAutoResponseEmail;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R170",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.emailHeader.triggerAutoResponseEmail=false; r=o.emailHeader.triggerAutoResponseEmail;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R171",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.emailHeader.triggerOtherEmail=true; r=o.emailHeader.triggerOtherEmail;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R172",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.emailHeader.triggerOtherEmail=false; r=o.emailHeader.triggerOtherEmail;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R173",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.emailHeader.triggerUserEmail=true; r=o.emailHeader.triggerUserEmail;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R174",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.emailHeader.triggerUserEmail=false; r=o.emailHeader.triggerUserEmail;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R175",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.duplicateRuleHeader.allowSave=true; r=o.duplicateRuleHeader.allowSave;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R176",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.duplicateRuleHeader.allowSave=false; r=o.duplicateRuleHeader.allowSave;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R177",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.duplicateRuleHeader.includeRecordDetails=true; r=o.duplicateRuleHeader.includeRecordDetails;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 45: Variable does not exist: includeRecordDetails",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 45
+    },
+    {
+      "ID": "R178",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.duplicateRuleHeader.includeRecordDetails=false; r=o.duplicateRuleHeader.includeRecordDetails;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 45: Variable does not exist: includeRecordDetails",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 45
+    },
+    {
+      "ID": "R179",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.duplicateRuleHeader.runAsCurrentUser=true; r=o.duplicateRuleHeader.runAsCurrentUser;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R180",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.duplicateRuleHeader.runAsCurrentUser=false; r=o.duplicateRuleHeader.runAsCurrentUser;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R181",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=true; Account x=new Account(Name='A36',Description='x'.repeat(32001)); Database.SaveResult s=Database.insert(x,o); r=a36.save(s)+(s.isSuccess()?'|'+[SELECT Description FROM Account WHERE Id=:x.Id].Description.length():'');} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true||32000",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R182",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.optAllOrNone=true; List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,o); r=a36.save(ss[0])+';'+a36.save(ss[1]);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|REQUIRED_FIELD_MISSING|(Name)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R183",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=false; Account x=new Account(Name='A36',Description='x'.repeat(32001)); Database.SaveResult s=Database.insert(x,o); r=a36.save(s)+(s.isSuccess()?'|'+[SELECT Description FROM Account WHERE Id=:x.Id].Description.length():'');} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|false|STRING_TOO_LONG:Description",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R184",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.optAllOrNone=false; List<Account> xs=new List<Account>{new Account(Name='A36'),new Account()}; Database.SaveResult[] ss=Database.insert(xs,o); r=a36.save(ss[0])+';'+a36.save(ss[1]);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|;false|false|REQUIRED_FIELD_MISSING:Name",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R185",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=true; Account x=new Account(Name='A36'); x.setOptions(o); r=x.getOptions().allowFieldTruncation;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R186",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); r=x.getOptions()==null;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R187",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); x.setOptions(null); r=x.getOptions()==null;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R188",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=true; Account x=new Account(Name='A36',Description='x'.repeat(32001)); x.setOptions(o); insert x; r=[SELECT Description FROM Account WHERE Id=:x.Id].Description.length();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "32000",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R189",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.localeOptions.language='en_US'; r=o.localeOptions.language;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 55: Variable does not exist: language",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 55
+    },
+    {
+      "ID": "R190",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint s=Database.setSavepoint(); Account x=new Account(Name='A36'); insert x; Database.rollback(s); r=[SELECT COUNT() FROM Account WHERE Id=:x.Id];} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R191",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint s=Database.setSavepoint(); Account x=new Account(Name='A36'); insert x; Database.rollback(s); r=x.Id!=null;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R192",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint s=Database.setSavepoint(); Account x=new Account(Name='A36'); insert x; Database.rollback(s); insert x; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "DML|1|INVALID_FIELD_FOR_INSERT_UPDATE|(Id)",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R193",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Savepoint s=Database.setSavepoint(); x.Name='Changed'; update x; Database.rollback(s); r=[SELECT Name FROM Account WHERE Id=:x.Id].Name;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "A36",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R194",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Savepoint s=Database.setSavepoint(); x.Name='Changed'; update x; Database.rollback(s); r=x.Name;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "Changed",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R195",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; Savepoint s=Database.setSavepoint(); delete x; Database.rollback(s); r=[SELECT COUNT() FROM Account WHERE Id=:x.Id];} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R196",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36'); insert x; delete x; Savepoint s=Database.setSavepoint(); undelete x; Database.rollback(s); r=[SELECT IsDeleted FROM Account WHERE Id=:x.Id ALL ROWS].IsDeleted;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R197",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint s=Database.setSavepoint(); Account x=new Account(Name='A36'); insert x; Database.rollback(s); Database.rollback(s); r=[SELECT COUNT() FROM Account WHERE Id=:x.Id];} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R198",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint s=Database.setSavepoint(); Database.releaseSavepoint(s); Database.rollback(s); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.TypeException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R199",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint s=Database.setSavepoint(); Database.releaseSavepoint(s); Database.releaseSavepoint(s); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.TypeException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R200",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.rollback(null); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R201",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.releaseSavepoint(null); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R202",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint a=Database.setSavepoint(); Account x=new Account(Name='A36-A'); insert x; Savepoint b=Database.setSavepoint(); Account y=new Account(Name='A36-B'); insert y; Database.rollback(b); r=[SELECT COUNT() FROM Account WHERE Id IN :new Set<Id>{x.Id,y.Id}];} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R203",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint a=Database.setSavepoint(); Savepoint b=Database.setSavepoint(); Database.rollback(a); Database.rollback(b); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.TypeException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R204",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint a=Database.setSavepoint(); Savepoint b=Database.setSavepoint(); Database.releaseSavepoint(a); Database.rollback(b); r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.TypeException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R205",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint a=Database.setSavepoint(); r=a==a;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R206",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint a=Database.setSavepoint(); Savepoint b=Database.setSavepoint(); r=a==b;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R207",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Savepoint s=Database.setSavepoint(); Account x=new Account(Name='A36'); Database.SaveResult v=Database.insert(x,false); Database.rollback(s); r=v.isSuccess()+'|'+(v.getId()==x.Id)+'|'+[SELECT COUNT() FROM Account WHERE Id=:x.Id];} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R208",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); r=x.getLeadId();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R209",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); r=x.getAccountId();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R210",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); r=x.getContactId();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R211",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); r=x.getOpportunityName();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R212",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); r=x.getConvertedStatus();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R213",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); r=x.getDoNotCreateOpportunity();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 33: Method does not exist or incorrect signature: void getDoNotCreateOpportunity() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 33
+    },
+    {
+      "ID": "R214",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); r=x.getOverwriteLeadSource();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 33: Method does not exist or incorrect signature: void getOverwriteLeadSource() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 33
+    },
+    {
+      "ID": "R215",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); r=x.getSendNotificationEmail();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 33: Method does not exist or incorrect signature: void getSendNotificationEmail() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 33
+    },
+    {
+      "ID": "R216",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); r=x.getOwnerId();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R217",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setDoNotCreateOpportunity(true); r=x.getDoNotCreateOpportunity();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 34: Method does not exist or incorrect signature: void getDoNotCreateOpportunity() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 34
+    },
+    {
+      "ID": "R218",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setDoNotCreateOpportunity(false); r=x.getDoNotCreateOpportunity();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 34: Method does not exist or incorrect signature: void getDoNotCreateOpportunity() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 34
+    },
+    {
+      "ID": "R219",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setDoNotCreateOpportunity(null); r=x.getDoNotCreateOpportunity();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 34: Method does not exist or incorrect signature: void getDoNotCreateOpportunity() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 34
+    },
+    {
+      "ID": "R220",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setOverwriteLeadSource(true); r=x.getOverwriteLeadSource();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 34: Method does not exist or incorrect signature: void getOverwriteLeadSource() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 34
+    },
+    {
+      "ID": "R221",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setOverwriteLeadSource(false); r=x.getOverwriteLeadSource();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 34: Method does not exist or incorrect signature: void getOverwriteLeadSource() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 34
+    },
+    {
+      "ID": "R222",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setOverwriteLeadSource(null); r=x.getOverwriteLeadSource();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 34: Method does not exist or incorrect signature: void getOverwriteLeadSource() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 34
+    },
+    {
+      "ID": "R223",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setSendNotificationEmail(true); r=x.getSendNotificationEmail();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 34: Method does not exist or incorrect signature: void getSendNotificationEmail() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 34
+    },
+    {
+      "ID": "R224",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setSendNotificationEmail(false); r=x.getSendNotificationEmail();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 34: Method does not exist or incorrect signature: void getSendNotificationEmail() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 34
+    },
+    {
+      "ID": "R225",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setSendNotificationEmail(null); r=x.getSendNotificationEmail();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 34: Method does not exist or incorrect signature: void getSendNotificationEmail() from the type Database.LeadConvert",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 34
+    },
+    {
+      "ID": "R226",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setOpportunityName('A36 opportunity'); r=x.getOpportunityName();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "A36 opportunity",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R227",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setOpportunityName(''); r=x.getOpportunityName();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R228",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setOpportunityName(null); r=x.getOpportunityName();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R229",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setConvertedStatus('A36 status'); r=x.getConvertedStatus();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "A36 status",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R230",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setConvertedStatus(''); r=x.getConvertedStatus();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R231",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); x.setConvertedStatus(null); r=x.getConvertedStatus();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R232",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead a=new Lead(LastName='A36',Company='A36'); insert a; Database.LeadConvert x=new Database.LeadConvert(); x.setLeadId(a.Id); r=x.getLeadId()==a.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R233",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account a=new Account(Name='A36'); insert a; Database.LeadConvert x=new Database.LeadConvert(); x.setAccountId(a.Id); r=x.getAccountId()==a.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R234",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Contact a=new Contact(LastName='A36'); insert a; Database.LeadConvert x=new Database.LeadConvert(); x.setContactId(a.Id); r=x.getContactId()==a.Id;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R235",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead l=new Lead(LastName='A36',Company='A36'); insert l; String status=[SELECT MasterLabel FROM LeadStatus WHERE IsConverted=true ORDER BY SortOrder LIMIT 1].MasterLabel; Database.LeadConvert x=new Database.LeadConvert(); x.setLeadId(l.Id); x.setConvertedStatus(status); x.setDoNotCreateOpportunity(true); Database.LeadConvertResult s=Database.convertLead(x,true); r=a36.converted(s)+'|'+[SELECT IsConverted FROM Lead WHERE Id=:l.Id].IsConverted;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|true|true|false||true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R236",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead l=new Lead(LastName='A36',Company='A36'); insert l; String status=[SELECT MasterLabel FROM LeadStatus WHERE IsConverted=true ORDER BY SortOrder LIMIT 1].MasterLabel; Database.LeadConvert x=new Database.LeadConvert(); x.setLeadId(l.Id); x.setConvertedStatus(status); x.setDoNotCreateOpportunity(true); Database.LeadConvertResult s=Database.convertLead(x,false); r=a36.converted(s)+'|'+[SELECT IsConverted FROM Lead WHERE Id=:l.Id].IsConverted;} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|true|true|false||true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R237",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.LeadConvert x=new Database.LeadConvert(); Database.LeadConvertResult s=Database.convertLead(x,false); r=a36.converted(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|false|false|false|false|INVALID_CROSS_REFERENCE_KEY:",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R238",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Lead l=new Lead(LastName='A36',Company='A36'); insert l; Database.LeadConvert x=new Database.LeadConvert(); x.setLeadId(l.Id); x.setConvertedStatus('A36 INVALID STATUS'); Database.LeadConvertResult s=Database.convertLead(x,false); r=a36.converted(s);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|true|false|false|false|INVALID_STATUS:Status",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R239",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Database.LeadConvert> xs=new List<Database.LeadConvert>(); r=Database.convertLead(xs,false).size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R240",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {r=Datacloud.FindDuplicates.findDuplicates(new List<SObject>()).size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.HandledException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R241",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<SObject> xs=null; r=Datacloud.FindDuplicates.findDuplicates(xs).size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.HandledException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R242",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {r=Datacloud.FindDuplicates.findDuplicates(new List<SObject>{null}).size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.HandledException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R243",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {r=Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name='A36')}).size();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "C001",
+      "Code": "insert 1; pq.out('C001',true);",
+      "Expected": "COMPILE_ERROR\tline 6: DML requires SObject or SObject list type: Integer",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C002",
+      "Code": "update new List<Integer>{1}; pq.out('C002',true);",
+      "Expected": "COMPILE_ERROR\tline 6: DML requires SObject or SObject list type: List<Integer>",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C003",
+      "Code": "Database.SaveResult s=Database.delete(new Account()); pq.out('C003',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Database.DeleteResult to Database.SaveResult",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C004",
+      "Code": "Database.DeleteResult s=Database.insert(new Account()); pq.out('C004',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Database.SaveResult to Database.DeleteResult",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C005",
+      "Code": "Database.SaveResult s=new Database.SaveResult(); pq.out('C005',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Database.SaveResult",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C006",
+      "Code": "Database.UpsertResult s=new Database.UpsertResult(); pq.out('C006',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Database.UpsertResult",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C007",
+      "Code": "Account x=new Account(); upsert x NoSuchExternal__c; pq.out('C007',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid field for upsert, must be an External Id custom or standard indexed field: NoSuchExternal__c",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C008",
+      "Code": "Account x=new Account(); upsert x Name; pq.out('C008',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid field for upsert, must be an External Id custom or standard indexed field: Name",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C009",
+      "Code": "undelete new List<Integer>{1}; pq.out('C009',true);",
+      "Expected": "COMPILE_ERROR\tline 6: DML requires SObject or SObject list type: List<Integer>",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C010",
+      "Code": "merge new Case() new Case(); pq.out('C010',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Specified type Case cannot be merged",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C011",
+      "Code": "Database.Error e=new Database.Error(); pq.out('C011',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Database.Error",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C012",
+      "Code": "Database.SaveResult s=Database.insert(new Account(),false); s.isSuccess=true; pq.out('C012',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Variable does not exist: isSuccess",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C013",
+      "Code": "Database.DMLOptions o=new Database.DMLOptions(); o.optAllOrNone='true'; pq.out('C013',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Boolean",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C014",
+      "Code": "Database.DMLOptions o=new Database.DMLOptions(); o.unknownOption=true; pq.out('C014',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Variable does not exist: unknownOption",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C015",
+      "Code": "Savepoint s=new Savepoint(); pq.out('C015',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: System.Savepoint",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C016",
+      "Code": "Database.rollback(1); pq.out('C016',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void rollback(Integer) from the type Database",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C017",
+      "Code": "Database.LeadConvert x=new Database.LeadConvert(); x.setLeadId(1); pq.out('C017',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setLeadId(Integer) from the type Database.LeadConvert",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C018",
+      "Code": "Database.LeadConvert x=new Database.LeadConvert(); x.setDoNotCreateOpportunity('true'); pq.out('C018',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setDoNotCreateOpportunity(String) from the type Database.LeadConvert",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C019",
+      "Code": "List<Datacloud.FindDuplicatesResult> xs; List<Datacloud.DuplicateResult> ds; List<Datacloud.MatchResult> ms; List<Datacloud.MatchRecord> rs; pq.out('C019',true);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false
+    },
+    {
+      "ID": "C020",
+      "Code": "Datacloud.FindDuplicates.findDuplicates(new List<Integer>{1}); pq.out('C020',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void findDuplicates(List<Integer>) from the type Datacloud.FindDuplicates",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "T001",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=true; Account x=new Account(Name='A36-Control',Description='x'.repeat(32001)); Database.SaveResult s=Database.insert(x,o); r=s.isSuccess()+'|'+(s.isSuccess()?String.valueOf([SELECT Description FROM Account WHERE Id=:x.Id].Description.length()):String.valueOf(s.getErrors()[0].getStatusCode()));} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|32000",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T002",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=false; Account x=new Account(Name='A36-Control',Description='x'.repeat(32001)); Database.SaveResult s=Database.insert(x,o); r=s.isSuccess()+'|'+(s.isSuccess()?String.valueOf([SELECT Description FROM Account WHERE Id=:x.Id].Description.length()):String.valueOf(s.getErrors()[0].getStatusCode()));} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|STRING_TOO_LONG",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T003",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=true; Contact x=new Contact(LastName='A36-Control',Description='x'.repeat(32001)); Database.SaveResult s=Database.insert(x,o); r=s.isSuccess()+'|'+(s.isSuccess()?String.valueOf([SELECT Description FROM Contact WHERE Id=:x.Id].Description.length()):String.valueOf(s.getErrors()[0].getStatusCode()));} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|32000",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T004",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=false; Contact x=new Contact(LastName='A36-Control',Description='x'.repeat(32001)); Database.SaveResult s=Database.insert(x,o); r=s.isSuccess()+'|'+(s.isSuccess()?String.valueOf([SELECT Description FROM Contact WHERE Id=:x.Id].Description.length()):String.valueOf(s.getErrors()[0].getStatusCode()));} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|STRING_TOO_LONG",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T005",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=true; Case x=new Case(Subject='A36-Control',Description='x'.repeat(32001)); Database.SaveResult s=Database.insert(x,o); r=s.isSuccess()+'|'+(s.isSuccess()?String.valueOf([SELECT Description FROM Case WHERE Id=:x.Id].Description.length()):String.valueOf(s.getErrors()[0].getStatusCode()));} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|32000",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T006",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Database.DMLOptions o=new Database.DMLOptions(); o.allowFieldTruncation=false; Case x=new Case(Subject='A36-Control',Description='x'.repeat(32001)); Database.SaveResult s=Database.insert(x,o); r=s.isSuccess()+'|'+(s.isSuccess()?String.valueOf([SELECT Description FROM Case WHERE Id=:x.Id].Description.length()):String.valueOf(s.getErrors()[0].getStatusCode()));} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "false|STRING_TOO_LONG",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T007",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36-Control',Description='x'.repeat(32000)); Database.SaveResult s=Database.insert(x,false); r=s.isSuccess()+'|'+[SELECT Description FROM Account WHERE Id=:x.Id].Description.length();} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|32000",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T008",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=new Account(Name='A36-Control',Description='a\\nb'); insert x; String d=[SELECT Description FROM Account WHERE Id=:x.Id].Description; r=d.length()+'|'+d.equals('a\\nb');} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "3|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T009",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{null}; insert xs; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T010",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=null; insert x; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T011",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{null}; update xs; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T012",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=null; update x; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T013",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{null}; upsert xs; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T014",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=null; upsert x; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T015",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{null}; delete xs; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T016",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=null; delete x; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T017",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Account> xs=new List<Account>{null}; undelete xs; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.ListException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "T018",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Account x=null; undelete x; r='returned';} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.NullPointerException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "U001",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Object x=new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control'); Database.UpsertResult rs=Database.upsert(x,Account.A36External__c,true); Database.UpsertResult s=rs; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void upsert(Object, Schema.SObjectField, Boolean) from the type Database",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "U002",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Object x=new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control'); Database.UpsertResult rs=Database.upsert(x,Account.A36External__c,false); Database.UpsertResult s=rs; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void upsert(Object, Schema.SObjectField, Boolean) from the type Database",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "U003",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Object x=new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control'); Database.UpsertResult rs=Database.upsert(x,Account.A36External__c,AccessLevel.USER_MODE); Database.UpsertResult s=rs; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void upsert(Object, Schema.SObjectField, System.AccessLevel) from the type Database",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "U004",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Object x=new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control'); Database.UpsertResult rs=Database.upsert(x,Account.A36External__c,false,AccessLevel.USER_MODE); Database.UpsertResult s=rs; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void upsert(Object, Schema.SObjectField, Boolean, System.AccessLevel) from the type Database",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "U005",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Object> x=new List<Object>{new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control')}; List<Database.UpsertResult> rs=Database.upsert(x,Account.A36External__c,true); Database.UpsertResult s=rs[0]; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField, Boolean) from the type Database",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "U006",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Object> x=new List<Object>{new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control')}; List<Database.UpsertResult> rs=Database.upsert(x,Account.A36External__c,false); Database.UpsertResult s=rs[0]; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField, Boolean) from the type Database",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "U007",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Object> x=new List<Object>{new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control')}; List<Database.UpsertResult> rs=Database.upsert(x,Account.A36External__c,AccessLevel.USER_MODE); Database.UpsertResult s=rs[0]; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField, System.AccessLevel) from the type Database",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "U008",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Object> x=new List<Object>{new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control')}; List<Database.UpsertResult> rs=Database.upsert(x,Account.A36External__c,false,AccessLevel.USER_MODE); Database.UpsertResult s=rs[0]; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField, Boolean, System.AccessLevel) from the type Database",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "U009",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {SObject x=new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control'); Database.UpsertResult rs=Database.upsert(x,Account.A36External__c,false); Database.UpsertResult s=rs; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "U010",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<SObject> x=new List<SObject>{new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control')}; List<Database.UpsertResult> rs=Database.upsert(x,Account.A36External__c,false); Database.UpsertResult s=rs[0]; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "U011",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Object> x=new List<Object>{new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control')}; List<Database.UpsertResult> rs=Database.upsert(x,Account.Name,false); Database.UpsertResult s=rs[0]; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField, Boolean) from the type Database",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 8
+    },
+    {
+      "ID": "U012",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<SObject> x=new List<SObject>{new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control')}; List<Database.UpsertResult> rs=Database.upsert(x,Account.Name,false); Database.UpsertResult s=rs[0]; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "EXC|System.SObjectException",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "U013",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {Object x=new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control'); Database.UpsertResult rs=Database.upsert(x,Account.A36External__c); Database.UpsertResult s=rs; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void upsert(Object, Schema.SObjectField) from the type Database",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 9
+    },
+    {
+      "ID": "U014",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<Object> x=new List<Object>{new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control')}; List<Database.UpsertResult> rs=Database.upsert(x,Account.A36External__c); Database.UpsertResult s=rs[0]; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField) from the type Database",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 9
+    },
+    {
+      "ID": "U015",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {SObject x=new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control'); Database.UpsertResult rs=Database.upsert(x,Account.A36External__c); Database.UpsertResult s=rs; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|true",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "U016",
+      "Code": "Savepoint a36outer=Database.setSavepoint(); try {List<SObject> x=new List<SObject>{new Account(Name='A36-Upsert-Control',A36External__c='A36-Upsert-Control')}; List<Database.UpsertResult> rs=Database.upsert(x,Account.A36External__c); Database.UpsertResult s=rs[0]; r=s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null);} catch(DmlException a36e){r='DML|'+a36e.getNumDml()+'|'+a36e.getDmlStatusCode(0)+'|'+a36e.getDmlFieldNames(0);} catch(Exception a36e){r='EXC|'+a36e.getTypeName();} finally {Database.rollback(a36outer); Database.releaseSavepoint(a36outer);}",
+      "Expected": "true|true|true",
+      "Compile": false,
+      "NativeNull": false
+    }
+  ],
+  "Remaining": []
+}

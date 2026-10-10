@@ -21,7 +21,11 @@ func TestBuildIndex(t *testing.T) {
 	writeFile(t, classPath, "public class Hello { public void run() {} }")
 	writeFile(t, triggerPath, "trigger HelloTrigger on Account (before insert) {}")
 
+	openParsers := apexast.OpenParsersForTesting()
 	idx := Build(project.Project{Root: root, ApexFiles: []string{classPath, triggerPath}}, schema.Schema{})
+	if got := apexast.OpenParsersForTesting(); got > openParsers {
+		t.Fatalf("build left parsers open: before = %d, after = %d", openParsers, got)
+	}
 	if idx.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
 	}
@@ -285,7 +289,7 @@ func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
   ],
   "objects": [
     {
-      "name": "pkg__CartItemLine__c",
+      "name": "pkg__BasketLine__c",
       "fields": [
         {"name": "pkg__Product__c", "type": "reference"}
       ]
@@ -311,7 +315,7 @@ func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
 	if len(idx.Types) != 1 || idx.Types[0].Name != "Address" || idx.Types[0].Namespace != "pkg" || !idx.Types[0].Dependency {
 		t.Fatalf("types = %#v", idx.Types)
 	}
-	if len(idx.Objects) != 1 || idx.Objects[0].Name != "pkg__CartItemLine__c" {
+	if len(idx.Objects) != 1 || idx.Objects[0].Name != "pkg__BasketLine__c" {
 		t.Fatalf("objects = %#v", idx.Objects)
 	}
 }

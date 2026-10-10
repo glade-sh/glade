@@ -12,6 +12,7 @@ import (
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -35,12 +36,18 @@ func (p preparedAnonymousSource) close() {
 }
 
 func prepareAnonymousSource(source, apiVersion string) (preparedAnonymousSource, error) {
-	apiVersion, err := apexversion.ResolveSource(apiVersion)
+	return prepareAnonymousSourceInContext(source, typesys.Index{
+		Project: typesys.ProjectInfo{SourceAPIVersion: apiVersion},
+	})
+}
+
+func prepareAnonymousSourceInContext(source string, projectIndex typesys.Index) (preparedAnonymousSource, error) {
+	apiVersion, err := apexversion.PreserveSource(projectIndex.Project.SourceAPIVersion)
 	if err != nil {
 		return preparedAnonymousSource{}, err
 	}
 	prepared := preparedAnonymousSource{body: source, apiVersion: apiVersion}
-	parsed := apexast.NewParser().ParseSource("__glade_anonymous.cls", source)
+	parsed := apexast.ParseSource("__glade_anonymous.cls", source)
 	var declarations []struct {
 		start int
 		end   int
@@ -65,8 +72,12 @@ func prepareAnonymousSource(source, apiVersion string) (preparedAnonymousSource,
 	if len(declarations) == 0 {
 		return prepared, nil
 	}
-	if len(parsed.Diagnostics) > 0 {
-		return prepared, fmt.Errorf("%s", parsed.Diagnostics[0].Message)
+	for _, first := range parsed.Diagnostics {
+		// Reserved identifiers remain errors, but a deeper inner-type rejection
+		// takes precedence (C051-C054); Q001-Q004 retain reserved-name errors.
+		if first.Code != "APEXPARSE002" && first.Code != "APEXPARSE003" {
+			return prepared, fmt.Errorf("%s: %s", first.Code, first.Message)
+		}
 	}
 
 	tempRoot, err := os.MkdirTemp("", "glade-anonymous-runtime-")
@@ -83,7 +94,16 @@ func prepareAnonymousSource(source, apiVersion string) (preparedAnonymousSource,
 	paths := make([]string, 0, len(declarations))
 	for i, declaration := range declarations {
 		path := filepath.Join(classDir, fmt.Sprintf("GladeAnonymous%d.cls", i))
-		if err := os.WriteFile(path, []byte(declaration.text), 0o600); err != nil {
+		// Preserve the source occurrence's line/column positions for lifecycle
+		// compiler diagnostics after declarations move into transient files.
+		prefix := []byte(source[:declaration.start])
+		for j := range prefix {
+			if prefix[j] != '\n' && prefix[j] != '\r' {
+				prefix[j] = ' '
+			}
+		}
+		text := append(prefix, []byte(declaration.text)...)
+		if err := os.WriteFile(path, text, 0o600); err != nil {
 			prepared.close()
 			return prepared, fmt.Errorf("write anonymous declaration: %w", err)
 		}
@@ -102,14 +122,22 @@ func prepareAnonymousSource(source, apiVersion string) (preparedAnonymousSource,
 	prepared.body = string(body)
 	index := typesys.Build(project.Project{
 		Root:             tempRoot,
+		Namespace:        projectIndex.Project.Namespace,
 		SourceAPIVersion: apiVersion,
 		ApexFiles:        paths,
 	}, gladeschema.Schema{})
-	for _, item := range index.Diagnostics {
+	index = sema.WithAnonymousDeclarationContext(index)
+	for _, item := range sema.NativeLifecycleDiagnostics(index, index.Diagnostics) {
 		if item.Severity == diagnostic.Error {
 			prepared.close()
-			return prepared, fmt.Errorf("anonymous declaration index: %s", item.Message)
+			return prepared, fmt.Errorf("%s: anonymous declaration index: %s", item.Code, anonymousNativeMessage(item))
 		}
+	}
+	analysisIndex := mergeAnonymousIndex(projectIndex, index)
+	if analysis := sema.AnalyzeAnonymousDeclarationsInContext(analysisIndex, index); analysis.HasErrors() {
+		prepared.close()
+		first := analysis.Diagnostics[0]
+		return prepared, fmt.Errorf("%s: %s", first.Code, anonymousNativeMessage(first))
 	}
 	runtime, err := apextest.CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
 	if err != nil {
@@ -135,4 +163,11 @@ func mergeAnonymousIndex(base, transient typesys.Index) typesys.Index {
 
 func registerAnonymousRuntime(machine *vm.VM, runtime apextest.CompiledProjectRuntime) error {
 	return apextest.RegisterCompiledProjectRuntimeForRequest(machine, runtime)
+}
+
+func anonymousNativeMessage(d diagnostic.Diagnostic) string {
+	if d.NativeMessage != "" {
+		return d.NativeMessage
+	}
+	return d.Message
 }

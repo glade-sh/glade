@@ -489,6 +489,15 @@ jobs:
           restore-keys: |
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.6-ci-server-playground-${{ hashFiles('go.sum') }}-
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.6-ci-test-${{ hashFiles('go.sum') }}-
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install LWC conformance dependencies
+        run: npm ci --prefix third_party/lwc
+      - name: Install browser conformance dependencies
+        run: npm ci --prefix lwcruntime
+      - name: Install conformance Chromium
+        run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-server-and-playground.json server-and-playground -- scripts/ci-go-test.sh lane server-and-playground
       - name: Save Go module cache
         if: success()
@@ -578,6 +587,12 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
+      - name: Install LWC conformance dependencies
+        run: npm ci --prefix third_party/lwc
+      - name: Install browser conformance dependencies
+        run: npm ci --prefix lwcruntime
+      - name: Install conformance Chromium
+        run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-repoguard.json repoguard -- scripts/ci-go-test.sh lane repoguard
       - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go
       - name: Save Go module cache

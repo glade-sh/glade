@@ -1,0 +1,1822 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "expectationStatus": "native captured",
+  "declarations": {},
+  "cases": [
+    {
+      "id": "R001",
+      "group": "text-id/id15-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted='001xx000003DGbY';List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR001",
+          "source": "@IsTest private class CRT625df0943f83eaR001 {\n\n@IsTest static void R001() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted='001xx000003DGbY';List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R001|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR001",
+          "source": "@IsTest private class CRT674da21880dbdbR001 {\n\n@IsTest static void R001() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted='001xx000003DGbY';List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R001|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R002",
+      "group": "text-id/id18-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=Id.valueOf(String.valueOf(first));List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR002",
+          "source": "@IsTest private class CRT625df0943f83eaR002 {\n\n@IsTest static void R002() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=Id.valueOf(String.valueOf(first));List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R002|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR002",
+          "source": "@IsTest private class CRT674da21880dbdbR002 {\n\n@IsTest static void R002() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=Id.valueOf(String.valueOf(first));List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R002|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R003",
+      "group": "text-id/id15-set-in",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Set<Id> wanted=new Set<Id>{first};List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber IN :wanted]; r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR003",
+          "source": "@IsTest private class CRT625df0943f83eaR003 {\n\n@IsTest static void R003() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Set<Id> wanted=new Set<Id>{first};List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber IN :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R003|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR003",
+          "source": "@IsTest private class CRT674da21880dbdbR003 {\n\n@IsTest static void R003() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Set<Id> wanted=new Set<Id>{first};List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber IN :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R003|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R004",
+      "group": "text-id/id15-list-in",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();List<Id> wanted=new List<Id>{first};List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber IN :wanted]; r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR004",
+          "source": "@IsTest private class CRT625df0943f83eaR004 {\n\n@IsTest static void R004() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();List<Id> wanted=new List<Id>{first};List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber IN :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R004|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR004",
+          "source": "@IsTest private class CRT674da21880dbdbR004 {\n\n@IsTest static void R004() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();List<Id> wanted=new List<Id>{first};List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber IN :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R004|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R005",
+      "group": "text-id/dynamic-id15-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=first;List<Account> matches=Database.query('SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted'); r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR005",
+          "source": "@IsTest private class CRT625df0943f83eaR005 {\n\n@IsTest static void R005() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=first;List<Account> matches=Database.query('SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted'); r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R005|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR005",
+          "source": "@IsTest private class CRT674da21880dbdbR005 {\n\n@IsTest static void R005() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=first;List<Account> matches=Database.query('SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted'); r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R005|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R006",
+      "group": "text-id/dynamic-id15-list-in",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();List<Id> wanted=new List<Id>{first};List<Account> matches=Database.query('SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber IN :wanted'); r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR006",
+          "source": "@IsTest private class CRT625df0943f83eaR006 {\n\n@IsTest static void R006() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();List<Id> wanted=new List<Id>{first};List<Account> matches=Database.query('SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber IN :wanted'); r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R006|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR006",
+          "source": "@IsTest private class CRT674da21880dbdbR006 {\n\n@IsTest static void R006() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();List<Id> wanted=new List<Id>{first};List<Account> matches=Database.query('SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber IN :wanted'); r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R006|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R007",
+      "group": "text-id/string18-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted=String.valueOf(first);List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR007",
+          "source": "@IsTest private class CRT625df0943f83eaR007 {\n\n@IsTest static void R007() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted=String.valueOf(first);List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R007|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR007",
+          "source": "@IsTest private class CRT674da21880dbdbR007 {\n\n@IsTest static void R007() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted=String.valueOf(first);List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R007|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R008",
+      "group": "text-id/string18-folded-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted=String.valueOf(first).toLowerCase();List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR008",
+          "source": "@IsTest private class CRT625df0943f83eaR008 {\n\n@IsTest static void R008() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted=String.valueOf(first).toLowerCase();List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R008|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR008",
+          "source": "@IsTest private class CRT674da21880dbdbR008 {\n\n@IsTest static void R008() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted=String.valueOf(first).toLowerCase();List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R008|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R009",
+      "group": "text-id/string15-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted='001xx000003DGbY';List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR009",
+          "source": "@IsTest private class CRT625df0943f83eaR009 {\n\n@IsTest static void R009() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted='001xx000003DGbY';List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R009|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR009",
+          "source": "@IsTest private class CRT674da21880dbdbR009 {\n\n@IsTest static void R009() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted='001xx000003DGbY';List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R009|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R010",
+      "group": "text-id/literal15-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = '001xx000003DGbY']; r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR010",
+          "source": "@IsTest private class CRT625df0943f83eaR010 {\n\n@IsTest static void R010() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = '001xx000003DGbY']; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R010|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR010",
+          "source": "@IsTest private class CRT674da21880dbdbR010 {\n\n@IsTest static void R010() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = '001xx000003DGbY']; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R010|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R011",
+      "group": "text-id/stored15-id15-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber='001xx000003DGbY'),new Account(Name='Value Two',AccountNumber='001xx000003DGBY')};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=first;List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR011",
+          "source": "@IsTest private class CRT625df0943f83eaR011 {\n\n@IsTest static void R011() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber='001xx000003DGbY'),new Account(Name='Value Two',AccountNumber='001xx000003DGBY')};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=first;List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R011|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR011",
+          "source": "@IsTest private class CRT674da21880dbdbR011 {\n\n@IsTest static void R011() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber='001xx000003DGbY'),new Account(Name='Value Two',AccountNumber='001xx000003DGBY')};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=first;List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R011|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R012",
+      "group": "text-id/stored15-id18-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber='001xx000003DGbY'),new Account(Name='Value Two',AccountNumber='001xx000003DGBY')};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=Id.valueOf(String.valueOf(first));List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR012",
+          "source": "@IsTest private class CRT625df0943f83eaR012 {\n\n@IsTest static void R012() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber='001xx000003DGbY'),new Account(Name='Value Two',AccountNumber='001xx000003DGBY')};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=Id.valueOf(String.valueOf(first));List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R012|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR012",
+          "source": "@IsTest private class CRT674da21880dbdbR012 {\n\n@IsTest static void R012() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber='001xx000003DGbY'),new Account(Name='Value Two',AccountNumber='001xx000003DGBY')};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Id wanted=Id.valueOf(String.valueOf(first));List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R012|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R013",
+      "group": "text-id/stored15-string-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber='001xx000003DGbY'),new Account(Name='Value Two',AccountNumber='001xx000003DGBY')};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted='001xx000003DGbY';List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "2",
+          "67.0": "2"
+        },
+        "isTest": {
+          "62.0": "2",
+          "67.0": "2"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR013",
+          "source": "@IsTest private class CRT625df0943f83eaR013 {\n\n@IsTest static void R013() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber='001xx000003DGbY'),new Account(Name='Value Two',AccountNumber='001xx000003DGBY')};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted='001xx000003DGbY';List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R013|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR013",
+          "source": "@IsTest private class CRT674da21880dbdbR013 {\n\n@IsTest static void R013() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber='001xx000003DGbY'),new Account(Name='Value Two',AccountNumber='001xx000003DGBY')};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();String wanted='001xx000003DGbY';List<Account> matches=[SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted]; r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R013|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R014",
+      "group": "text-id/boolean-bind-rejection",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Boolean wanted=true;List<Account> matches=Database.query('SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted'); r=matches.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.QueryException|Invalid bind expression type of Boolean for column of type String",
+          "67.0": "EXC|System.QueryException|Invalid bind expression type of Boolean for column of type String"
+        },
+        "isTest": {
+          "62.0": "EXC|System.QueryException|Invalid bind expression type of Boolean for column of type String",
+          "67.0": "EXC|System.QueryException|Invalid bind expression type of Boolean for column of type String"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR014",
+          "source": "@IsTest private class CRT625df0943f83eaR014 {\n\n@IsTest static void R014() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Boolean wanted=true;List<Account> matches=Database.query('SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted'); r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R014|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR014",
+          "source": "@IsTest private class CRT674da21880dbdbR014 {\n\n@IsTest static void R014() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id first='001xx000003DGbY'; Id second='001xx000003DGBY';List<Account> rows=new List<Account>{new Account(Name='Value One',AccountNumber=String.valueOf(first)),new Account(Name='Value Two',AccountNumber=String.valueOf(second))};insert rows; Set<Id> owned=new Map<Id,Account>(rows).keySet();Boolean wanted=true;List<Account> matches=Database.query('SELECT Id FROM Account WHERE Id IN :owned AND AccountNumber = :wanted'); r=matches.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R014|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R015",
+      "group": "text-id/invalid-id-rejection",
+      "code": "r=Id.valueOf('not-an-id');",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.StringException|Invalid id: not-an-id",
+          "67.0": "EXC|System.StringException|Invalid id: not-an-id"
+        },
+        "isTest": {
+          "62.0": "EXC|System.StringException|Invalid id: not-an-id",
+          "67.0": "EXC|System.StringException|Invalid id: not-an-id"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR015",
+          "source": "@IsTest private class CRT625df0943f83eaR015 {\n\n@IsTest static void R015() {\nString corpusObserved;\ntry {\nObject r;\nr=Id.valueOf('not-an-id');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R015|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR015",
+          "source": "@IsTest private class CRT674da21880dbdbR015 {\n\n@IsTest static void R015() {\nString corpusObserved;\ntry {\nObject r;\nr=Id.valueOf('not-an-id');\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R015|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R016",
+      "group": "email/recipient-property/ToAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "success",
+          "67.0": "success"
+        },
+        "isTest": {
+          "62.0": "success",
+          "67.0": "success"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR016",
+          "source": "@IsTest private class CRT625df0943f83eaR016 {\n\n@IsTest static void R016() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R016|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR016",
+          "source": "@IsTest private class CRT674da21880dbdbR016 {\n\n@IsTest static void R016() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R016|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R017",
+      "group": "email/recipient-property/toaddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.toaddresses=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "success",
+          "67.0": "success"
+        },
+        "isTest": {
+          "62.0": "success",
+          "67.0": "success"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR017",
+          "source": "@IsTest private class CRT625df0943f83eaR017 {\n\n@IsTest static void R017() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.toaddresses=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R017|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR017",
+          "source": "@IsTest private class CRT674da21880dbdbR017 {\n\n@IsTest static void R017() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.toaddresses=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R017|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R018",
+      "group": "email/recipient-property/tOaDdReSsEs",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.tOaDdReSsEs=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "success",
+          "67.0": "success"
+        },
+        "isTest": {
+          "62.0": "success",
+          "67.0": "success"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR018",
+          "source": "@IsTest private class CRT625df0943f83eaR018 {\n\n@IsTest static void R018() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.tOaDdReSsEs=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R018|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR018",
+          "source": "@IsTest private class CRT674da21880dbdbR018 {\n\n@IsTest static void R018() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.tOaDdReSsEs=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R018|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R019",
+      "group": "email/recipient-property/cCaDdReSsEs",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.cCaDdReSsEs=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "success",
+          "67.0": "success"
+        },
+        "isTest": {
+          "62.0": "success",
+          "67.0": "success"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR019",
+          "source": "@IsTest private class CRT625df0943f83eaR019 {\n\n@IsTest static void R019() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.cCaDdReSsEs=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R019|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR019",
+          "source": "@IsTest private class CRT674da21880dbdbR019 {\n\n@IsTest static void R019() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.cCaDdReSsEs=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R019|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R020",
+      "group": "email/recipient-property/BCCADDRESSES",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.BCCADDRESSES=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "success",
+          "67.0": "success"
+        },
+        "isTest": {
+          "62.0": "success",
+          "67.0": "success"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR020",
+          "source": "@IsTest private class CRT625df0943f83eaR020 {\n\n@IsTest static void R020() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.BCCADDRESSES=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R020|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR020",
+          "source": "@IsTest private class CRT674da21880dbdbR020 {\n\n@IsTest static void R020() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.BCCADDRESSES=new List<String>{'value@example.invalid'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R020|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R021",
+      "group": "email/recipient-setter-control",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{'value@example.invalid'});Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "success",
+          "67.0": "success"
+        },
+        "isTest": {
+          "62.0": "success",
+          "67.0": "success"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR021",
+          "source": "@IsTest private class CRT625df0943f83eaR021 {\n\n@IsTest static void R021() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{'value@example.invalid'});Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R021|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR021",
+          "source": "@IsTest private class CRT674da21880dbdbR021 {\n\n@IsTest static void R021() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{'value@example.invalid'});Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R021|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R022",
+      "group": "email/missing-recipient-rejection",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.",
+          "67.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email."
+        },
+        "isTest": {
+          "62.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.",
+          "67.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email."
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR022",
+          "source": "@IsTest private class CRT625df0943f83eaR022 {\n\n@IsTest static void R022() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R022|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR022",
+          "source": "@IsTest private class CRT674da21880dbdbR022 {\n\n@IsTest static void R022() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R022|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R023",
+      "group": "email/invalid-recipient-rejection",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'not-an-address'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: not-an-address",
+          "67.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: not-an-address"
+        },
+        "isTest": {
+          "62.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: not-an-address",
+          "67.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: not-an-address"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR023",
+          "source": "@IsTest private class CRT625df0943f83eaR023 {\n\n@IsTest static void R023() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'not-an-address'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R023|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR023",
+          "source": "@IsTest private class CRT674da21880dbdbR023 {\n\n@IsTest static void R023() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'not-an-address'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R023|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R024",
+      "group": "email/body-property",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.ToAddresses=new List<String>{'value@example.invalid'};m.PlainTextBody='Value edge body'; m.SaveAsActivity=false;Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "success",
+          "67.0": "success"
+        },
+        "isTest": {
+          "62.0": "success",
+          "67.0": "success"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR024",
+          "source": "@IsTest private class CRT625df0943f83eaR024 {\n\n@IsTest static void R024() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.ToAddresses=new List<String>{'value@example.invalid'};m.PlainTextBody='Value edge body'; m.SaveAsActivity=false;Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R024|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR024",
+          "source": "@IsTest private class CRT674da21880dbdbR024 {\n\n@IsTest static void R024() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.ToAddresses=new List<String>{'value@example.invalid'};m.PlainTextBody='Value edge body'; m.SaveAsActivity=false;Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R024|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R025",
+      "group": "json/queried-populated-envelope",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;insert new Contact(LastName='Value Child',AccountId=a.Id);Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1|true|1",
+          "67.0": "1|true|1"
+        },
+        "isTest": {
+          "62.0": "1|true|1",
+          "67.0": "1|true|1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR025",
+          "source": "@IsTest private class CRT625df0943f83eaR025 {\n\n@IsTest static void R025() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;insert new Contact(LastName='Value Child',AccountId=a.Id);Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R025|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR025",
+          "source": "@IsTest private class CRT674da21880dbdbR025 {\n\n@IsTest static void R025() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;insert new Contact(LastName='Value Child',AccountId=a.Id);Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R025|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R026",
+      "group": "json/queried-populated-roundtrip",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;insert new Contact(LastName='Value Child',AccountId=a.Id);Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Account copy=(Account)JSON.deserialize(JSON.serialize(row),Account.class);r=copy.Contacts.size()+'|'+copy.Contacts[0].LastName;} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1|Value Child",
+          "67.0": "1|Value Child"
+        },
+        "isTest": {
+          "62.0": "1|Value Child",
+          "67.0": "1|Value Child"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR026",
+          "source": "@IsTest private class CRT625df0943f83eaR026 {\n\n@IsTest static void R026() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;insert new Contact(LastName='Value Child',AccountId=a.Id);Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Account copy=(Account)JSON.deserialize(JSON.serialize(row),Account.class);r=copy.Contacts.size()+'|'+copy.Contacts[0].LastName;} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R026|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR026",
+          "source": "@IsTest private class CRT674da21880dbdbR026 {\n\n@IsTest static void R026() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;insert new Contact(LastName='Value Child',AccountId=a.Id);Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Account copy=(Account)JSON.deserialize(JSON.serialize(row),Account.class);r=copy.Contacts.size()+'|'+copy.Contacts[0].LastName;} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R026|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R027",
+      "group": "json/queried-empty-envelope",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+          "67.0": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+        },
+        "isTest": {
+          "62.0": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+          "67.0": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR027",
+          "source": "@IsTest private class CRT625df0943f83eaR027 {\n\n@IsTest static void R027() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R027|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR027",
+          "source": "@IsTest private class CRT674da21880dbdbR027 {\n\n@IsTest static void R027() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R027|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R028",
+      "group": "json/queried-empty-roundtrip",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Account copy=(Account)JSON.deserialize(JSON.serialize(row),Account.class);r=copy.Contacts.size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR028",
+          "source": "@IsTest private class CRT625df0943f83eaR028 {\n\n@IsTest static void R028() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Account copy=(Account)JSON.deserialize(JSON.serialize(row),Account.class);r=copy.Contacts.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R028|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR028",
+          "source": "@IsTest private class CRT674da21880dbdbR028 {\n\n@IsTest static void R028() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account a=new Account(Name='Value Parent'); insert a; Id owned=a.Id;Account row=[SELECT Name,(SELECT LastName FROM Contacts) FROM Account WHERE Id=:owned];Account copy=(Account)JSON.deserialize(JSON.serialize(row),Account.class);r=copy.Contacts.size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R028|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R029",
+      "group": "json/deserialized-child-envelope",
+      "code": "Account row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1|true|1",
+          "67.0": "1|true|1"
+        },
+        "isTest": {
+          "62.0": "1|true|1",
+          "67.0": "1|true|1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR029",
+          "source": "@IsTest private class CRT625df0943f83eaR029 {\n\n@IsTest static void R029() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R029|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR029",
+          "source": "@IsTest private class CRT674da21880dbdbR029 {\n\n@IsTest static void R029() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R029|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R030",
+      "group": "json/raw-child-array-rejection",
+      "code": "Account row=(Account)JSON.deserialize('{\"Contacts\":[{\"LastName\":\"Value Child\"}]}',Account.class); r=row.Contacts.size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.JSONException|QueryResult must start with '{'",
+          "67.0": "EXC|System.JSONException|QueryResult must start with '{'"
+        },
+        "isTest": {
+          "62.0": "EXC|System.JSONException|QueryResult must start with '{'",
+          "67.0": "EXC|System.JSONException|QueryResult must start with '{'"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR030",
+          "source": "@IsTest private class CRT625df0943f83eaR030 {\n\n@IsTest static void R030() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Contacts\":[{\"LastName\":\"Value Child\"}]}',Account.class); r=row.Contacts.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R030|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR030",
+          "source": "@IsTest private class CRT674da21880dbdbR030 {\n\n@IsTest static void R030() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Contacts\":[{\"LastName\":\"Value Child\"}]}',Account.class); r=row.Contacts.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R030|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R031",
+      "group": "json/parent-object-control",
+      "code": "Contact row=(Contact)JSON.deserialize('{\"LastName\":\"Value Child\",\"Account\":{\"Name\":\"Value Parent\"}}',Contact.class); String payload=JSON.serialize(row);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(payload);Map<String,Object> parent=(Map<String,Object>)root.get('Account');Contact copy=(Contact)JSON.deserialize(payload,Contact.class);r=String.valueOf(parent.containsKey('records'))+'|'+copy.Account.Name;",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "false|Value Parent",
+          "67.0": "false|Value Parent"
+        },
+        "isTest": {
+          "62.0": "false|Value Parent",
+          "67.0": "false|Value Parent"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR031",
+          "source": "@IsTest private class CRT625df0943f83eaR031 {\n\n@IsTest static void R031() {\nString corpusObserved;\ntry {\nObject r;\nContact row=(Contact)JSON.deserialize('{\"LastName\":\"Value Child\",\"Account\":{\"Name\":\"Value Parent\"}}',Contact.class); String payload=JSON.serialize(row);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(payload);Map<String,Object> parent=(Map<String,Object>)root.get('Account');Contact copy=(Contact)JSON.deserialize(payload,Contact.class);r=String.valueOf(parent.containsKey('records'))+'|'+copy.Account.Name;\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R031|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR031",
+          "source": "@IsTest private class CRT674da21880dbdbR031 {\n\n@IsTest static void R031() {\nString corpusObserved;\ntry {\nObject r;\nContact row=(Contact)JSON.deserialize('{\"LastName\":\"Value Child\",\"Account\":{\"Name\":\"Value Parent\"}}',Contact.class); String payload=JSON.serialize(row);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(payload);Map<String,Object> parent=(Map<String,Object>)root.get('Account');Contact copy=(Contact)JSON.deserialize(payload,Contact.class);r=String.valueOf(parent.containsKey('records'))+'|'+copy.Account.Name;\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R031|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R032",
+      "group": "json/plain-list-control",
+      "code": "List<Account> rows=new List<Account>{new Account(Name='Value Parent')};Object decoded=JSON.deserializeUntyped(JSON.serialize(rows));r=(decoded instanceof List<Object>);",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "true",
+          "67.0": "true"
+        },
+        "isTest": {
+          "62.0": "true",
+          "67.0": "true"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR032",
+          "source": "@IsTest private class CRT625df0943f83eaR032 {\n\n@IsTest static void R032() {\nString corpusObserved;\ntry {\nObject r;\nList<Account> rows=new List<Account>{new Account(Name='Value Parent')};Object decoded=JSON.deserializeUntyped(JSON.serialize(rows));r=(decoded instanceof List<Object>);\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R032|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR032",
+          "source": "@IsTest private class CRT674da21880dbdbR032 {\n\n@IsTest static void R032() {\nString corpusObserved;\ntry {\nObject r;\nList<Account> rows=new List<Account>{new Account(Name='Value Parent')};Object decoded=JSON.deserializeUntyped(JSON.serialize(rows));r=(decoded instanceof List<Object>);\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R032|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R033",
+      "group": "json/pretty-child-roundtrip",
+      "code": "Account row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Account copy=(Account)JSON.deserialize(JSON.serializePretty(row),Account.class);r=copy.Contacts.size()+'|'+copy.Contacts[0].LastName;",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1|Value Child",
+          "67.0": "1|Value Child"
+        },
+        "isTest": {
+          "62.0": "1|Value Child",
+          "67.0": "1|Value Child"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR033",
+          "source": "@IsTest private class CRT625df0943f83eaR033 {\n\n@IsTest static void R033() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Account copy=(Account)JSON.deserialize(JSON.serializePretty(row),Account.class);r=copy.Contacts.size()+'|'+copy.Contacts[0].LastName;\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R033|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR033",
+          "source": "@IsTest private class CRT674da21880dbdbR033 {\n\n@IsTest static void R033() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Account copy=(Account)JSON.deserialize(JSON.serializePretty(row),Account.class);r=copy.Contacts.size()+'|'+copy.Contacts[0].LastName;\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R033|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R034",
+      "group": "json/list-child-roundtrip",
+      "code": "Account row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);List<Account> copy=(List<Account>)JSON.deserialize(JSON.serialize(new List<Account>{row}),List<Account>.class);r=copy[0].Contacts.size()+'|'+copy[0].Contacts[0].LastName;",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1|Value Child",
+          "67.0": "1|Value Child"
+        },
+        "isTest": {
+          "62.0": "1|Value Child",
+          "67.0": "1|Value Child"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR034",
+          "source": "@IsTest private class CRT625df0943f83eaR034 {\n\n@IsTest static void R034() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);List<Account> copy=(List<Account>)JSON.deserialize(JSON.serialize(new List<Account>{row}),List<Account>.class);r=copy[0].Contacts.size()+'|'+copy[0].Contacts[0].LastName;\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R034|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR034",
+          "source": "@IsTest private class CRT674da21880dbdbR034 {\n\n@IsTest static void R034() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);List<Account> copy=(List<Account>)JSON.deserialize(JSON.serialize(new List<Account>{row}),List<Account>.class);r=copy[0].Contacts.size()+'|'+copy[0].Contacts[0].LastName;\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R034|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R035",
+      "group": "json/map-child-roundtrip",
+      "code": "Account row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Account> copy=(Map<String,Account>)JSON.deserialize(JSON.serialize(new Map<String,Account>{'parent'=>row}),Map<String,Account>.class);r=copy.get('parent').Contacts.size()+'|'+copy.get('parent').Contacts[0].LastName;",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1|Value Child",
+          "67.0": "1|Value Child"
+        },
+        "isTest": {
+          "62.0": "1|Value Child",
+          "67.0": "1|Value Child"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR035",
+          "source": "@IsTest private class CRT625df0943f83eaR035 {\n\n@IsTest static void R035() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Account> copy=(Map<String,Account>)JSON.deserialize(JSON.serialize(new Map<String,Account>{'parent'=>row}),Map<String,Account>.class);r=copy.get('parent').Contacts.size()+'|'+copy.get('parent').Contacts[0].LastName;\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R035|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR035",
+          "source": "@IsTest private class CRT674da21880dbdbR035 {\n\n@IsTest static void R035() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Account> copy=(Map<String,Account>)JSON.deserialize(JSON.serialize(new Map<String,Account>{'parent'=>row}),Map<String,Account>.class);r=copy.get('parent').Contacts.size()+'|'+copy.get('parent').Contacts[0].LastName;\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R035|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R036",
+      "group": "json/deserialized-empty-envelope",
+      "code": "Account row=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0|true|0",
+          "67.0": "0|true|0"
+        },
+        "isTest": {
+          "62.0": "0|true|0",
+          "67.0": "0|true|0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR036",
+          "source": "@IsTest private class CRT625df0943f83eaR036 {\n\n@IsTest static void R036() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R036|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR036",
+          "source": "@IsTest private class CRT674da21880dbdbR036 {\n\n@IsTest static void R036() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R036|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R037",
+      "group": "email/null-setter-recipient-rejection",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{null});Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: null",
+          "67.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: null"
+        },
+        "isTest": {
+          "62.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: null",
+          "67.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: null"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR037",
+          "source": "@IsTest private class CRT625df0943f83eaR037 {\n\n@IsTest static void R037() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{null});Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R037|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR037",
+          "source": "@IsTest private class CRT674da21880dbdbR037 {\n\n@IsTest static void R037() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{null});Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R037|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R038",
+      "group": "email/null-property-recipient-rejection",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{null};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: null",
+          "67.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: null"
+        },
+        "isTest": {
+          "62.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: null",
+          "67.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: null"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR038",
+          "source": "@IsTest private class CRT625df0943f83eaR038 {\n\n@IsTest static void R038() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{null};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R038|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR038",
+          "source": "@IsTest private class CRT674da21880dbdbR038 {\n\n@IsTest static void R038() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{null};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R038|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R039",
+      "group": "email/empty-property-recipient-rejection",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{''};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: ",
+          "67.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: "
+        },
+        "isTest": {
+          "62.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid:",
+          "67.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid:"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR039",
+          "source": "@IsTest private class CRT625df0943f83eaR039 {\n\n@IsTest static void R039() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{''};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R039|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR039",
+          "source": "@IsTest private class CRT674da21880dbdbR039 {\n\n@IsTest static void R039() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{''};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R039|' + corpusObserved);\n}\n}\n"
+        }
+      },
+      "framedNamedByAPI": {
+        "62.0": {
+          "id": "R039F",
+          "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{''};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();r='['+String.valueOf(r)+']';",
+          "expected": "[error|INVALID_EMAIL_ADDRESS|Email address is invalid: ]",
+          "className": "CRT6270d582ce3d26R039F",
+          "source": "@IsTest private class CRT6270d582ce3d26R039F {\n\n@IsTest static void R039F() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{''};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();r='['+String.valueOf(r)+']';\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R039F|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "id": "R039F",
+          "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{''};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();r='['+String.valueOf(r)+']';",
+          "expected": "[error|INVALID_EMAIL_ADDRESS|Email address is invalid: ]",
+          "className": "CRT679079e6646ffaR039F",
+          "source": "@IsTest private class CRT679079e6646ffaR039F {\n\n@IsTest static void R039F() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{''};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();r='['+String.valueOf(r)+']';\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R039F|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R040",
+      "group": "email/invalid-cc-property-rejection",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.cCaDdReSsEs=new List<String>{'not-an-address'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: not-an-address",
+          "67.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: not-an-address"
+        },
+        "isTest": {
+          "62.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: not-an-address",
+          "67.0": "error|INVALID_EMAIL_ADDRESS|Email address is invalid: not-an-address"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR040",
+          "source": "@IsTest private class CRT625df0943f83eaR040 {\n\n@IsTest static void R040() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.cCaDdReSsEs=new List<String>{'not-an-address'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R040|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR040",
+          "source": "@IsTest private class CRT674da21880dbdbR040 {\n\n@IsTest static void R040() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.cCaDdReSsEs=new List<String>{'not-an-address'};Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R040|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R041",
+      "group": "email/property-then-null-setter",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};m.setToAddresses(null);Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.",
+          "67.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email."
+        },
+        "isTest": {
+          "62.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.",
+          "67.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email."
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR041",
+          "source": "@IsTest private class CRT625df0943f83eaR041 {\n\n@IsTest static void R041() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};m.setToAddresses(null);Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R041|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR041",
+          "source": "@IsTest private class CRT674da21880dbdbR041 {\n\n@IsTest static void R041() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};m.setToAddresses(null);Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R041|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R042",
+      "group": "email/property-then-empty-setter",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};m.setToAddresses(new List<String>());Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.",
+          "67.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email."
+        },
+        "isTest": {
+          "62.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.",
+          "67.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email."
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR042",
+          "source": "@IsTest private class CRT625df0943f83eaR042 {\n\n@IsTest static void R042() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};m.setToAddresses(new List<String>());Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R042|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR042",
+          "source": "@IsTest private class CRT674da21880dbdbR042 {\n\n@IsTest static void R042() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};m.setToAddresses(new List<String>());Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R042|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R043",
+      "group": "email/setter-then-null-property",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{'value@example.invalid'});m.ToAddresses=null;Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.",
+          "67.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email."
+        },
+        "isTest": {
+          "62.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.",
+          "67.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email."
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR043",
+          "source": "@IsTest private class CRT625df0943f83eaR043 {\n\n@IsTest static void R043() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{'value@example.invalid'});m.ToAddresses=null;Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R043|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR043",
+          "source": "@IsTest private class CRT674da21880dbdbR043 {\n\n@IsTest static void R043() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{'value@example.invalid'});m.ToAddresses=null;Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R043|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R044",
+      "group": "email/setter-then-empty-property",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{'value@example.invalid'});m.ToAddresses=new List<String>();Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.",
+          "67.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email."
+        },
+        "isTest": {
+          "62.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email.",
+          "67.0": "error|REQUIRED_FIELD_MISSING|Add a recipient (To, CC, or BCC) to send an email."
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR044",
+          "source": "@IsTest private class CRT625df0943f83eaR044 {\n\n@IsTest static void R044() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{'value@example.invalid'});m.ToAddresses=new List<String>();Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R044|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR044",
+          "source": "@IsTest private class CRT674da21880dbdbR044 {\n\n@IsTest static void R044() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.setToAddresses(new List<String>{'value@example.invalid'});m.ToAddresses=new List<String>();Messaging.SendEmailResult x=Messaging.sendEmail(new List<Messaging.Email>{m},false)[0];r=x.isSuccess()?'success':'error|'+String.valueOf(x.getErrors()[0].getStatusCode())+'|'+x.getErrors()[0].getMessage();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R044|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R045",
+      "group": "email/property-getter",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};r=m.getToAddresses()[0];",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "value@example.invalid",
+          "67.0": "value@example.invalid"
+        },
+        "isTest": {
+          "62.0": "value@example.invalid",
+          "67.0": "value@example.invalid"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR045",
+          "source": "@IsTest private class CRT625df0943f83eaR045 {\n\n@IsTest static void R045() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};r=m.getToAddresses()[0];\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R045|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR045",
+          "source": "@IsTest private class CRT674da21880dbdbR045 {\n\n@IsTest static void R045() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);m.ToAddresses=new List<String>{'value@example.invalid'};r=m.getToAddresses()[0];\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R045|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R046",
+      "group": "reference/id15-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Account parent=new Account(Name='Reference Parent'); insert parent;Account child=new Account(Name='Reference Child',ParentId=parent.Id); insert child;Id owned=child.Id;Id wanted=Id.valueOf(String.valueOf(parent.Id).substring(0,15));r=[SELECT Id FROM Account WHERE Id=:owned AND ParentId=:wanted].size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR046",
+          "source": "@IsTest private class CRT625df0943f83eaR046 {\n\n@IsTest static void R046() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account parent=new Account(Name='Reference Parent'); insert parent;Account child=new Account(Name='Reference Child',ParentId=parent.Id); insert child;Id owned=child.Id;Id wanted=Id.valueOf(String.valueOf(parent.Id).substring(0,15));r=[SELECT Id FROM Account WHERE Id=:owned AND ParentId=:wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R046|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR046",
+          "source": "@IsTest private class CRT674da21880dbdbR046 {\n\n@IsTest static void R046() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account parent=new Account(Name='Reference Parent'); insert parent;Account child=new Account(Name='Reference Child',ParentId=parent.Id); insert child;Id owned=child.Id;Id wanted=Id.valueOf(String.valueOf(parent.Id).substring(0,15));r=[SELECT Id FROM Account WHERE Id=:owned AND ParentId=:wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R046|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R047",
+      "group": "reference/id18-equality",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Account parent=new Account(Name='Reference Parent'); insert parent;Account child=new Account(Name='Reference Child',ParentId=parent.Id); insert child;Id owned=child.Id;Id wanted=Id.valueOf(String.valueOf(parent.Id));r=[SELECT Id FROM Account WHERE Id=:owned AND ParentId=:wanted].size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR047",
+          "source": "@IsTest private class CRT625df0943f83eaR047 {\n\n@IsTest static void R047() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account parent=new Account(Name='Reference Parent'); insert parent;Account child=new Account(Name='Reference Child',ParentId=parent.Id); insert child;Id owned=child.Id;Id wanted=Id.valueOf(String.valueOf(parent.Id));r=[SELECT Id FROM Account WHERE Id=:owned AND ParentId=:wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R047|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR047",
+          "source": "@IsTest private class CRT674da21880dbdbR047 {\n\n@IsTest static void R047() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account parent=new Account(Name='Reference Parent'); insert parent;Account child=new Account(Name='Reference Child',ParentId=parent.Id); insert child;Id owned=child.Id;Id wanted=Id.valueOf(String.valueOf(parent.Id));r=[SELECT Id FROM Account WHERE Id=:owned AND ParentId=:wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R047|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R048",
+      "group": "reference/id-set-in",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Account parent=new Account(Name='Reference Parent'); insert parent;Account child=new Account(Name='Reference Child',ParentId=parent.Id); insert child;Id owned=child.Id;Set<Id> wanted=new Set<Id>{parent.Id};r=[SELECT Id FROM Account WHERE Id=:owned AND ParentId IN :wanted].size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR048",
+          "source": "@IsTest private class CRT625df0943f83eaR048 {\n\n@IsTest static void R048() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account parent=new Account(Name='Reference Parent'); insert parent;Account child=new Account(Name='Reference Child',ParentId=parent.Id); insert child;Id owned=child.Id;Set<Id> wanted=new Set<Id>{parent.Id};r=[SELECT Id FROM Account WHERE Id=:owned AND ParentId IN :wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R048|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR048",
+          "source": "@IsTest private class CRT674da21880dbdbR048 {\n\n@IsTest static void R048() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Account parent=new Account(Name='Reference Parent'); insert parent;Account child=new Account(Name='Reference Child',ParentId=parent.Id); insert child;Id owned=child.Id;Set<Id> wanted=new Set<Id>{parent.Id};r=[SELECT Id FROM Account WHERE Id=:owned AND ParentId IN :wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R048|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R049",
+      "group": "text-id/like-stored18-id-matching-twin",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name=String.valueOf(identity)); insert row; Id owned=row.Id;Id wanted=identity; r=[SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted].size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR049",
+          "source": "@IsTest private class CRT625df0943f83eaR049 {\n\n@IsTest static void R049() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name=String.valueOf(identity)); insert row; Id owned=row.Id;Id wanted=identity; r=[SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R049|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR049",
+          "source": "@IsTest private class CRT674da21880dbdbR049 {\n\n@IsTest static void R049() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name=String.valueOf(identity)); insert row; Id owned=row.Id;Id wanted=identity; r=[SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R049|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R050",
+      "group": "text-id/like-stored15-id-negative-control",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name='001000000000001'); insert row; Id owned=row.Id;Id wanted=identity; r=[SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted].size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR050",
+          "source": "@IsTest private class CRT625df0943f83eaR050 {\n\n@IsTest static void R050() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name='001000000000001'); insert row; Id owned=row.Id;Id wanted=identity; r=[SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R050|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR050",
+          "source": "@IsTest private class CRT674da21880dbdbR050 {\n\n@IsTest static void R050() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name='001000000000001'); insert row; Id owned=row.Id;Id wanted=identity; r=[SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R050|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R051",
+      "group": "text-id/like-stored18-string-matching-control",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name=String.valueOf(identity)); insert row; Id owned=row.Id;String wanted=String.valueOf(identity); r=[SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted].size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR051",
+          "source": "@IsTest private class CRT625df0943f83eaR051 {\n\n@IsTest static void R051() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name=String.valueOf(identity)); insert row; Id owned=row.Id;String wanted=String.valueOf(identity); r=[SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R051|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR051",
+          "source": "@IsTest private class CRT674da21880dbdbR051 {\n\n@IsTest static void R051() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name=String.valueOf(identity)); insert row; Id owned=row.Id;String wanted=String.valueOf(identity); r=[SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted].size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R051|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R052",
+      "group": "text-id/like-boolean-bind-rejection",
+      "code": "Savepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name=String.valueOf(identity)); insert row; Id owned=row.Id;Boolean wanted=true; r=Database.query('SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted').size();} finally {Database.rollback(sp);}",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "EXC|System.QueryException|Invalid bind expression type of Boolean for column of type String",
+          "67.0": "EXC|System.QueryException|Invalid bind expression type of Boolean for column of type String"
+        },
+        "isTest": {
+          "62.0": "EXC|System.QueryException|Invalid bind expression type of Boolean for column of type String",
+          "67.0": "EXC|System.QueryException|Invalid bind expression type of Boolean for column of type String"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR052",
+          "source": "@IsTest private class CRT625df0943f83eaR052 {\n\n@IsTest static void R052() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name=String.valueOf(identity)); insert row; Id owned=row.Id;Boolean wanted=true; r=Database.query('SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted').size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R052|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR052",
+          "source": "@IsTest private class CRT674da21880dbdbR052 {\n\n@IsTest static void R052() {\nString corpusObserved;\ntry {\nObject r;\nSavepoint sp=Database.setSavepoint(); try {Id identity='001000000000001';Account row=new Account(Name=String.valueOf(identity)); insert row; Id owned=row.Id;Boolean wanted=true; r=Database.query('SELECT Id FROM Account WHERE Id=:owned AND Name LIKE :wanted').size();} finally {Database.rollback(sp);}\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R052|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R053",
+      "group": "email/property-source-clear/ToAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.ToAddresses=source; source.clear();r=m.getToAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR053",
+          "source": "@IsTest private class CRT625df0943f83eaR053 {\n\n@IsTest static void R053() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.ToAddresses=source; source.clear();r=m.getToAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R053|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR053",
+          "source": "@IsTest private class CRT674da21880dbdbR053 {\n\n@IsTest static void R053() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.ToAddresses=source; source.clear();r=m.getToAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R053|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R054",
+      "group": "email/property-getter-clear/ToAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.ToAddresses=source;List<String> returned=m.getToAddresses(); returned.clear();r=m.getToAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR054",
+          "source": "@IsTest private class CRT625df0943f83eaR054 {\n\n@IsTest static void R054() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.ToAddresses=source;List<String> returned=m.getToAddresses(); returned.clear();r=m.getToAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R054|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR054",
+          "source": "@IsTest private class CRT674da21880dbdbR054 {\n\n@IsTest static void R054() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.ToAddresses=source;List<String> returned=m.getToAddresses(); returned.clear();r=m.getToAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R054|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R055",
+      "group": "email/setter-source-clear-control/ToAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setToAddresses(source); source.clear();r=m.getToAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR055",
+          "source": "@IsTest private class CRT625df0943f83eaR055 {\n\n@IsTest static void R055() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setToAddresses(source); source.clear();r=m.getToAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R055|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR055",
+          "source": "@IsTest private class CRT674da21880dbdbR055 {\n\n@IsTest static void R055() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setToAddresses(source); source.clear();r=m.getToAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R055|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R056",
+      "group": "email/setter-getter-clear-control/ToAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setToAddresses(source);List<String> returned=m.getToAddresses(); returned.clear();r=m.getToAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR056",
+          "source": "@IsTest private class CRT625df0943f83eaR056 {\n\n@IsTest static void R056() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setToAddresses(source);List<String> returned=m.getToAddresses(); returned.clear();r=m.getToAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R056|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR056",
+          "source": "@IsTest private class CRT674da21880dbdbR056 {\n\n@IsTest static void R056() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setToAddresses(source);List<String> returned=m.getToAddresses(); returned.clear();r=m.getToAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R056|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R057",
+      "group": "email/property-source-clear/CcAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.CcAddresses=source; source.clear();r=m.getCcAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR057",
+          "source": "@IsTest private class CRT625df0943f83eaR057 {\n\n@IsTest static void R057() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.CcAddresses=source; source.clear();r=m.getCcAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R057|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR057",
+          "source": "@IsTest private class CRT674da21880dbdbR057 {\n\n@IsTest static void R057() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.CcAddresses=source; source.clear();r=m.getCcAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R057|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R058",
+      "group": "email/property-getter-clear/CcAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.CcAddresses=source;List<String> returned=m.getCcAddresses(); returned.clear();r=m.getCcAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR058",
+          "source": "@IsTest private class CRT625df0943f83eaR058 {\n\n@IsTest static void R058() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.CcAddresses=source;List<String> returned=m.getCcAddresses(); returned.clear();r=m.getCcAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R058|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR058",
+          "source": "@IsTest private class CRT674da21880dbdbR058 {\n\n@IsTest static void R058() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.CcAddresses=source;List<String> returned=m.getCcAddresses(); returned.clear();r=m.getCcAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R058|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R059",
+      "group": "email/setter-source-clear-control/CcAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setCcAddresses(source); source.clear();r=m.getCcAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR059",
+          "source": "@IsTest private class CRT625df0943f83eaR059 {\n\n@IsTest static void R059() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setCcAddresses(source); source.clear();r=m.getCcAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R059|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR059",
+          "source": "@IsTest private class CRT674da21880dbdbR059 {\n\n@IsTest static void R059() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setCcAddresses(source); source.clear();r=m.getCcAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R059|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R060",
+      "group": "email/setter-getter-clear-control/CcAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setCcAddresses(source);List<String> returned=m.getCcAddresses(); returned.clear();r=m.getCcAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR060",
+          "source": "@IsTest private class CRT625df0943f83eaR060 {\n\n@IsTest static void R060() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setCcAddresses(source);List<String> returned=m.getCcAddresses(); returned.clear();r=m.getCcAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R060|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR060",
+          "source": "@IsTest private class CRT674da21880dbdbR060 {\n\n@IsTest static void R060() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setCcAddresses(source);List<String> returned=m.getCcAddresses(); returned.clear();r=m.getCcAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R060|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R061",
+      "group": "email/property-source-clear/BccAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.BccAddresses=source; source.clear();r=m.getBccAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR061",
+          "source": "@IsTest private class CRT625df0943f83eaR061 {\n\n@IsTest static void R061() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.BccAddresses=source; source.clear();r=m.getBccAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R061|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR061",
+          "source": "@IsTest private class CRT674da21880dbdbR061 {\n\n@IsTest static void R061() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.BccAddresses=source; source.clear();r=m.getBccAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R061|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R062",
+      "group": "email/property-getter-clear/BccAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.BccAddresses=source;List<String> returned=m.getBccAddresses(); returned.clear();r=m.getBccAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR062",
+          "source": "@IsTest private class CRT625df0943f83eaR062 {\n\n@IsTest static void R062() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.BccAddresses=source;List<String> returned=m.getBccAddresses(); returned.clear();r=m.getBccAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R062|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR062",
+          "source": "@IsTest private class CRT674da21880dbdbR062 {\n\n@IsTest static void R062() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.BccAddresses=source;List<String> returned=m.getBccAddresses(); returned.clear();r=m.getBccAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R062|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R063",
+      "group": "email/setter-source-clear-control/BccAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setBccAddresses(source); source.clear();r=m.getBccAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1",
+          "67.0": "1"
+        },
+        "isTest": {
+          "62.0": "1",
+          "67.0": "1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR063",
+          "source": "@IsTest private class CRT625df0943f83eaR063 {\n\n@IsTest static void R063() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setBccAddresses(source); source.clear();r=m.getBccAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R063|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR063",
+          "source": "@IsTest private class CRT674da21880dbdbR063 {\n\n@IsTest static void R063() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setBccAddresses(source); source.clear();r=m.getBccAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R063|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R064",
+      "group": "email/setter-getter-clear-control/BccAddresses",
+      "code": "Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setBccAddresses(source);List<String> returned=m.getBccAddresses(); returned.clear();r=m.getBccAddresses().size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0",
+          "67.0": "0"
+        },
+        "isTest": {
+          "62.0": "0",
+          "67.0": "0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR064",
+          "source": "@IsTest private class CRT625df0943f83eaR064 {\n\n@IsTest static void R064() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setBccAddresses(source);List<String> returned=m.getBccAddresses(); returned.clear();r=m.getBccAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R064|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR064",
+          "source": "@IsTest private class CRT674da21880dbdbR064 {\n\n@IsTest static void R064() {\nString corpusObserved;\ntry {\nObject r;\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setPlainTextBody('Value edge body'); m.setSaveAsActivity(false);List<String> source=new List<String>{'value@example.invalid'};m.setBccAddresses(source);List<String> returned=m.getBccAddresses(); returned.clear();r=m.getBccAddresses().size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R064|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R065",
+      "group": "json/envelope-size-mismatch-serialize",
+      "code": "Account row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":2,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "2|true|1",
+          "67.0": "2|true|1"
+        },
+        "isTest": {
+          "62.0": "2|true|1",
+          "67.0": "2|true|1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR065",
+          "source": "@IsTest private class CRT625df0943f83eaR065 {\n\n@IsTest static void R065() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":2,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R065|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR065",
+          "source": "@IsTest private class CRT674da21880dbdbR065 {\n\n@IsTest static void R065() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":2,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R065|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R066",
+      "group": "json/envelope-done-false-serialize",
+      "code": "Account row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":false,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "1|false|1",
+          "67.0": "1|false|1"
+        },
+        "isTest": {
+          "62.0": "1|false|1",
+          "67.0": "1|false|1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR066",
+          "source": "@IsTest private class CRT625df0943f83eaR066 {\n\n@IsTest static void R066() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":false,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R066|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR066",
+          "source": "@IsTest private class CRT674da21880dbdbR066 {\n\n@IsTest static void R066() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":1,\"done\":false,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R066|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R067",
+      "group": "json/envelope-size-mismatch-done-false-serialize",
+      "code": "Account row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":2,\"done\":false,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "2|false|1",
+          "67.0": "2|false|1"
+        },
+        "isTest": {
+          "62.0": "2|false|1",
+          "67.0": "2|false|1"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR067",
+          "source": "@IsTest private class CRT625df0943f83eaR067 {\n\n@IsTest static void R067() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":2,\"done\":false,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R067|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR067",
+          "source": "@IsTest private class CRT674da21880dbdbR067 {\n\n@IsTest static void R067() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Name\":\"Value Parent\",\"Contacts\":{\"totalSize\":2,\"done\":false,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Value Child\"}]}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R067|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    },
+    {
+      "id": "R068",
+      "group": "json/envelope-missing-records-input",
+      "code": "Account row=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":0,\"done\":true}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();",
+      "compile": false,
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "0|true|0",
+          "67.0": "0|true|0"
+        },
+        "isTest": {
+          "62.0": "0|true|0",
+          "67.0": "0|true|0"
+        }
+      },
+      "namedSourcesByAPI": {
+        "62.0": {
+          "className": "CRT625df0943f83eaR068",
+          "source": "@IsTest private class CRT625df0943f83eaR068 {\n\n@IsTest static void R068() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":0,\"done\":true}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R068|' + corpusObserved);\n}\n}\n"
+        },
+        "67.0": {
+          "className": "CRT674da21880dbdbR068",
+          "source": "@IsTest private class CRT674da21880dbdbR068 {\n\n@IsTest static void R068() {\nString corpusObserved;\ntry {\nObject r;\nAccount row=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":0,\"done\":true}}',Account.class);Map<String,Object> root=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row));Map<String,Object> children=(Map<String,Object>)root.get('Contacts');List<Object> records=(List<Object>)children.get('records');r=String.valueOf(children.get('totalSize'))+'|'+children.get('done')+'|'+records.size();\ncorpusObserved = String.valueOf(r);\n} catch (Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R068|' + corpusObserved);\n}\n}\n"
+        }
+      }
+    }
+  ],
+  "nativeSourceReferences": [
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R039F"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R039F"
+    }
+  ]
+}

@@ -1,0 +1,1623 @@
+[
+  {
+    "id": "I001",
+    "code": "Id.valueOf('001000000000001')",
+    "compile": false,
+    "expected": "001000000000001AAA",
+    "floorExpected": "001000000000001AAA"
+  },
+  {
+    "id": "I002",
+    "code": "Id.valueOf('001000000000001').to15()",
+    "compile": false,
+    "expected": "001000000000001",
+    "floorExpected": "001000000000001"
+  },
+  {
+    "id": "I003",
+    "code": "Id.valueOf('001000000000001').getSObjectType().getDescribe().getName()",
+    "compile": false,
+    "expected": "Account",
+    "floorExpected": "Account"
+  },
+  {
+    "id": "I004",
+    "code": "Id.valueOf('001000000000001').equals(Id.valueOf('001000000000001'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "I005",
+    "code": "Id x = '001000000000001'; r = String.valueOf(x);",
+    "compile": false,
+    "expected": "001000000000001AAA",
+    "floorExpected": "001000000000001AAA"
+  },
+  {
+    "id": "I006",
+    "code": "Id x = '001000000000001'; r = x.equals((Object)null);",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "I007",
+    "code": "Id.valueOf('001B000001DVM9t')",
+    "compile": false,
+    "expected": "001B000001DVM9tIAH",
+    "floorExpected": "001B000001DVM9tIAH"
+  },
+  {
+    "id": "I008",
+    "code": "Id.valueOf('001B000001DVM9t').to15()",
+    "compile": false,
+    "expected": "001B000001DVM9t",
+    "floorExpected": "001B000001DVM9t"
+  },
+  {
+    "id": "I009",
+    "code": "Id.valueOf('001B000001DVM9t').getSObjectType().getDescribe().getName()",
+    "compile": false,
+    "expected": "Account",
+    "floorExpected": "Account"
+  },
+  {
+    "id": "I010",
+    "code": "Id.valueOf('001B000001DVM9t').equals(Id.valueOf('001B000001DVM9t'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "I011",
+    "code": "Id x = '001B000001DVM9t'; r = String.valueOf(x);",
+    "compile": false,
+    "expected": "001B000001DVM9tIAH",
+    "floorExpected": "001B000001DVM9tIAH"
+  },
+  {
+    "id": "I012",
+    "code": "Id x = '001B000001DVM9t'; r = x.equals((Object)null);",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "I013",
+    "code": "Id.valueOf('003000000000001')",
+    "compile": false,
+    "expected": "003000000000001AAA",
+    "floorExpected": "003000000000001AAA"
+  },
+  {
+    "id": "I014",
+    "code": "Id.valueOf('003000000000001').to15()",
+    "compile": false,
+    "expected": "003000000000001",
+    "floorExpected": "003000000000001"
+  },
+  {
+    "id": "I015",
+    "code": "Id.valueOf('003000000000001').getSObjectType().getDescribe().getName()",
+    "compile": false,
+    "expected": "Contact",
+    "floorExpected": "Contact"
+  },
+  {
+    "id": "I016",
+    "code": "Id.valueOf('003000000000001').equals(Id.valueOf('003000000000001'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "I017",
+    "code": "Id x = '003000000000001'; r = String.valueOf(x);",
+    "compile": false,
+    "expected": "003000000000001AAA",
+    "floorExpected": "003000000000001AAA"
+  },
+  {
+    "id": "I018",
+    "code": "Id x = '003000000000001'; r = x.equals((Object)null);",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "I019",
+    "code": "Id.valueOf('005000000000001')",
+    "compile": false,
+    "expected": "005000000000001AAA",
+    "floorExpected": "005000000000001AAA"
+  },
+  {
+    "id": "I020",
+    "code": "Id.valueOf('005000000000001').to15()",
+    "compile": false,
+    "expected": "005000000000001",
+    "floorExpected": "005000000000001"
+  },
+  {
+    "id": "I021",
+    "code": "Id.valueOf('005000000000001').getSObjectType().getDescribe().getName()",
+    "compile": false,
+    "expected": "User",
+    "floorExpected": "User"
+  },
+  {
+    "id": "I022",
+    "code": "Id.valueOf('005000000000001').equals(Id.valueOf('005000000000001'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "I023",
+    "code": "Id x = '005000000000001'; r = String.valueOf(x);",
+    "compile": false,
+    "expected": "005000000000001AAA",
+    "floorExpected": "005000000000001AAA"
+  },
+  {
+    "id": "I024",
+    "code": "Id x = '005000000000001'; r = x.equals((Object)null);",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "I025",
+    "code": "Id.valueOf('00G000000000001')",
+    "compile": false,
+    "expected": "00G000000000001EAA",
+    "floorExpected": "00G000000000001EAA"
+  },
+  {
+    "id": "I026",
+    "code": "Id.valueOf('00G000000000001').to15()",
+    "compile": false,
+    "expected": "00G000000000001",
+    "floorExpected": "00G000000000001"
+  },
+  {
+    "id": "I027",
+    "code": "Id.valueOf('00G000000000001').getSObjectType().getDescribe().getName()",
+    "compile": false,
+    "expected": "Group",
+    "floorExpected": "Group"
+  },
+  {
+    "id": "I028",
+    "code": "Id.valueOf('00G000000000001').equals(Id.valueOf('00G000000000001'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "I029",
+    "code": "Id x = '00G000000000001'; r = String.valueOf(x);",
+    "compile": false,
+    "expected": "00G000000000001EAA",
+    "floorExpected": "00G000000000001EAA"
+  },
+  {
+    "id": "I030",
+    "code": "Id x = '00G000000000001'; r = x.equals((Object)null);",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "I031",
+    "code": "Id.valueOf('00Q000000000001')",
+    "compile": false,
+    "expected": "00Q000000000001EAA",
+    "floorExpected": "00Q000000000001EAA"
+  },
+  {
+    "id": "I032",
+    "code": "Id.valueOf('00Q000000000001').to15()",
+    "compile": false,
+    "expected": "00Q000000000001",
+    "floorExpected": "00Q000000000001"
+  },
+  {
+    "id": "I033",
+    "code": "Id.valueOf('00Q000000000001').getSObjectType().getDescribe().getName()",
+    "compile": false,
+    "expected": "Lead",
+    "floorExpected": "Lead"
+  },
+  {
+    "id": "I034",
+    "code": "Id.valueOf('00Q000000000001').equals(Id.valueOf('00Q000000000001'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "I035",
+    "code": "Id x = '00Q000000000001'; r = String.valueOf(x);",
+    "compile": false,
+    "expected": "00Q000000000001EAA",
+    "floorExpected": "00Q000000000001EAA"
+  },
+  {
+    "id": "I036",
+    "code": "Id x = '00Q000000000001'; r = x.equals((Object)null);",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "I037",
+    "code": "Id.valueOf('500000000000001')",
+    "compile": false,
+    "expected": "500000000000001AAA",
+    "floorExpected": "500000000000001AAA"
+  },
+  {
+    "id": "I038",
+    "code": "Id.valueOf('500000000000001').to15()",
+    "compile": false,
+    "expected": "500000000000001",
+    "floorExpected": "500000000000001"
+  },
+  {
+    "id": "I039",
+    "code": "Id.valueOf('500000000000001').getSObjectType().getDescribe().getName()",
+    "compile": false,
+    "expected": "Case",
+    "floorExpected": "Case"
+  },
+  {
+    "id": "I040",
+    "code": "Id.valueOf('500000000000001').equals(Id.valueOf('500000000000001'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "I041",
+    "code": "Id x = '500000000000001'; r = String.valueOf(x);",
+    "compile": false,
+    "expected": "500000000000001AAA",
+    "floorExpected": "500000000000001AAA"
+  },
+  {
+    "id": "I042",
+    "code": "Id x = '500000000000001'; r = x.equals((Object)null);",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "I043",
+    "code": "Id.valueOf('006000000000001')",
+    "compile": false,
+    "expected": "006000000000001AAA",
+    "floorExpected": "006000000000001AAA"
+  },
+  {
+    "id": "I044",
+    "code": "Id.valueOf('006000000000001').to15()",
+    "compile": false,
+    "expected": "006000000000001",
+    "floorExpected": "006000000000001"
+  },
+  {
+    "id": "I045",
+    "code": "Id.valueOf('006000000000001').getSObjectType().getDescribe().getName()",
+    "compile": false,
+    "expected": "Opportunity",
+    "floorExpected": "Opportunity"
+  },
+  {
+    "id": "I046",
+    "code": "Id.valueOf('006000000000001').equals(Id.valueOf('006000000000001'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "I047",
+    "code": "Id x = '006000000000001'; r = String.valueOf(x);",
+    "compile": false,
+    "expected": "006000000000001AAA",
+    "floorExpected": "006000000000001AAA"
+  },
+  {
+    "id": "I048",
+    "code": "Id x = '006000000000001'; r = x.equals((Object)null);",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "I049",
+    "code": "Id.valueOf('a00000000000001')",
+    "compile": false,
+    "expected": "a00000000000001AAA",
+    "floorExpected": "a00000000000001AAA"
+  },
+  {
+    "id": "I050",
+    "code": "Id.valueOf('a00000000000001').to15()",
+    "compile": false,
+    "expected": "a00000000000001",
+    "floorExpected": "a00000000000001"
+  },
+  {
+    "id": "I051",
+    "code": "Id.valueOf('a00000000000001').getSObjectType().getDescribe().getName()",
+    "compile": false,
+    "expected": "FamilyBaseline__c",
+    "floorExpected": "FamilyBaseline__c",
+    "carry": "schema describe: FamilyBaseline__c fixture prefix a00 collides with seeded DuplicateRule; schema fixture prefix resolution is required."
+  },
+  {
+    "id": "I052",
+    "code": "Id.valueOf('a00000000000001').equals(Id.valueOf('a00000000000001'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "I053",
+    "code": "Id x = 'a00000000000001'; r = String.valueOf(x);",
+    "compile": false,
+    "expected": "a00000000000001AAA",
+    "floorExpected": "a00000000000001AAA"
+  },
+  {
+    "id": "I054",
+    "code": "Id x = 'a00000000000001'; r = x.equals((Object)null);",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "I055",
+    "code": "Id.valueOf('000000000000000')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I056",
+    "code": "Id.valueOf('000000000000000').to15()",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I057",
+    "code": "Id.valueOf('000000000000000').getSObjectType().getDescribe().getName()",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I058",
+    "code": "Id.valueOf('000000000000000').equals(Id.valueOf('000000000000000'))",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I059",
+    "code": "Id x = '000000000000000'; r = String.valueOf(x);",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I060",
+    "code": "Id x = '000000000000000'; r = x.equals((Object)null);",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 000000000000000",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I061",
+    "code": "Id.valueOf('ZZZ000000000001')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "floorExpected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I062",
+    "code": "Id.valueOf('ZZZ000000000001').to15()",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "floorExpected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I063",
+    "code": "Id.valueOf('ZZZ000000000001').getSObjectType().getDescribe().getName()",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "floorExpected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I064",
+    "code": "Id.valueOf('ZZZ000000000001').equals(Id.valueOf('ZZZ000000000001'))",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "floorExpected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I065",
+    "code": "Id x = 'ZZZ000000000001'; r = String.valueOf(x);",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "floorExpected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I066",
+    "code": "Id x = 'ZZZ000000000001'; r = x.equals((Object)null);",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "floorExpected": "EXC|System.StringException|Invalid id: ZZZ000000000001",
+    "carry": "type system: schema-aware Id prefix coercion; the shared shape helper also admits opaque mock DTO IDs."
+  },
+  {
+    "id": "I067",
+    "code": "Id.valueOf('')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: ",
+    "floorExpected": "EXC|System.StringException|Invalid id: "
+  },
+  {
+    "id": "I068",
+    "code": "Id.valueOf('', true)",
+    "compile": false,
+    "expected": "",
+    "floorExpected": ""
+  },
+  {
+    "id": "I069",
+    "code": "Id.valueOf('', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: ",
+    "floorExpected": "EXC|System.StringException|Invalid id: "
+  },
+  {
+    "id": "I070",
+    "code": "Id.valueOf('1')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 1",
+    "floorExpected": "EXC|System.StringException|Invalid id: 1"
+  },
+  {
+    "id": "I071",
+    "code": "Id.valueOf('1', true)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 1",
+    "floorExpected": "EXC|System.StringException|Invalid id: 1"
+  },
+  {
+    "id": "I072",
+    "code": "Id.valueOf('1', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 1",
+    "floorExpected": "EXC|System.StringException|Invalid id: 1"
+  },
+  {
+    "id": "I073",
+    "code": "Id.valueOf('00100000000000')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 00100000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 00100000000000"
+  },
+  {
+    "id": "I074",
+    "code": "Id.valueOf('00100000000000', true)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 00100000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 00100000000000"
+  },
+  {
+    "id": "I075",
+    "code": "Id.valueOf('00100000000000', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 00100000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 00100000000000"
+  },
+  {
+    "id": "I076",
+    "code": "Id.valueOf('0010000000000000')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 0010000000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 0010000000000000"
+  },
+  {
+    "id": "I077",
+    "code": "Id.valueOf('0010000000000000', true)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 0010000000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 0010000000000000"
+  },
+  {
+    "id": "I078",
+    "code": "Id.valueOf('0010000000000000', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 0010000000000000",
+    "floorExpected": "EXC|System.StringException|Invalid id: 0010000000000000"
+  },
+  {
+    "id": "I079",
+    "code": "Id.valueOf('001000000000001AAA')",
+    "compile": false,
+    "expected": "001000000000001AAA",
+    "floorExpected": "001000000000001AAA"
+  },
+  {
+    "id": "I080",
+    "code": "Id.valueOf('001000000000001AAA', true)",
+    "compile": false,
+    "expected": "001000000000001AAA",
+    "floorExpected": "001000000000001AAA"
+  },
+  {
+    "id": "I081",
+    "code": "Id.valueOf('001000000000001AAA', false)",
+    "compile": false,
+    "expected": "001000000000001AAA",
+    "floorExpected": "001000000000001AAA"
+  },
+  {
+    "id": "I082",
+    "code": "Id.valueOf('001000000000001aaa')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001000000000001aaa",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001000000000001aaa"
+  },
+  {
+    "id": "I083",
+    "code": "Id.valueOf('001000000000001aaa', true)",
+    "compile": false,
+    "expected": "001000000000001AAA",
+    "floorExpected": "001000000000001AAA"
+  },
+  {
+    "id": "I084",
+    "code": "Id.valueOf('001000000000001aaa', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001000000000001aaa",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001000000000001aaa"
+  },
+  {
+    "id": "I085",
+    "code": "Id.valueOf('001B000001DVM9tIAH')",
+    "compile": false,
+    "expected": "001B000001DVM9tIAH",
+    "floorExpected": "001B000001DVM9tIAH"
+  },
+  {
+    "id": "I086",
+    "code": "Id.valueOf('001B000001DVM9tIAH', true)",
+    "compile": false,
+    "expected": "001B000001DVM9tIAH",
+    "floorExpected": "001B000001DVM9tIAH"
+  },
+  {
+    "id": "I087",
+    "code": "Id.valueOf('001B000001DVM9tIAH', false)",
+    "compile": false,
+    "expected": "001B000001DVM9tIAH",
+    "floorExpected": "001B000001DVM9tIAH"
+  },
+  {
+    "id": "I088",
+    "code": "Id.valueOf('001b000001dvm9tiah')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001b000001dvm9tiah",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001b000001dvm9tiah"
+  },
+  {
+    "id": "I089",
+    "code": "Id.valueOf('001b000001dvm9tiah', true)",
+    "compile": false,
+    "expected": "001B000001DVM9tIAH",
+    "floorExpected": "001B000001DVM9tIAH"
+  },
+  {
+    "id": "I090",
+    "code": "Id.valueOf('001b000001dvm9tiah', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001b000001dvm9tiah",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001b000001dvm9tiah"
+  },
+  {
+    "id": "I091",
+    "code": "Id.valueOf('001B000001DVM9tZZZ')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001B000001DVM9tZZZ",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001B000001DVM9tZZZ"
+  },
+  {
+    "id": "I092",
+    "code": "Id.valueOf('001B000001DVM9tZZZ', true)",
+    "compile": false,
+    "expected": "001B000001Dvm9TIAR",
+    "floorExpected": "001B000001Dvm9TIAR"
+  },
+  {
+    "id": "I093",
+    "code": "Id.valueOf('001B000001DVM9tZZZ', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001B000001DVM9tZZZ",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001B000001DVM9tZZZ"
+  },
+  {
+    "id": "I094",
+    "code": "Id.valueOf(' 001000000000001')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id:  001000000000001",
+    "floorExpected": "EXC|System.StringException|Invalid id:  001000000000001"
+  },
+  {
+    "id": "I095",
+    "code": "Id.valueOf(' 001000000000001', true)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id:  001000000000001",
+    "floorExpected": "EXC|System.StringException|Invalid id:  001000000000001"
+  },
+  {
+    "id": "I096",
+    "code": "Id.valueOf(' 001000000000001', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id:  001000000000001",
+    "floorExpected": "EXC|System.StringException|Invalid id:  001000000000001"
+  },
+  {
+    "id": "I097",
+    "code": "Id.valueOf('001000000000001 ')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001000000000001 ",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001000000000001 "
+  },
+  {
+    "id": "I098",
+    "code": "Id.valueOf('001000000000001 ', true)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001000000000001 ",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001000000000001 "
+  },
+  {
+    "id": "I099",
+    "code": "Id.valueOf('001000000000001 ', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001000000000001 ",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001000000000001 "
+  },
+  {
+    "id": "I100",
+    "code": "Id.valueOf('00100000000000_')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 00100000000000_",
+    "floorExpected": "EXC|System.StringException|Invalid id: 00100000000000_"
+  },
+  {
+    "id": "I101",
+    "code": "Id.valueOf('00100000000000_', true)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Unable to restore casing for 15 character ids",
+    "floorExpected": "EXC|System.StringException|Unable to restore casing for 15 character ids"
+  },
+  {
+    "id": "I102",
+    "code": "Id.valueOf('00100000000000_', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 00100000000000_",
+    "floorExpected": "EXC|System.StringException|Invalid id: 00100000000000_"
+  },
+  {
+    "id": "I103",
+    "code": "Id.valueOf('00100000000000-')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 00100000000000-",
+    "floorExpected": "EXC|System.StringException|Invalid id: 00100000000000-"
+  },
+  {
+    "id": "I104",
+    "code": "Id.valueOf('00100000000000-', true)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Unable to restore casing for 15 character ids",
+    "floorExpected": "EXC|System.StringException|Unable to restore casing for 15 character ids"
+  },
+  {
+    "id": "I105",
+    "code": "Id.valueOf('00100000000000-', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 00100000000000-",
+    "floorExpected": "EXC|System.StringException|Invalid id: 00100000000000-"
+  },
+  {
+    "id": "I106",
+    "code": "Id.valueOf('00100000000000\u00e9')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 00100000000000\u00e9",
+    "floorExpected": "EXC|System.StringException|Invalid id: 00100000000000\u00e9"
+  },
+  {
+    "id": "I107",
+    "code": "Id.valueOf('00100000000000\u00e9', true)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Unable to restore casing for 15 character ids",
+    "floorExpected": "EXC|System.StringException|Unable to restore casing for 15 character ids"
+  },
+  {
+    "id": "I108",
+    "code": "Id.valueOf('00100000000000\u00e9', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 00100000000000\u00e9",
+    "floorExpected": "EXC|System.StringException|Invalid id: 00100000000000\u00e9"
+  },
+  {
+    "id": "I109",
+    "code": "Id.valueOf('001000000000001AAAA')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001000000000001AAAA",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001000000000001AAAA"
+  },
+  {
+    "id": "I110",
+    "code": "Id.valueOf('001000000000001AAAA', true)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001000000000001AAAA",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001000000000001AAAA"
+  },
+  {
+    "id": "I111",
+    "code": "Id.valueOf('001000000000001AAAA', false)",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: 001000000000001AAAA",
+    "floorExpected": "EXC|System.StringException|Invalid id: 001000000000001AAAA"
+  },
+  {
+    "id": "I112",
+    "code": "Id.valueOf((String)null)",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "I113",
+    "code": "Id.valueOf((String)null, true)",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "I114",
+    "code": "Id.valueOf((String)null, false)",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "I115",
+    "code": "Id x = '001B000001DVM9t'; r = x == '001B000001DVM9tIAH';",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "I116",
+    "code": "Id x = '001B000001DVM9t'; r = x.equals('001b000001dvm9t');",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "I117",
+    "code": "Id x = '001000000000001'; r = x.equals('bad');",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid id: bad",
+    "floorExpected": "EXC|System.StringException|Invalid id: bad"
+  },
+  {
+    "id": "U001",
+    "code": "UUID.fromString('00000000-0000-0000-0000-000000000000').toString()",
+    "compile": false,
+    "expected": "00000000-0000-0000-0000-000000000000",
+    "floorExpected": "00000000-0000-0000-0000-000000000000"
+  },
+  {
+    "id": "U002",
+    "code": "UUID.fromString('00000000-0000-0000-0000-000000000000').equals(UUID.fromString('00000000-0000-0000-0000-000000000000'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "U003",
+    "code": "UUID.fromString('00000000-0000-0000-0000-000000000000').equals((Object)null)",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "U004",
+    "code": "UUID.fromString('00000000-0000-0000-0000-000000000000').equals(UUID.fromString('00000000-0000-0000-0000-000000000000'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "U005",
+    "code": "UUID.fromString('00000000-0000-0000-0000-000000000000').hashCode()",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "U006",
+    "code": "UUID.fromString('00000000-0000-0000-0000-000000000000').equals('00000000-0000-0000-0000-000000000000')",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "U007",
+    "code": "UUID.fromString('12345678-1234-5678-9abc-def012345678').toString()",
+    "compile": false,
+    "expected": "12345678-1234-5678-9abc-def012345678",
+    "floorExpected": "12345678-1234-5678-9abc-def012345678"
+  },
+  {
+    "id": "U008",
+    "code": "UUID.fromString('12345678-1234-5678-9abc-def012345678').equals(UUID.fromString('12345678-1234-5678-9abc-def012345678'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "U009",
+    "code": "UUID.fromString('12345678-1234-5678-9abc-def012345678').equals((Object)null)",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "U010",
+    "code": "UUID.fromString('12345678-1234-5678-9abc-def012345678').equals(UUID.fromString('12345678-1234-5678-9abc-def012345678'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "U011",
+    "code": "UUID.fromString('12345678-1234-5678-9abc-def012345678').hashCode()",
+    "compile": false,
+    "expected": "-2004318072",
+    "floorExpected": "-2004318072"
+  },
+  {
+    "id": "U012",
+    "code": "UUID.fromString('12345678-1234-5678-9abc-def012345678').equals('12345678-1234-5678-9abc-def012345678')",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "U013",
+    "code": "UUID.fromString('FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF').toString()",
+    "compile": false,
+    "expected": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+    "floorExpected": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+  },
+  {
+    "id": "U014",
+    "code": "UUID.fromString('FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF').equals(UUID.fromString('FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "U015",
+    "code": "UUID.fromString('FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF').equals((Object)null)",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "U016",
+    "code": "UUID.fromString('FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF').equals(UUID.fromString('ffffffff-ffff-ffff-ffff-ffffffffffff'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "U017",
+    "code": "UUID.fromString('FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF').hashCode()",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "U018",
+    "code": "UUID.fromString('FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF').equals('FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF')",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "U019",
+    "code": "UUID.fromString('aabbccdd-eeff-4012-8012-0123456789ab').toString()",
+    "compile": false,
+    "expected": "aabbccdd-eeff-4012-8012-0123456789ab",
+    "floorExpected": "aabbccdd-eeff-4012-8012-0123456789ab"
+  },
+  {
+    "id": "U020",
+    "code": "UUID.fromString('aabbccdd-eeff-4012-8012-0123456789ab').equals(UUID.fromString('aabbccdd-eeff-4012-8012-0123456789ab'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "U021",
+    "code": "UUID.fromString('aabbccdd-eeff-4012-8012-0123456789ab').equals((Object)null)",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "U022",
+    "code": "UUID.fromString('aabbccdd-eeff-4012-8012-0123456789ab').equals(UUID.fromString('aabbccdd-eeff-4012-8012-0123456789ab'))",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "U023",
+    "code": "UUID.fromString('aabbccdd-eeff-4012-8012-0123456789ab').hashCode()",
+    "compile": false,
+    "expected": "-2127494073",
+    "floorExpected": "-2127494073"
+  },
+  {
+    "id": "U024",
+    "code": "UUID.fromString('aabbccdd-eeff-4012-8012-0123456789ab').equals('aabbccdd-eeff-4012-8012-0123456789ab')",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "U025",
+    "code": "UUID.fromString('')",
+    "compile": false,
+    "expected": "EXC|System.IllegalArgumentException|Invalid UUID string: ",
+    "floorExpected": "EXC|System.IllegalArgumentException|Invalid UUID string: "
+  },
+  {
+    "id": "U026",
+    "code": "UUID.fromString('bad')",
+    "compile": false,
+    "expected": "EXC|System.IllegalArgumentException|Invalid UUID string: bad",
+    "floorExpected": "EXC|System.IllegalArgumentException|Invalid UUID string: bad"
+  },
+  {
+    "id": "U027",
+    "code": "UUID.fromString('1-2-3-4-5')",
+    "compile": false,
+    "expected": "00000001-0002-0003-0004-000000000005",
+    "floorExpected": "00000001-0002-0003-0004-000000000005"
+  },
+  {
+    "id": "U028",
+    "code": "UUID.fromString('0-0-0-0-0')",
+    "compile": false,
+    "expected": "00000000-0000-0000-0000-000000000000",
+    "floorExpected": "00000000-0000-0000-0000-000000000000"
+  },
+  {
+    "id": "U029",
+    "code": "UUID.fromString('0000000-0000-0000-0000-000000000000')",
+    "compile": false,
+    "expected": "00000000-0000-0000-0000-000000000000",
+    "floorExpected": "00000000-0000-0000-0000-000000000000"
+  },
+  {
+    "id": "U030",
+    "code": "UUID.fromString('000000000-0000-0000-0000-000000000000')",
+    "compile": false,
+    "expected": "EXC|System.IllegalArgumentException|UUID string too large",
+    "floorExpected": "EXC|System.IllegalArgumentException|UUID string too large"
+  },
+  {
+    "id": "U031",
+    "code": "UUID.fromString('00000000_0000-0000-0000-000000000000')",
+    "compile": false,
+    "expected": "EXC|System.IllegalArgumentException|Invalid UUID string: 00000000_0000-0000-0000-000000000000",
+    "floorExpected": "EXC|System.IllegalArgumentException|Invalid UUID string: 00000000_0000-0000-0000-000000000000"
+  },
+  {
+    "id": "U032",
+    "code": "UUID.fromString('g0000000-0000-0000-0000-000000000000')",
+    "compile": false,
+    "expected": "EXC|System.IllegalArgumentException|Error at index 0 in: \"g0000000\"",
+    "floorExpected": "EXC|System.IllegalArgumentException|Error at index 0 in: \"g0000000\""
+  },
+  {
+    "id": "U033",
+    "code": "UUID.fromString(' 00000000-0000-0000-0000-000000000000')",
+    "compile": false,
+    "expected": "EXC|System.IllegalArgumentException|UUID string too large",
+    "floorExpected": "EXC|System.IllegalArgumentException|UUID string too large"
+  },
+  {
+    "id": "U034",
+    "code": "UUID.fromString('00000000-0000-0000-0000-000000000000 ')",
+    "compile": false,
+    "expected": "EXC|System.IllegalArgumentException|UUID string too large",
+    "floorExpected": "EXC|System.IllegalArgumentException|UUID string too large"
+  },
+  {
+    "id": "U035",
+    "code": "UUID.fromString('00000000000000000000000000000000')",
+    "compile": false,
+    "expected": "EXC|System.IllegalArgumentException|Invalid UUID string: 00000000000000000000000000000000",
+    "floorExpected": "EXC|System.IllegalArgumentException|Invalid UUID string: 00000000000000000000000000000000"
+  },
+  {
+    "id": "U036",
+    "code": "UUID.fromString('{00000000-0000-0000-0000-000000000000}')",
+    "compile": false,
+    "expected": "EXC|System.IllegalArgumentException|UUID string too large",
+    "floorExpected": "EXC|System.IllegalArgumentException|UUID string too large"
+  },
+  {
+    "id": "U037",
+    "code": "UUID.fromString((String)null)",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null"
+  },
+  {
+    "id": "U038",
+    "code": "UUID u = UUID.randomUUID(); String s = u.toString(); r = s.length();",
+    "compile": false,
+    "expected": "36",
+    "floorExpected": "36"
+  },
+  {
+    "id": "U039",
+    "code": "String s = UUID.randomUUID().toString(); r = Pattern.matches('[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}', s);",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "U040",
+    "code": "UUID u = UUID.randomUUID(); r = u.equals(UUID.fromString(u.toString()));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "U041",
+    "code": "UUID u = UUID.randomUUID(); r = u.hashCode() == UUID.fromString(u.toString()).hashCode();",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "V001",
+    "code": "new Version(0,0).toString()",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "V002",
+    "code": "new Version(0,0).major()",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "V003",
+    "code": "new Version(0,0).minor()",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "V004",
+    "code": "new Version(0,0).patch()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "V005",
+    "code": "new Version(1,2).toString()",
+    "compile": false,
+    "expected": "1.2",
+    "floorExpected": "1.2"
+  },
+  {
+    "id": "V006",
+    "code": "new Version(1,2).major()",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "V007",
+    "code": "new Version(1,2).minor()",
+    "compile": false,
+    "expected": "2",
+    "floorExpected": "2"
+  },
+  {
+    "id": "V008",
+    "code": "new Version(1,2).patch()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "V009",
+    "code": "new Version(1,2,0).toString()",
+    "compile": false,
+    "expected": "1.2.0",
+    "floorExpected": "1.2.0"
+  },
+  {
+    "id": "V010",
+    "code": "new Version(1,2,0).major()",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "V011",
+    "code": "new Version(1,2,0).minor()",
+    "compile": false,
+    "expected": "2",
+    "floorExpected": "2"
+  },
+  {
+    "id": "V012",
+    "code": "new Version(1,2,0).patch()",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "V013",
+    "code": "new Version(1,2,3).toString()",
+    "compile": false,
+    "expected": "1.2.3",
+    "floorExpected": "1.2.3"
+  },
+  {
+    "id": "V014",
+    "code": "new Version(1,2,3).major()",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "V015",
+    "code": "new Version(1,2,3).minor()",
+    "compile": false,
+    "expected": "2",
+    "floorExpected": "2"
+  },
+  {
+    "id": "V016",
+    "code": "new Version(1,2,3).patch()",
+    "compile": false,
+    "expected": "3",
+    "floorExpected": "3"
+  },
+  {
+    "id": "V017",
+    "code": "new Version(2147483647,0).toString()",
+    "compile": false,
+    "expected": "2147483647.0",
+    "floorExpected": "2147483647.0"
+  },
+  {
+    "id": "V018",
+    "code": "new Version(2147483647,0).major()",
+    "compile": false,
+    "expected": "2147483647",
+    "floorExpected": "2147483647"
+  },
+  {
+    "id": "V019",
+    "code": "new Version(2147483647,0).minor()",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "V020",
+    "code": "new Version(2147483647,0).patch()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "V021",
+    "code": "new Version(0,2147483647).toString()",
+    "compile": false,
+    "expected": "0.2147483647",
+    "floorExpected": "0.2147483647"
+  },
+  {
+    "id": "V022",
+    "code": "new Version(0,2147483647).major()",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "V023",
+    "code": "new Version(0,2147483647).minor()",
+    "compile": false,
+    "expected": "2147483647",
+    "floorExpected": "2147483647"
+  },
+  {
+    "id": "V024",
+    "code": "new Version(0,2147483647).patch()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "V025",
+    "code": "new Version(-1,0).toString()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Major version number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Major version number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V026",
+    "code": "new Version(-1,0).major()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Major version number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Major version number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V027",
+    "code": "new Version(-1,0).minor()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Major version number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Major version number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V028",
+    "code": "new Version(-1,0).patch()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Major version number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Major version number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V029",
+    "code": "new Version(1,-1).toString()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Minor version number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Minor version number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V030",
+    "code": "new Version(1,-1).major()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Minor version number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Minor version number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V031",
+    "code": "new Version(1,-1).minor()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Minor version number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Minor version number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V032",
+    "code": "new Version(1,-1).patch()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Minor version number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Minor version number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V033",
+    "code": "new Version(1,2,-1).toString()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V034",
+    "code": "new Version(1,2,-1).major()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V035",
+    "code": "new Version(1,2,-1).minor()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V036",
+    "code": "new Version(1,2,-1).patch()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V037",
+    "code": "new Version(null,2).toString()",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 1 cannot be null"
+  },
+  {
+    "id": "V038",
+    "code": "new Version(null,2).major()",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 1 cannot be null"
+  },
+  {
+    "id": "V039",
+    "code": "new Version(null,2).minor()",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 1 cannot be null"
+  },
+  {
+    "id": "V040",
+    "code": "new Version(null,2).patch()",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 1 cannot be null"
+  },
+  {
+    "id": "V041",
+    "code": "new Version(1,null).toString()",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 2 cannot be null"
+  },
+  {
+    "id": "V042",
+    "code": "new Version(1,null).major()",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 2 cannot be null"
+  },
+  {
+    "id": "V043",
+    "code": "new Version(1,null).minor()",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 2 cannot be null"
+  },
+  {
+    "id": "V044",
+    "code": "new Version(1,null).patch()",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 2 cannot be null"
+  },
+  {
+    "id": "V045",
+    "code": "new Version(1,2,null).toString()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V046",
+    "code": "new Version(1,2,null).major()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V047",
+    "code": "new Version(1,2,null).minor()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V048",
+    "code": "new Version(1,2,null).patch()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V049",
+    "code": "new Version(1,2).compareTo(new Version(1,2,3))",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "V050",
+    "code": "new Version(1,2,3).compareTo(new Version(1,2))",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "V051",
+    "code": "new Version(1,2,3).compareTo(new Version(1,2,4))",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "V052",
+    "code": "new Version(1,3).compareTo(new Version(1,2,99))",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "V053",
+    "code": "new Version(2,0).compareTo(new Version(1,99,99))",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "V054",
+    "code": "new Version(0,0).compareTo(new Version(0,0))",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "V055",
+    "code": "new Version(0,0,0).compareTo(new Version(0,0,0))",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "V056",
+    "code": "new Version(2147483647,0).compareTo(new Version(0,2147483647))",
+    "compile": false,
+    "expected": "2147483647",
+    "floorExpected": "2147483647"
+  },
+  {
+    "id": "V057",
+    "code": "new Version(1,2,0).compareTo(new Version(1,2,null))",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V058",
+    "code": "new Version(1,2,null).compareTo(new Version(1,2,3))",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Patch number is null or out of range (>= 0)"
+  },
+  {
+    "id": "V059",
+    "code": "new Version(1,2).compareTo((Version)null)",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 1 cannot be null"
+  },
+  {
+    "id": "V060",
+    "code": "System.requestVersion().major()",
+    "compile": false,
+    "expected": "UNCAUGHT|System.ProcedureException: Method is not supported from an unmanaged namespace",
+    "floorExpected": "UNCAUGHT|System.ProcedureException: Method is not supported from an unmanaged namespace"
+  },
+  {
+    "id": "V061",
+    "code": "System.requestVersion().minor()",
+    "compile": false,
+    "expected": "UNCAUGHT|System.ProcedureException: Method is not supported from an unmanaged namespace",
+    "floorExpected": "UNCAUGHT|System.ProcedureException: Method is not supported from an unmanaged namespace"
+  },
+  {
+    "id": "V062",
+    "code": "System.requestVersion().patch()",
+    "compile": false,
+    "expected": "UNCAUGHT|System.ProcedureException: Method is not supported from an unmanaged namespace",
+    "floorExpected": "UNCAUGHT|System.ProcedureException: Method is not supported from an unmanaged namespace"
+  },
+  {
+    "id": "V063",
+    "code": "System.requestVersion().toString()",
+    "compile": false,
+    "expected": "UNCAUGHT|System.ProcedureException: Method is not supported from an unmanaged namespace",
+    "floorExpected": "UNCAUGHT|System.ProcedureException: Method is not supported from an unmanaged namespace"
+  },
+  {
+    "id": "C001",
+    "code": "Id x = 7; pq.out('C001', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Id",
+    "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Id"
+  },
+  {
+    "id": "C002",
+    "code": "UUID x = new UUID(); pq.out('C002', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.UUID].<Constructor>()",
+    "floorExpected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.UUID].<Constructor>()"
+  },
+  {
+    "id": "C003",
+    "code": "UUID x = UUID.fromString(7); pq.out('C003', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fromString(Integer) from the type System.UUID",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fromString(Integer) from the type System.UUID"
+  },
+  {
+    "id": "C004",
+    "code": "Version x = new Version(1); pq.out('C004', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.Version].<Constructor>(Integer)",
+    "floorExpected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.Version].<Constructor>(Integer)"
+  },
+  {
+    "id": "C005",
+    "code": "Version x = new Version(1,2,3,4); pq.out('C005', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.Version].<Constructor>(Integer, Integer, Integer, Integer)",
+    "floorExpected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.Version].<Constructor>(Integer, Integer, Integer, Integer)"
+  },
+  {
+    "id": "C006",
+    "code": "Version x = new Version(1.5,2); pq.out('C006', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.Version].<Constructor>(Decimal, Integer)",
+    "floorExpected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.Version].<Constructor>(Decimal, Integer)"
+  },
+  {
+    "id": "C007",
+    "code": "Version x = new Version(1,2); x.major = 3; pq.out('C007', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Variable does not exist: major",
+    "floorExpected": "COMPILE_ERROR\tline 6: Variable does not exist: major",
+    "carry": "type system: assignment to unknown dotted field is not rejected by sema; Version.major is a method, not a field."
+  },
+  {
+    "id": "C008",
+    "code": "Id x = '001000000000001'; x.to15(1); pq.out('C008', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void to15(Integer) from the type Id",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void to15(Integer) from the type Id"
+  }
+]

@@ -136,12 +136,12 @@ func TestRenderPromotedUIOnlyComponents(t *testing.T) {
 		{
 			name:   "panelGrid",
 			markup: `<apex:page><apex:panelGrid columns="2" id="grid"><apex:outputText value="A"/><apex:outputText value="B"/></apex:panelGrid></apex:page>`,
-			wants:  []string{`<table id="grid">`, `<tbody><tr><td>A</td><td>B</td></tr></tbody>`},
+			wants:  []string{`<table id="j_id0:grid">`, "<tbody>\n<tr>\n<td>A</td>\n<td>B</td>\n</tr>\n</tbody>\n"},
 		},
 		{
 			name:   "panelGroup",
 			markup: `<apex:page><apex:panelGroup id="group" layout="block" styleClass="box"><apex:outputText value="Grouped"/></apex:panelGroup></apex:page>`,
-			wants:  []string{`<div id="group" data-rerender="group" class="box">Grouped</div>`},
+			wants:  []string{`<div id="j_id0:group" data-rerender="j_id0:group" class="box">Grouped</div>`},
 		},
 		{
 			name:   "sectionHeader",
@@ -151,12 +151,12 @@ func TestRenderPromotedUIOnlyComponents(t *testing.T) {
 		{
 			name:   "toolbar",
 			markup: `<apex:page><apex:toolbar id="tools"><apex:commandButton value="Save"/><apex:commandButton value="Cancel"/></apex:toolbar></apex:page>`,
-			wants:  []string{`<div id="tools" data-rerender="tools" class="toolbar">`, `value="Save"`, `value="Cancel"`},
+			wants:  []string{`<div id="j_id0:tools" data-rerender="j_id0:tools" class="toolbar">`, `value="Save"`, `value="Cancel"`},
 		},
 		{
 			name:   "toolbarGroup",
 			markup: `<apex:page><apex:toolbarGroup id="left" location="left"><apex:outputText value="Left"/></apex:toolbarGroup></apex:page>`,
-			wants:  []string{`<span id="left" data-rerender="left" class="toolbarGroup" data-location="left">Left</span>`},
+			wants:  []string{`<span id="j_id0:left" data-rerender="j_id0:left" class="toolbarGroup" data-location="left">Left</span>`},
 		},
 		{
 			name:   "tabPanel",
@@ -171,7 +171,7 @@ func TestRenderPromotedUIOnlyComponents(t *testing.T) {
 		{
 			name:   "panelBar",
 			markup: `<apex:page><apex:panelBar id="bar"><apex:panelBarItem label="One" expanded="true">First</apex:panelBarItem><apex:panelBarItem label="Two">Second</apex:panelBarItem></apex:panelBar></apex:page>`,
-			wants:  []string{`<div id="bar" data-rerender="bar" class="panelBar">`, `<section class="panelBarItem active">`, `<h3>One</h3>`, `<div class="panelBarContent">First</div>`},
+			wants:  []string{`<div id="j_id0:bar" data-rerender="j_id0:bar" class="panelBar">`, `<section class="panelBarItem active">`, `<h3>One</h3>`, `<div class="panelBarContent">First</div>`},
 		},
 		{
 			name:   "panelBarItem",

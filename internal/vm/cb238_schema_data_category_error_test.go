@@ -12,13 +12,14 @@ try {
 }
 try {
   Schema.DataCategoryGroupSobjectTypePair pair = new Schema.DataCategoryGroupSobjectTypePair();
-  pair.setSobject('Knowledge__kav');
-  pair.setDataCategoryGroupName('Products');
+  // Schema describe R265 uses an existing object with no category support.
+  pair.setSobject('Account');
+  pair.setDataCategoryGroupName('A23MissingCategoryGroup');
   Schema.describeDataCategoryGroupStructures(
     new List<Schema.DataCategoryGroupSobjectTypePair>{pair}, false);
   System.assert(false, 'describeDataCategoryGroupStructures should fail without data category metadata');
 } catch (Exception e) {
-  System.assertEquals('System.NullPointerException', e.getTypeName());
+  System.assertEquals('System.InvalidParameterValueException', e.getTypeName());
 }
 `)
 	if err != nil {

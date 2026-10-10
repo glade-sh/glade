@@ -1,3 +1,3 @@
-import { createBaseComponent, renderTitledSlot } from "./base.mjs";
+import { createBaseComponent, renderVerticalNavigationSection } from "./base.mjs";
 
-export default createBaseComponent("lightning-vertical-navigation-section", renderTitledSlot("section", "slds-nav-vertical__section"));
+export default createBaseComponent("lightning-vertical-navigation-section", renderVerticalNavigationSection);

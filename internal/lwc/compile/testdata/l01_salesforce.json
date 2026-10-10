@@ -1,0 +1,2421 @@
+[
+  {
+    "id": "grammar_span_text",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_member",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>{row.value}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_call",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>{handle()}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_computed",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>{row[\"value\"]}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_arithmetic",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>{1 + 2}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_ternary",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>{flag ? \"YES\" : \"NO\"}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_optional",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>{row?.value}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_nullish",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>{value ?? \"NO\"}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_assignment",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>{value = \"NO\"}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_empty_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>{}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_ERROR",
+      "63.0": "COMPILE_OK",
+      "65.0": "COMPILE_OK",
+      "66.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_unclosed_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>{value</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_ERROR",
+      "63.0": "COMPILE_OK",
+      "65.0": "COMPILE_OK",
+      "66.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_event",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span onclick={handle}>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_event_literal",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span onclick=\"handle\">text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_attr_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span title={value}>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_attr_mixed",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span title=\"prefix{value}\">text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_modern",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span lwc:if={flag}>yes</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_legacy",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span if:true={flag}>yes</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_orphan_else",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span lwc:else>no</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_literal_if",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span lwc:if=\"true\">yes</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_ref",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span lwc:ref=\"node\">text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_ref_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span lwc:ref={value}>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_unknown_directive",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span lwc:unknown>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_dom_manual",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span lwc:dom=\"manual\"></span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_dom_children",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span lwc:dom=\"manual\">text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_duplicate_attr",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span title=\"a\" title=\"b\">text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_unclosed",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>text</template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_mismatch",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><span>text</strong></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_span_comments",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><!-- comment --><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_span_inner_template",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><template><span>text</span></template></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_text",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>{value}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_member",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>{row.value}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_call",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>{handle()}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_computed",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>{row[\"value\"]}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_arithmetic",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>{1 + 2}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_ternary",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>{flag ? \"YES\" : \"NO\"}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_optional",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>{row?.value}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_nullish",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>{value ?? \"NO\"}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_assignment",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>{value = \"NO\"}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_empty_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>{}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_ERROR",
+      "63.0": "COMPILE_OK",
+      "65.0": "COMPILE_OK",
+      "66.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_unclosed_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>{value</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_ERROR",
+      "63.0": "COMPILE_OK",
+      "65.0": "COMPILE_OK",
+      "66.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_event",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div onclick={handle}>text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_event_literal",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div onclick=\"handle\">text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_attr_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div title={value}>text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_attr_mixed",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div title=\"prefix{value}\">text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_modern",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div lwc:if={flag}>yes</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_legacy",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div if:true={flag}>yes</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_orphan_else",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div lwc:else>no</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_literal_if",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div lwc:if=\"true\">yes</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_ref",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div lwc:ref=\"node\">text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_ref_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div lwc:ref={value}>text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_unknown_directive",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div lwc:unknown>text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_dom_manual",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div lwc:dom=\"manual\"></div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_dom_children",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div lwc:dom=\"manual\">text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_duplicate_attr",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div title=\"a\" title=\"b\">text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_unclosed",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>text</template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_mismatch",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><div>text</strong></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_div_comments",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><!-- comment --><div>text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_div_inner_template",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><template><div>text</div></template></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_text",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>{value}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_member",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>{row.value}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_call",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>{handle()}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_computed",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>{row[\"value\"]}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_arithmetic",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>{1 + 2}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_ternary",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>{flag ? \"YES\" : \"NO\"}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_optional",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>{row?.value}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_nullish",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>{value ?? \"NO\"}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_OK",
+      "63.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_assignment",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>{value = \"NO\"}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_empty_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>{}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_ERROR",
+      "63.0": "COMPILE_OK",
+      "65.0": "COMPILE_OK",
+      "66.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_unclosed_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>{value</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_ERROR",
+      "63.0": "COMPILE_OK",
+      "65.0": "COMPILE_OK",
+      "66.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_event",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button onclick={handle}>text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_event_literal",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button onclick=\"handle\">text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_attr_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button title={value}>text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_attr_mixed",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button title=\"prefix{value}\">text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_modern",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button lwc:if={flag}>yes</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_legacy",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button if:true={flag}>yes</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_orphan_else",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button lwc:else>no</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_literal_if",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button lwc:if=\"true\">yes</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_ref",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button lwc:ref=\"node\">text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_ref_expression",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button lwc:ref={value}>text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_unknown_directive",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button lwc:unknown>text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_dom_manual",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button lwc:dom=\"manual\"></button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_dom_children",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button lwc:dom=\"manual\">text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_duplicate_attr",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button title=\"a\" title=\"b\">text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_unclosed",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>text</template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_mismatch",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><button>text</strong></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "grammar_button_comments",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><!-- comment --><button>text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "grammar_button_inner_template",
+    "group": "template-grammar",
+    "kind": "compile",
+    "template": "<template><template><button>text</button></template></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "meta_lightning__AppPage_true",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__AppPage</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__AppPage_false",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__AppPage</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__RecordPage_true",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__RecordPage</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__RecordPage_false",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__RecordPage</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__HomePage_true",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__HomePage</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__HomePage_false",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__HomePage</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__Tab_true",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__Tab</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__Tab_false",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__Tab</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__UtilityBar_true",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__UtilityBar</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__UtilityBar_false",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__UtilityBar</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__RecordAction_true",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__RecordAction</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__RecordAction_false",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__RecordAction</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__FlowScreen_true",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__FlowScreen</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__FlowScreen_false",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__FlowScreen</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__UrlAddressable_true",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__UrlAddressable</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__UrlAddressable_false",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__UrlAddressable</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_lightning__Bogus_true",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__Bogus</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "meta_lightning__Bogus_false",
+    "group": "targets",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><targets><target>lightning__Bogus</target></targets>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "cap_lightning__dynamicComponent_true",
+    "group": "capabilities",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><capabilities><capability>lightning__dynamicComponent</capability></capabilities>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "cap_lightning__dynamicComponent_false",
+    "group": "capabilities",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><capabilities><capability>lightning__dynamicComponent</capability></capabilities>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "cap_lightning__ServerRenderable_true",
+    "group": "capabilities",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><capabilities><capability>lightning__ServerRenderable</capability></capabilities>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "cap_lightning__ServerRenderable_false",
+    "group": "capabilities",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><capabilities><capability>lightning__ServerRenderable</capability></capabilities>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "cap_lightning__ServerRenderableWithHydration_true",
+    "group": "capabilities",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><capabilities><capability>lightning__ServerRenderableWithHydration</capability></capabilities>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "cap_lightning__ServerRenderableWithHydration_false",
+    "group": "capabilities",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><capabilities><capability>lightning__ServerRenderableWithHydration</capability></capabilities>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "cap_lightningCommunity__RelaxedCSP_true",
+    "group": "capabilities",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><capabilities><capability>lightningCommunity__RelaxedCSP</capability></capabilities>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "cap_lightningCommunity__RelaxedCSP_false",
+    "group": "capabilities",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><capabilities><capability>lightningCommunity__RelaxedCSP</capability></capabilities>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "cap_lightning__Bogus_true",
+    "group": "capabilities",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><capabilities><capability>lightning__Bogus</capability></capabilities>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "cap_lightning__Bogus_false",
+    "group": "capabilities",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed><capabilities><capability>lightning__Bogus</capability></capabilities>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "meta_no_version",
+    "group": "metadata-structure",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>false</isExposed>",
+    "omit_version": true,
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_empty_targets",
+    "group": "metadata-structure",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets/>",
+    "omit_version": false,
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_duplicate_version",
+    "group": "metadata-structure",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<apiVersion>{api}</apiVersion><isExposed>false</isExposed>",
+    "omit_version": false,
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_invalid_exposed",
+    "group": "metadata-structure",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>maybe</isExposed>",
+    "omit_version": false,
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_label",
+    "group": "metadata-structure",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<masterLabel>Owned Label</masterLabel><isExposed>false</isExposed>",
+    "omit_version": false,
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "meta_config_unknown_target",
+    "group": "metadata-structure",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__AppPage</target></targets><targetConfigs><targetConfig targets=\"lightning__RecordPage\"/></targetConfigs>",
+    "omit_version": false,
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "meta_property_missing",
+    "group": "metadata-structure",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "meta_fragment": "<isExposed>true</isExposed><targets><target>lightning__AppPage</target></targets><targetConfigs><targetConfig targets=\"lightning__AppPage\"><property name=\"missing\" type=\"String\"/></targetConfig></targetConfigs>",
+    "omit_version": false,
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "module_00",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lwc'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lwc",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "module_01",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/button'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/button",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_02",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/input'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/input",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_03",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/navigation'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/navigation",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_04",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/platformResourceLoader'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/platformResourceLoader",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_05",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/messageService'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/messageService",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_06",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/refresh'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/refresh",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_07",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/uiRecordApi'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/uiRecordApi",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_08",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/uiObjectInfoApi'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/uiObjectInfoApi",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_09",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/uiListApi'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/uiListApi",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_10",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/uiRelatedListApi'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/uiRelatedListApi",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_11",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/graphql'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/graphql",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_12",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/uiGraphQLApi'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/uiGraphQLApi",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_13",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/toast'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/toast",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_14",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/modal'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/modal",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_15",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/alert'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/alert",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_16",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/confirm'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/confirm",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_17",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/prompt'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/prompt",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_18",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/userFormFactor'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/userFormFactor",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_19",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from '@salesforce/i18n/lang'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "@salesforce/i18n/lang",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_20",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from '@salesforce/user/Id'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "@salesforce/user/Id",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_21",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'c/ownedMissing'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "c/ownedMissing",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_22",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from 'lightning/ownedMissing'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "lightning/ownedMissing",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    }
+  },
+  {
+    "id": "module_23",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from './ownedMissing'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "./ownedMissing",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "module_24",
+    "group": "module-resolution",
+    "kind": "compile",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; import ownedModule from '@salesforce/ownedMissing'; export default class FamilyCompile extends LightningElement { value = ownedModule; }",
+    "meta": "",
+    "module": "@salesforce/ownedMissing",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    }
+  },
+  {
+    "id": "runtime_span_text",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  },
+  {
+    "id": "runtime_span_entity",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><span>A&amp;B</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "A&B",
+      "67.0": "A&B"
+    }
+  },
+  {
+    "id": "runtime_span_value",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><span>{value}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "VALUE",
+      "67.0": "VALUE"
+    }
+  },
+  {
+    "id": "runtime_span_member",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><span>{row.value}</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "NESTED",
+      "67.0": "NESTED"
+    }
+  },
+  {
+    "id": "runtime_span_modern",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><span lwc:if={flag}>yes</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "yes",
+      "67.0": "yes"
+    }
+  },
+  {
+    "id": "runtime_span_legacy",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><span if:true={flag}>yes</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "yes",
+      "67.0": "yes"
+    }
+  },
+  {
+    "id": "runtime_span_false",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><span if:false={flag}>no</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "",
+      "67.0": ""
+    }
+  },
+  {
+    "id": "runtime_span_title",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><span title={value}>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  },
+  {
+    "id": "runtime_span_comment",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><!--owned--><span>text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  },
+  {
+    "id": "runtime_span_ref",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><span lwc:ref=\"owned\">text</span></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  },
+  {
+    "id": "runtime_div_text",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><div>text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  },
+  {
+    "id": "runtime_div_entity",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><div>A&amp;B</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "A&B",
+      "67.0": "A&B"
+    }
+  },
+  {
+    "id": "runtime_div_value",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><div>{value}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "VALUE",
+      "67.0": "VALUE"
+    }
+  },
+  {
+    "id": "runtime_div_member",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><div>{row.value}</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "NESTED",
+      "67.0": "NESTED"
+    }
+  },
+  {
+    "id": "runtime_div_modern",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><div lwc:if={flag}>yes</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "yes",
+      "67.0": "yes"
+    }
+  },
+  {
+    "id": "runtime_div_legacy",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><div if:true={flag}>yes</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "yes",
+      "67.0": "yes"
+    }
+  },
+  {
+    "id": "runtime_div_false",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><div if:false={flag}>no</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "",
+      "67.0": ""
+    }
+  },
+  {
+    "id": "runtime_div_title",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><div title={value}>text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  },
+  {
+    "id": "runtime_div_comment",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><!--owned--><div>text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  },
+  {
+    "id": "runtime_div_ref",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><div lwc:ref=\"owned\">text</div></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  },
+  {
+    "id": "runtime_button_text",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><button>text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  },
+  {
+    "id": "runtime_button_entity",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><button>A&amp;B</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "A&B",
+      "67.0": "A&B"
+    }
+  },
+  {
+    "id": "runtime_button_value",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><button>{value}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "VALUE",
+      "67.0": "VALUE"
+    }
+  },
+  {
+    "id": "runtime_button_member",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><button>{row.value}</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "NESTED",
+      "67.0": "NESTED"
+    }
+  },
+  {
+    "id": "runtime_button_modern",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><button lwc:if={flag}>yes</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "yes",
+      "67.0": "yes"
+    }
+  },
+  {
+    "id": "runtime_button_legacy",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><button if:true={flag}>yes</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "yes",
+      "67.0": "yes"
+    }
+  },
+  {
+    "id": "runtime_button_false",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><button if:false={flag}>no</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "",
+      "67.0": ""
+    }
+  },
+  {
+    "id": "runtime_button_title",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><button title={value}>text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  },
+  {
+    "id": "runtime_button_comment",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><!--owned--><button>text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  },
+  {
+    "id": "runtime_button_ref",
+    "group": "runtime-grammar",
+    "kind": "runtime",
+    "template": "<template><button lwc:ref=\"owned\">text</button></template>",
+    "js": "import { LightningElement } from 'lwc'; export default class FamilyCompile extends LightningElement { value='VALUE'; flag=true; row={value:'NESTED'}; handle() {} }",
+    "meta": "",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "runtime_expected": {
+      "59.0": "text",
+      "67.0": "text"
+    }
+  }
+]

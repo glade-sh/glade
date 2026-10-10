@@ -1,6 +1,7 @@
 package visualforce
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -21,10 +22,12 @@ type RemotingRequest struct {
 }
 
 type RemoteActionMethod struct {
-	ClassName   string
-	MethodName  string
-	Annotations []string
-	Modifiers   []string
+	ClassName      string
+	MethodName     string
+	Annotations    []string
+	Modifiers      []string
+	ParameterCount int
+	ParameterTypes []string
 }
 
 type RemotingMetadata struct {
@@ -32,9 +35,11 @@ type RemotingMetadata struct {
 }
 
 type RemoteActionDescriptor struct {
-	ClassName  string
-	MethodName string
-	Action     string
+	ClassName      string
+	MethodName     string
+	Action         string
+	ParameterCount int
+	ParameterTypes []string `json:"-"`
 }
 
 type RemotingInvocation struct {
@@ -91,11 +96,17 @@ func BuildRemotingMetadataFromIndex(page Page, index typesys.Index) (RemotingMet
 			if member.Kind != apexast.DeclarationMethod || !hasRemoteActionAnnotation(member.Modifiers) {
 				continue
 			}
+			parameterTypes := make([]string, len(member.Parameters))
+			for i, parameter := range member.Parameters {
+				parameterTypes[i] = parameter.Type
+			}
 			methods = append(methods, RemoteActionMethod{
-				ClassName:   className,
-				MethodName:  member.Name,
-				Annotations: member.Modifiers,
-				Modifiers:   member.Modifiers,
+				ClassName:      className,
+				MethodName:     member.Name,
+				Annotations:    member.Modifiers,
+				Modifiers:      member.Modifiers,
+				ParameterCount: len(member.Parameters),
+				ParameterTypes: parameterTypes,
 			})
 		}
 	}
@@ -123,9 +134,11 @@ func BuildRemotingMetadata(page Page, methods []RemoteActionMethod) (RemotingMet
 		className := strings.TrimSpace(method.ClassName)
 		methodName := strings.TrimSpace(method.MethodName)
 		metadata.Actions = append(metadata.Actions, RemoteActionDescriptor{
-			ClassName:  className,
-			MethodName: methodName,
-			Action:     className + "." + methodName,
+			ClassName:      className,
+			MethodName:     methodName,
+			Action:         className + "." + methodName,
+			ParameterCount: method.ParameterCount,
+			ParameterTypes: append([]string(nil), method.ParameterTypes...),
 		})
 	}
 	sort.Slice(metadata.Actions, func(i, j int) bool {
@@ -135,6 +148,47 @@ func BuildRemotingMetadata(page Page, methods []RemoteActionMethod) (RemotingMet
 		return metadata.Actions[i].ClassName < metadata.Actions[j].ClassName
 	})
 	return metadata, nil
+}
+
+// Rendering and dispatch discover the same exposed actions. Reuse the page's
+// registered runtime so rendering does not parse or compile the project again.
+func renderPageRemotingScript(node *MarkupNode, ctx *RenderContext) string {
+	if ctx.VM == nil {
+		return ""
+	}
+	page := ctx.PageMeta
+	if page.Controller == "" {
+		page.Controller = node.Attribute("controller")
+	}
+	if len(page.Extensions) == 0 {
+		page.Extensions = splitCSV(node.Attribute("extensions"))
+	}
+	methods := make([]RemoteActionMethod, 0)
+	seen := map[string]bool{}
+	for _, method := range ctx.VM.Methods {
+		dot := strings.LastIndex(method.Name, ".")
+		if dot < 0 || !hasRemoteActionAnnotation(method.Modifiers) {
+			continue
+		}
+		candidate := RemoteActionMethod{
+			ClassName:      method.Name[:dot],
+			MethodName:     method.Name[dot+1:],
+			Annotations:    method.Modifiers,
+			Modifiers:      method.Modifiers,
+			ParameterCount: len(method.Params),
+		}
+		key := strings.ToLower(method.Name)
+		if seen[key] || ValidateRemoteActionExposure(candidate) != nil {
+			continue
+		}
+		seen[key] = true
+		methods = append(methods, candidate)
+	}
+	metadata, err := BuildRemotingMetadata(page, methods)
+	if err != nil || len(metadata.Actions) == 0 {
+		return ""
+	}
+	return RenderRemotingMetadataScript(metadata)
 }
 
 func DispatchRemotingRequests(metadata RemotingMetadata, requests []RemotingRequest, invoker RemotingInvoker) []RemotingResponse {
@@ -174,14 +228,17 @@ func DispatchRemotingRequests(metadata RemotingMetadata, requests []RemotingRequ
 	return responses
 }
 
+//go:embed remoting_runtime.js
+var remotingManagerScript string
+
 func RenderRemotingMetadataScript(metadata RemotingMetadata) string {
 	builder := strings.Builder{}
 	builder.WriteString(`<script>(function(window){`)
-	builder.WriteString(`window.Visualforce=window.Visualforce||{};`)
-	builder.WriteString(`Visualforce.remoting=Visualforce.remoting||{};`)
-	builder.WriteString(`Visualforce.remoting.Manager=Visualforce.remoting.Manager||{};`)
-	builder.WriteString(`Visualforce.remoting.Manager._tid=Visualforce.remoting.Manager._tid||1;`)
-	builder.WriteString(`Visualforce.remoting.Manager.invokeAction=function(remoteAction){var values=Array.prototype.slice.call(arguments,1);var callback=null;if(values.length&&typeof values[values.length-1]=="function"){callback=values.pop();}else if(values.length>1&&typeof values[values.length-2]=="function"){callback=values[values.length-2];values.splice(values.length-2,1);}var isOptions=function(value){return value&&typeof value=="object"&&!Array.isArray(value)&&("escape" in value||"timeout" in value||"buffer" in value||"abortable" in value);};if(callback&&values.length&&isOptions(values[values.length-1])){values.pop();}var read=function(name){var el=document.querySelector('input[name="'+name+'"]');return el?el.value:"";};var actionText=String(remoteAction||"");var actionName=actionText.replace(/^\{!\$RemoteAction\./,"").replace(/\}$/,"");var dot=actionName.lastIndexOf(".");var action=dot>=0?actionName.slice(0,dot):actionName;var method=dot>=0?actionName.slice(dot+1):"";var request={action:action,method:method,data:values,type:"rpc",tid:Visualforce.remoting.Manager._tid++,ctx:{page:window.location.pathname,viewState:read("` + ViewStateFormFieldName() + `"),csrf:read("__vf_csrf")}};return fetch(window.location.pathname.replace(/\/$/,"")+"/remoting",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify([request])}).then(function(response){return response.json();}).then(function(responses){var response=Array.isArray(responses)?responses[0]:responses;var event={status:!!(response&&response.status),type:(response&&response.type)||"rpc",tid:response&&response.tid,action:response&&response.action,method:response&&response.method,message:response&&response.message,where:response&&response.where};if(callback){callback(response?response.result:null,event);}return response;}).catch(function(err){var event={status:false,type:"exception",message:String(err)};if(callback){callback(null,event);}return {status:false,message:String(err),errors:[{message:String(err)}]};});};`)
+	actions, _ := json.Marshal(metadata.Actions)
+	builder.WriteString(`var actions=`)
+	builder.Write(actions)
+	builder.WriteString(`;`)
+	builder.WriteString(strings.ReplaceAll(remotingManagerScript, "__GLADE_VIEW_STATE_FIELD__", ViewStateFormFieldName()))
 	for _, action := range metadata.Actions {
 		classID := jsIdentifier(action.ClassName)
 		methodID := jsIdentifier(action.MethodName)

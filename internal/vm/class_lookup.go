@@ -15,7 +15,37 @@ type runtimeClassNameCacheKey struct {
 
 type frozenClassLookup struct {
 	generation uint64
-	keys       map[string]string
+	// keys maps canonical class names to live Classes keys. On a root
+	// generation (base == nil) it is complete. On a layer it holds only the
+	// keys whose result differs from base, where "" hides the base entry.
+	keys map[string]string
+	// base is the root generation a layer was registered on. written lists
+	// the Classes keys a layer's runtime wrote since base, cumulatively.
+	base    *frozenClassLookup
+	written map[string]struct{}
+
+	// Derived artifacts of this generation, shared like keys. A nil
+	// searchEntries or copyPlan disables layering on this generation.
+	searchEntries []classNameSearchEntry
+	topLevel      map[string]topLevelClassLookup
+	copyPlan      *classCopyPlan
+
+	// contributors maps each root key to every Classes key that writes it
+	// in a full build. It is built once, by the first registering clone.
+	contributorsOnce  sync.Once
+	contributorsReady atomic.Bool
+	contributors      map[string][]string
+
+	// namespaceAliases is built lazily, once per namespace, by the first clone
+	// that queries it and then shared by every clone of this generation.
+	namespaceMu      sync.RWMutex
+	namespaceAliases map[string]map[string]namespaceClassAlias
+}
+
+type namespaceClassAlias struct {
+	Alias string
+	Name  string
+	OK    bool
 }
 
 var (
@@ -74,6 +104,9 @@ func (vm *VM) classNamespace(className string) string {
 func (vm *VM) currentCallerNamespace() string {
 	if vm.currentTrigger && len(vm.activeTriggerNamespaces) > 0 {
 		return strings.TrimSpace(vm.activeTriggerNamespaces[len(vm.activeTriggerNamespaces)-1])
+	}
+	if vm.currentMethod.SourceContextBound {
+		return strings.TrimSpace(vm.currentMethod.Namespace)
 	}
 	if vm.currentMethodMatchesExecutionClass() {
 		if ns := vm.classNamespace(vm.currentMethod.ClassName); ns != "" {
@@ -220,6 +253,14 @@ func (vm *VM) lookupClassInNamespace(namespace, className string) (Class, bool) 
 		}
 		return result.Class, true
 	}
+	if classesByShort, ok := vm.frozenNamespaceClassLookup(nsKey); ok {
+		vm.namespaceClassLookup[nsKey] = classesByShort
+		result, found := classesByShort[shortKey]
+		if !found || !result.OK {
+			return Class{}, false
+		}
+		return result.Class, true
+	}
 	classesByShort := make(map[string]namespaceClassLookup)
 	for _, entry := range vm.classNameSearchEntries() {
 		class, ok := vm.lookupClass(entry.Name)
@@ -250,6 +291,87 @@ func (vm *VM) lookupClassInNamespace(namespace, className string) (Class, bool) 
 	}
 	return result.Class, true
 }
+
+// frozenNamespaceClassLookup returns this VM's per-namespace short-name table
+// using the alias table shared by every clone of one frozen generation. The
+// shared table holds live Classes keys only; Class values are read from this
+// VM's own Classes map when the namespace is first queried, exactly when the
+// unshared path below would snapshot them. Registration drops the frozen
+// generation, so a changed class set never reads a stale table.
+func (vm *VM) frozenNamespaceClassLookup(nsKey string) (map[string]namespaceClassLookup, bool) {
+	frozen := vm.frozenClassLookup
+	if frozen == nil {
+		return nil, false
+	}
+	frozen.namespaceMu.RLock()
+	aliases, ok := frozen.namespaceAliases[nsKey]
+	frozen.namespaceMu.RUnlock()
+	if !ok {
+		aliases = vm.buildFrozenNamespaceClassAliases(frozen, nsKey)
+		frozen.namespaceMu.Lock()
+		if frozen.namespaceAliases == nil {
+			frozen.namespaceAliases = make(map[string]map[string]namespaceClassAlias)
+		}
+		if existing, exists := frozen.namespaceAliases[nsKey]; exists {
+			aliases = existing
+		} else {
+			frozen.namespaceAliases[nsKey] = aliases
+		}
+		frozen.namespaceMu.Unlock()
+	}
+	classesByShort := make(map[string]namespaceClassLookup, len(aliases))
+	for key, entry := range aliases {
+		if !entry.OK {
+			classesByShort[key] = namespaceClassLookup{}
+			continue
+		}
+		class, exists := vm.Classes[entry.Alias]
+		if !exists {
+			return nil, false
+		}
+		classesByShort[key] = namespaceClassLookup{Class: class, OK: true}
+	}
+	return classesByShort, true
+}
+
+// buildFrozenNamespaceClassAliases mirrors the unshared table build in
+// lookupClassInNamespace, recording the frozen alias each lookupClass call
+// would resolve instead of the Class value.
+func (vm *VM) buildFrozenNamespaceClassAliases(frozen *frozenClassLookup, nsKey string) map[string]namespaceClassAlias {
+	aliases := make(map[string]namespaceClassAlias)
+	for _, entry := range vm.classNameSearchEntries() {
+		typeName := strings.TrimSpace(entry.Name)
+		if typeName == "" {
+			continue
+		}
+		alias, ok := frozen.resolve(typeName)
+		if !ok {
+			continue
+		}
+		class, ok := vm.Classes[alias]
+		if !ok {
+			continue
+		}
+		if !strings.EqualFold(strings.TrimSpace(class.Namespace), nsKey) {
+			continue
+		}
+		if !strings.Contains(class.Name, ".") {
+			key := strings.ToLower(strings.TrimSpace(class.Name))
+			aliases[key] = namespaceClassAlias{Alias: alias, Name: class.Name, OK: true}
+			continue
+		}
+		key := strings.ToLower(shortTypeName(class.Name))
+		if existing, exists := aliases[key]; exists {
+			if existing.OK && strings.Contains(existing.Name, ".") && !strings.EqualFold(existing.Name, class.Name) {
+				aliases[key] = namespaceClassAlias{}
+			}
+			continue
+		}
+		aliases[key] = namespaceClassAlias{Alias: alias, Name: class.Name, OK: true}
+	}
+	return aliases
+}
+
 func (vm *VM) isSubclass(child, parent string) bool {
 	if resolved, ok := vm.resolveClassName(child); ok {
 		child = resolved
@@ -304,53 +426,138 @@ func apexIdentifierStartsUpper(name string) bool {
 	first := name[0]
 	return first >= 'A' && first <= 'Z'
 }
+
+// typeTokenName gives each resolved record a stable qualified identity, including
+// records nested in generic Type tokens. Class declarations retain their identity.
+func (vm *VM) typeTokenName(name string) string {
+	// SObject is the record base type, not a concrete schema declaration.
+	if strings.EqualFold(canonicalRuntimePlatformType(name), "SObject") {
+		return "SObject"
+	}
+	if record, ok := vm.explicitSchemaRecordType(name); ok {
+		if strings.EqualFold(record, "SObject") {
+			return "SObject"
+		}
+		return "Schema." + record
+	}
+	if strings.HasSuffix(name, "[]") {
+		return vm.typeTokenName(strings.TrimSuffix(name, "[]")) + "[]"
+	}
+	if args, ok := genericTypeArgs(name); ok {
+		base, _ := genericBaseName(name)
+		for i := range args {
+			args[i] = vm.typeTokenName(args[i])
+		}
+		return base + "<" + strings.Join(args, ",") + ">"
+	}
+	if _, class := vm.lookupClass(name); class {
+		return name
+	}
+	if record, ok := vm.resolveObjectName(name); ok {
+		return "Schema." + record
+	}
+	if vm.isSObjectLikeType(name) {
+		return "Schema." + name
+	}
+	return name
+}
+
+// Record identity is private metadata so the existing Type display and scalar
+// payload stay unchanged. A later class registration cannot redirect the token.
+const reflectionTypeIdentityField = "__gladeTypeIdentity"
+
+func (vm *VM) markReflectionTypeToken(value Value, name string) Value {
+	identity := vm.typeTokenName(name)
+	if identity != typeValueText(value) {
+		if value.Fields == nil {
+			value.Fields = make(map[string]Value)
+		}
+		value.Fields[reflectionTypeIdentityField] = String(identity)
+	}
+	return value
+}
+
+func (vm *VM) reflectionTypeToken(name string) Value {
+	display := name
+	if record, ok := vm.explicitSchemaRecordType(name); ok {
+		display = record
+	}
+	return vm.markReflectionTypeToken(platformScalar("Type", display), name)
+}
+
 func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value {
-	if strings.TrimSpace(name) == "" {
+	// R195: forName does not trim a type-name argument.
+	if name == "" || name != strings.TrimSpace(name) {
 		return Null
+	}
+	// R185/R187: qualified schema records and System interfaces are visible
+	// through the single-name overload; System scalar aliases are not.
+	if namespace == "" && hasPrefixFold(name, "Schema.") {
+		if record, ok := vm.explicitSchemaRecordType(name); ok {
+			return vm.reflectionTypeToken("Schema." + record)
+		}
+	}
+	if namespace == "" && strings.EqualFold(name, "System.Callable") {
+		return vm.reflectionTypeToken("System.Callable")
+	}
+	// The single-name overload prefers a schema record even when a project
+	// class has the same name. Empty/null explicit namespaces keep class lookup.
+	if namespace == "" && !explicitNamespace {
+		if record, ok := vm.resolveObjectName(name); ok {
+			return vm.reflectionTypeToken("Schema." + record)
+		}
+		if record, ok := storage.ResolveKnownStandardObjectName(name); ok {
+			return vm.reflectionTypeToken("Schema." + record)
+		}
 	}
 	if namespace != "" {
 		if resolved, ok := generatedPlatformTypeForName(namespace, name); ok {
-			return platformScalar("Type", resolved)
+			return vm.reflectionTypeToken(resolved)
 		}
 		// Salesforce exposes concrete System exception types through the
 		// two-argument overload, but the abstract Exception base type is not
 		// returned from Type.forName('System', 'Exception').
 		if strings.EqualFold(namespace, "System") &&
 			!strings.EqualFold(name, "Exception") && isBuiltinExceptionType(name) {
-			return platformScalar("Type", "System."+exceptionTypeName(name))
+			return vm.reflectionTypeToken("System." + exceptionTypeName(name))
 		}
 		for _, candidate := range namespaceTypeNameCandidates(namespace, name) {
-			if class, ok := vm.lookupClass(candidate); ok {
-				return platformScalar("Type", typeForNameClassToken(namespace, class))
+			if class, ok := vm.lookupClass(candidate); ok && !methodHasModifier(class.Modifiers, AnonymousClassModifier) {
+				return vm.reflectionTypeToken(typeForNameClassToken(namespace, class))
 			}
 		}
 		if objectName, ok := vm.localNamespaceSObjectTypeForName(namespace, name); ok {
-			return platformScalar("Type", objectName)
+			return vm.reflectionTypeToken(objectName)
 		}
 		return Null
 	}
 	if resolved, ok := vm.resolveClassName(name); ok {
-		if class, ok := vm.lookupClass(resolved); ok {
+		if class, ok := vm.lookupClass(resolved); ok && !methodHasModifier(class.Modifiers, AnonymousClassModifier) {
 			if !explicitNamespace && !strings.Contains(name, ".") && !typeForNameClassVisible(class) {
 				return Null
 			}
-			return platformScalar("Type", vm.classTypeToken(class))
+			return vm.reflectionTypeToken(vm.classTypeToken(class))
 		}
-		return platformScalar("Type", resolved)
+		if _, class := vm.lookupClass(resolved); !class {
+			return vm.reflectionTypeToken(resolved)
+		}
 	}
 	if vm.Org != nil {
 		if canonical, ok := vm.resolveObjectName(name); ok {
-			return platformScalar("Type", canonical)
+			return vm.reflectionTypeToken("Schema." + canonical)
 		}
 	}
 	if hasPrefixFold(name, "System.") {
 		return Null
 	}
 	if resolved, ok := vm.resolveTypeNameToken(name); ok {
-		return platformScalar("Type", resolved)
+		if class, exists := vm.lookupClass(resolved); exists && methodHasModifier(class.Modifiers, AnonymousClassModifier) {
+			return Null
+		}
+		return vm.reflectionTypeToken(resolved)
 	}
 	if isBuiltinTypeName(name) || isGenericTypeName(name) || isCommonSObjectTypeName(name) {
-		return platformScalar("Type", name)
+		return vm.reflectionTypeToken(name)
 	}
 	return Null
 }
@@ -561,7 +768,30 @@ func isCommonSObjectTypeName(name string) bool {
 	}
 	return storage.IsKnownStandardObject(name)
 }
+
+// explicitSchemaRecordType resolves record qualification without consulting
+// user-class aliases. Keep Schema in type tokens until record allocation, where
+// the canonical object name and classInstance=false carry the same provenance.
+func (vm *VM) explicitSchemaRecordType(typeName string) (string, bool) {
+	typeName = strings.TrimSpace(typeName)
+	if !hasPrefixFold(typeName, "Schema.") {
+		return "", false
+	}
+	record := typeName[len("Schema."):]
+	if canonical, ok := vm.resolveObjectName(record); ok {
+		return canonical, true
+	}
+	// Suffix-shaped names alone do not establish that a record exists.
+	if isCommonSObjectTypeName(record) {
+		return record, true
+	}
+	return "", false
+}
+
 func (vm *VM) resolveClassName(typeName string) (string, bool) {
+	if record, ok := vm.explicitSchemaRecordType(typeName); ok {
+		return "Schema." + record, true
+	}
 	if isCommonSObjectTypeName(typeName) {
 		return typeName, true
 	}
@@ -615,11 +845,7 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 	}
 	vm.recordClassLookupMiss()
 	if frozen := vm.frozenClassLookup; frozen != nil {
-		alias, ok := frozen.keys[typeName]
-		if !ok {
-			alias, ok = foldLookupStringMap(frozen.keys, typeName)
-		}
-		if ok {
+		if alias, ok := frozen.resolve(typeName); ok {
 			if class, ok := vm.Classes[alias]; ok {
 				vm.storeClassLookupNameCache(typeName, alias, true)
 				return class, true
@@ -631,6 +857,16 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 	if class, ok := vm.Classes[typeName]; ok {
 		vm.storeClassLookupNameCache(typeName, typeName, true)
 		return class, true
+	}
+	if overlay := vm.classOverlay; overlay != nil {
+		if class, ok := overlay.lookup(vm.Classes, typeName); ok {
+			if alias := vm.liveClassAlias(class); alias != "" {
+				vm.storeClassLookupNameCache(typeName, alias, true)
+			}
+			return class, true
+		}
+		vm.storeClassLookupNameCache(typeName, "", false)
+		return Class{}, false
 	}
 	if vm.classLookup == nil {
 		vm.rebuildClassLookup()
@@ -754,10 +990,20 @@ func (vm *VM) updateClassLookupNameCacheGauges() {
 // exact artifact by pointer instead of rebuilding a per-clone classLookup.
 // Later registration invalidates the frozen artifact and starts a private
 // generation with a bounded result overlay.
+//
+// After registrations on a frozen clone, freezing publishes a layer over the
+// root generation in O(registered names); see class_lookup_overlay.go.
 func (vm *VM) FreezeClassLookup() {
 	if vm == nil {
 		return
 	}
+	if overlay := vm.classOverlay; overlay != nil {
+		vm.classOverlay = nil
+		if vm.freezeClassLookupOverlay(overlay) {
+			return
+		}
+	}
+	vm.classLookupBuilds++
 	keys := make(map[string]string, len(vm.Classes)*2)
 	ranks := make(map[string]int, len(vm.Classes)*2)
 	nss := make(map[string]string, len(vm.Classes)*2)
@@ -778,11 +1024,19 @@ func (vm *VM) FreezeClassLookup() {
 		}
 	}
 	generation := nextClassLookupGeneration.Add(1)
-	vm.frozenClassLookup = &frozenClassLookup{generation: generation, keys: keys}
+	frozen := &frozenClassLookup{generation: generation, keys: keys}
+	vm.frozenClassLookup = frozen
 	vm.sharedClassCopyPlan = buildClassCopyPlan(vm.Classes)
+	vm.classMapWritten = false
+	vm.classValuesWritten = false
 	vm.classLookupGeneration = generation
-	vm.classNameSearchEntries()
-	vm.rebuildTopLevelClassLookup()
+	// A search cache missing names (one that predates an unregistered alias
+	// write) is kept as before but never extended by a layer.
+	if entries := vm.classNameSearchEntries(); len(entries) == len(vm.Classes) {
+		frozen.searchEntries = entries
+	}
+	frozen.topLevel = vm.rebuildTopLevelClassLookup()
+	frozen.copyPlan = vm.sharedClassCopyPlan
 	vm.resetClassLookupNameCache()
 	vm.classLookup = nil
 }
@@ -826,26 +1080,51 @@ func (vm *VM) unshareClassLookup() {
 	vm.rebuildClassLookup()
 }
 func (vm *VM) storeClassAliases(class Class) {
-	vm.unshareClassLookup()
+	vm.prepareClassMapWrite()
+	overlay := vm.beginClassLookupOverlay()
+	if overlay == nil {
+		vm.unshareClassLookup()
+	}
 	if vm.Classes == nil {
 		vm.Classes = make(map[string]Class)
 	}
-	if vm.classLookup == nil {
+	if overlay == nil && vm.classLookup == nil {
 		vm.classLookup = make(map[string]Class)
 	}
 	if existing, exists := vm.Classes[class.Name]; !exists || shouldReplaceShortClassAlias(existing, class) {
-		vm.Classes[class.Name] = class
+		vm.writeRegisteredClass(overlay, class.Name, class)
 	}
 	vm.classLookupGeneration = nextClassLookupGeneration.Add(1)
 	vm.resetClassAccessCaches()
 	vm.enumLookup = nil
 	vm.enumSuffixLookup = nil
-	vm.storeClassLookupAlias(class.Name, class)
+	vm.storeRegisteredClassLookupAlias(overlay, class.Name, class)
 	if class.Namespace != "" {
 		qualified := runtimeClassName(class)
-		vm.Classes[qualified] = class
-		vm.storeClassLookupAlias(qualified, class)
+		vm.writeRegisteredClass(overlay, qualified, class)
+		vm.storeRegisteredClassLookupAlias(overlay, qualified, class)
 	}
+}
+
+func (vm *VM) writeRegisteredClass(overlay *classLookupOverlay, alias string, class Class) {
+	// Frozen clones can already have a static index before registration.
+	// Replacing or adding static fields makes that index stale.
+	previous := vm.Classes[alias]
+	if len(previous.StaticFields) != 0 || len(class.StaticFields) != 0 {
+		vm.invalidateStaticValueRefs()
+	}
+	if overlay != nil {
+		overlay.recordWrite(vm.Classes, alias, class)
+	}
+	vm.Classes[alias] = class
+}
+
+func (vm *VM) storeRegisteredClassLookupAlias(overlay *classLookupOverlay, name string, class Class) {
+	if overlay != nil {
+		overlay.storeAlias(name, class)
+		return
+	}
+	vm.storeClassLookupAlias(name, class)
 }
 func shouldReplaceShortClassAlias(existing, incoming Class) bool {
 	if strings.EqualFold(existing.Namespace, incoming.Namespace) {
@@ -877,6 +1156,8 @@ func (vm *VM) storeClassValue(class Class) {
 	// access caches. Class structure (name/namespace/access) is unchanged, so
 	// those caches remain valid. Only fall back to the rebuild path when a name
 	// would be newly introduced.
+	vm.prepareClassMapWrite()
+	vm.classValuesWritten = true
 	if vm.frozenClassLookup != nil && vm.updateExistingClassValue(class) {
 		return
 	}
@@ -885,12 +1166,21 @@ func (vm *VM) storeClassValue(class Class) {
 		vm.Classes = make(map[string]Class)
 	}
 	if existing, exists := vm.Classes[class.Name]; !exists || shouldReplaceShortClassAlias(existing, class) {
-		vm.Classes[class.Name] = class
+		vm.writeClassValue(class.Name, class)
 	}
-	vm.Classes[runtimeClassName(class)] = class
+	vm.writeClassValue(runtimeClassName(class), class)
 	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
-		vm.Classes[class.Namespace+"."+class.Name] = class
+		vm.writeClassValue(class.Namespace+"."+class.Name, class)
 	}
+}
+
+// writeClassValue writes a class value outside registration, keeping the
+// pending overlay's view of the values its lookups were taken from.
+func (vm *VM) writeClassValue(alias string, class Class) {
+	if vm.classOverlay != nil {
+		vm.classOverlay.recordPrior(vm.Classes, alias)
+	}
+	vm.Classes[alias] = class
 }
 
 // updateExistingClassValue updates a class value in place on the frozen lookup
@@ -989,7 +1279,9 @@ func (vm *VM) rebuildTopLevelClassLookup() map[string]topLevelClassLookup {
 }
 
 func (vm *VM) rebuildClassLookup() {
+	vm.classLookupBuilds++
 	vm.frozenClassLookup = nil
+	vm.classOverlay = nil
 	vm.sharedClassCopyPlan = nil
 	vm.classLookupGeneration = nextClassLookupGeneration.Add(1)
 	vm.resetClassAccessCaches()

@@ -27,6 +27,9 @@ type Index struct {
 	Types                 []TypeSymbol                      `json:"types"`
 	Triggers              []TriggerSymbol                   `json:"triggers"`
 	Objects               []schema.Object                   `json:"objects"`
+	VisualforcePageNames  []string                          `json:"visualforcePageNames,omitempty"`
+	VisualforcePagesKnown bool                              `json:"visualforcePagesKnown,omitempty"`
+	OrgShapeFeatures      []string                          `json:"orgShapeFeatures,omitempty"`
 	CustomMetadataRecords []schema.CustomMetadataRecord     `json:"customMetadataRecords,omitempty"`
 	CodeIntelSymbols      []packageartifact.CodeIntelSymbol `json:"codeIntelSymbols,omitempty"`
 	CodeIntelUses         []packageartifact.CodeIntelUse    `json:"codeIntelUses,omitempty"`
@@ -164,7 +167,9 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 		sources = NewWorkspaceSources()
 	}
 	artifacts.Sources = sources
+	features := capturedOrgShapeFeatures(p.Root)
 	parser := apexast.NewParser()
+	defer parser.Close()
 	idx = Index{
 		Project: ProjectInfo{
 			Root:             p.Root,
@@ -172,8 +177,11 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 			SourceAPIVersion: p.SourceAPIVersion,
 		},
 		Objects:               s.Objects,
+		VisualforcePageNames:  projectVisualforcePageNames(p),
+		VisualforcePagesKnown: projectVisualforcePagesKnown(p),
+		OrgShapeFeatures:      features,
 		CustomMetadataRecords: s.CustomMetadataRecords,
-		projectIdentity:       incrementalProjectIdentity(p),
+		projectIdentity:       incrementalProjectIdentityWithFeatures(p, features),
 	}
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -688,6 +696,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 		go func() {
 			defer wg.Done()
 			localParser := apexast.NewParser()
+			defer localParser.Close()
 			for job := range jobs {
 				results <- result{
 					Index: job.Index,
@@ -1073,6 +1082,9 @@ type incrementalPackageShimIdentity struct {
 }
 
 type incrementalProjectIdentityLedger struct {
+	OrgShapeFeatures      []string
+	VisualforcePageNames  []string
+	VisualforcePagesKnown bool
 	Project               incrementalProjectConfigIdentity
 	ManagedDependencies   []incrementalManagedDependencyIdentity
 	PackageShims          []incrementalPackageShimIdentity
@@ -1089,8 +1101,24 @@ func incrementalProjectConfigForIdentity(p project.Project) incrementalProjectCo
 	}
 }
 
+func capturedOrgShapeFeatures(root string) []string {
+	if root == "" {
+		return nil
+	}
+	features := append([]string(nil), project.OrgShapeFeatures(root)...)
+	sort.Strings(features)
+	return features
+}
+
 func incrementalProjectIdentity(p project.Project) string {
+	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p.Root))
+}
+
+func incrementalProjectIdentityWithFeatures(p project.Project, features []string) string {
 	ledger := incrementalProjectIdentityLedger{
+		OrgShapeFeatures:      features,
+		VisualforcePageNames:  projectVisualforcePageNames(p),
+		VisualforcePagesKnown: projectVisualforcePagesKnown(p),
 		Project:               incrementalProjectConfigForIdentity(p),
 		DependencyDiagnostics: p.DependencyDiagnostics,
 	}
@@ -1340,6 +1368,9 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 	idx = Index{
 		Project:               previous.Project,
 		Objects:               previous.Objects,
+		VisualforcePageNames:  previous.VisualforcePageNames,
+		VisualforcePagesKnown: previous.VisualforcePagesKnown,
+		OrgShapeFeatures:      previous.OrgShapeFeatures,
 		CustomMetadataRecords: previous.CustomMetadataRecords,
 		CodeIntelSymbols:      previous.CodeIntelSymbols,
 		CodeIntelUses:         previous.CodeIntelUses,
@@ -1504,6 +1535,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		source = namespaceremap.ApplySource(metadata.namespaceRemaps, source)
 		parser := apexast.NewParser()
 		file := parser.ParseSource(path, source)
+		parser.Close()
 		if len(file.Diagnostics) > 0 {
 			return Index{}, false
 		}

@@ -9,6 +9,13 @@ import (
 
 const semaAnalysisCanonicalNameLimit = 4 * 1024
 
+const (
+	semaSharedNameMemoLimit = 16 * 1024
+	semaNameMemoMaxBytes    = 1024
+)
+
+var semaNormalizedNames = newSemaCanonicalNames(semaSharedNameMemoLimit)
+
 // semaCanonicalNames retains only spellings that require case folding. Lowercase
 // ASCII names already pass through normalizeName without allocation and do not
 // consume cache entries. The fixed limit prevents a reused Analyzer from
@@ -31,18 +38,22 @@ func (c *semaCanonicalNames) canonical(name string) string {
 	if name == "" || !semaNameNeedsCaseFold(name) {
 		return name
 	}
-	if c == nil || c.limit == 0 {
-		return normalizeName(name)
+	if c == nil || c.limit == 0 || len(name) > semaNameMemoMaxBytes {
+		return normalizeNameUncached(name)
 	}
 	c.mu.RLock()
 	canonical, ok := c.names[name]
+	full := len(c.names) >= c.limit
 	c.mu.RUnlock()
 	if ok {
 		return canonical
 	}
-	canonical = normalizeName(name)
+	canonical = normalizeNameUncached(name)
 	if canonical == name {
 		return name
+	}
+	if full || len(canonical) > semaNameMemoMaxBytes {
+		return canonical
 	}
 	c.mu.Lock()
 	if existing, exists := c.names[name]; exists {
@@ -51,7 +62,9 @@ func (c *semaCanonicalNames) canonical(name string) string {
 		if c.names == nil {
 			c.names = make(map[string]string)
 		}
-		c.names[name] = canonical
+		// Names can be slices of a source file. The changed canonical value
+		// already owns its bytes; retain only a copy of the input spelling.
+		c.names[strings.Clone(name)] = canonical
 	}
 	c.mu.Unlock()
 	return canonical
@@ -78,9 +91,86 @@ func semaNameNeedsCaseFold(name string) bool {
 var (
 	semaPlatformAliasOnce sync.Once
 	semaPlatformAliasMap  map[string]string
+	semaPlatformNames     = &semaPlatformNameMemo{limit: semaSharedNameMemoLimit}
 )
 
+// Both results depend only on the exact input and immutable platform tables.
+// Limit entries and bytes, and own retained strings so source slices cannot
+// keep entire files alive after an analysis finishes.
+type semaPlatformNameMemo struct {
+	mu        sync.RWMutex
+	aliases   map[string]string
+	receivers map[string]bool
+	limit     int
+}
+
+func (c *semaPlatformNameMemo) canonicalAlias(typeName string) string {
+	if c == nil || c.limit <= 0 || typeName == "" || len(typeName) > semaNameMemoMaxBytes {
+		return semaCanonicalPlatformAliasUncached(typeName)
+	}
+	c.mu.RLock()
+	canonical, ok := c.aliases[typeName]
+	full := len(c.aliases) >= c.limit
+	c.mu.RUnlock()
+	if ok {
+		return canonical
+	}
+	canonical = semaCanonicalPlatformAliasUncached(typeName)
+	if full || len(canonical) > semaNameMemoMaxBytes {
+		return canonical
+	}
+	c.mu.Lock()
+	if existing, exists := c.aliases[typeName]; exists {
+		canonical = existing
+	} else if len(c.aliases) < c.limit {
+		if c.aliases == nil {
+			c.aliases = make(map[string]string)
+		}
+		key := strings.Clone(typeName)
+		if canonical == typeName {
+			canonical = key
+		} else {
+			canonical = strings.Clone(canonical)
+		}
+		c.aliases[key] = canonical
+	}
+	c.mu.Unlock()
+	return canonical
+}
+
+func (c *semaPlatformNameMemo) knownReceiver(typeName string) bool {
+	if c == nil || c.limit <= 0 || typeName == "" || len(typeName) > semaNameMemoMaxBytes {
+		return semaKnownPlatformTypeReceiverUncached(typeName)
+	}
+	c.mu.RLock()
+	known, ok := c.receivers[typeName]
+	full := len(c.receivers) >= c.limit
+	c.mu.RUnlock()
+	if ok {
+		return known
+	}
+	known = semaKnownPlatformTypeReceiverUncached(typeName)
+	if full {
+		return known
+	}
+	c.mu.Lock()
+	if existing, exists := c.receivers[typeName]; exists {
+		known = existing
+	} else if len(c.receivers) < c.limit {
+		if c.receivers == nil {
+			c.receivers = make(map[string]bool)
+		}
+		c.receivers[strings.Clone(typeName)] = known
+	}
+	c.mu.Unlock()
+	return known
+}
+
 func semaCanonicalPlatformAlias(typeName string) string {
+	return semaPlatformNames.canonicalAlias(typeName)
+}
+
+func semaCanonicalPlatformAliasUncached(typeName string) string {
 	typeName = strings.TrimSpace(typeName)
 	if typeName == "" {
 		return typeName
@@ -89,9 +179,9 @@ func semaCanonicalPlatformAlias(typeName string) string {
 	if len(args) > 0 {
 		canonicalArgs := make([]string, len(args))
 		for i, arg := range args {
-			canonicalArgs[i] = semaCanonicalPlatformAlias(arg)
+			canonicalArgs[i] = semaCanonicalPlatformAliasUncached(arg)
 		}
-		return semaCanonicalPlatformAlias(base) + "<" + strings.Join(canonicalArgs, ",") + ">"
+		return semaCanonicalPlatformAliasUncached(base) + "<" + strings.Join(canonicalArgs, ",") + ">"
 	}
 	if canonical, ok := semaPlatformAlias(typeName); ok {
 		return canonical

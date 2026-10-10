@@ -19,8 +19,9 @@ and explicit non-parity are separate outcomes.
 | Glade Tools AMD64 binary SHA-256 | `f3842194bd55476f4d0ef8a01ed79ed7757d7f617a4c2d4ba1e11bbcbc075252` |
 | Frozen scope SHA-256 | `ec25212379b73f65320f7cd6b0c5d81638a98124da6f4713c5f8ca49e79587cf` |
 | Receipt SHA-256 | `bf0a7b7a9fc2b0a7e505677b37c4891acea4f9b1cad8edb0c6ba714e3709517c` |
-| Assurance JSON SHA-256 | `921bbc27c8fdc62e3e340138c26e1ea34b8137f206d251c66244bb63642aae04` |
+| Sealed assurance JSON SHA-256 | `921bbc27c8fdc62e3e340138c26e1ea34b8137f206d251c66244bb63642aae04` |
 | Original explorer export SHA-256 | `5bad30dfb04858f39d11c33a82e1290181d376ea58205a80ce47467eaff21625` |
+| Published explorer payload SHA-256 | `754284ac05ac8dd434b55d6ee49ba8cdeb5a568d06382e5f3b1b1ec685667aca` |
 | Packet manifest SHA-256 | `f9d9593c9b09c1c062bca5abb515b79f7fc7bcbbd350b835eddf70696c3e896e` |
 
 The docs-only follow-up does not change the reviewed product candidate.
@@ -60,11 +61,14 @@ Each row states whether it has compile, local-contract, runtime, or non-parity
 evidence. Keep Salesforce in the release gate for hosted-deferred and explicit
 non-parity behavior.
 
-The current explorer uses the shared site styling and retains the exact assurance
-JSON bytes identified above. The original self-contained HTML export and its
-checksum remain available in the
-[archived source](https://github.com/glade-sh/glade/blob/37c2bf878133cef2879124e4f47d20ba51d5bcfd/site/docs-src/public/private-corpus-assurance.html).
-Presentation changes do not refresh the v0.2.11 evidence or its reviewed inputs.
+The current explorer uses the shared site styling and carries a redacted
+projection of the sealed assurance JSON. Org-defined names in usage keys, such
+as custom object API names, appear as `org-defined`. Per-surface private
+reference counts and fixture tags are removed. Every surface outcome is
+unchanged. The published payload has its own SHA-256, listed above. The sealed
+assurance JSON and original explorer export hashes identify the receipt-bound
+originals. Presentation and redaction changes do not refresh the v0.2.11
+evidence or its reviewed inputs.
 
 The first-party Glade Tools assurance workflow owns scope freezing, usage
 reconciliation, local proof, repository replay, Salesforce execution, cleanup,

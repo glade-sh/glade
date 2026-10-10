@@ -17,6 +17,13 @@ func normalizeNameFields(objectName string, definition storage.ObjectDefinition,
 	normalizePersonAccountFields(objectName, definition, record)
 }
 
+func normalizeUserNameFields(objectName string, definition storage.ObjectDefinition, record *storage.Record) {
+	if !strings.EqualFold(objectName, "User") {
+		return
+	}
+	normalizeFirstLastName(definition, record)
+}
+
 func normalizeFirstLastName(definition storage.ObjectDefinition, record *storage.Record) {
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)

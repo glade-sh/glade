@@ -142,8 +142,7 @@ func BuildSourceIndex(index typesys.Index) SourceIndex {
 		if readErr != nil {
 			continue
 		}
-		parser := apexast.NewParser()
-		astFile := parser.ParseSourceAST(file, string(source))
+		astFile := apexast.ParseSourceAST(file, string(source))
 		varLines := variableTypesByMethod(linesOfSource(source), methods, methodByLineMatcher(methods))
 		collectByAST(&sourceIndex, file, string(source), methods, varLines, astFile.Nodes)
 	}

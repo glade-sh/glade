@@ -1,0 +1,9 @@
+[
+  {
+    "id": "c_metadata_bad_target",
+    "message": "lightning__OwnedMissing is not a valid TARGETS",
+    "type": "Error",
+    "line": null,
+    "column": null
+  }
+]

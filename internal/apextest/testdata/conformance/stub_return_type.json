@@ -1,0 +1,248 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "expectationStatus": "native captured",
+  "declarations": {
+    "StubReturnTarget": "public virtual class StubReturnTarget {\n    public virtual Decimal decimalValue() { return 0; }\n    public virtual Object objectValue() { return null; }\n    public virtual Decimal nullValue() { return 0; }\n}\n"
+  },
+  "anonymousDeclarations": {
+    "StubReturnTarget": "public virtual class StubReturnTarget {\n    public virtual Decimal decimalValue() { return 0; }\n    public virtual Object objectValue() { return null; }\n    public virtual Decimal nullValue() { return 0; }\n}\n",
+    "StubReturnAnonymous": "public class StubReturnAnonymous {\n    private class Provider implements System.StubProvider {\n        public Object handleMethodCall(Object receiver, String methodName,\n                Type returnType, List<Type> parameterTypes,\n                List<String> parameterNames, List<Object> arguments) {\n            if (methodName == 'nullValue') return null;\n            return Decimal.valueOf('4.75');\n        }\n    }\n    public static StubReturnTarget stub() {\n        return (StubReturnTarget)Test.createStub(StubReturnTarget.class, new Provider());\n    }\n}\n"
+  },
+  "testClass": "StubReturnCases",
+  "testHead": "@IsTest private class StubReturnCases {\n    private class Provider implements System.StubProvider {\n        public Object handleMethodCall(Object receiver, String methodName,\n                Type returnType, List<Type> parameterTypes,\n                List<String> parameterNames, List<Object> arguments) {\n            if (methodName == 'nullValue') return null;\n            return Decimal.valueOf('4.75');\n        }\n    }\n    private static StubReturnTarget stub() {\n        return (StubReturnTarget)Test.createStub(StubReturnTarget.class, new Provider());\n    }\n",
+  "cases": [
+    {
+      "id": "R001",
+      "description": "declared Decimal return permits Integer conversion",
+      "code": "StubReturnTarget s=stub(); r=(Integer)s.decimalValue();",
+      "anonymousCode": "StubReturnTarget s=StubReturnAnonymous.stub(); r=(Integer)s.decimalValue();"
+    },
+    {
+      "id": "R002",
+      "description": "declared Decimal assignment preserves value",
+      "code": "StubReturnTarget s=stub(); Decimal d=s.decimalValue(); r=d;",
+      "anonymousCode": "StubReturnTarget s=StubReturnAnonymous.stub(); Decimal d=s.decimalValue(); r=d;"
+    },
+    {
+      "id": "R003",
+      "description": "declared Object return keeps boxed Decimal rejection",
+      "code": "StubReturnTarget s=stub(); r=(Integer)s.objectValue();",
+      "anonymousCode": "StubReturnTarget s=StubReturnAnonymous.stub(); r=(Integer)s.objectValue();"
+    },
+    {
+      "id": "R004",
+      "description": "Object local reboxes a declared Decimal return",
+      "code": "StubReturnTarget s=stub(); Object boxed=s.decimalValue(); r=(Integer)boxed;",
+      "anonymousCode": "StubReturnTarget s=StubReturnAnonymous.stub(); Object boxed=s.decimalValue(); r=(Integer)boxed;"
+    },
+    {
+      "id": "R005",
+      "description": "explicit Decimal unboxing permits Integer conversion",
+      "code": "StubReturnTarget s=stub(); r=(Integer)(Decimal)s.objectValue();",
+      "anonymousCode": "StubReturnTarget s=StubReturnAnonymous.stub(); r=(Integer)(Decimal)s.objectValue();"
+    },
+    {
+      "id": "R006",
+      "description": "null declared Decimal return stays null",
+      "code": "StubReturnTarget s=stub(); r=s.nullValue()==null;",
+      "anonymousCode": "StubReturnTarget s=StubReturnAnonymous.stub(); r=s.nullValue()==null;"
+    },
+    {
+      "id": "R007",
+      "description": "direct Object holding Decimal keeps rejection",
+      "code": "Object boxed=Decimal.valueOf('4.75'); r=(Integer)boxed;",
+      "anonymousCode": "Object boxed=Decimal.valueOf('4.75'); r=(Integer)boxed;"
+    }
+  ],
+  "nativeObservations": [
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R001",
+      "observed": "4"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R002",
+      "observed": "4.75"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R003",
+      "observed": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to Integer"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R004",
+      "observed": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to Integer"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R005",
+      "observed": "4"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R006",
+      "observed": "true"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R007",
+      "observed": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to Integer"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R001",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R002",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R003",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R004",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R005",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R006",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R007",
+      "observed": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to Integer"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R001",
+      "observed": "4"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R002",
+      "observed": "4.75"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R003",
+      "observed": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to Integer"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R004",
+      "observed": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to Integer"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R005",
+      "observed": "4"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R006",
+      "observed": "true"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R007",
+      "observed": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to Integer"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R001",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R002",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R003",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R004",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R005",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R006",
+      "observed": "EXC|System.TypeException|Test.createStub() can only be called from test methods"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R007",
+      "observed": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to Integer"
+    }
+  ],
+  "nativeSourceReferences": [
+    {
+      "apiVersion": "62.0",
+      "route": "isTest"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous"
+    }
+  ]
+}

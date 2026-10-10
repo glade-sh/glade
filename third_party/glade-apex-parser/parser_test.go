@@ -771,6 +771,21 @@ func TestParseStructuredAnnotationArgumentsSupportWhitespaceSeparation(t *testin
 	}
 }
 
+func TestParseStructuredAnnotationArgumentsSupportAdjacentStringProperties(t *testing.T) {
+	arguments := splitAnnotationArguments(`label='Body'description='request Body'`)
+	if len(arguments) != 2 || strings.TrimSpace(arguments[0].text) != `label='Body'` || strings.TrimSpace(arguments[1].text) != `description='request Body'` {
+		t.Fatalf("arguments = %#v", arguments)
+	}
+	file := NewParser().ParseSource("Probe.cls", `public class Probe { @InvocableVariable(label='Body'description='request Body') public String value; }`)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	annotation := file.Declarations[0].Members[0].Annotations[0]
+	if len(annotation.Arguments) != 2 || annotation.Arguments[0].Name != "label" || annotation.Arguments[0].Value != "'Body'" || annotation.Arguments[1].Name != "description" || annotation.Arguments[1].Value != "'request Body'" {
+		t.Fatalf("annotation arguments = %#v", annotation.Arguments)
+	}
+}
+
 func TestParseAnnotationModifierPreservesBackslashEscapedApostrophe(t *testing.T) {
 	for name, tc := range map[string]struct {
 		source string

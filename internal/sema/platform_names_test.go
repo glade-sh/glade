@@ -184,7 +184,7 @@ func BenchmarkNormalizeNameRepeated(b *testing.B) {
 	b.Run("legacy", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			benchmarkCanonicalNameSink = normalizeName(inputs[i%len(inputs)])
+			benchmarkCanonicalNameSink = normalizeNameUncached(inputs[i%len(inputs)])
 		}
 	})
 	b.Run("analysis_local", func(b *testing.B) {

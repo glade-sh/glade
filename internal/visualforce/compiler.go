@@ -3,6 +3,7 @@ package visualforce
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 	"unicode"
@@ -12,6 +13,46 @@ import (
 )
 
 var selfClosingVFTagRE = regexp.MustCompile(`<([A-Za-z][A-Za-z0-9:.-]*)([^>]*)/>`)
+
+// Check source tag balance before the HTML parser can repair mismatched markup.
+// The tokenizer preserves script/style raw text and Visualforce expressions.
+func validateSourceTagBalance(source string) error {
+	z := html.NewTokenizer(strings.NewReader(source))
+	// Native root_page_cdata/root_component_cdata accept CDATA markup as text.
+	z.AllowCDATA(true)
+	var stack []string
+	for {
+		switch z.Next() {
+		case html.ErrorToken:
+			if err := z.Err(); err != io.EOF {
+				return err
+			}
+			if len(stack) != 0 {
+				return fmt.Errorf("unclosed Visualforce markup tag <%s>", stack[len(stack)-1])
+			}
+			return nil
+		case html.SelfClosingTagToken:
+			// A self-closing Visualforce element has no raw text body, even
+			// when the HTML tokenizer recognizes its name as a raw text element.
+			z.NextIsNotRawText()
+		case html.StartTagToken:
+			name, _ := z.TagName()
+			stack = append(stack, string(name))
+		case html.EndTagToken:
+			name, _ := z.TagName()
+			if len(stack) == 0 {
+				return fmt.Errorf("unmatched Visualforce markup end tag </%s>", name)
+			}
+			if stack[len(stack)-1] != string(name) {
+				// Native root_{page,component}_{unclosed,mismatched}_html
+				// identifies the open element, rather than the closing token.
+				open := stack[len(stack)-1]
+				return fmt.Errorf("The element type %q must be terminated by the matching end-tag %q.", open, "</"+open+">")
+			}
+			stack = stack[:len(stack)-1]
+		}
+	}
+}
 
 func normalizeSelfClosingVFTags(source string) string {
 	return selfClosingVFTagRE.ReplaceAllString(source, "<$1$2></$1>")
@@ -36,9 +77,18 @@ type MarkupNode struct {
 	Children      []*MarkupNode
 	Line          int
 	Column        int
+	NameEndLine   int
+	NameEndColumn int
 }
 
 func ParseMarkupTree(source string) (*MarkupNode, error) {
+	return parseMarkupTree(source, "")
+}
+
+func parseMarkupTree(source, sourceName string) (*MarkupNode, error) {
+	if err := validateRepetitionSource(source, sourceName); err != nil {
+		return nil, err
+	}
 	sourceTags := scanSourceTags(source)
 	normalized := normalizeSelfClosingVFTags(source)
 	nodes, err := html.ParseFragment(bytes.NewReader([]byte(normalized)), &html.Node{
@@ -74,6 +124,9 @@ func ParseMarkupTree(source string) (*MarkupNode, error) {
 	}
 	if len(root.Children) == 0 {
 		return nil, fmt.Errorf("no renderable Visualforce markup")
+	}
+	if err := validateMarkupStructure(root, sourceName); err != nil {
+		return nil, err
 	}
 	return root, nil
 }
@@ -123,6 +176,8 @@ func convertHTMLNode(node *html.Node, sourceTags []sourceTag, tagIndex *int) *Ma
 			out.RawAttributes = tag.attrs
 			out.Line = tag.line
 			out.Column = tag.column
+			out.NameEndLine = tag.nameEndLine
+			out.NameEndColumn = tag.nameEndColumn
 		}
 		for _, attr := range node.Attr {
 			key := strings.ToLower(strings.TrimSpace(attr.Key))
@@ -159,10 +214,12 @@ func nextSourceTag(sourceTags []sourceTag, tagIndex *int, rawName string) (sourc
 }
 
 type sourceTag struct {
-	name   string
-	attrs  map[string]string
-	line   int
-	column int
+	name          string
+	attrs         map[string]string
+	line          int
+	column        int
+	nameEndLine   int
+	nameEndColumn int
 }
 
 func scanSourceTags(source string) []sourceTag {
@@ -191,7 +248,8 @@ func scanSourceTags(source string) []sourceTag {
 		raw := source[i : end+1]
 		line, column := lineColumnAt(source, i)
 		name, attrs := parseRawStartTag(raw)
-		tags = append(tags, sourceTag{name: name, attrs: attrs, line: line, column: column})
+		nameEndLine, nameEndColumn := lineColumnAt(source, i+1+len(name))
+		tags = append(tags, sourceTag{name: name, attrs: attrs, line: line, column: column, nameEndLine: nameEndLine, nameEndColumn: nameEndColumn})
 		i = end + 1
 		switch strings.ToLower(name) {
 		case "script", "style":

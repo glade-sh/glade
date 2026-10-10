@@ -4,9 +4,13 @@ type WireApexRequest struct {
 	ClassName string `json:"className"`
 	Method    string `json:"method"`
 	Params    any    `json:"params"`
+	Cacheable bool   `json:"cacheable,omitempty"`
 }
 
 type WireGetRecordRequest struct {
+	RetainedFields []string `json:"retainedFields,omitempty"`
+	LayoutTypes    []string `json:"layoutTypes,omitempty"`
+	Modes          []string `json:"modes,omitempty"`
 	RecordID       string   `json:"recordId"`
 	Fields         []string `json:"fields"`
 	OptionalFields []string `json:"optionalFields"`
@@ -90,7 +94,8 @@ type WireCreateRecordRequest struct {
 }
 
 type WireUpdateRecordRequest struct {
-	Fields map[string]any `json:"fields"`
+	Fields            map[string]any `json:"fields"`
+	IfUnmodifiedSince string         `json:"ifUnmodifiedSince,omitempty"`
 }
 
 type WireDeleteRecordRequest struct {
@@ -103,13 +108,18 @@ type WireError struct {
 	Message string         `json:"message"`
 	Body    *WireErrorBody `json:"body,omitempty"`
 	Status  int            `json:"status,omitempty"`
+	// RecordBody is serialized by the LDS record response path only. Apex
+	// retains its exception body and its existing transport contract.
+	RecordBody    map[string]any `json:"-"`
+	RecordErrorID string         `json:"-"`
 }
 
 type WireErrorBody struct {
-	Code          string `json:"code,omitempty"`
-	Message       string `json:"message"`
-	ExceptionType string `json:"exceptionType,omitempty"`
-	StackTrace    string `json:"stackTrace,omitempty"`
+	Code                   string `json:"code,omitempty"`
+	Message                string `json:"message"`
+	ExceptionType          string `json:"exceptionType,omitempty"`
+	StackTrace             string `json:"stackTrace,omitempty"`
+	IsUserDefinedException *bool  `json:"isUserDefinedException,omitempty"`
 }
 
 type WireResponse struct {

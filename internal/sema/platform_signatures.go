@@ -346,6 +346,19 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 	}
 	if strings.EqualFold(receiverType, "Approval") {
 		switch method {
+		case "process":
+			return semaCollectionSignature{returnType: "Approval.ProcessResult", params: [][]string{
+				{"Approval.ProcessRequest"},
+				{"Approval.ProcessRequest", "Boolean"},
+				{"Approval.ProcessSubmitRequest"},
+				{"Approval.ProcessSubmitRequest", "Boolean"},
+				{"Approval.ProcessWorkitemRequest"},
+				{"Approval.ProcessWorkitemRequest", "Boolean"},
+				{"List<Approval.ProcessRequest>"},
+				{"List<Approval.ProcessRequest>", "Boolean"},
+				{"List<Approval.ProcessSubmitRequest>"},
+				{"List<Approval.ProcessWorkitemRequest>"},
+			}}, true
 		case "islocked":
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"Id"}, {"List<Id>"}, {"SObject"}, {"List<SObject>"}}}, true
 		case "lock", "unlock":
@@ -976,7 +989,9 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	case "webservicecallout":
 		if method == "invoke" {
-			return semaCollectionSignature{returnType: "void", params: [][]string{{"Object", "Object", "Map<String,Object>", "List<String>"}}}, true
+			// SOAP carriers accept raw maps and lists;
+			// their element types are not part of the invoke signature.
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Object", "Object", "Map", "List"}}}, true
 		}
 	case "pagereference":
 		switch method {
@@ -1013,6 +1028,41 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	}
 	return semaCollectionSignature{}, false
+}
+
+// semaApprovalActionReturnType supplies the concrete result type when the
+// standard schema's Approval sObject placeholder hides the platform Approval
+// class from project-body member resolution. The generated platform symbol has
+// the overloads; this fallback only restores their return shape for expression
+// typing, including the List result overloads.
+func semaApprovalActionReturnType(receiverType, method string, argTypes []string) string {
+	if !strings.EqualFold(receiverType, "Approval") || len(argTypes) == 0 {
+		return ""
+	}
+	switch strings.ToLower(strings.TrimSpace(method)) {
+	case "islocked":
+		if base, _ := semaGenericBaseAndArgs(argTypes[0]); strings.EqualFold(base, "List") {
+			return "Map<Id,Boolean>"
+		}
+		return "Boolean"
+	case "process":
+		if base, _ := semaGenericBaseAndArgs(argTypes[0]); strings.EqualFold(base, "List") {
+			return "List<Approval.ProcessResult>"
+		}
+		return "Approval.ProcessResult"
+	case "lock":
+		if base, _ := semaGenericBaseAndArgs(argTypes[0]); strings.EqualFold(base, "List") {
+			return "List<Approval.LockResult>"
+		}
+		return "Approval.LockResult"
+	case "unlock":
+		if base, _ := semaGenericBaseAndArgs(argTypes[0]); strings.EqualFold(base, "List") {
+			return "List<Approval.UnlockResult>"
+		}
+		return "Approval.UnlockResult"
+	default:
+		return ""
+	}
 }
 
 func semaDescribeSObjectResultChildRelationships(receiverType, method string) bool {

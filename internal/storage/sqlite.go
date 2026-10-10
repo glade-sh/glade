@@ -28,6 +28,7 @@ const (
 	metaOrgID                    = "orgId"
 	metaAPIVersion               = "apiVersion"
 	metaNamespace                = "namespace"
+	metaOrgDomainURL             = "domainUrl"
 	metaOrgMetadata              = "glade.org.metadata"
 	metaProjectRoot              = "glade.project.root"
 	metaProjectSchemaFingerprint = "glade.project.schemaFingerprint"
@@ -120,6 +121,12 @@ func (s *SQLiteStore) Load() (OrgState, error) {
 			org.APIVersion = value
 		case metaNamespace:
 			org.Namespace = value
+		case metaOrgDomainURL:
+			domainURL, err := NormalizeOrgDomainURL(value)
+			if err != nil {
+				return OrgState{}, fmt.Errorf("storage: load org domainUrl: %w", err)
+			}
+			org.DomainURL = domainURL
 		case metaOrgMetadata:
 			if err := json.Unmarshal([]byte(value), &org.Metadata); err != nil {
 				return OrgState{}, fmt.Errorf("storage: decode org metadata: %w", err)
@@ -199,6 +206,10 @@ func (s *SQLiteStore) Load() (OrgState, error) {
 }
 
 func (s *SQLiteStore) Save(org OrgState) error {
+	domainURL, err := NormalizeOrgDomainURL(org.DomainURL)
+	if err != nil {
+		return fmt.Errorf("storage: save org domainUrl: %w", err)
+	}
 	meta, err := s.Metadata()
 	if err != nil {
 		return err
@@ -210,6 +221,7 @@ func (s *SQLiteStore) Save(org OrgState) error {
 	setMetaValue(meta, metaOrgID, org.OrgID)
 	setMetaValue(meta, metaAPIVersion, org.APIVersion)
 	setMetaValue(meta, metaNamespace, org.Namespace)
+	setMetaValue(meta, metaOrgDomainURL, domainURL)
 	setMetaValue(meta, metaOrgMetadata, string(metadata))
 	tx, err := s.db.Begin()
 	if err != nil {

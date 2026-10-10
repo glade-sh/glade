@@ -20,9 +20,10 @@ type RemoteObjectsDescriptor struct {
 }
 
 type RemoteObjectModelDescriptor struct {
-	Name   string
-	JSName string
-	Fields []RemoteObjectFieldDescriptor
+	Name     string
+	JSName   string
+	Fields   []RemoteObjectFieldDescriptor
+	idPrefix string
 }
 
 type RemoteObjectFieldDescriptor struct {
@@ -165,7 +166,43 @@ func RenderRemoteObjectsScript(descriptor RemoteObjectsDescriptor) string {
 	namespaceID := jsIdentifier(namespace)
 	builder := strings.Builder{}
 	builder.WriteString(`<script>(function(window){`)
-	builder.WriteString(`window.__gladeRemoteObjects=window.__gladeRemoteObjects||function(operation,objectName,fields,callback,criteria){fields=fields||{};criteria=criteria||{};var ids=[];if(fields.Id){ids=[String(fields.Id)];}else if(fields.id){ids=[String(fields.id)];}else if(criteria.Id){ids=[String(criteria.Id)];}else if(criteria.id){ids=[String(criteria.id)];}else if(Array.isArray(criteria.ids)){ids=criteria.ids.map(String);}var read=function(name){var el=document.querySelector('input[name="'+name+'"]');return el?el.value:"";};return fetch(window.location.pathname.replace(/\/$/,"")+"/remoteObjects",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({operation:operation,objectName:objectName,fields:fields,criteria:criteria,ids:ids,viewState:read("` + ViewStateFormFieldName() + `"),csrf:read("__vf_csrf")})}).then(function(response){return response.json();}).then(function(result){if(callback){callback(result,{status:!!(result&&result.success),type:"remoteObjects"});}return result;}).catch(function(err){var result={success:false,errors:[{message:String(err)}]};if(callback){callback(result,{status:false,type:"remoteObjects",message:String(err)});}return result;});};`)
+	builder.WriteString(`window.__gladeRemoteObjects=window.__gladeRemoteObjects||function(operation,objectName,fields,callback,criteria){
+fields=fields||{};criteria=criteria||{};
+var ids=[];
+if(fields.Id){ids=[String(fields.Id)];}else if(fields.id){ids=[String(fields.id)];}
+else if(criteria.Id){ids=[String(criteria.Id)];}else if(criteria.id){ids=[String(criteria.id)];}
+else if(Array.isArray(criteria.ids)){ids=criteria.ids.map(String);}
+var read=function(name){var el=document.querySelector('input[name="'+name+'"]');return el?el.value:"";};
+var transportStatus=false;
+return fetch(window.location.pathname.replace(/\/$/,"")+"/remoteObjects",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({operation:operation,objectName:objectName,fields:fields,criteria:criteria,ids:ids,viewState:read("` + ViewStateFormFieldName() + `"),csrf:read("__vf_csrf")})})
+.then(function(response){transportStatus=response.ok;return response.json();})
+.then(function(result){
+var event={status:!!(result&&result.success),type:"remoteObjects"};
+Object.defineProperty(event,"transportStatus",{value:transportStatus});
+if(callback){callback(result,event);}
+return result;
+}).catch(function(err){
+var result={success:false,errors:[{message:String(err)}]};
+var event={status:false,type:"remoteObjects",message:String(err)};
+Object.defineProperty(event,"transportStatus",{value:false});
+if(callback){callback(result,event);}
+return result;
+});
+};
+var remoteObjectTID=1;
+var retrieve=function(objectName,criteria,callback){
+if(typeof criteria==="function"){criteria=criteria();}
+var tid=remoteObjectTID++;
+return window.__gladeRemoteObjects("query",objectName,{},function(result,transport){
+var success=!!(result&&result.success);
+var failure=result&&result.errors&&result.errors[0];
+var error=success?null:new Error(failure&&failure.message||"Remote object retrieve failed");
+var records=success?(result.records||[]):null;
+var event={status:!!(transport&&transport.transportStatus),type:"rpc",tid:tid,action:"JavaScriptSObjectBaseController",method:"retrieve"};
+if(!event.status){event.type="exception";event.message=transport&&transport.message||error&&error.message;}
+if(typeof callback==="function"){callback(error,records,event);}
+},criteria||{});
+};`)
 	builder.WriteString(`var `)
 	builder.WriteString(namespaceID)
 	builder.WriteString(` = window.`)
@@ -179,13 +216,26 @@ func RenderRemoteObjectsScript(descriptor RemoteObjectsDescriptor) string {
 	for _, model := range descriptor.Models {
 		jsName := jsIdentifier(model.JSName)
 		fieldNames := make([]string, 0, len(model.Fields))
+		aliases := map[string]string{"Id": "Id"}
 		for _, field := range model.Fields {
 			fieldNames = append(fieldNames, field.Name)
+			aliases[field.Name] = field.Name
+			if field.JSName != "" {
+				aliases[field.JSName] = field.Name
+			}
 		}
+		aliasJSON, _ := json.Marshal(aliases)
+		builder.WriteString(`(function(){var aliases=`)
+		builder.Write(aliasJSON)
+		builder.WriteString(`;var idPrefix=`)
+		builder.WriteString(jsString(model.idPrefix))
+		builder.WriteString(`;var canonical=function(name){return Object.prototype.hasOwnProperty.call(aliases,name)?aliases[name]:name;};`)
 		builder.WriteString(namespaceID)
 		builder.WriteString(`.`)
 		builder.WriteString(jsName)
-		builder.WriteString(` = function(fields){this.fields=fields||{};};`)
+		builder.WriteString(` = function(fields){this.fields=Object.create(null);var self=this;Object.keys(fields||{}).forEach(function(name){self.set(name,fields[name]);});};`)
+		builder.WriteString(namespaceID + `.` + jsName + `.prototype.get=function(name){var value=this.fields[canonical(name)];return value===null?undefined:value;};`)
+		builder.WriteString(namespaceID + `.` + jsName + `.prototype.set=function(name,value){var field=canonical(name);if(field==="Id"&&value!=null&&idPrefix&&(typeof value!=="string"||!(/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/.test(value))||value.slice(0,3)!==idPrefix)){throw new Error("Invalid id provided: "+value+" Expected value with prefix: "+idPrefix+" and length 15 or 18");}this.fields[field]=value;};`)
 		builder.WriteString(namespaceID)
 		builder.WriteString(`.`)
 		builder.WriteString(jsName)
@@ -210,7 +260,14 @@ func RenderRemoteObjectsScript(descriptor RemoteObjectsDescriptor) string {
 		builder.WriteString(`.query = function(criteria,callback){if(typeof criteria=="function"){callback=criteria;criteria={};}return window.__gladeRemoteObjects("query",`)
 		builder.WriteString(jsString(model.Name))
 		builder.WriteString(`,{},callback,criteria||{});};`)
-		for _, method := range []string{"create", "retrieve", "update", "del"} {
+		// Keep the existing one-callback local retrieval path while adding the
+		// captured criteria/callback signature and its three-argument callback.
+		builder.WriteString(namespaceID + `.` + jsName + `.prototype.retrieve=function(criteria,callback){if(typeof callback!=="function"){return window.__gladeRemoteObjects("retrieve",`)
+		builder.WriteString(jsString(model.Name))
+		builder.WriteString(`,this.fields,criteria);}return retrieve(`)
+		builder.WriteString(jsString(model.Name))
+		builder.WriteString(`,criteria,callback);};`)
+		for _, method := range []string{"create", "update", "del"} {
 			builder.WriteString(namespaceID)
 			builder.WriteString(`.`)
 			builder.WriteString(jsName)
@@ -222,6 +279,7 @@ func RenderRemoteObjectsScript(descriptor RemoteObjectsDescriptor) string {
 			builder.WriteString(jsString(model.Name))
 			builder.WriteString(`,this.fields,callback);};`)
 		}
+		builder.WriteString(`})();`)
 	}
 	builder.WriteString(`})(window);</script>`)
 	return builder.String()
@@ -235,6 +293,13 @@ func renderApexRemoteObjects(node *MarkupNode, ctx *RenderContext) (string, erro
 	}
 	if err != nil {
 		return "", err
+	}
+	if ctx != nil && ctx.VM != nil && ctx.VM.Org != nil {
+		for i := range descriptor.Models {
+			if name, ok := storage.ResolveObjectName(*ctx.VM.Org, descriptor.Models[i].Name); ok {
+				descriptor.Models[i].idPrefix = strings.TrimSpace(ctx.VM.Org.Objects[name].Definition.KeyPrefix)
+			}
+		}
 	}
 	children, err := renderRemoteObjectsVisibleChildren(node, ctx)
 	if err != nil {
@@ -545,7 +610,7 @@ func buildRemoteObjectModel(node *MarkupNode, schema RemoteObjectSchema) (Remote
 		var ok bool
 		declaredFields, ok = remoteObjectSchemaFields(schema, name)
 		if !ok {
-			return RemoteObjectModelDescriptor{}, fmt.Errorf("undeclared remote object %s", name)
+			return RemoteObjectModelDescriptor{}, fmt.Errorf(`Wrong type for attribute <apex:remoteObjectModel name="">. Expected valid entity name, found %s`, name)
 		}
 	}
 	model := RemoteObjectModelDescriptor{Name: name, JSName: firstNonEmpty(node.Attribute("jsshorthand"), name)}
@@ -557,10 +622,10 @@ func buildRemoteObjectModel(node *MarkupNode, schema RemoteObjectSchema) (Remote
 		}
 		key := strings.ToLower(fieldName)
 		if validateSchema && !declaredFields[key] {
-			return fmt.Errorf("undeclared remote field %s.%s", name, fieldName)
+			return fmt.Errorf("Invalid field '%s.%s' specified. Ensure that you use the full API name for any custom fields.", name, fieldName)
 		}
 		if seen[key] {
-			return nil
+			return fmt.Errorf("Duplicate field(s) '%s' specified for sObject '%s'.", fieldName, name)
 		}
 		seen[key] = true
 		model.Fields = append(model.Fields, RemoteObjectFieldDescriptor{Name: fieldName, JSName: firstNonEmpty(jsName, fieldName)})

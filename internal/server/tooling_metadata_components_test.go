@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestToolingSourceMetadataComponentsReadQueryAndDescribe(t *testing.T) {
@@ -104,6 +105,80 @@ func TestToolingSourceMetadataComponentsReadQueryAndDescribe(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestToolingSourceMetadataUsesVisualforceSidecarVersionAndFallback(t *testing.T) {
+	root := filepath.Join(".testdata-generated", strings.NewReplacer("/", "_", " ", "_").Replace(t.Name()))
+	if err := os.RemoveAll(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(root) })
+	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	pagePath := filepath.Join(root, "force-app/main/default/pages/Sidecar.page")
+	fallbackPath := filepath.Join(root, "force-app/main/default/pages/Fallback.page")
+	componentPath := filepath.Join(root, "force-app/main/default/components/Sidecar.component")
+	metadataOnlyPath := filepath.Join(root, "force-app/main/default/pages/MetadataOnly.page-meta.xml")
+	writeServerTestFile(t, pagePath, `<apex:page/>`)
+	writeServerTestFile(t, pagePath+"-meta.xml", `<ApexPage><apiVersion>61.0</apiVersion></ApexPage>`)
+	writeServerTestFile(t, fallbackPath, `<apex:page/>`)
+	writeServerTestFile(t, componentPath, `<apex:component/>`)
+	writeServerTestFile(t, componentPath+"-meta.xml", `<ApexComponent><apiVersion>62.0</apiVersion></ApexComponent>`)
+	writeServerTestFile(t, metadataOnlyPath, `<ApexPage><apiVersion>60.0</apiVersion></ApexPage>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertToolingVisualforceVersion(t, source, "ApexPage", "Sidecar", "61.0")
+	assertToolingVisualforceVersion(t, source, "ApexPage", "Fallback", "65.0")
+	assertToolingVisualforceVersion(t, source, "ApexPage", "MetadataOnly", "60.0")
+	assertToolingVisualforceVersion(t, source, "ApexComponent", "Sidecar", "62.0")
+
+	if got := source.ToolingOrg.Objects["ApexPage"].Records[findToolingVisualforceRecord(t, source, "ApexPage", "MetadataOnly")].Fields["Markup"].String; got != "" {
+		t.Fatalf("metadata-only page markup = %q, want empty", got)
+	}
+}
+
+func TestToolingSourceMetadataRejectsInvalidVisualforceSidecarVersion(t *testing.T) {
+	root := filepath.Join(".testdata-generated", strings.NewReplacer("/", "_", " ", "_").Replace(t.Name()))
+	if err := os.RemoveAll(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(root) })
+	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	path := filepath.Join(root, "force-app/main/default/pages/Probe.page")
+	writeServerTestFile(t, path, `<apex:page/>`)
+	writeServerTestFile(t, path+"-meta.xml", `<ApexPage><apiVersion>67.1</apiVersion></ApexPage>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = NewSourceMetadataFromProject(p)
+	if err == nil || !strings.Contains(err.Error(), "unsupported Visualforce source API version") {
+		t.Fatalf("NewSourceMetadataFromProject error = %v, want invalid sidecar version", err)
+	}
+}
+
+func assertToolingVisualforceVersion(t *testing.T, source SourceMetadata, objectName, name, want string) {
+	t.Helper()
+	if got := source.ToolingOrg.Objects[objectName].Records[findToolingVisualforceRecord(t, source, objectName, name)].Fields["ApiVersion"].Decimal; got != want {
+		t.Fatalf("%s %s API version = %q, want %q", objectName, name, got, want)
+	}
+}
+
+func findToolingVisualforceRecord(t *testing.T, source SourceMetadata, objectName, name string) storage.ID {
+	t.Helper()
+	for id, record := range source.ToolingOrg.Objects[objectName].Records {
+		if record.Fields["Name"].String == name {
+			return id
+		}
+	}
+	t.Fatalf("missing %s %s record", objectName, name)
+	return ""
 }
 
 func testToolingMetadataComponentSource(t *testing.T) SourceMetadata {

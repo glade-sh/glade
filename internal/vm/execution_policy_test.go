@@ -209,6 +209,8 @@ update as system row;
 	systemOrg := orgForSecurePolicyTest()
 	systemMachine.SetOrg(&systemOrg)
 	systemMachine.executionUser = stripInaccessibleTestUser()
+	// A28 named R135-R139: explicit SYSTEM_MODE is valid in test methods.
+	systemMachine.EnableTestContext()
 	if _, err := systemMachine.Execute(systemProgram); err != nil {
 		t.Fatalf("API 67 explicit system DML = %v", err)
 	}
@@ -271,7 +273,8 @@ func TestTriggerUserModePublicQueryAndSearchPaths(t *testing.T) {
 List<Widget__c> rows = [SELECT Id FROM Widget__c];
 if (rows.size() != 1) { throw new DmlException('trigger SOQL exposed another owner'); }
 List<Widget__c> databaseRows = Database.query('SELECT Id FROM Widget__c');
-if (databaseRows.size() != 1 || Database.countQuery('SELECT Id FROM Widget__c') != 1) { throw new DmlException('trigger Database query exposed another owner'); }
+// A33 R025: use the scalar-count route while preserving this sharing control.
+if (databaseRows.size() != 1 || Database.countQuery('SELECT COUNT() FROM Widget__c') != 1) { throw new DmlException('trigger Database query exposed another owner'); }
 Search.SearchResults found = Search.find('FIND {Other} IN ALL FIELDS RETURNING Widget__c(Id, Name)');
 if (found.get('Widget__c').size() != 0) { throw new DmlException('trigger Search.find exposed another owner'); }
 List<List<SObject>> queried = Search.query('FIND {Other} IN ALL FIELDS RETURNING Widget__c(Id, Name)');
@@ -317,6 +320,25 @@ if (rows.size() != 1) { throw new DmlException('handler sharing context was lost
 	}
 	if _, err := machine.runTrigger(Trigger{Name: "WidgetHandlerTrigger", Object: "Widget__c", Timing: "before", Operation: "insert", APIVersion: "67.0", Program: triggerProgram}, nil, nil, &Result{}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestNestedProfileUserEnforcesFieldPermissions(t *testing.T) {
+	machine := New(io.Discard)
+	machine.currentMethod = Method{APIVersion: "67.0"}
+	org := orgForSecurePolicyTest()
+	machine.SetOrg(&org)
+	user := Object("User")
+	profile := Object("Profile")
+	profile.Fields["Name"] = String("Minimum Access - Salesforce")
+	user.Fields["Profile"] = profile
+	machine.executionUser = user
+
+	if machine.currentUserFieldPermission("Account", "Secret__c", "isAccessible") {
+		t.Fatal("nested Minimum Access profile unexpectedly allowed the protected field")
+	}
+	if _, err := machine.executeSOQL("SELECT Id, Secret__c FROM Account", &Result{}); err == nil {
+		t.Fatal("API 67 SOQL unexpectedly bypassed field permissions for nested Profile user")
 	}
 }
 

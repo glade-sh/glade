@@ -181,7 +181,7 @@ jobs:
           go-version: "1.26.6"
           cache: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server","./internal/visualforce"]'), matrix.package) }}
         with:
           node-version: "22"
       - name: Resolve npm cache path
@@ -198,6 +198,12 @@ jobs:
       - name: Install LWC toolchain
         if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
         run: npm ci --prefix third_party/lwc
+      - name: Install browser conformance dependencies
+        if: ${{ contains(fromJSON('["./internal/lwc/compile","./internal/lwcbrowser","./internal/server","./internal/visualforce"]'), matrix.package) }}
+        run: npm ci --prefix lwcruntime
+      - name: Install conformance Chromium
+        if: ${{ contains(fromJSON('["./internal/lwc/compile","./internal/lwcbrowser","./internal/server","./internal/visualforce"]'), matrix.package) }}
+        run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - name: Resolve artifact name
         id: artifact
         env:

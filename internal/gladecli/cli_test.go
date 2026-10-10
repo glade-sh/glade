@@ -111,7 +111,11 @@ func TestRunVersionJSONUsesCLIEnvelope(t *testing.T) {
 }
 
 func TestRunTestWritesTraceFile(t *testing.T) {
-	root := filepath.Join("..", "..", "testdata", "local-tests", "basic")
+	root := t.TempDir()
+	fixture := filepath.Join("..", "..", "testdata", "local-tests", "basic")
+	if err := copySelectionFixture(fixture, root); err != nil {
+		t.Fatal(err)
+	}
 	tracePath := filepath.Join(t.TempDir(), "trace.json")
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"test", "--project", root, "--class", "PassingTest", "--trace", tracePath, "--json", "--no-progress"}, &stdout, &stderr)
@@ -128,6 +132,10 @@ func TestRunTestWritesTraceFile(t *testing.T) {
 }
 
 func TestRunTestPerfJSONRecordsEffectiveExecutionProvenance(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/PerfExecutionTest.cls"), `
@@ -4168,6 +4176,10 @@ func TestRunDAPAcceptsDBFlag(t *testing.T) {
 const dapTestTimeout = 45 * time.Second
 
 func TestRunDAPLaunchEmitsStopped(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	inR, inW := io.Pipe()
 	outR, outW := io.Pipe()
 	t.Cleanup(func() {
@@ -5717,6 +5729,10 @@ private class CalculatorTest {
 }
 
 func TestRunTestWatchOnceStreamsEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/classes/SampleTest.cls"), `
@@ -5739,6 +5755,10 @@ private class SampleTest {
 }
 
 func TestRunTestWatchOnceEmitsProfileSummaryWhenTracing(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/classes/ProfiledWatchTest.cls"), `
@@ -5762,6 +5782,10 @@ private class ProfiledWatchTest {
 }
 
 func TestRunTestDaemonFilterUsesWarmService(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/classes/WarmOneTest.cls"), `
@@ -5795,6 +5819,10 @@ private class WarmTwoTest {
 }
 
 func TestRunTestDaemonChangedSinceNarrowsMultipleAffectedClasses(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
 	}
@@ -5871,6 +5899,10 @@ func TestRunTestDaemonStatusNoServer(t *testing.T) {
 }
 
 func TestRunTestDaemonStatusAndStopRunningServer(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/WarmOneTest.cls"), `
@@ -6017,6 +6049,10 @@ func TestRunTestWizardPrintsDailyLoopCommands(t *testing.T) {
 }
 
 func TestRunTestProgressIncludesStartupCacheHint(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/CacheHintTest.cls"), `
@@ -6036,6 +6072,10 @@ private class CacheHintTest {
 }
 
 func TestRunTestProgressReportsFreshCacheAndParallelBypass(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	restoreDiskCache := apextest.EnableDiskCacheForTesting()
 	t.Cleanup(restoreDiskCache)
 	previousGOMAXPROCS := runtime.GOMAXPROCS(2)
@@ -6075,6 +6115,10 @@ func runGitCLI(t *testing.T, root string, args ...string) {
 }
 
 func TestRunTestDaemonWatchOnceStreamsEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/classes/SampleTest.cls"), `
@@ -6215,6 +6259,10 @@ func TestRunExecDebugEmitsDAPInitializeResponse(t *testing.T) {
 }
 
 func TestRunTestDebugEmitsDAPInitializeResponse(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/classes/SampleTest.cls"), `
@@ -6688,6 +6736,7 @@ func TestRunDBDescribeObjectJSONIncludesFields(t *testing.T) {
 	}
 	for _, field := range got.Fields {
 		if field.Name == "OwnerId" {
+			// Captured standard_describe_catalog.json.gz describe: Account.OwnerId references User only.
 			if field.Type != "REFERENCE" || field.DisplayType != "REFERENCE" || fmt.Sprint(field.ReferenceTo) != "[User]" {
 				t.Fatalf("OwnerId field = %#v", field)
 			}
@@ -6895,6 +6944,7 @@ public class Risk {
 
 func writeTestFile(t *testing.T, path, content string) {
 	t.Helper()
+	releaseStaleRuntimeCaches(t)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
 	}

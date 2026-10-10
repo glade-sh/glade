@@ -43,13 +43,5 @@ func attributeValue(node *TemplateNode, name string, bag PropertyBag) (string, e
 }
 
 func renderChildren(node *TemplateNode, ctx *RenderContext) (string, error) {
-	var b strings.Builder
-	for _, child := range node.Children {
-		out, err := renderNode(child, ctx)
-		if err != nil {
-			return "", err
-		}
-		b.WriteString(out)
-	}
-	return b.String(), nil
+	return renderSiblings(node.Children, ctx)
 }

@@ -1,0 +1,2730 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "cases": [
+    {
+      "id": "R001",
+      "group": "dto-construction",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R002",
+      "group": "clone-type-graph",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.CustomMetadata)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R003",
+      "group": "dto-construction",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R004",
+      "group": "clone-type-graph",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.CustomMetadataValue)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R005",
+      "group": "dto-construction",
+      "code": "Metadata.Layout x=new Metadata.Layout(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R006",
+      "group": "clone-type-graph",
+      "code": "Metadata.Layout x=new Metadata.Layout(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.Layout)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R007",
+      "group": "dto-construction",
+      "code": "Metadata.LayoutColumn x=new Metadata.LayoutColumn(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R008",
+      "group": "clone-type-graph",
+      "code": "Metadata.LayoutColumn x=new Metadata.LayoutColumn(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.LayoutColumn)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R009",
+      "group": "dto-construction",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R010",
+      "group": "clone-type-graph",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.LayoutItem)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R011",
+      "group": "dto-construction",
+      "code": "Metadata.LayoutSection x=new Metadata.LayoutSection(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R012",
+      "group": "clone-type-graph",
+      "code": "Metadata.LayoutSection x=new Metadata.LayoutSection(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.LayoutSection)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R013",
+      "group": "dto-construction",
+      "code": "Metadata.MiniLayout x=new Metadata.MiniLayout(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R014",
+      "group": "clone-type-graph",
+      "code": "Metadata.MiniLayout x=new Metadata.MiniLayout(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.MiniLayout)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R015",
+      "group": "dto-construction",
+      "code": "Metadata.MiniLayoutItem x=new Metadata.MiniLayoutItem(); r=x!=null;",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.MiniLayoutItem",
+      "floorExpected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.MiniLayoutItem",
+      "nativeNull": false,
+      "sourceLine": 20
+    },
+    {
+      "id": "R016",
+      "group": "clone-type-graph",
+      "code": "Metadata.MiniLayoutItem x=new Metadata.MiniLayoutItem(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.MiniLayoutItem)+'|'+(x===y);",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.MiniLayoutItem",
+      "floorExpected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.MiniLayoutItem",
+      "nativeNull": false,
+      "sourceLine": 20
+    },
+    {
+      "id": "R017",
+      "group": "dto-construction",
+      "code": "Metadata.QuickActionList x=new Metadata.QuickActionList(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R018",
+      "group": "clone-type-graph",
+      "code": "Metadata.QuickActionList x=new Metadata.QuickActionList(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.QuickActionList)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R019",
+      "group": "dto-construction",
+      "code": "Metadata.QuickActionListItem x=new Metadata.QuickActionListItem(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R020",
+      "group": "clone-type-graph",
+      "code": "Metadata.QuickActionListItem x=new Metadata.QuickActionListItem(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.QuickActionListItem)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R021",
+      "group": "dto-construction",
+      "code": "Metadata.RelatedContent x=new Metadata.RelatedContent(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R022",
+      "group": "clone-type-graph",
+      "code": "Metadata.RelatedContent x=new Metadata.RelatedContent(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.RelatedContent)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R023",
+      "group": "dto-construction",
+      "code": "Metadata.RelatedContentItem x=new Metadata.RelatedContentItem(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R024",
+      "group": "clone-type-graph",
+      "code": "Metadata.RelatedContentItem x=new Metadata.RelatedContentItem(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.RelatedContentItem)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R025",
+      "group": "dto-construction",
+      "code": "Metadata.RelatedList x=new Metadata.RelatedList(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R026",
+      "group": "clone-type-graph",
+      "code": "Metadata.RelatedList x=new Metadata.RelatedList(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.RelatedList)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R027",
+      "group": "dto-construction",
+      "code": "Metadata.RelatedListItem x=new Metadata.RelatedListItem(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R028",
+      "group": "clone-type-graph",
+      "code": "Metadata.RelatedListItem x=new Metadata.RelatedListItem(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.RelatedListItem)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R029",
+      "group": "dto-construction",
+      "code": "Metadata.ReportChartComponentLayoutItem x=new Metadata.ReportChartComponentLayoutItem(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R030",
+      "group": "clone-type-graph",
+      "code": "Metadata.ReportChartComponentLayoutItem x=new Metadata.ReportChartComponentLayoutItem(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.ReportChartComponentLayoutItem)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R031",
+      "group": "dto-construction",
+      "code": "Metadata.AnalyticsCloudComponentLayoutItem x=new Metadata.AnalyticsCloudComponentLayoutItem(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R032",
+      "group": "clone-type-graph",
+      "code": "Metadata.AnalyticsCloudComponentLayoutItem x=new Metadata.AnalyticsCloudComponentLayoutItem(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.AnalyticsCloudComponentLayoutItem)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R033",
+      "group": "dto-construction",
+      "code": "Metadata.SidebarComponent x=new Metadata.SidebarComponent(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R034",
+      "group": "clone-type-graph",
+      "code": "Metadata.SidebarComponent x=new Metadata.SidebarComponent(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.SidebarComponent)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R035",
+      "group": "dto-construction",
+      "code": "Metadata.Container x=new Metadata.Container(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R036",
+      "group": "clone-type-graph",
+      "code": "Metadata.Container x=new Metadata.Container(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.Container)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R037",
+      "group": "dto-construction",
+      "code": "Metadata.ConsoleComponent x=new Metadata.ConsoleComponent(); r=x!=null;",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 40: Type is not visible: Metadata.ConsoleComponent",
+      "floorExpected": "COMPILE_ERROR\tline 40: Type is not visible: Metadata.ConsoleComponent",
+      "nativeNull": false,
+      "sourceLine": 40
+    },
+    {
+      "id": "R038",
+      "group": "clone-type-graph",
+      "code": "Metadata.ConsoleComponent x=new Metadata.ConsoleComponent(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.ConsoleComponent)+'|'+(x===y);",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 40: Type is not visible: Metadata.ConsoleComponent",
+      "floorExpected": "COMPILE_ERROR\tline 40: Type is not visible: Metadata.ConsoleComponent",
+      "nativeNull": false,
+      "sourceLine": 40
+    },
+    {
+      "id": "R039",
+      "group": "dto-construction",
+      "code": "Metadata.CustomConsoleComponents x=new Metadata.CustomConsoleComponents(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R040",
+      "group": "clone-type-graph",
+      "code": "Metadata.CustomConsoleComponents x=new Metadata.CustomConsoleComponents(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.CustomConsoleComponents)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R041",
+      "group": "dto-construction",
+      "code": "Metadata.PrimaryTabComponents x=new Metadata.PrimaryTabComponents(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R042",
+      "group": "clone-type-graph",
+      "code": "Metadata.PrimaryTabComponents x=new Metadata.PrimaryTabComponents(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.PrimaryTabComponents)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R043",
+      "group": "dto-construction",
+      "code": "Metadata.SubtabComponents x=new Metadata.SubtabComponents(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R044",
+      "group": "clone-type-graph",
+      "code": "Metadata.SubtabComponents x=new Metadata.SubtabComponents(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.SubtabComponents)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R045",
+      "group": "dto-construction",
+      "code": "Metadata.SummaryLayout x=new Metadata.SummaryLayout(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R046",
+      "group": "clone-type-graph",
+      "code": "Metadata.SummaryLayout x=new Metadata.SummaryLayout(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.SummaryLayout)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R047",
+      "group": "dto-construction",
+      "code": "Metadata.SummaryLayoutItem x=new Metadata.SummaryLayoutItem(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R048",
+      "group": "clone-type-graph",
+      "code": "Metadata.SummaryLayoutItem x=new Metadata.SummaryLayoutItem(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.SummaryLayoutItem)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R049",
+      "group": "dto-construction",
+      "code": "Metadata.FeedLayout x=new Metadata.FeedLayout(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R050",
+      "group": "clone-type-graph",
+      "code": "Metadata.FeedLayout x=new Metadata.FeedLayout(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.FeedLayout)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R051",
+      "group": "dto-construction",
+      "code": "Metadata.FeedLayoutFilter x=new Metadata.FeedLayoutFilter(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R052",
+      "group": "clone-type-graph",
+      "code": "Metadata.FeedLayoutFilter x=new Metadata.FeedLayoutFilter(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.FeedLayoutFilter)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R053",
+      "group": "dto-construction",
+      "code": "Metadata.FeedLayoutComponent x=new Metadata.FeedLayoutComponent(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R054",
+      "group": "clone-type-graph",
+      "code": "Metadata.FeedLayoutComponent x=new Metadata.FeedLayoutComponent(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.FeedLayoutComponent)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R055",
+      "group": "dto-construction",
+      "code": "Metadata.PlatformActionList x=new Metadata.PlatformActionList(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R056",
+      "group": "clone-type-graph",
+      "code": "Metadata.PlatformActionList x=new Metadata.PlatformActionList(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.PlatformActionList)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R057",
+      "group": "dto-construction",
+      "code": "Metadata.PlatformActionListItem x=new Metadata.PlatformActionListItem(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R058",
+      "group": "clone-type-graph",
+      "code": "Metadata.PlatformActionListItem x=new Metadata.PlatformActionListItem(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.PlatformActionListItem)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R059",
+      "group": "dto-construction",
+      "code": "Metadata.DeployMessage x=new Metadata.DeployMessage(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R060",
+      "group": "clone-type-graph",
+      "code": "Metadata.DeployMessage x=new Metadata.DeployMessage(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.DeployMessage)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R061",
+      "group": "dto-construction",
+      "code": "Metadata.DeployDetails x=new Metadata.DeployDetails(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R062",
+      "group": "clone-type-graph",
+      "code": "Metadata.DeployDetails x=new Metadata.DeployDetails(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.DeployDetails)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R063",
+      "group": "dto-construction",
+      "code": "Metadata.DeployResult x=new Metadata.DeployResult(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R064",
+      "group": "clone-type-graph",
+      "code": "Metadata.DeployResult x=new Metadata.DeployResult(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.DeployResult)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R065",
+      "group": "dto-construction",
+      "code": "Metadata.AsyncResult x=new Metadata.AsyncResult(); r=x!=null;",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.AsyncResult",
+      "floorExpected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.AsyncResult",
+      "nativeNull": false,
+      "sourceLine": 20
+    },
+    {
+      "id": "R066",
+      "group": "clone-type-graph",
+      "code": "Metadata.AsyncResult x=new Metadata.AsyncResult(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.AsyncResult)+'|'+(x===y);",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.AsyncResult",
+      "floorExpected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.AsyncResult",
+      "nativeNull": false,
+      "sourceLine": 20
+    },
+    {
+      "id": "R067",
+      "group": "dto-construction",
+      "code": "Metadata.CustomField x=new Metadata.CustomField(); r=x!=null;",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.CustomField",
+      "floorExpected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.CustomField",
+      "nativeNull": false,
+      "sourceLine": 20
+    },
+    {
+      "id": "R068",
+      "group": "clone-type-graph",
+      "code": "Metadata.CustomField x=new Metadata.CustomField(); Object y=x.clone(); r=String.valueOf(y instanceof Metadata.CustomField)+'|'+(x===y);",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.CustomField",
+      "floorExpected": "COMPILE_ERROR\tline 20: Invalid type: Metadata.CustomField",
+      "nativeNull": false,
+      "sourceLine": 20
+    },
+    {
+      "id": "R069",
+      "group": "dto-field-default",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); r=x.fullName;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R070",
+      "group": "dto-field-write",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); x.fullName='A44Fixture.Default'; r=x.fullName;",
+      "compile": false,
+      "expected": "A44Fixture.Default",
+      "floorExpected": "A44Fixture.Default",
+      "nativeNull": false
+    },
+    {
+      "id": "R071",
+      "group": "dto-field-default",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); r=x.label;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R072",
+      "group": "dto-field-write",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); x.label='A44 fixture'; r=x.label;",
+      "compile": false,
+      "expected": "A44 fixture",
+      "floorExpected": "A44 fixture",
+      "nativeNull": false
+    },
+    {
+      "id": "R073",
+      "group": "dto-field-default",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); r=x.protected_x;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R074",
+      "group": "dto-field-write",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); x.protected_x=true; r=x.protected_x;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R075",
+      "group": "dto-field-default",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); r=x.field;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R076",
+      "group": "dto-field-write",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); x.field='Enabled__c'; r=x.field;",
+      "compile": false,
+      "expected": "Enabled__c",
+      "floorExpected": "Enabled__c",
+      "nativeNull": false
+    },
+    {
+      "id": "R077",
+      "group": "dto-field-default",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); r=x.value;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R078",
+      "group": "dto-field-write",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); x.value=true; r=x.value;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R079",
+      "group": "dto-field-default",
+      "code": "Metadata.Layout x=new Metadata.Layout(); r=x.fullName;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R080",
+      "group": "dto-field-write",
+      "code": "Metadata.Layout x=new Metadata.Layout(); x.fullName='Account-A44Fixture'; r=x.fullName;",
+      "compile": false,
+      "expected": "Account-A44Fixture",
+      "floorExpected": "Account-A44Fixture",
+      "nativeNull": false
+    },
+    {
+      "id": "R081",
+      "group": "dto-field-default",
+      "code": "Metadata.Layout x=new Metadata.Layout(); r=x.customButtons;",
+      "compile": false,
+      "expected": "()",
+      "floorExpected": "()",
+      "nativeNull": false
+    },
+    {
+      "id": "R082",
+      "group": "dto-field-write",
+      "code": "Metadata.Layout x=new Metadata.Layout(); x.customButtons=new List<String>{'New'}; r=JSON.serialize(x.customButtons);",
+      "compile": false,
+      "expected": "[\"New\"]",
+      "floorExpected": "[\"New\"]",
+      "nativeNull": false
+    },
+    {
+      "id": "R083",
+      "group": "dto-field-default",
+      "code": "Metadata.Layout x=new Metadata.Layout(); r=x.layoutSections;",
+      "compile": false,
+      "expected": "()",
+      "floorExpected": "()",
+      "nativeNull": false
+    },
+    {
+      "id": "R084",
+      "group": "dto-field-write",
+      "code": "Metadata.Layout x=new Metadata.Layout(); x.layoutSections=new List<Metadata.LayoutSection>{new Metadata.LayoutSection()}; r=JSON.serialize(x.layoutSections);",
+      "compile": false,
+      "expected": "[{\"style\":null,\"layoutColumns\":[],\"label\":null,\"editHeading\":null,\"detailHeading\":null,\"customLabel\":null}]",
+      "floorExpected": "[{\"style\":null,\"layoutColumns\":[],\"label\":null,\"editHeading\":null,\"detailHeading\":null,\"customLabel\":null}]",
+      "nativeNull": false
+    },
+    {
+      "id": "R085",
+      "group": "dto-field-default",
+      "code": "Metadata.Layout x=new Metadata.Layout(); r=x.showHighlightsPanel;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R086",
+      "group": "dto-field-write",
+      "code": "Metadata.Layout x=new Metadata.Layout(); x.showHighlightsPanel=false; r=x.showHighlightsPanel;",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false",
+      "nativeNull": false
+    },
+    {
+      "id": "R087",
+      "group": "dto-field-default",
+      "code": "Metadata.LayoutColumn x=new Metadata.LayoutColumn(); r=x.layoutItems;",
+      "compile": false,
+      "expected": "()",
+      "floorExpected": "()",
+      "nativeNull": false
+    },
+    {
+      "id": "R088",
+      "group": "dto-field-write",
+      "code": "Metadata.LayoutColumn x=new Metadata.LayoutColumn(); x.layoutItems=new List<Metadata.LayoutItem>{new Metadata.LayoutItem()}; r=JSON.serialize(x.layoutItems);",
+      "compile": false,
+      "expected": "[{\"width\":null,\"showScrollbars\":null,\"showLabel\":null,\"scontrol\":null,\"reportChartComponent\":null,\"page_x\":null,\"height\":null,\"field\":null,\"emptySpace\":null,\"customLink\":null,\"component\":null,\"canvas\":null,\"behavior\":null,\"analyticsCloudComponent\":null}]",
+      "floorExpected": "[{\"width\":null,\"showScrollbars\":null,\"showLabel\":null,\"scontrol\":null,\"reportChartComponent\":null,\"page_x\":null,\"height\":null,\"field\":null,\"emptySpace\":null,\"customLink\":null,\"component\":null,\"canvas\":null,\"behavior\":null,\"analyticsCloudComponent\":null}]",
+      "nativeNull": false
+    },
+    {
+      "id": "R089",
+      "group": "dto-field-default",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); r=x.field;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R090",
+      "group": "dto-field-write",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); x.field='Name'; r=x.field;",
+      "compile": false,
+      "expected": "Name",
+      "floorExpected": "Name",
+      "nativeNull": false
+    },
+    {
+      "id": "R091",
+      "group": "dto-field-default",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); r=x.behavior;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R092",
+      "group": "dto-field-write",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); x.behavior=Metadata.UiBehavior.Required; r=x.behavior;",
+      "compile": false,
+      "expected": "Required",
+      "floorExpected": "Required",
+      "nativeNull": false
+    },
+    {
+      "id": "R093",
+      "group": "dto-field-default",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); r=x.emptySpace;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R094",
+      "group": "dto-field-write",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); x.emptySpace=false; r=x.emptySpace;",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false",
+      "nativeNull": false
+    },
+    {
+      "id": "R095",
+      "group": "dto-field-default",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); r=x.height;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R096",
+      "group": "dto-field-write",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); x.height=-1; r=x.height;",
+      "compile": false,
+      "expected": "-1",
+      "floorExpected": "-1",
+      "nativeNull": false
+    },
+    {
+      "id": "R097",
+      "group": "dto-field-default",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); r=x.width;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R098",
+      "group": "dto-field-write",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); x.width=''; r=x.width;",
+      "compile": false,
+      "expected": "",
+      "floorExpected": "",
+      "nativeNull": false
+    },
+    {
+      "id": "R099",
+      "group": "dto-field-default",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); r=x.page_x;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R100",
+      "group": "dto-field-write",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); x.page_x='A44Page'; r=x.page_x;",
+      "compile": false,
+      "expected": "A44Page",
+      "floorExpected": "A44Page",
+      "nativeNull": false
+    },
+    {
+      "id": "R101",
+      "group": "dto-field-default",
+      "code": "Metadata.LayoutSection x=new Metadata.LayoutSection(); r=x.label;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R102",
+      "group": "dto-field-write",
+      "code": "Metadata.LayoutSection x=new Metadata.LayoutSection(); x.label='Details'; r=x.label;",
+      "compile": false,
+      "expected": "Details",
+      "floorExpected": "Details",
+      "nativeNull": false
+    },
+    {
+      "id": "R103",
+      "group": "dto-field-default",
+      "code": "Metadata.LayoutSection x=new Metadata.LayoutSection(); r=x.style;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R104",
+      "group": "dto-field-write",
+      "code": "Metadata.LayoutSection x=new Metadata.LayoutSection(); x.style=Metadata.LayoutSectionStyle.OneColumn; r=x.style;",
+      "compile": false,
+      "expected": "OneColumn",
+      "floorExpected": "OneColumn",
+      "nativeNull": false
+    },
+    {
+      "id": "R105",
+      "group": "dto-field-default",
+      "code": "Metadata.LayoutSection x=new Metadata.LayoutSection(); r=x.layoutColumns;",
+      "compile": false,
+      "expected": "()",
+      "floorExpected": "()",
+      "nativeNull": false
+    },
+    {
+      "id": "R106",
+      "group": "dto-field-write",
+      "code": "Metadata.LayoutSection x=new Metadata.LayoutSection(); x.layoutColumns=new List<Metadata.LayoutColumn>(); r=JSON.serialize(x.layoutColumns);",
+      "compile": false,
+      "expected": "[]",
+      "floorExpected": "[]",
+      "nativeNull": false
+    },
+    {
+      "id": "R107",
+      "group": "dto-field-default",
+      "code": "Metadata.QuickActionListItem x=new Metadata.QuickActionListItem(); r=x.quickActionName;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R108",
+      "group": "dto-field-write",
+      "code": "Metadata.QuickActionListItem x=new Metadata.QuickActionListItem(); x.quickActionName='Account.New'; r=x.quickActionName;",
+      "compile": false,
+      "expected": "Account.New",
+      "floorExpected": "Account.New",
+      "nativeNull": false
+    },
+    {
+      "id": "R109",
+      "group": "dto-field-default",
+      "code": "Metadata.RelatedList x=new Metadata.RelatedList(); r=x.hideOnDetail;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R110",
+      "group": "dto-field-write",
+      "code": "Metadata.RelatedList x=new Metadata.RelatedList(); x.hideOnDetail=true; r=x.hideOnDetail;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R111",
+      "group": "dto-field-default",
+      "code": "Metadata.RelatedListItem x=new Metadata.RelatedListItem(); r=x.fields;",
+      "compile": false,
+      "expected": "()",
+      "floorExpected": "()",
+      "nativeNull": false
+    },
+    {
+      "id": "R112",
+      "group": "dto-field-write",
+      "code": "Metadata.RelatedListItem x=new Metadata.RelatedListItem(); x.fields=new List<String>{'Name'}; r=JSON.serialize(x.fields);",
+      "compile": false,
+      "expected": "[\"Name\"]",
+      "floorExpected": "[\"Name\"]",
+      "nativeNull": false
+    },
+    {
+      "id": "R113",
+      "group": "dto-field-default",
+      "code": "Metadata.RelatedListItem x=new Metadata.RelatedListItem(); r=x.sortOrder;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R114",
+      "group": "dto-field-write",
+      "code": "Metadata.RelatedListItem x=new Metadata.RelatedListItem(); x.sortOrder=Metadata.SortOrder.Asc_x; r=x.sortOrder;",
+      "compile": false,
+      "expected": "Asc_x",
+      "floorExpected": "Asc_x",
+      "nativeNull": false
+    },
+    {
+      "id": "R115",
+      "group": "dto-field-default",
+      "code": "Metadata.ReportChartComponentLayoutItem x=new Metadata.ReportChartComponentLayoutItem(); r=x.size;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R116",
+      "group": "dto-field-write",
+      "code": "Metadata.ReportChartComponentLayoutItem x=new Metadata.ReportChartComponentLayoutItem(); x.size=Metadata.ReportChartComponentSize.LARGE; r=x.size;",
+      "compile": false,
+      "expected": "LARGE",
+      "floorExpected": "LARGE",
+      "nativeNull": false
+    },
+    {
+      "id": "R117",
+      "group": "dto-field-default",
+      "code": "Metadata.AnalyticsCloudComponentLayoutItem x=new Metadata.AnalyticsCloudComponentLayoutItem(); r=x.height;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R118",
+      "group": "dto-field-write",
+      "code": "Metadata.AnalyticsCloudComponentLayoutItem x=new Metadata.AnalyticsCloudComponentLayoutItem(); x.height=0; r=x.height;",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R119",
+      "group": "dto-field-default",
+      "code": "Metadata.SidebarComponent x=new Metadata.SidebarComponent(); r=x.relatedLists;",
+      "compile": false,
+      "expected": "()",
+      "floorExpected": "()",
+      "nativeNull": false
+    },
+    {
+      "id": "R120",
+      "group": "dto-field-write",
+      "code": "Metadata.SidebarComponent x=new Metadata.SidebarComponent(); x.relatedLists=new List<Metadata.RelatedList>(); r=JSON.serialize(x.relatedLists);",
+      "compile": false,
+      "expected": "[]",
+      "floorExpected": "[]",
+      "nativeNull": false
+    },
+    {
+      "id": "R121",
+      "group": "dto-field-default",
+      "code": "Metadata.Container x=new Metadata.Container(); r=x.width;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R122",
+      "group": "dto-field-write",
+      "code": "Metadata.Container x=new Metadata.Container(); x.width=2147483647; r=x.width;",
+      "compile": false,
+      "expected": "2147483647",
+      "floorExpected": "2147483647",
+      "nativeNull": false
+    },
+    {
+      "id": "R123",
+      "group": "dto-field-default",
+      "code": "Metadata.ConsoleComponent x=new Metadata.ConsoleComponent(); r=x.visualforcePage;",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 28: Type is not visible: Metadata.ConsoleComponent",
+      "floorExpected": "COMPILE_ERROR\tline 28: Type is not visible: Metadata.ConsoleComponent",
+      "nativeNull": false,
+      "sourceLine": 28
+    },
+    {
+      "id": "R124",
+      "group": "dto-field-write",
+      "code": "Metadata.ConsoleComponent x=new Metadata.ConsoleComponent(); x.visualforcePage='A44Page'; r=x.visualforcePage;",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 28: Type is not visible: Metadata.ConsoleComponent",
+      "floorExpected": "COMPILE_ERROR\tline 28: Type is not visible: Metadata.ConsoleComponent",
+      "nativeNull": false,
+      "sourceLine": 28
+    },
+    {
+      "id": "R125",
+      "group": "dto-field-default",
+      "code": "Metadata.SummaryLayout x=new Metadata.SummaryLayout(); r=x.summaryLayoutStyle;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R126",
+      "group": "dto-field-write",
+      "code": "Metadata.SummaryLayout x=new Metadata.SummaryLayout(); x.summaryLayoutStyle=Metadata.SummaryLayoutStyleEnum.Default_x; r=x.summaryLayoutStyle;",
+      "compile": false,
+      "expected": "Default_x",
+      "floorExpected": "Default_x",
+      "nativeNull": false
+    },
+    {
+      "id": "R127",
+      "group": "dto-field-default",
+      "code": "Metadata.SummaryLayoutItem x=new Metadata.SummaryLayoutItem(); r=x.posX;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R128",
+      "group": "dto-field-write",
+      "code": "Metadata.SummaryLayoutItem x=new Metadata.SummaryLayoutItem(); x.posX=-1; r=x.posX;",
+      "compile": false,
+      "expected": "-1",
+      "floorExpected": "-1",
+      "nativeNull": false
+    },
+    {
+      "id": "R129",
+      "group": "dto-field-default",
+      "code": "Metadata.FeedLayout x=new Metadata.FeedLayout(); r=x.feedFilters;",
+      "compile": false,
+      "expected": "()",
+      "floorExpected": "()",
+      "nativeNull": false
+    },
+    {
+      "id": "R130",
+      "group": "dto-field-write",
+      "code": "Metadata.FeedLayout x=new Metadata.FeedLayout(); x.feedFilters=new List<Metadata.FeedLayoutFilter>(); r=JSON.serialize(x.feedFilters);",
+      "compile": false,
+      "expected": "[]",
+      "floorExpected": "[]",
+      "nativeNull": false
+    },
+    {
+      "id": "R131",
+      "group": "dto-field-default",
+      "code": "Metadata.FeedLayoutFilter x=new Metadata.FeedLayoutFilter(); r=x.feedItemType;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R132",
+      "group": "dto-field-write",
+      "code": "Metadata.FeedLayoutFilter x=new Metadata.FeedLayoutFilter(); x.feedItemType=Metadata.FeedItemTypeEnum.TextPost; r=x.feedItemType;",
+      "compile": false,
+      "expected": "TextPost",
+      "floorExpected": "TextPost",
+      "nativeNull": false
+    },
+    {
+      "id": "R133",
+      "group": "dto-field-default",
+      "code": "Metadata.DeployMessage x=new Metadata.DeployMessage(); r=x.problem;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R134",
+      "group": "dto-field-write",
+      "code": "Metadata.DeployMessage x=new Metadata.DeployMessage(); x.problem='A44 problem'; r=x.problem;",
+      "compile": false,
+      "expected": "A44 problem",
+      "floorExpected": "A44 problem",
+      "nativeNull": false
+    },
+    {
+      "id": "R135",
+      "group": "dto-field-default",
+      "code": "Metadata.DeployMessage x=new Metadata.DeployMessage(); r=x.problemType;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R136",
+      "group": "dto-field-write",
+      "code": "Metadata.DeployMessage x=new Metadata.DeployMessage(); x.problemType=Metadata.DeployProblemType.Error; r=x.problemType;",
+      "compile": false,
+      "expected": "Error",
+      "floorExpected": "Error",
+      "nativeNull": false
+    },
+    {
+      "id": "R137",
+      "group": "dto-field-default",
+      "code": "Metadata.DeployMessage x=new Metadata.DeployMessage(); r=x.columnNumber;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R138",
+      "group": "dto-field-write",
+      "code": "Metadata.DeployMessage x=new Metadata.DeployMessage(); x.columnNumber=0; r=x.columnNumber;",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R139",
+      "group": "dto-field-default",
+      "code": "Metadata.DeployDetails x=new Metadata.DeployDetails(); r=x.componentFailures;",
+      "compile": false,
+      "expected": "()",
+      "floorExpected": "()",
+      "nativeNull": false
+    },
+    {
+      "id": "R140",
+      "group": "dto-field-write",
+      "code": "Metadata.DeployDetails x=new Metadata.DeployDetails(); x.componentFailures=new List<Metadata.DeployMessage>(); r=JSON.serialize(x.componentFailures);",
+      "compile": false,
+      "expected": "[]",
+      "floorExpected": "[]",
+      "nativeNull": false
+    },
+    {
+      "id": "R141",
+      "group": "dto-field-default",
+      "code": "Metadata.DeployResult x=new Metadata.DeployResult(); r=x.status;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R142",
+      "group": "dto-field-write",
+      "code": "Metadata.DeployResult x=new Metadata.DeployResult(); x.status=Metadata.DeployStatus.Failed; r=x.status;",
+      "compile": false,
+      "expected": "Failed",
+      "floorExpected": "Failed",
+      "nativeNull": false
+    },
+    {
+      "id": "R143",
+      "group": "dto-field-default",
+      "code": "Metadata.DeployResult x=new Metadata.DeployResult(); r=x.done;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R144",
+      "group": "dto-field-write",
+      "code": "Metadata.DeployResult x=new Metadata.DeployResult(); x.done=false; r=x.done;",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false",
+      "nativeNull": false
+    },
+    {
+      "id": "R145",
+      "group": "dto-field-default",
+      "code": "Metadata.DeployResult x=new Metadata.DeployResult(); r=x.numberComponentErrors;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R146",
+      "group": "dto-field-write",
+      "code": "Metadata.DeployResult x=new Metadata.DeployResult(); x.numberComponentErrors=-1; r=x.numberComponentErrors;",
+      "compile": false,
+      "expected": "-1",
+      "floorExpected": "-1",
+      "nativeNull": false
+    },
+    {
+      "id": "R147",
+      "group": "dto-field-default",
+      "code": "Metadata.DeployResult x=new Metadata.DeployResult(); r=x.errorMessage;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R148",
+      "group": "dto-field-write",
+      "code": "Metadata.DeployResult x=new Metadata.DeployResult(); x.errorMessage=''; r=x.errorMessage;",
+      "compile": false,
+      "expected": "",
+      "floorExpected": "",
+      "nativeNull": false
+    },
+    {
+      "id": "R149",
+      "group": "dto-field-default",
+      "code": "Metadata.AsyncResult x=new Metadata.AsyncResult(); r=x.statusCode;",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 52: Invalid type: Metadata.AsyncResult",
+      "floorExpected": "COMPILE_ERROR\tline 52: Invalid type: Metadata.AsyncResult",
+      "nativeNull": false,
+      "sourceLine": 52
+    },
+    {
+      "id": "R150",
+      "group": "dto-field-write",
+      "code": "Metadata.AsyncResult x=new Metadata.AsyncResult(); x.statusCode=Metadata.StatusCode.APEX_FAILED; r=x.statusCode;",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 52: Invalid type: Metadata.AsyncResult",
+      "floorExpected": "COMPILE_ERROR\tline 52: Invalid type: Metadata.AsyncResult",
+      "nativeNull": false,
+      "sourceLine": 52
+    },
+    {
+      "id": "R151",
+      "group": "dto-field-default",
+      "code": "Metadata.CustomField x=new Metadata.CustomField(); r=x.label;",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: Metadata.CustomField",
+      "floorExpected": "COMPILE_ERROR\tline 6: Invalid type: Metadata.CustomField",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "R152",
+      "group": "dto-field-write",
+      "code": "Metadata.CustomField x=new Metadata.CustomField(); x.label='A44 field'; r=x.label;",
+      "compile": false,
+      "expected": "COMPILE_ERROR\tline 6: Invalid type: Metadata.CustomField",
+      "floorExpected": "COMPILE_ERROR\tline 6: Invalid type: Metadata.CustomField",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "R153",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.DeployStatus x:Metadata.DeployStatus.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "Pending|InProgress|Succeeded|SucceededPartial|Failed|Canceling|Canceled",
+      "floorExpected": "Pending|InProgress|Succeeded|SucceededPartial|Failed|Canceling|Canceled",
+      "nativeNull": false
+    },
+    {
+      "id": "R154",
+      "group": "enums-conversion",
+      "code": "Metadata.DeployStatus x=Metadata.DeployStatus.valueOf('Succeeded'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.DeployStatus.Succeeded);",
+      "compile": false,
+      "expected": "Succeeded|2|true",
+      "floorExpected": "Succeeded|2|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R155",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.MetadataType x:Metadata.MetadataType.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "OmniInteractionAccessConfig|CustomMetadata|Layout",
+      "floorExpected": "OmniInteractionAccessConfig|CustomMetadata|Layout",
+      "nativeNull": false
+    },
+    {
+      "id": "R156",
+      "group": "enums-conversion",
+      "code": "Metadata.MetadataType x=Metadata.MetadataType.valueOf('CustomMetadata'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.MetadataType.CustomMetadata);",
+      "compile": false,
+      "expected": "CustomMetadata|1|true",
+      "floorExpected": "CustomMetadata|1|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R157",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.DeployProblemType x:Metadata.DeployProblemType.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "Warning|Error|Info",
+      "floorExpected": "Warning|Error|Info",
+      "nativeNull": false
+    },
+    {
+      "id": "R158",
+      "group": "enums-conversion",
+      "code": "Metadata.DeployProblemType x=Metadata.DeployProblemType.valueOf('Error'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.DeployProblemType.Error);",
+      "compile": false,
+      "expected": "Error|1|true",
+      "floorExpected": "Error|1|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R159",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.UiBehavior x:Metadata.UiBehavior.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "Edit|Required|Readonly",
+      "floorExpected": "Edit|Required|Readonly",
+      "nativeNull": false
+    },
+    {
+      "id": "R160",
+      "group": "enums-conversion",
+      "code": "Metadata.UiBehavior x=Metadata.UiBehavior.valueOf('Required'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.UiBehavior.Required);",
+      "compile": false,
+      "expected": "Required|1|true",
+      "floorExpected": "Required|1|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R161",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.LayoutSectionStyle x:Metadata.LayoutSectionStyle.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "TwoColumnsTopToBottom|TwoColumnsLeftToRight|OneColumn|CustomLinks",
+      "floorExpected": "TwoColumnsTopToBottom|TwoColumnsLeftToRight|OneColumn|CustomLinks",
+      "nativeNull": false
+    },
+    {
+      "id": "R162",
+      "group": "enums-conversion",
+      "code": "Metadata.LayoutSectionStyle x=Metadata.LayoutSectionStyle.valueOf('OneColumn'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.LayoutSectionStyle.OneColumn);",
+      "compile": false,
+      "expected": "OneColumn|2|true",
+      "floorExpected": "OneColumn|2|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R163",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.SortOrder x:Metadata.SortOrder.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "Asc_x|Desc_x",
+      "floorExpected": "Asc_x|Desc_x",
+      "nativeNull": false
+    },
+    {
+      "id": "R164",
+      "group": "enums-conversion",
+      "code": "Metadata.SortOrder x=Metadata.SortOrder.valueOf('Asc_x'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.SortOrder.Asc_x);",
+      "compile": false,
+      "expected": "Asc_x|0|true",
+      "floorExpected": "Asc_x|0|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R165",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.ReportChartComponentSize x:Metadata.ReportChartComponentSize.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "SMALL|MEDIUM|LARGE",
+      "floorExpected": "SMALL|MEDIUM|LARGE",
+      "nativeNull": false
+    },
+    {
+      "id": "R166",
+      "group": "enums-conversion",
+      "code": "Metadata.ReportChartComponentSize x=Metadata.ReportChartComponentSize.valueOf('LARGE'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.ReportChartComponentSize.LARGE);",
+      "compile": false,
+      "expected": "LARGE|2|true",
+      "floorExpected": "LARGE|2|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R167",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.SummaryLayoutStyleEnum x:Metadata.SummaryLayoutStyleEnum.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "Default_x|QuoteTemplate|DefaultQuoteTemplate|ServiceReportTemplate|ChildServiceReportTemplateStyle|DefaultServiceReportTemplate|CaseInteraction|QuickActionLayoutLeftRight|QuickActionLayoutTopDown|PathAssistant",
+      "floorExpected": "Default_x|QuoteTemplate|DefaultQuoteTemplate|ServiceReportTemplate|ChildServiceReportTemplateStyle|DefaultServiceReportTemplate|CaseInteraction|QuickActionLayoutLeftRight|QuickActionLayoutTopDown|PathAssistant",
+      "nativeNull": false
+    },
+    {
+      "id": "R168",
+      "group": "enums-conversion",
+      "code": "Metadata.SummaryLayoutStyleEnum x=Metadata.SummaryLayoutStyleEnum.valueOf('Default_x'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.SummaryLayoutStyleEnum.Default_x);",
+      "compile": false,
+      "expected": "Default_x|0|true",
+      "floorExpected": "Default_x|0|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R169",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.FeedLayoutComponentType x:Metadata.FeedLayoutComponentType.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "HelpAndToolLinks|CustomButtons|Following|Followers|CustomLinks|Milestones|SimilarCases|CaseExperts|Topics|CaseUnifiedFiles|Visualforce",
+      "floorExpected": "HelpAndToolLinks|CustomButtons|Following|Followers|CustomLinks|Milestones|SimilarCases|CaseExperts|Topics|CaseUnifiedFiles|Visualforce",
+      "nativeNull": false
+    },
+    {
+      "id": "R170",
+      "group": "enums-conversion",
+      "code": "Metadata.FeedLayoutComponentType x=Metadata.FeedLayoutComponentType.valueOf('CustomButtons'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.FeedLayoutComponentType.CustomButtons);",
+      "compile": false,
+      "expected": "CustomButtons|1|true",
+      "floorExpected": "CustomButtons|1|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R171",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.FeedLayoutFilterPosition x:Metadata.FeedLayoutFilterPosition.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "CenterDropDown|LeftFixed|LeftFloat",
+      "floorExpected": "CenterDropDown|LeftFixed|LeftFloat",
+      "nativeNull": false
+    },
+    {
+      "id": "R172",
+      "group": "enums-conversion",
+      "code": "Metadata.FeedLayoutFilterPosition x=Metadata.FeedLayoutFilterPosition.valueOf('CenterDropDown'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.FeedLayoutFilterPosition.CenterDropDown);",
+      "compile": false,
+      "expected": "CenterDropDown|0|true",
+      "floorExpected": "CenterDropDown|0|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R173",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.FeedLayoutFilterType x:Metadata.FeedLayoutFilterType.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "AllUpdates|FeedItemType|Custom",
+      "floorExpected": "AllUpdates|FeedItemType|Custom",
+      "nativeNull": false
+    },
+    {
+      "id": "R174",
+      "group": "enums-conversion",
+      "code": "Metadata.FeedLayoutFilterType x=Metadata.FeedLayoutFilterType.valueOf('AllUpdates'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.FeedLayoutFilterType.AllUpdates);",
+      "compile": false,
+      "expected": "AllUpdates|0|true",
+      "floorExpected": "AllUpdates|0|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R175",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.FeedItemTypeEnum x:Metadata.FeedItemTypeEnum.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "TrackedChange|UserStatus|TextPost|AdvancedTextPost|LinkPost|ContentPost|DashboardComponentAlert|PollPost|RypplePost|ProfileSkillPost|DashboardComponentSnapshot|TestItem|ApprovalPost|CaseCommentPost|ReplyPost|EmailMessageEvent|CallLogPost|ChangeStatusPost|AttachArticleEvent|MilestoneEvent|ActivityEvent|ChatTranscriptPost|CollaborationGroupCreated|AttachExternalDocumentEvent|CollaborationGroupUnarchived|SocialPost|QuestionPost|Undefined|FacebookPost|BasicTemplateFeedItem|CreateRecordEvent|CanvasPost|AnnouncementPost",
+      "floorExpected": "TrackedChange|UserStatus|TextPost|AdvancedTextPost|LinkPost|ContentPost|DashboardComponentAlert|PollPost|RypplePost|ProfileSkillPost|DashboardComponentSnapshot|TestItem|ApprovalPost|CaseCommentPost|ReplyPost|EmailMessageEvent|CallLogPost|ChangeStatusPost|AttachArticleEvent|MilestoneEvent|ActivityEvent|ChatTranscriptPost|CollaborationGroupCreated|AttachExternalDocumentEvent|CollaborationGroupUnarchived|SocialPost|QuestionPost|Undefined|FacebookPost|BasicTemplateFeedItem|CreateRecordEvent|CanvasPost|AnnouncementPost",
+      "nativeNull": false
+    },
+    {
+      "id": "R176",
+      "group": "enums-conversion",
+      "code": "Metadata.FeedItemTypeEnum x=Metadata.FeedItemTypeEnum.valueOf('TextPost'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.FeedItemTypeEnum.TextPost);",
+      "compile": false,
+      "expected": "TextPost|2|true",
+      "floorExpected": "TextPost|2|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R177",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.LayoutHeader x:Metadata.LayoutHeader.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "PersonalTagging|PublicTagging",
+      "floorExpected": "PersonalTagging|PublicTagging",
+      "nativeNull": false
+    },
+    {
+      "id": "R178",
+      "group": "enums-conversion",
+      "code": "Metadata.LayoutHeader x=Metadata.LayoutHeader.valueOf('PersonalTagging'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.LayoutHeader.PersonalTagging);",
+      "compile": false,
+      "expected": "PersonalTagging|0|true",
+      "floorExpected": "PersonalTagging|0|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R179",
+      "group": "enums-values",
+      "code": "List<String> names=new List<String>(); for(Metadata.StatusCode x:Metadata.StatusCode.values()){names.add(String.valueOf(x));} r=String.join(names,'|');",
+      "compile": false,
+      "expected": "ALERT_NOTIFICATION_LIMIT_EXCEEDED|ALL_OR_NONE_OPERATION_ROLLED_BACK|ALREADY_APPLIED|ALREADY_IN_PROCESS|ALREADY_REDEEMED_VOUCHER|APEX_DATA_ACCESS_RESTRICTION|APEX_FAILED|APPLICATION_ALREADY_EXISTS|ASSIGNEE_TYPE_REQUIRED|ATTRIBUTE_DEFINITION_LIMIT_EXCEEDED|AURA_COMPILE_ERROR|AUTH_PROVIDER_NEEDS_AUTH|AUTH_PROVIDER_NOT_FOUND|B2B_SEARCH_ADMIN_ERROR|BAD_CUSTOM_ENTITY_PARENT_DOMAIN|BCC_NOT_ALLOWED_IF_BCC_COMPLIANCE_ENABLED|BLOCKED_EXCLUSIVE|CANNOT_CASCADE_PRODUCT_ACTIVE|CANNOT_CHANGE_FIELD_TYPE_OF_APEX_REFERENCED_FIELD|CANNOT_CHANGE_FIELD_TYPE_OF_REFERENCED_FIELD|CANNOT_CREATE_ANOTHER_MANAGED_PACKAGE|CANNOT_DEACTIVATE_DIVISION|CANNOT_DELETE_GLOBAL_ACTION_LIST|CANNOT_DELETE_LAST_DATED_CONVERSION_RATE|CANNOT_DELETE_MANAGED_OBJECT|CANNOT_DISABLE_LAST_ADMIN|CANNOT_ENABLE_IP_RESTRICT_REQUESTS|CANNOT_EXECUTE_FLOW_TRIGGER|CANNOT_FREEZE_SELF|CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|CANNOT_MODIFY_MANAGED_OBJECT|CANNOT_PASSWORD_LOCKOUT|CANNOT_POST_TO_ARCHIVED_GROUP|CANNOT_RENAME_APEX_REFERENCED_FIELD|CANNOT_RENAME_APEX_REFERENCED_OBJECT|CANNOT_RENAME_REFERENCED_FIELD|CANNOT_RENAME_REFERENCED_OBJECT|CANNOT_REPARENT_RECORD|CANNOT_UPDATE_CONVERTED_LEAD|CANNOT_UPDATE_IS_THIRD_PARTY|CANNOT_UPDATE_PAYMENT_METHOD_SET|CANT_DISABLE_CORP_CURRENCY|CANT_UNSET_CORP_CURRENCY|CART_ITEM_NOT_FOUND|CART_NOT_FOUND|CHECKOUT_CONFLICT|CHECKOUT_EXPIRED|CHECKOUT_INVALIDATED|CHECKOUT_LOCKED|CHECKOUT_NOT_FOUND|CHECKOUT_UNAUTHORIZED|CHILD_SHARE_FAILS_PARENT|CIRCULAR_DEPENDENCY|CLEAN_SERVICE_ERROR|CLONE_FIELD_INTEGRITY_EXCEPTION|CLONE_NOT_SUPPORTED|CMS_FOLDER_ITEM_MOVE_FAILED|COLLISION_DETECTED|COMMERCE_SEARCH_INDEXING_SYSTEM_ERROR|COMMERCE_SEARCH_MQ_ERROR|COMMERCE_SEARCH_PROVIDER_LIMIT_EXCEEDED|COMMERCE_SEARCH_RESOURCE_NOT_FOUND|COMMERCIAL_CONTROL_ERROR|COMMUNITY_NOT_ACCESSIBLE|CONFLICT|CONFLICTING_ENVIRONMENT_HUB_MEMBER|CONFLICTING_SSO_USER_MAPPING|CONTENT_NOT_FOUND|CONTENT_SEARCH_NOT_ENABLED|CONTENT_TYPE_DISABLED_FOR_API|CONTENT_TYPE_NOT_FOUND|COUPON_REDEMPTION_LIMIT_EXCEEDED|CUSTOM_APEX_ERROR|CUSTOM_CLOB_FIELD_LIMIT_EXCEEDED|CUSTOM_ENTITY_OR_FIELD_LIMIT|CUSTOM_FIELD_INDEX_LIMIT_EXCEEDED|CUSTOM_INDEX_EXISTS|CUSTOM_LINK_LIMIT_EXCEEDED|CUSTOM_METADATA_LIMIT_EXCEEDED|CUSTOM_METADATA_REL_FIELD_MANAGEABILITY|CUSTOM_SETTINGS_LIMIT_EXCEEDED|CUSTOM_TAB_LIMIT_EXCEEDED|DATAASSESSMENT_CONFIG_ASSESSMENT_IN_PROGRESS_ERROR|DATAASSESSMENT_CONFIG_SERVICE_ERROR|DATACLOUDADDRESS_NO_RECORDS_FOUND|DATACLOUDADDRESS_PROCESSING_ERROR|DATACLOUDADDRESS_SERVER_ERROR|DATA_MAPPING_NOT_FOUND|DATA_MAPPING_SCHEMA_NOT_FOUND|DATA_TRANSFER_RECORD_LIMIT_EXCEEDED|DATA_TYPE_NOT_SUPPORTED|DATE_OUT_OF_RANGE|DELETE_FAILED|DELETE_NOT_ALLOWED|DELETE_OPERATION_TOO_LARGE|DELETE_REQUIRED_ON_CASCADE|DEPENDENCY_EXISTS|DUPLICATES_DETECTED|DUPLICATE_CASE_SOLUTION|DUPLICATE_COMM_NICKNAME|DUPLICATE_CUSTOM_ENTITY_DEFINITION|DUPLICATE_CUSTOM_TAB_MOTIF|DUPLICATE_DEVELOPER_NAME|DUPLICATE_EXTERNAL_ID|DUPLICATE_MASTER_LABEL|DUPLICATE_SENDER_DISPLAY_NAME|DUPLICATE_USERNAME|DUPLICATE_VALUE|EMAIL_ADDRESS_BOUNCED|EMAIL_EXTERNAL_TRANSPORT_CONNECTION_ERROR|EMAIL_EXTERNAL_TRANSPORT_PERMISSION_ERROR|EMAIL_EXTERNAL_TRANSPORT_TOKEN_ERROR|EMAIL_EXTERNAL_TRANSPORT_TOO_LARGE_ERROR|EMAIL_EXTERNAL_TRANSPORT_TOO_MANY_REQUESTS_ERROR|EMAIL_EXTERNAL_TRANSPORT_UNKNOWN_ERROR|EMAIL_NOT_PROCESSED_DUE_TO_PRIOR_ERROR|EMAIL_OPTED_OUT|EMAIL_TEMPLATE_FORMULA_ERROR|EMAIL_TEMPLATE_MERGEFIELD_ACCESS_ERROR|EMAIL_TEMPLATE_MERGEFIELD_ERROR|EMAIL_TEMPLATE_MERGEFIELD_VALUE_ERROR|EMAIL_TEMPLATE_PROCESSING_ERROR|EMPTY_CATALOG|EMPTY_INGESTION_JOB|EMPTY_SCONTROL_FILE_NAME|ENHANCED_EMAIL_TEMPLATE_COMPILATION_ERROR|ENTITY_FAILED_IFLASTMODIFIED_ON_UPDATE|ENTITY_IS_ARCHIVED|ENTITY_IS_DELETED|ENTITY_IS_LOCKED|ENTITY_SAVE_ERROR|ENTITY_SAVE_VALIDATION_ERROR|ENVIRONMENT_HUB_MEMBERSHIP_CONFLICT|ENVIRONMENT_HUB_MEMBERSHIP_ERROR_JOINING_HUB|ENVIRONMENT_HUB_MEMBERSHIP_USER_ALREADY_IN_HUB|ENVIRONMENT_HUB_MEMBERSHIP_USER_NOT_ORG_ADMIN|ERROR_CALCULATING_EXPIRY_DATE|ERROR_IN_MAILER|EXCEEDED_MAX_SEMIJOIN_SUBSELECTS_WRITE|EXCHANGE_WEB_SERVICES_URL_INVALID|EXTERNAL_RESOURCE_FORBIDDEN|FAILED_ACTIVATION|FAILED_DUE_TO_OTHER_INPUTS|FAILED_TO_RESOLVE_MAPPING|FAILED_TO_RESOLVE_SCHEMA_INFORMATION|FIELD_CUSTOM_VALIDATION_EXCEPTION|FIELD_FILTER_VALIDATION_EXCEPTION|FIELD_INTEGRITY_EXCEPTION|FIELD_KEYWORD_LIST_MATCH_LIMIT|FIELD_MAPPING_ERROR|FIELD_MODERATION_RULE_BLOCK|FIELD_NOT_UPDATABLE|FILE_EXTENSION_NOT_ALLOWED|FILE_SIZE_LIMIT_EXCEEDED|FILTERED_LOOKUP_LIMIT_EXCEEDED|FIND_DUPLICATES_ERROR|FLOW_EXCEPTION|FUNCTIONALITY_NOT_ENABLED|GET_EINSTEIN_TENANT_ERROR|GUEST_INSUFFICIENT_ACCESS|HAS_PUBLIC_REFERENCES|HTML_FILE_UPLOAD_NOT_ALLOWED|IAS_AM_AUTH_BAD_REQUEST|IAS_AM_AUTH_UNAUTHORIZED|IAS_INVALID_AUTH|IAS_INVALID_REQUEST_PARAMETER|IAS_RECORD_DOES_NOT_EXIST|IAS_TENANT_NOT_PROVISIONED|IAS_UNCOMMITTED_WORK|IMAGE_TOO_LARGE|INACTIVE_OWNER_OR_USER|INACTIVE_RULE_ERROR|INDEX_ITEM_LIMIT_EXCEEDED|INDEX_PAYLOAD_NOT_FOUND|INGESTION_JOB_RECORDS_LIMIT_EXCEEDED|INGESTION_TOTAL_FILE_SIZE_LIMIT_EXCEEDED|INPUTPARAM_INCOMPATIBLE_DATATYPE|INSERT_UPDATE_DELETE_NOT_ALLOWED_DURING_MAINTENANCE|INSUFFICIENT_ACCESS|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|INSUFFICIENT_ACCESS_OR_READONLY|INSUFFICIENT_ACCESS_TO_INSIGHTSEXTERNALDATA|INSUFFICIENT_BALANCE|INSUFFICIENT_BENEFIT_REMAINING|INSUFFICIENT_CREDITS|INTEGRATION_CANCELLED|INTERNAL_ERROR|INVALID_ACCESS_LEVEL|INVALID_ACCESS_TOKEN|INVALID_ACCOUNT|INVALID_ACTION_VERSION|INVALID_API_INPUT|INVALID_ARGUMENT_TYPE|INVALID_ASSIGNEE_TYPE|INVALID_ASSIGNMENT_RULE|INVALID_AUTH_HEADER|INVALID_BATCH_OPERATION|INVALID_BUSINESS_HOURS_NAME|INVALID_CHECKOUT_INPUT|INVALID_CONTACT|INVALID_CONTENT_TYPE|INVALID_CREDIT_CARD_INFO|INVALID_CROSS_REFERENCE_KEY|INVALID_CROSS_REFERENCE_TYPE_FOR_FIELD|INVALID_CURRENCY_CONV_RATE|INVALID_CURRENCY_CORP_RATE|INVALID_CURRENCY_ISO|INVALID_DATASET_REFERENCE_INPUT|INVALID_DATA_CATEGORY_GROUP_REFERENCE|INVALID_DATA_URI|INVALID_EBV_OPERATION|INVALID_EMAIL_ADDRESS|INVALID_EMPTY_KEY_OWNER|INVALID_ENTITY_FOR_MATCH_ENGINE_ERROR|INVALID_ENTITY_FOR_MATCH_OPERATION_ERROR|INVALID_ENTITY_FOR_UPSERT|INVALID_ENVIRONMENT_HUB_MEMBER|INVALID_EVENT_DELIVERY|INVALID_EVENT_INPUT|INVALID_EVENT_SUBSCRIPTION|INVALID_EXTENSION_ID|INVALID_EXTERNAL_ID_FIELD_NAME|INVALID_FIELD|INVALID_FIELD_FOR_INSERT_UPDATE|INVALID_FIELD_WHEN_USING_TEMPLATE|INVALID_FILTER_ACTION|INVALID_GOOGLE_DOCS_URL|INVALID_ID_FIELD|INVALID_INET_ADDRESS|INVALID_INPUT|INVALID_INPUT_FORMAT|INVALID_KEY_FIELD_INPUT|INVALID_LINEITEM_CLONE_STATE|INVALID_MARKUP|INVALID_MASTER_OR_TRANSLATED_SOLUTION|INVALID_MERCHANT_ACCOUNT_MODE|INVALID_MERCHANT_ACCOUNT_MODE_OR_STATUS|INVALID_MERGE_RECORD|INVALID_MESSAGE_ID_REFERENCE|INVALID_NAMESPACE_PREFIX|INVALID_OAUTH_URL|INVALID_OPERATION|INVALID_OPERATOR|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|INVALID_OWNER|INVALID_PACKAGE_LICENSE|INVALID_PACKAGE_VERSION|INVALID_PARTNER_NETWORK_STATUS|INVALID_PAYLOAD_VERSION|INVALID_PERSON_ACCOUNT_OPERATION|INVALID_PROFILE|INVALID_PROMOTION|INVALID_PROVIDER_TYPE|INVALID_QUERY_KEY|INVALID_QUERY_LOCATOR|INVALID_QUERY_VALUE|INVALID_READ_ONLY_USER_DML|INVALID_RECEIVEDDOCUMENTID_ATTACHMENT|INVALID_RECORD_ATTRIBUTE_VALUE|INVALID_RECORD_TYPE|INVALID_REFRESH_TOKEN|INVALID_REQUEST_STATE|INVALID_RUNTIME_VALUE|INVALID_SAVE_AS_ACTIVITY_FLAG|INVALID_SCS_INBOUND_USER|INVALID_SEARCH_PROVIDER_REQUEST|INVALID_SESSION_ID|INVALID_SETUP_OWNER|INVALID_SIGNUP_COUNTRY|INVALID_SIGNUP_OPTION|INVALID_SITE_DELETE_EXCEPTION|INVALID_SITE_FILE_IMPORTED_EXCEPTION|INVALID_SITE_FILE_TYPE_EXCEPTION|INVALID_SOURCE_OBJECT_ID|INVALID_STATUS|INVALID_SUBDOMAIN|INVALID_TARGET_OBJECT_NAME|INVALID_TEXT_REPRESENTATION|INVALID_TYPE|INVALID_TYPE_FOR_OPERATION|INVALID_TYPE_ON_FIELD_IN_RECORD|INVALID_UNMERGE_RECORD|INVALID_USERID|INVALID_USER_OBJECT|IP_RANGE_LIMIT_EXCEEDED|ITEM_NOT_FOUND|JIGSAW_IMPORT_LIMIT_EXCEEDED|LICENSE_LIMIT_EXCEEDED|LIGHT_PORTAL_USER_EXCEPTION|LIMIT_EXCEEDED|LIST_PRICE_NOT_FOUND|MALFORMED_ID|MANAGER_NOT_DEFINED|MASSMAIL_RETRY_LIMIT_EXCEEDED|MASS_MAIL_LIMIT_EXCEEDED|MATCH_DEFINITION_ERROR|MATCH_OPERATION_ERROR|MATCH_OPERATION_INVALID_ENGINE_ERROR|MATCH_OPERATION_INVALID_RULE_ERROR|MATCH_OPERATION_MISSING_ENGINE_ERROR|MATCH_OPERATION_MISSING_OBJECT_TYPE_ERROR|MATCH_OPERATION_MISSING_OPTIONS_ERROR|MATCH_OPERATION_MISSING_RULE_ERROR|MATCH_OPERATION_UNKNOWN_RULE_ERROR|MATCH_OPERATION_UNSUPPORTED_VERSION_ERROR|MATCH_PRECONDITION_FAILED|MATCH_PRECONDITION_REQUIRED|MATCH_RUNTIME_ERROR|MATCH_SERVICE_ERROR|MATCH_SERVICE_TIMED_OUT|MATCH_SERVICE_UNAVAILABLE_ERROR|MAXIMUM_CCEMAILS_EXCEEDED|MAXIMUM_DASHBOARD_COMPONENTS_EXCEEDED|MAXIMUM_HIERARCHY_CHILDREN_REACHED|MAXIMUM_HIERARCHY_LEVELS_REACHED|MAXIMUM_HIERARCHY_TREE_SIZE_REACHED|MAXIMUM_SIZE_OF_ATTACHMENT|MAXIMUM_SIZE_OF_DOCUMENT|MAX_ACTIONS_PER_RULE_EXCEEDED|MAX_ACTIVE_RULES_EXCEEDED|MAX_APPROVAL_STEPS_EXCEEDED|MAX_DEPTH_IN_FLOW_EXECUTION|MAX_FORMULAS_PER_RULE_EXCEEDED|MAX_LIMIT_EXCEEDED|MAX_RULES_EXCEEDED|MAX_RULE_ENTRIES_EXCEEDED|MAX_TASK_DESCRIPTION_EXCEEEDED|MAX_TM_RULES_EXCEEDED|MAX_TM_RULE_ITEMS_EXCEEDED|MAX_TRIGGERS_EXCEEDED|MERGE_FAILED|METADATA_FIELD_UPDATE_ERROR|METHOD_NOT_ALLOWED|MISMATCHING_TYPES|MISSING_ARGUMENT|MISSING_OMNI_PROCESS_ID|MISSING_RECEIVEDDOCUMENTID_ATTACHMENT|MISSING_RECORD|MIXED_DML_OPERATION|MULTIPLE_CONTENT_FOUND|MULTIPLE_VOUCHERS|NONUNIQUE_SHIPPING_ADDRESS|NOT_FOUND|NOT_RECOVERABLE_SEARCH_PROVIDER_ERROR|NO_ACCESS_TOKEN|NO_ACCESS_TOKEN_FROM_REFRESH|NO_APPLICABLE_PROCESS|NO_ATTACHMENT_PERMISSION|NO_AUTH_PROVIDER|NO_BUSINESS_HOURS_FOUND|NO_INACTIVE_DIVISION_MEMBERS|NO_MASS_MAIL_PERMISSION|NO_PARTNER_PERMISSION|NO_REFRESH_TOKEN|NO_SEARCH_ATTRIBUTES|NO_SINGLE_MAIL_PERMISSION|NO_SORT_PRICEBOOK_ASSOCIATED_ERROR|NO_SUCH_USER_EXISTS|NO_TOKEN_ENDPOINT|NUMBER_OUTSIDE_VALID_RANGE|NUM_HISTORY_FIELDS_BY_SOBJECT_EXCEEDED|OCR_INVALID_REQUEST|OPERATION_ENQUEUED|OPTED_OUT_OF_MASS_MAIL|OP_WITH_INVALID_USER_TYPE_EXCEPTION|ORCHESTRATION_INVALID|ORDER_MANAGEMENT_ACTION_NOT_ALLOWED|ORDER_MANAGEMENT_INVALID_RECORD|ORDER_MANAGEMENT_RECORD_EXISTS|ORDER_MANAGEMENT_RECORD_NOT_FOUND|PACKAGE_DISABLED|PACKAGE_LICENSE_REQUIRED|PACKAGING_API_INSTALL_FAILED|PACKAGING_API_UNINSTALL_FAILED|PALI_INVALID_ACTION_ID|PALI_INVALID_ACTION_NAME|PALI_INVALID_ACTION_TYPE|PAL_INVALID_ASSISTANT_RECOMMENDATION_TYPE_ID|PAL_INVALID_ENTITY_ID|PAL_INVALID_FLEXIPAGE_ID|PAL_INVALID_LAYOUT_ID|PAL_INVALID_PARAMETERS|PARAMETER_TOO_LARGE|PARTICIPANT_RELATIONSHIP_EXISTS|PAYLOAD_SIZE_EXCEEDED|PA_API_EXCEPTION|PA_AXIS_FAULT|PA_INVALID_ID_EXCEPTION|PA_NO_ACCESS_EXCEPTION|PA_NO_DATA_FOUND_EXCEPTION|PA_URI_SYNTAX_EXCEPTION|PA_VISIBLE_ACTIONS_FILTER_ORDERING_EXCEPTION|PENDING_COMMIT|PICKLIST_INACTIVE_VALUES_EXCEEDED|PLATFORM_EVENT_ENCRYPTION_ERROR|PLATFORM_EVENT_PUBLISHING_UNAVAILABLE|PLATFORM_EVENT_PUBLISH_FAILED|PORTAL_NO_ACCESS|PORTAL_USER_ALREADY_EXISTS_FOR_CONTACT|PORTAL_USER_CREATION_RESTRICTED_WITH_ENCRYPTION|PRICE_NOT_FOUND|PRIVATE_CONTACT_ON_ASSET|PROCESSING_HALTED|PROGRAM_PROGRESS_NOT_ACTIVE|QA_INVALID_CREATE_FEED_ITEM|QA_INVALID_SUCCESS_MESSAGE|QUERY_REFINEMENT_VALUE_LIMIT_EXCEEDED|QUERY_TIMEOUT|QUICK_ACTION_LIST_ITEM_NOT_ALLOWED|QUICK_ACTION_LIST_NOT_ALLOWED|RECORD_CREATION_FAILED|RECORD_IN_USE_BY_WORKFLOW|RECORD_UPDATE_FAILED|RECOVERABLE_SEARCH_PROVIDER_ERROR|RELATED_ENTITY_FILTER_VALIDATION_EXCEPTION|REL_FIELD_BAD_ACCESSIBILITY|REPUTATION_MINIMUM_NUMBER_NOT_REACHED|REQUEST_RUNNING_TOO_LONG|REQUIRED_FEATURE_MISSING|REQUIRED_FIELD_MISSING|REQUIRE_CONNECTED_APP_SCS|REQUIRE_CONNECTED_APP_SESSION_SCS|REQUIRE_RUNAS_USER|RETRIEVE_EXCHANGE_ATTACHMENT_FAILED|RETRIEVE_EXCHANGE_EMAIL_FAILED|RETRIEVE_EXCHANGE_EVENT_FAILED|RETRIEVE_GOOGLE_EMAIL_FAILED|RETRIEVE_GOOGLE_EVENT_FAILED|RETRIEVE_USER_CONFIG_ERROR|ROUTES_EVALUATION_LIMIT_EXCEEDED|SALESFORCE_INBOX_TRANSPORT_CONNECTION_ERROR|SALESFORCE_INBOX_TRANSPORT_INVALID_INPUT_ERROR|SALESFORCE_INBOX_TRANSPORT_TOKEN_ERROR|SALESFORCE_INBOX_TRANSPORT_UNKNOWN_ERROR|SCHEMA_OBJECT_NOT_FOUND|SCREEN_POP_REQUIRED_INPUT_MISSING|SEARCH_PROVIDER_REQUEST_RATE_EXCEEDED|SEGMENT_COUNT_LIMIT_EXCEEDED|SELF_REFERENCE_FROM_FLOW|SELF_REFERENCE_FROM_TRIGGER|SERVICE_UNAVAILABLE|SESSION_EXPIRED|SESSION_INVALIDATED|SHARE_NEEDED_FOR_CHILD_OWNER|SINGLE_EMAIL_LIMIT_EXCEEDED|SLACK_API_ERROR|SOCIAL_ACCOUNT_NOT_FOUND|SOCIAL_ACTION_INVALID|SOCIAL_PERSONA_NOT_FOUND|SOCIAL_POST_INVALID|SOCIAL_POST_NOT_FOUND|SPECIFICATION_GENERATION_EXCEPTION|STANDARD_PRICE_NOT_DEFINED|STORAGE_LIMIT_EXCEEDED|STRING_TOO_LONG|SUBDOMAIN_IN_USE|TABSET_LIMIT_EXCEEDED|TEMPLATE_NOT_ACTIVE|TEMPLATE_NOT_FOUND|TERMS_OF_SERVICE_UNREAD|TERRITORY_REALIGN_IN_PROGRESS|TEXT_DATA_OUTSIDE_SUPPORTED_CHARSET|TEXT_TO_PICKLIST_VALUES_EXCEEDED|TOO_MANY_APEX_REQUESTS|TOO_MANY_ENUM_VALUE|TOO_MANY_JOBS|TOO_MANY_POSSIBLE_USERS_EXIST|TRANSFER_REQUIRES_READ|TXN_SECURITY_NO_ACCESS|UISF_ENTITY_QUERY_FAILED|UISF_NO_MAPPINGS_FOUND|UISF_TOKEN_NOT_FOUND|UISF_UNKNOWN_EXCEPTION|UISF_USER_MAPPING_FAILED|UNABLE_TO_LOCK_ROW|UNAUTHORIZED_SEARCH_PROVIDER_REQUEST|UNAVAILABLE_RECORDTYPE_EXCEPTION|UNAVAILABLE_REF|UNDEFINED_MAPPING_DEFINITION|UNDELETE_FAILED|UNKNOWN_EXCEPTION|UNKNOWN_TOKEN_ERROR|UNPROCESSABLE_REQUEST|UNQUALIFIED_CART|UNSAFE_HTML_CONTENT|UNSPECIFIED_EMAIL_ADDRESS|UNSUPPORTED_APEX_TRIGGER_OPERATON|UNSUPPORTED_MODE|UNSUPPORTED_PAYMENT_GATEWAY_TYPE|UNSUPPORTED_PAYMENT_REQUEST_TYPE|UNSUPPORTED_SITE|UNSUPPORTED_SITE_FILE_IMPORTED_EXCEPTION|UNSUPPORTED_SOCIAL_PROVIDER|UNVERIFIED_SENDER_ADDRESS|UPDATE_GOOGLE_EMAIL_LABEL_FAILED|USER_OWNS_PORTAL_ACCOUNT_EXCEPTION|USER_WITHOUT_WEM_PERMISSION|USER_WITH_APEX_SHARES_EXCEPTION|VARIANT_NOT_FOUND|VF_COMPILE_ERROR|WEBLINK_SIZE_LIMIT_EXCEEDED|WEBLINK_URL_INVALID|WEM_SEGMENTS_CAN_NOT_HAVE_NON_ACTIVE_SEGMENT_TYPE|WEM_SHIFT_SEGMENT_TIME_IS_OUTSIDE_OF_THE_SHIFT_DURATION|WEM_USER_NOT_ORG_ADMIN|WORKSPACE_NOT_FOUND|WRONG_CONTROLLER_TYPE|XCLEAN_DJ_MATCH_IGNORABLE_ERROR|XCLEAN_DJ_MATCH_INTERNAL_DJ_ERROR|XCLEAN_DJ_MATCH_NON_RETRIABLE_ERROR|XCLEAN_DJ_MATCH_RETRIABLE_ERROR|XCLEAN_DJ_MATCH_UNKNOWN_ERROR|XCLEAN_UNEXPECTED_ERROR",
+      "floorExpected": "ALERT_NOTIFICATION_LIMIT_EXCEEDED|ALL_OR_NONE_OPERATION_ROLLED_BACK|ALREADY_APPLIED|ALREADY_IN_PROCESS|ALREADY_REDEEMED_VOUCHER|APEX_DATA_ACCESS_RESTRICTION|APEX_FAILED|APPLICATION_ALREADY_EXISTS|ASSIGNEE_TYPE_REQUIRED|ATTRIBUTE_DEFINITION_LIMIT_EXCEEDED|AURA_COMPILE_ERROR|AUTH_PROVIDER_NEEDS_AUTH|AUTH_PROVIDER_NOT_FOUND|B2B_SEARCH_ADMIN_ERROR|BAD_CUSTOM_ENTITY_PARENT_DOMAIN|BCC_NOT_ALLOWED_IF_BCC_COMPLIANCE_ENABLED|BLOCKED_EXCLUSIVE|CANNOT_CASCADE_PRODUCT_ACTIVE|CANNOT_CHANGE_FIELD_TYPE_OF_APEX_REFERENCED_FIELD|CANNOT_CHANGE_FIELD_TYPE_OF_REFERENCED_FIELD|CANNOT_CREATE_ANOTHER_MANAGED_PACKAGE|CANNOT_DEACTIVATE_DIVISION|CANNOT_DELETE_GLOBAL_ACTION_LIST|CANNOT_DELETE_LAST_DATED_CONVERSION_RATE|CANNOT_DELETE_MANAGED_OBJECT|CANNOT_DISABLE_LAST_ADMIN|CANNOT_ENABLE_IP_RESTRICT_REQUESTS|CANNOT_EXECUTE_FLOW_TRIGGER|CANNOT_FREEZE_SELF|CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|CANNOT_MODIFY_MANAGED_OBJECT|CANNOT_PASSWORD_LOCKOUT|CANNOT_POST_TO_ARCHIVED_GROUP|CANNOT_RENAME_APEX_REFERENCED_FIELD|CANNOT_RENAME_APEX_REFERENCED_OBJECT|CANNOT_RENAME_REFERENCED_FIELD|CANNOT_RENAME_REFERENCED_OBJECT|CANNOT_REPARENT_RECORD|CANNOT_UPDATE_CONVERTED_LEAD|CANNOT_UPDATE_IS_THIRD_PARTY|CANNOT_UPDATE_PAYMENT_METHOD_SET|CANT_DISABLE_CORP_CURRENCY|CANT_UNSET_CORP_CURRENCY|CART_ITEM_NOT_FOUND|CART_NOT_FOUND|CHECKOUT_CONFLICT|CHECKOUT_EXPIRED|CHECKOUT_INVALIDATED|CHECKOUT_LOCKED|CHECKOUT_NOT_FOUND|CHECKOUT_UNAUTHORIZED|CHILD_SHARE_FAILS_PARENT|CIRCULAR_DEPENDENCY|CLEAN_SERVICE_ERROR|CLONE_FIELD_INTEGRITY_EXCEPTION|CLONE_NOT_SUPPORTED|CMS_FOLDER_ITEM_MOVE_FAILED|COLLISION_DETECTED|COMMERCE_SEARCH_INDEXING_SYSTEM_ERROR|COMMERCE_SEARCH_MQ_ERROR|COMMERCE_SEARCH_PROVIDER_LIMIT_EXCEEDED|COMMERCE_SEARCH_RESOURCE_NOT_FOUND|COMMERCIAL_CONTROL_ERROR|COMMUNITY_NOT_ACCESSIBLE|CONFLICT|CONFLICTING_ENVIRONMENT_HUB_MEMBER|CONFLICTING_SSO_USER_MAPPING|CONTENT_NOT_FOUND|CONTENT_SEARCH_NOT_ENABLED|CONTENT_TYPE_DISABLED_FOR_API|CONTENT_TYPE_NOT_FOUND|COUPON_REDEMPTION_LIMIT_EXCEEDED|CUSTOM_APEX_ERROR|CUSTOM_CLOB_FIELD_LIMIT_EXCEEDED|CUSTOM_ENTITY_OR_FIELD_LIMIT|CUSTOM_FIELD_INDEX_LIMIT_EXCEEDED|CUSTOM_INDEX_EXISTS|CUSTOM_LINK_LIMIT_EXCEEDED|CUSTOM_METADATA_LIMIT_EXCEEDED|CUSTOM_METADATA_REL_FIELD_MANAGEABILITY|CUSTOM_SETTINGS_LIMIT_EXCEEDED|CUSTOM_TAB_LIMIT_EXCEEDED|DATAASSESSMENT_CONFIG_ASSESSMENT_IN_PROGRESS_ERROR|DATAASSESSMENT_CONFIG_SERVICE_ERROR|DATACLOUDADDRESS_NO_RECORDS_FOUND|DATACLOUDADDRESS_PROCESSING_ERROR|DATACLOUDADDRESS_SERVER_ERROR|DATA_MAPPING_NOT_FOUND|DATA_MAPPING_SCHEMA_NOT_FOUND|DATA_TRANSFER_RECORD_LIMIT_EXCEEDED|DATA_TYPE_NOT_SUPPORTED|DATE_OUT_OF_RANGE|DELETE_FAILED|DELETE_NOT_ALLOWED|DELETE_OPERATION_TOO_LARGE|DELETE_REQUIRED_ON_CASCADE|DEPENDENCY_EXISTS|DUPLICATES_DETECTED|DUPLICATE_CASE_SOLUTION|DUPLICATE_COMM_NICKNAME|DUPLICATE_CUSTOM_ENTITY_DEFINITION|DUPLICATE_CUSTOM_TAB_MOTIF|DUPLICATE_DEVELOPER_NAME|DUPLICATE_EXTERNAL_ID|DUPLICATE_MASTER_LABEL|DUPLICATE_SENDER_DISPLAY_NAME|DUPLICATE_USERNAME|DUPLICATE_VALUE|EMAIL_ADDRESS_BOUNCED|EMAIL_EXTERNAL_TRANSPORT_CONNECTION_ERROR|EMAIL_EXTERNAL_TRANSPORT_PERMISSION_ERROR|EMAIL_EXTERNAL_TRANSPORT_TOKEN_ERROR|EMAIL_EXTERNAL_TRANSPORT_TOO_LARGE_ERROR|EMAIL_EXTERNAL_TRANSPORT_TOO_MANY_REQUESTS_ERROR|EMAIL_EXTERNAL_TRANSPORT_UNKNOWN_ERROR|EMAIL_NOT_PROCESSED_DUE_TO_PRIOR_ERROR|EMAIL_OPTED_OUT|EMAIL_TEMPLATE_FORMULA_ERROR|EMAIL_TEMPLATE_MERGEFIELD_ACCESS_ERROR|EMAIL_TEMPLATE_MERGEFIELD_ERROR|EMAIL_TEMPLATE_MERGEFIELD_VALUE_ERROR|EMAIL_TEMPLATE_PROCESSING_ERROR|EMPTY_CATALOG|EMPTY_INGESTION_JOB|EMPTY_SCONTROL_FILE_NAME|ENHANCED_EMAIL_TEMPLATE_COMPILATION_ERROR|ENTITY_FAILED_IFLASTMODIFIED_ON_UPDATE|ENTITY_IS_ARCHIVED|ENTITY_IS_DELETED|ENTITY_IS_LOCKED|ENTITY_SAVE_ERROR|ENTITY_SAVE_VALIDATION_ERROR|ENVIRONMENT_HUB_MEMBERSHIP_CONFLICT|ENVIRONMENT_HUB_MEMBERSHIP_ERROR_JOINING_HUB|ENVIRONMENT_HUB_MEMBERSHIP_USER_ALREADY_IN_HUB|ENVIRONMENT_HUB_MEMBERSHIP_USER_NOT_ORG_ADMIN|ERROR_CALCULATING_EXPIRY_DATE|ERROR_IN_MAILER|EXCEEDED_MAX_SEMIJOIN_SUBSELECTS_WRITE|EXCHANGE_WEB_SERVICES_URL_INVALID|EXTERNAL_RESOURCE_FORBIDDEN|FAILED_ACTIVATION|FAILED_DUE_TO_OTHER_INPUTS|FAILED_TO_RESOLVE_MAPPING|FAILED_TO_RESOLVE_SCHEMA_INFORMATION|FIELD_CUSTOM_VALIDATION_EXCEPTION|FIELD_FILTER_VALIDATION_EXCEPTION|FIELD_INTEGRITY_EXCEPTION|FIELD_KEYWORD_LIST_MATCH_LIMIT|FIELD_MAPPING_ERROR|FIELD_MODERATION_RULE_BLOCK|FIELD_NOT_UPDATABLE|FILE_EXTENSION_NOT_ALLOWED|FILE_SIZE_LIMIT_EXCEEDED|FILTERED_LOOKUP_LIMIT_EXCEEDED|FIND_DUPLICATES_ERROR|FLOW_EXCEPTION|FUNCTIONALITY_NOT_ENABLED|GET_EINSTEIN_TENANT_ERROR|GUEST_INSUFFICIENT_ACCESS|HAS_PUBLIC_REFERENCES|HTML_FILE_UPLOAD_NOT_ALLOWED|IAS_AM_AUTH_BAD_REQUEST|IAS_AM_AUTH_UNAUTHORIZED|IAS_INVALID_AUTH|IAS_INVALID_REQUEST_PARAMETER|IAS_RECORD_DOES_NOT_EXIST|IAS_TENANT_NOT_PROVISIONED|IAS_UNCOMMITTED_WORK|IMAGE_TOO_LARGE|INACTIVE_OWNER_OR_USER|INACTIVE_RULE_ERROR|INDEX_ITEM_LIMIT_EXCEEDED|INDEX_PAYLOAD_NOT_FOUND|INGESTION_JOB_RECORDS_LIMIT_EXCEEDED|INGESTION_TOTAL_FILE_SIZE_LIMIT_EXCEEDED|INPUTPARAM_INCOMPATIBLE_DATATYPE|INSERT_UPDATE_DELETE_NOT_ALLOWED_DURING_MAINTENANCE|INSUFFICIENT_ACCESS|INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY|INSUFFICIENT_ACCESS_OR_READONLY|INSUFFICIENT_ACCESS_TO_INSIGHTSEXTERNALDATA|INSUFFICIENT_BALANCE|INSUFFICIENT_BENEFIT_REMAINING|INSUFFICIENT_CREDITS|INTEGRATION_CANCELLED|INTERNAL_ERROR|INVALID_ACCESS_LEVEL|INVALID_ACCESS_TOKEN|INVALID_ACCOUNT|INVALID_ACTION_VERSION|INVALID_API_INPUT|INVALID_ARGUMENT_TYPE|INVALID_ASSIGNEE_TYPE|INVALID_ASSIGNMENT_RULE|INVALID_AUTH_HEADER|INVALID_BATCH_OPERATION|INVALID_BUSINESS_HOURS_NAME|INVALID_CHECKOUT_INPUT|INVALID_CONTACT|INVALID_CONTENT_TYPE|INVALID_CREDIT_CARD_INFO|INVALID_CROSS_REFERENCE_KEY|INVALID_CROSS_REFERENCE_TYPE_FOR_FIELD|INVALID_CURRENCY_CONV_RATE|INVALID_CURRENCY_CORP_RATE|INVALID_CURRENCY_ISO|INVALID_DATASET_REFERENCE_INPUT|INVALID_DATA_CATEGORY_GROUP_REFERENCE|INVALID_DATA_URI|INVALID_EBV_OPERATION|INVALID_EMAIL_ADDRESS|INVALID_EMPTY_KEY_OWNER|INVALID_ENTITY_FOR_MATCH_ENGINE_ERROR|INVALID_ENTITY_FOR_MATCH_OPERATION_ERROR|INVALID_ENTITY_FOR_UPSERT|INVALID_ENVIRONMENT_HUB_MEMBER|INVALID_EVENT_DELIVERY|INVALID_EVENT_INPUT|INVALID_EVENT_SUBSCRIPTION|INVALID_EXTENSION_ID|INVALID_EXTERNAL_ID_FIELD_NAME|INVALID_FIELD|INVALID_FIELD_FOR_INSERT_UPDATE|INVALID_FIELD_WHEN_USING_TEMPLATE|INVALID_FILTER_ACTION|INVALID_GOOGLE_DOCS_URL|INVALID_ID_FIELD|INVALID_INET_ADDRESS|INVALID_INPUT|INVALID_INPUT_FORMAT|INVALID_KEY_FIELD_INPUT|INVALID_LINEITEM_CLONE_STATE|INVALID_MARKUP|INVALID_MASTER_OR_TRANSLATED_SOLUTION|INVALID_MERCHANT_ACCOUNT_MODE|INVALID_MERCHANT_ACCOUNT_MODE_OR_STATUS|INVALID_MERGE_RECORD|INVALID_MESSAGE_ID_REFERENCE|INVALID_NAMESPACE_PREFIX|INVALID_OAUTH_URL|INVALID_OPERATION|INVALID_OPERATOR|INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST|INVALID_OWNER|INVALID_PACKAGE_LICENSE|INVALID_PACKAGE_VERSION|INVALID_PARTNER_NETWORK_STATUS|INVALID_PAYLOAD_VERSION|INVALID_PERSON_ACCOUNT_OPERATION|INVALID_PROFILE|INVALID_PROMOTION|INVALID_PROVIDER_TYPE|INVALID_QUERY_KEY|INVALID_QUERY_LOCATOR|INVALID_QUERY_VALUE|INVALID_READ_ONLY_USER_DML|INVALID_RECEIVEDDOCUMENTID_ATTACHMENT|INVALID_RECORD_ATTRIBUTE_VALUE|INVALID_RECORD_TYPE|INVALID_REFRESH_TOKEN|INVALID_REQUEST_STATE|INVALID_RUNTIME_VALUE|INVALID_SAVE_AS_ACTIVITY_FLAG|INVALID_SCS_INBOUND_USER|INVALID_SEARCH_PROVIDER_REQUEST|INVALID_SESSION_ID|INVALID_SETUP_OWNER|INVALID_SIGNUP_COUNTRY|INVALID_SIGNUP_OPTION|INVALID_SITE_DELETE_EXCEPTION|INVALID_SITE_FILE_IMPORTED_EXCEPTION|INVALID_SITE_FILE_TYPE_EXCEPTION|INVALID_SOURCE_OBJECT_ID|INVALID_STATUS|INVALID_SUBDOMAIN|INVALID_TARGET_OBJECT_NAME|INVALID_TEXT_REPRESENTATION|INVALID_TYPE|INVALID_TYPE_FOR_OPERATION|INVALID_TYPE_ON_FIELD_IN_RECORD|INVALID_UNMERGE_RECORD|INVALID_USERID|INVALID_USER_OBJECT|IP_RANGE_LIMIT_EXCEEDED|ITEM_NOT_FOUND|JIGSAW_IMPORT_LIMIT_EXCEEDED|LICENSE_LIMIT_EXCEEDED|LIGHT_PORTAL_USER_EXCEPTION|LIMIT_EXCEEDED|LIST_PRICE_NOT_FOUND|MALFORMED_ID|MANAGER_NOT_DEFINED|MASSMAIL_RETRY_LIMIT_EXCEEDED|MASS_MAIL_LIMIT_EXCEEDED|MATCH_DEFINITION_ERROR|MATCH_OPERATION_ERROR|MATCH_OPERATION_INVALID_ENGINE_ERROR|MATCH_OPERATION_INVALID_RULE_ERROR|MATCH_OPERATION_MISSING_ENGINE_ERROR|MATCH_OPERATION_MISSING_OBJECT_TYPE_ERROR|MATCH_OPERATION_MISSING_OPTIONS_ERROR|MATCH_OPERATION_MISSING_RULE_ERROR|MATCH_OPERATION_UNKNOWN_RULE_ERROR|MATCH_OPERATION_UNSUPPORTED_VERSION_ERROR|MATCH_PRECONDITION_FAILED|MATCH_PRECONDITION_REQUIRED|MATCH_RUNTIME_ERROR|MATCH_SERVICE_ERROR|MATCH_SERVICE_TIMED_OUT|MATCH_SERVICE_UNAVAILABLE_ERROR|MAXIMUM_CCEMAILS_EXCEEDED|MAXIMUM_DASHBOARD_COMPONENTS_EXCEEDED|MAXIMUM_HIERARCHY_CHILDREN_REACHED|MAXIMUM_HIERARCHY_LEVELS_REACHED|MAXIMUM_HIERARCHY_TREE_SIZE_REACHED|MAXIMUM_SIZE_OF_ATTACHMENT|MAXIMUM_SIZE_OF_DOCUMENT|MAX_ACTIONS_PER_RULE_EXCEEDED|MAX_ACTIVE_RULES_EXCEEDED|MAX_APPROVAL_STEPS_EXCEEDED|MAX_DEPTH_IN_FLOW_EXECUTION|MAX_FORMULAS_PER_RULE_EXCEEDED|MAX_LIMIT_EXCEEDED|MAX_RULES_EXCEEDED|MAX_RULE_ENTRIES_EXCEEDED|MAX_TASK_DESCRIPTION_EXCEEEDED|MAX_TM_RULES_EXCEEDED|MAX_TM_RULE_ITEMS_EXCEEDED|MAX_TRIGGERS_EXCEEDED|MERGE_FAILED|METADATA_FIELD_UPDATE_ERROR|METHOD_NOT_ALLOWED|MISMATCHING_TYPES|MISSING_ARGUMENT|MISSING_OMNI_PROCESS_ID|MISSING_RECEIVEDDOCUMENTID_ATTACHMENT|MISSING_RECORD|MIXED_DML_OPERATION|MULTIPLE_CONTENT_FOUND|MULTIPLE_VOUCHERS|NONUNIQUE_SHIPPING_ADDRESS|NOT_FOUND|NOT_RECOVERABLE_SEARCH_PROVIDER_ERROR|NO_ACCESS_TOKEN|NO_ACCESS_TOKEN_FROM_REFRESH|NO_APPLICABLE_PROCESS|NO_ATTACHMENT_PERMISSION|NO_AUTH_PROVIDER|NO_BUSINESS_HOURS_FOUND|NO_INACTIVE_DIVISION_MEMBERS|NO_MASS_MAIL_PERMISSION|NO_PARTNER_PERMISSION|NO_REFRESH_TOKEN|NO_SEARCH_ATTRIBUTES|NO_SINGLE_MAIL_PERMISSION|NO_SORT_PRICEBOOK_ASSOCIATED_ERROR|NO_SUCH_USER_EXISTS|NO_TOKEN_ENDPOINT|NUMBER_OUTSIDE_VALID_RANGE|NUM_HISTORY_FIELDS_BY_SOBJECT_EXCEEDED|OCR_INVALID_REQUEST|OPERATION_ENQUEUED|OPTED_OUT_OF_MASS_MAIL|OP_WITH_INVALID_USER_TYPE_EXCEPTION|ORCHESTRATION_INVALID|ORDER_MANAGEMENT_ACTION_NOT_ALLOWED|ORDER_MANAGEMENT_INVALID_RECORD|ORDER_MANAGEMENT_RECORD_EXISTS|ORDER_MANAGEMENT_RECORD_NOT_FOUND|PACKAGE_DISABLED|PACKAGE_LICENSE_REQUIRED|PACKAGING_API_INSTALL_FAILED|PACKAGING_API_UNINSTALL_FAILED|PALI_INVALID_ACTION_ID|PALI_INVALID_ACTION_NAME|PALI_INVALID_ACTION_TYPE|PAL_INVALID_ASSISTANT_RECOMMENDATION_TYPE_ID|PAL_INVALID_ENTITY_ID|PAL_INVALID_FLEXIPAGE_ID|PAL_INVALID_LAYOUT_ID|PAL_INVALID_PARAMETERS|PARAMETER_TOO_LARGE|PARTICIPANT_RELATIONSHIP_EXISTS|PAYLOAD_SIZE_EXCEEDED|PA_API_EXCEPTION|PA_AXIS_FAULT|PA_INVALID_ID_EXCEPTION|PA_NO_ACCESS_EXCEPTION|PA_NO_DATA_FOUND_EXCEPTION|PA_URI_SYNTAX_EXCEPTION|PA_VISIBLE_ACTIONS_FILTER_ORDERING_EXCEPTION|PENDING_COMMIT|PICKLIST_INACTIVE_VALUES_EXCEEDED|PLATFORM_EVENT_ENCRYPTION_ERROR|PLATFORM_EVENT_PUBLISHING_UNAVAILABLE|PLATFORM_EVENT_PUBLISH_FAILED|PORTAL_NO_ACCESS|PORTAL_USER_ALREADY_EXISTS_FOR_CONTACT|PORTAL_USER_CREATION_RESTRICTED_WITH_ENCRYPTION|PRICE_NOT_FOUND|PRIVATE_CONTACT_ON_ASSET|PROCESSING_HALTED|PROGRAM_PROGRESS_NOT_ACTIVE|QA_INVALID_CREATE_FEED_ITEM|QA_INVALID_SUCCESS_MESSAGE|QUERY_REFINEMENT_VALUE_LIMIT_EXCEEDED|QUERY_TIMEOUT|QUICK_ACTION_LIST_ITEM_NOT_ALLOWED|QUICK_ACTION_LIST_NOT_ALLOWED|RECORD_CREATION_FAILED|RECORD_IN_USE_BY_WORKFLOW|RECORD_UPDATE_FAILED|RECOVERABLE_SEARCH_PROVIDER_ERROR|RELATED_ENTITY_FILTER_VALIDATION_EXCEPTION|REL_FIELD_BAD_ACCESSIBILITY|REPUTATION_MINIMUM_NUMBER_NOT_REACHED|REQUEST_RUNNING_TOO_LONG|REQUIRED_FEATURE_MISSING|REQUIRED_FIELD_MISSING|REQUIRE_CONNECTED_APP_SCS|REQUIRE_CONNECTED_APP_SESSION_SCS|REQUIRE_RUNAS_USER|RETRIEVE_EXCHANGE_ATTACHMENT_FAILED|RETRIEVE_EXCHANGE_EMAIL_FAILED|RETRIEVE_EXCHANGE_EVENT_FAILED|RETRIEVE_GOOGLE_EMAIL_FAILED|RETRIEVE_GOOGLE_EVENT_FAILED|RETRIEVE_USER_CONFIG_ERROR|ROUTES_EVALUATION_LIMIT_EXCEEDED|SALESFORCE_INBOX_TRANSPORT_CONNECTION_ERROR|SALESFORCE_INBOX_TRANSPORT_INVALID_INPUT_ERROR|SALESFORCE_INBOX_TRANSPORT_TOKEN_ERROR|SALESFORCE_INBOX_TRANSPORT_UNKNOWN_ERROR|SCHEMA_OBJECT_NOT_FOUND|SCREEN_POP_REQUIRED_INPUT_MISSING|SEARCH_PROVIDER_REQUEST_RATE_EXCEEDED|SEGMENT_COUNT_LIMIT_EXCEEDED|SELF_REFERENCE_FROM_FLOW|SELF_REFERENCE_FROM_TRIGGER|SERVICE_UNAVAILABLE|SESSION_EXPIRED|SESSION_INVALIDATED|SHARE_NEEDED_FOR_CHILD_OWNER|SINGLE_EMAIL_LIMIT_EXCEEDED|SLACK_API_ERROR|SOCIAL_ACCOUNT_NOT_FOUND|SOCIAL_ACTION_INVALID|SOCIAL_PERSONA_NOT_FOUND|SOCIAL_POST_INVALID|SOCIAL_POST_NOT_FOUND|SPECIFICATION_GENERATION_EXCEPTION|STANDARD_PRICE_NOT_DEFINED|STORAGE_LIMIT_EXCEEDED|STRING_TOO_LONG|SUBDOMAIN_IN_USE|TABSET_LIMIT_EXCEEDED|TEMPLATE_NOT_ACTIVE|TEMPLATE_NOT_FOUND|TERMS_OF_SERVICE_UNREAD|TERRITORY_REALIGN_IN_PROGRESS|TEXT_DATA_OUTSIDE_SUPPORTED_CHARSET|TEXT_TO_PICKLIST_VALUES_EXCEEDED|TOO_MANY_APEX_REQUESTS|TOO_MANY_ENUM_VALUE|TOO_MANY_JOBS|TOO_MANY_POSSIBLE_USERS_EXIST|TRANSFER_REQUIRES_READ|TXN_SECURITY_NO_ACCESS|UISF_ENTITY_QUERY_FAILED|UISF_NO_MAPPINGS_FOUND|UISF_TOKEN_NOT_FOUND|UISF_UNKNOWN_EXCEPTION|UISF_USER_MAPPING_FAILED|UNABLE_TO_LOCK_ROW|UNAUTHORIZED_SEARCH_PROVIDER_REQUEST|UNAVAILABLE_RECORDTYPE_EXCEPTION|UNAVAILABLE_REF|UNDEFINED_MAPPING_DEFINITION|UNDELETE_FAILED|UNKNOWN_EXCEPTION|UNKNOWN_TOKEN_ERROR|UNPROCESSABLE_REQUEST|UNQUALIFIED_CART|UNSAFE_HTML_CONTENT|UNSPECIFIED_EMAIL_ADDRESS|UNSUPPORTED_APEX_TRIGGER_OPERATON|UNSUPPORTED_MODE|UNSUPPORTED_PAYMENT_GATEWAY_TYPE|UNSUPPORTED_PAYMENT_REQUEST_TYPE|UNSUPPORTED_SITE|UNSUPPORTED_SITE_FILE_IMPORTED_EXCEPTION|UNSUPPORTED_SOCIAL_PROVIDER|UNVERIFIED_SENDER_ADDRESS|UPDATE_GOOGLE_EMAIL_LABEL_FAILED|USER_OWNS_PORTAL_ACCOUNT_EXCEPTION|USER_WITHOUT_WEM_PERMISSION|USER_WITH_APEX_SHARES_EXCEPTION|VARIANT_NOT_FOUND|VF_COMPILE_ERROR|WEBLINK_SIZE_LIMIT_EXCEEDED|WEBLINK_URL_INVALID|WEM_SEGMENTS_CAN_NOT_HAVE_NON_ACTIVE_SEGMENT_TYPE|WEM_SHIFT_SEGMENT_TIME_IS_OUTSIDE_OF_THE_SHIFT_DURATION|WEM_USER_NOT_ORG_ADMIN|WORKSPACE_NOT_FOUND|WRONG_CONTROLLER_TYPE|XCLEAN_DJ_MATCH_IGNORABLE_ERROR|XCLEAN_DJ_MATCH_INTERNAL_DJ_ERROR|XCLEAN_DJ_MATCH_NON_RETRIABLE_ERROR|XCLEAN_DJ_MATCH_RETRIABLE_ERROR|XCLEAN_DJ_MATCH_UNKNOWN_ERROR|XCLEAN_UNEXPECTED_ERROR",
+      "nativeNull": false
+    },
+    {
+      "id": "R180",
+      "group": "enums-conversion",
+      "code": "Metadata.StatusCode x=Metadata.StatusCode.valueOf('APEX_FAILED'); r=String.valueOf(x)+'|'+x.ordinal()+'|'+x.equals(Metadata.StatusCode.APEX_FAILED);",
+      "compile": false,
+      "expected": "APEX_FAILED|6|true",
+      "floorExpected": "APEX_FAILED|6|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R181",
+      "group": "enums-null-invalid",
+      "code": "r=Metadata.DeployStatus.valueOf(null);",
+      "compile": false,
+      "expected": "EXC|System.NoSuchElementException|No enum value found called null",
+      "floorExpected": "EXC|System.NoSuchElementException|No enum value found called null",
+      "nativeNull": false
+    },
+    {
+      "id": "R182",
+      "group": "enums-null-invalid",
+      "code": "r=Metadata.DeployStatus.valueOf('');",
+      "compile": false,
+      "expected": "EXC|System.NoSuchElementException|No enum value found called ",
+      "floorExpected": "EXC|System.NoSuchElementException|No enum value found called ",
+      "nativeNull": false
+    },
+    {
+      "id": "R183",
+      "group": "enums-null-invalid",
+      "code": "r=Metadata.DeployStatus.valueOf('succeeded');",
+      "compile": false,
+      "expected": "Succeeded",
+      "floorExpected": "Succeeded",
+      "nativeNull": false
+    },
+    {
+      "id": "R184",
+      "group": "enums-null-invalid",
+      "code": "r=Metadata.DeployStatus.valueOf(' Succeeded ');",
+      "compile": false,
+      "expected": "EXC|System.NoSuchElementException|No enum value found called  Succeeded ",
+      "floorExpected": "EXC|System.NoSuchElementException|No enum value found called  Succeeded ",
+      "nativeNull": false
+    },
+    {
+      "id": "R185",
+      "group": "enums-null-invalid",
+      "code": "r=Metadata.DeployStatus.valueOf('A44NoSuchStatus');",
+      "compile": false,
+      "expected": "EXC|System.NoSuchElementException|No enum value found called A44NoSuchStatus",
+      "floorExpected": "EXC|System.NoSuchElementException|No enum value found called A44NoSuchStatus",
+      "nativeNull": false
+    },
+    {
+      "id": "R186",
+      "group": "enums-null-receiver",
+      "code": "Metadata.DeployStatus x; r=x.ordinal();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R187",
+      "group": "enums-null-equality",
+      "code": "r=Metadata.DeployStatus.Succeeded.equals(null);",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false",
+      "nativeNull": false
+    },
+    {
+      "id": "R188",
+      "group": "enums-wrong-type-equality",
+      "code": "r=Metadata.DeployStatus.Succeeded.equals('Succeeded');",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false",
+      "nativeNull": false
+    },
+    {
+      "id": "R189",
+      "group": "clone-fields",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); x.fullName=null; Metadata.CustomMetadata y=(Metadata.CustomMetadata)x.clone(); r=String.valueOf(y.fullName)+'|'+(x===y);",
+      "compile": false,
+      "expected": "null|false",
+      "floorExpected": "null|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R190",
+      "group": "clone-fields",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); x.fullName=''; Metadata.CustomMetadata y=(Metadata.CustomMetadata)x.clone(); r=String.valueOf(y.fullName)+'|'+(x===y);",
+      "compile": false,
+      "expected": "|false",
+      "floorExpected": "|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R191",
+      "group": "clone-fields",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); x.fullName='A44Fixture.Default'; Metadata.CustomMetadata y=(Metadata.CustomMetadata)x.clone(); r=String.valueOf(y.fullName)+'|'+(x===y);",
+      "compile": false,
+      "expected": "A44Fixture.Default|false",
+      "floorExpected": "A44Fixture.Default|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R192",
+      "group": "dto-object-conversion",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); x.value=true; Metadata.CustomMetadataValue y=(Metadata.CustomMetadataValue)x.clone(); r=JSON.serialize(y.value);",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R193",
+      "group": "dto-object-conversion",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); x.value=0; Metadata.CustomMetadataValue y=(Metadata.CustomMetadataValue)x.clone(); r=JSON.serialize(y.value);",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R194",
+      "group": "dto-object-conversion",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); x.value=-1; Metadata.CustomMetadataValue y=(Metadata.CustomMetadataValue)x.clone(); r=JSON.serialize(y.value);",
+      "compile": false,
+      "expected": "-1",
+      "floorExpected": "-1",
+      "nativeNull": false
+    },
+    {
+      "id": "R195",
+      "group": "dto-object-conversion",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); x.value=1.25; Metadata.CustomMetadataValue y=(Metadata.CustomMetadataValue)x.clone(); r=JSON.serialize(y.value);",
+      "compile": false,
+      "expected": "1.25",
+      "floorExpected": "1.25",
+      "nativeNull": false
+    },
+    {
+      "id": "R196",
+      "group": "dto-object-conversion",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); x.value=''; Metadata.CustomMetadataValue y=(Metadata.CustomMetadataValue)x.clone(); r=JSON.serialize(y.value);",
+      "compile": false,
+      "expected": "\"\"",
+      "floorExpected": "\"\"",
+      "nativeNull": false
+    },
+    {
+      "id": "R197",
+      "group": "dto-object-conversion",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); x.value='A44 value'; Metadata.CustomMetadataValue y=(Metadata.CustomMetadataValue)x.clone(); r=JSON.serialize(y.value);",
+      "compile": false,
+      "expected": "\"A44 value\"",
+      "floorExpected": "\"A44 value\"",
+      "nativeNull": false
+    },
+    {
+      "id": "R198",
+      "group": "dto-object-conversion",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); x.value=null; Metadata.CustomMetadataValue y=(Metadata.CustomMetadataValue)x.clone(); r=JSON.serialize(y.value);",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": false
+    },
+    {
+      "id": "R199",
+      "group": "dto-object-conversion",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); x.value=new List<String>{'a',null}; Metadata.CustomMetadataValue y=(Metadata.CustomMetadataValue)x.clone(); r=JSON.serialize(y.value);",
+      "compile": false,
+      "expected": "[\"a\",null]",
+      "floorExpected": "[\"a\",null]",
+      "nativeNull": false
+    },
+    {
+      "id": "R200",
+      "group": "dto-object-conversion",
+      "code": "Metadata.CustomMetadataValue x=new Metadata.CustomMetadataValue(); x.value=new Map<String,Object>{'a'=>1}; Metadata.CustomMetadataValue y=(Metadata.CustomMetadataValue)x.clone(); r=JSON.serialize(y.value);",
+      "compile": false,
+      "expected": "{\"a\":1}",
+      "floorExpected": "{\"a\":1}",
+      "nativeNull": false
+    },
+    {
+      "id": "R201",
+      "group": "clone-conversion-null",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); r=x.values==null;",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false",
+      "nativeNull": false
+    },
+    {
+      "id": "R202",
+      "group": "clone-conversion-null",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); x.values=null; r=x.values;",
+      "compile": false,
+      "expected": "null",
+      "floorExpected": "null",
+      "nativeNull": true
+    },
+    {
+      "id": "R203",
+      "group": "clone-conversion-null",
+      "code": "Metadata.CustomMetadata x=new Metadata.CustomMetadata(); Metadata.CustomMetadataValue v=new Metadata.CustomMetadataValue(); v.field='A'; v.value=1; x.values=new List<Metadata.CustomMetadataValue>{v}; Metadata.CustomMetadata y=(Metadata.CustomMetadata)x.clone(); y.values[0].value=2; r=String.valueOf(x.values[0].value)+'|'+(x.values===y.values)+'|'+(x.values[0]===y.values[0]);",
+      "compile": false,
+      "expected": "2|true|true",
+      "floorExpected": "2|true|true",
+      "nativeNull": false
+    },
+    {
+      "id": "R204",
+      "group": "clone-conversion-null",
+      "code": "Metadata.Layout x=new Metadata.Layout(); x.customButtons=new List<String>{'A'}; Metadata.Layout y=(Metadata.Layout)x.clone(); y.customButtons.add('B'); r=x.customButtons.size();",
+      "compile": false,
+      "expected": "2",
+      "floorExpected": "2",
+      "nativeNull": false
+    },
+    {
+      "id": "R205",
+      "group": "clone-conversion-null",
+      "code": "Metadata.LayoutItem x=new Metadata.LayoutItem(); x.field='Name'; Metadata.LayoutItem y=(Metadata.LayoutItem)x.clone(); y.field='Id'; r=x.field;",
+      "compile": false,
+      "expected": "Name",
+      "floorExpected": "Name",
+      "nativeNull": false
+    },
+    {
+      "id": "R206",
+      "group": "clone-conversion-null",
+      "code": "Metadata.Metadata x=new Metadata.CustomMetadata(); x.fullName='A44.Default'; Object y=x.clone(); r=String.valueOf(y instanceof Metadata.CustomMetadata)+'|'+((Metadata.Metadata)y).fullName;",
+      "compile": false,
+      "expected": "true|A44.Default",
+      "floorExpected": "true|A44.Default",
+      "nativeNull": false
+    },
+    {
+      "id": "R207",
+      "group": "clone-conversion-null",
+      "code": "Metadata.Metadata x=new Metadata.Layout(); r=x instanceof Metadata.CustomMetadata;",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false",
+      "nativeNull": false
+    },
+    {
+      "id": "R208",
+      "group": "clone-conversion-null",
+      "code": "Object x=new Metadata.Layout(); r=((Metadata.CustomMetadata)x).fullName;",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Metadata.Layout to Metadata.CustomMetadata",
+      "floorExpected": "EXC|System.TypeException|Invalid conversion from runtime type Metadata.Layout to Metadata.CustomMetadata",
+      "nativeNull": false
+    },
+    {
+      "id": "R209",
+      "group": "clone-conversion-null",
+      "code": "Metadata.CustomMetadata x; r=x.clone();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R210",
+      "group": "clone-conversion-null",
+      "code": "Metadata.LayoutItem x; r=x.field;",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R211",
+      "group": "deploy-container",
+      "code": "Metadata.DeployContainer x=new Metadata.DeployContainer(); r=x.getMetadata().size();",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R212",
+      "group": "deploy-container",
+      "code": "Metadata.DeployContainer x=new Metadata.DeployContainer(); x.addMetadata(null); r=x.getMetadata().size();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Cannot add null in deploy container",
+      "floorExpected": "EXC|System.NullPointerException|Cannot add null in deploy container",
+      "nativeNull": false
+    },
+    {
+      "id": "R213",
+      "group": "deploy-container",
+      "code": "Metadata.DeployContainer x=new Metadata.DeployContainer(); Metadata.CustomMetadata v=new Metadata.CustomMetadata(); v.fullName='A44.Default'; x.addMetadata(v); r=x.getMetadata()[0].fullName;",
+      "compile": false,
+      "expected": "A44.Default",
+      "floorExpected": "A44.Default",
+      "nativeNull": false
+    },
+    {
+      "id": "R214",
+      "group": "deploy-container",
+      "code": "Metadata.DeployContainer x=new Metadata.DeployContainer(); Metadata.Layout v=new Metadata.Layout(); v.fullName='Account-A44'; x.addMetadata(v); r=x.getMetadata()[0] instanceof Metadata.Layout;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R215",
+      "group": "deploy-container",
+      "code": "Metadata.DeployContainer x=new Metadata.DeployContainer(); Metadata.CustomMetadata v=new Metadata.CustomMetadata(); x.addMetadata(v); x.addMetadata(v); r=x.getMetadata().size();",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1",
+      "nativeNull": false
+    },
+    {
+      "id": "R216",
+      "group": "deploy-container",
+      "code": "Metadata.DeployContainer x=new Metadata.DeployContainer(); List<Metadata.Metadata> rows=x.getMetadata(); r=rows===x.getMetadata();",
+      "compile": false,
+      "expected": "false",
+      "floorExpected": "false",
+      "nativeNull": false
+    },
+    {
+      "id": "R217",
+      "group": "deploy-container",
+      "code": "Metadata.DeployContainer x; r=x.getMetadata();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R218",
+      "group": "deploy-hosted-boundary",
+      "code": "r=Metadata.Operations.enqueueDeployment(null,null);",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Deploy container is null",
+      "floorExpected": "EXC|System.NullPointerException|Deploy container is null",
+      "nativeNull": false,
+      "namedOwner": "A30",
+      "namedReason": "Anonymous null-container result is asserted; native @IsTest deploy-guard precedence has not been captured at API 62/67."
+    },
+    {
+      "id": "R219",
+      "group": "deploy-hosted-boundary",
+      "code": "Metadata.DeployCallbackContext x=new Metadata.DeployCallbackContext(); r=x.getCallbackJobId()==null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R220",
+      "group": "deploy-hosted-boundary",
+      "code": "Metadata.DeployCallbackContext x; r=x.getCallbackJobId();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R221",
+      "group": "deploy-hosted-boundary",
+      "code": "r=Metadata.Operations.retrieve(null,null);",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Error retrieving metadata for entities of type: null. Error message: type and fullNames must be specified for items to read",
+      "floorExpected": "EXC|System.TypeException|Error retrieving metadata for entities of type: null. Error message: type and fullNames must be specified for items to read",
+      "nativeNull": false
+    },
+    {
+      "id": "R222",
+      "group": "deploy-hosted-boundary",
+      "code": "r=Metadata.Operations.retrieve(Metadata.MetadataType.CustomMetadata,null);",
+      "compile": false,
+      "expected": "EXC|System.TypeException|Error retrieving metadata for entities of type: CustomMetadata. Error message: type and fullNames must be specified for items to read",
+      "floorExpected": "EXC|System.TypeException|Error retrieving metadata for entities of type: CustomMetadata. Error message: type and fullNames must be specified for items to read",
+      "nativeNull": false
+    },
+    {
+      "id": "R223",
+      "group": "visualeditor-dto",
+      "code": "VisualEditor.DataRow x=new VisualEditor.DataRow('Label','Value'); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R224",
+      "group": "visualeditor-dto",
+      "code": "VisualEditor.DataRow x=new VisualEditor.DataRow(null,null); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R225",
+      "group": "visualeditor-dto",
+      "code": "VisualEditor.DataRow x=new VisualEditor.DataRow('',''); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R226",
+      "group": "visualeditor-dto",
+      "code": "VisualEditor.DataRow x=new VisualEditor.DataRow('Label','Value'); r=x.getLabel();",
+      "compile": false,
+      "expected": "Label",
+      "floorExpected": "Label",
+      "nativeNull": false
+    },
+    {
+      "id": "R227",
+      "group": "visualeditor-dto",
+      "code": "VisualEditor.DataRow x=new VisualEditor.DataRow('Label','Value'); r=x.getValue();",
+      "compile": false,
+      "expected": "Value",
+      "floorExpected": "Value",
+      "nativeNull": false
+    },
+    {
+      "id": "R228",
+      "group": "visualeditor-dto",
+      "code": "VisualEditor.DataRow x=new VisualEditor.DataRow('Label','Value'); Object y=x.clone(); r=String.valueOf(y instanceof VisualEditor.DataRow)+'|'+(x===y);",
+      "compile": false,
+      "expected": "true|false",
+      "floorExpected": "true|false",
+      "nativeNull": false
+    },
+    {
+      "id": "R229",
+      "group": "visualeditor-dto",
+      "code": "VisualEditor.DynamicPickListRows x=new VisualEditor.DynamicPickListRows(); r=x.size();",
+      "compile": false,
+      "expected": "0",
+      "floorExpected": "0",
+      "nativeNull": false
+    },
+    {
+      "id": "R230",
+      "group": "visualeditor-dto",
+      "code": "VisualEditor.DynamicPickListRows x=new VisualEditor.DynamicPickListRows(); x.addRow(new VisualEditor.DataRow('A','a')); r=x.size();",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1",
+      "nativeNull": false
+    },
+    {
+      "id": "R231",
+      "group": "visualeditor-dto",
+      "code": "VisualEditor.DynamicPickListRows x=new VisualEditor.DynamicPickListRows(); x.addRow(null); r=x.size();",
+      "compile": false,
+      "expected": "1",
+      "floorExpected": "1",
+      "nativeNull": false
+    },
+    {
+      "id": "R232",
+      "group": "visualeditor-dto",
+      "code": "VisualEditor.DynamicPickListRows x=new VisualEditor.DynamicPickListRows(); r=x.clone()!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R233",
+      "group": "visualeditor-design-time-boundary",
+      "code": "VisualEditor.DesignTimePageContext x=new VisualEditor.DesignTimePageContext(); r=String.valueOf(x.entityName)+'|'+x.pageType;",
+      "compile": false,
+      "expected": "null|null",
+      "floorExpected": "null|null",
+      "nativeNull": false
+    },
+    {
+      "id": "R234",
+      "group": "visualeditor-design-time-boundary",
+      "code": "VisualEditor.DesignTimePageContext x=new VisualEditor.DesignTimePageContext(); r=x.clone()!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R235",
+      "group": "visualeditor-design-time-boundary",
+      "code": "VisualEditor.DynamicPickList x; r=x.getValues();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R236",
+      "group": "visualeditor-design-time-boundary",
+      "code": "VisualEditor.DynamicPickList x; r=x.getDefaultValue();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R237",
+      "group": "partner-package-boundary",
+      "code": "IsvPartners.AppAnalytics x=new IsvPartners.AppAnalytics(); r=x!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R238",
+      "group": "partner-package-boundary",
+      "code": "IsvPartners.AppAnalytics x=new IsvPartners.AppAnalytics(); r=x.clone()!=null;",
+      "compile": false,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "R239",
+      "group": "partner-package-boundary",
+      "code": "IsvPartners.AppAnalytics.logCustomInteraction(null); r=true;",
+      "compile": false,
+      "expected": "EXC|System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum.",
+      "floorExpected": "EXC|System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum.",
+      "nativeNull": false
+    },
+    {
+      "id": "R240",
+      "group": "partner-package-boundary",
+      "code": "Package.Version x=(Package.Version)null; r=x.toString();",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "R241",
+      "group": "partner-package-boundary",
+      "code": "Package.Version x=(Package.Version)null; r=x.isGreaterThan(null);",
+      "compile": false,
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "nativeNull": false
+    },
+    {
+      "id": "C001",
+      "group": "deploy-callback-shape",
+      "code": "Object r=true; class A44Callback implements Metadata.DeployCallback { public void handleResult(Metadata.DeployResult result,Metadata.DeployCallbackContext context){} } Metadata.DeployCallback callback=new A44Callback(); r=callback!=null; pq.out('C001',r);",
+      "compile": true,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "C002",
+      "group": "deploy-operations-shape",
+      "code": "Object r=true; if(false){Id job=Metadata.Operations.enqueueDeployment(new Metadata.DeployContainer(),null);}  pq.out('C002',r);",
+      "compile": true,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "C003",
+      "group": "retrieve-operations-shape",
+      "code": "Object r=true; if(false){List<Metadata.Metadata> rows=Metadata.Operations.retrieve(Metadata.MetadataType.Layout,new List<String>());}  pq.out('C003',r);",
+      "compile": true,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "C004",
+      "group": "deploy-status-shape",
+      "code": "Object r=true; if(false){Metadata.DeployResult result=Metadata.Operations.checkDeployStatus((Id)null,true);}  pq.out('C004',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void checkDeployStatus(Id, Boolean) from the type Metadata.Operations",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void checkDeployStatus(Id, Boolean) from the type Metadata.Operations",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C005",
+      "group": "visualeditor-shape",
+      "code": "Object r=true; VisualEditor.DynamicPickList x; if(false){VisualEditor.DataRow row=x.getDefaultValue(); String label=x.getLabel((Object)null); Boolean valid=x.isValid(null); VisualEditor.DynamicPickListRows rows=x.getValuesForSemanticSearch('A44');} pq.out('C005',r);",
+      "compile": true,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "C006",
+      "group": "visualeditor-subclass-shape",
+      "code": "Object r=true; class A44PickList extends VisualEditor.DynamicPickList { public override VisualEditor.DynamicPickListRows getValues(){return new VisualEditor.DynamicPickListRows();} } VisualEditor.DynamicPickList x=new A44PickList(); r=x!=null; pq.out('C006',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 32: Class A44PickList must implement the abstract method: VisualEditor.DataRow VisualEditor.DynamicPickList.getDefaultValue()",
+      "floorExpected": "COMPILE_ERROR\tline 32: Class A44PickList must implement the abstract method: VisualEditor.DataRow VisualEditor.DynamicPickList.getDefaultValue()",
+      "nativeNull": false,
+      "sourceLine": 32
+    },
+    {
+      "id": "C007",
+      "group": "partner-service-shape",
+      "code": "Object r=true; if(false){IsvPartners.AppAnalytics.logCustomInteraction('A44');} pq.out('C007',r);",
+      "compile": true,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "C008",
+      "group": "package-service-shape",
+      "code": "Object r=true; Package.Version x; if(false){Boolean a=x.isGreaterThanOrEqual(x); Boolean b=x.isLessThan(x); Boolean c=x.isLessThanOrEqual(x); Integer h=x.hashCode();} pq.out('C008',r);",
+      "compile": true,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    },
+    {
+      "id": "C009",
+      "group": "compile-error",
+      "code": "Object r=true; Metadata.Metadata x=new Metadata.Metadata(); pq.out('C009',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Abstract classes cannot be constructed: Metadata.Metadata",
+      "floorExpected": "COMPILE_ERROR\tline 6: Abstract classes cannot be constructed: Metadata.Metadata",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C010",
+      "group": "compile-error",
+      "code": "Object r=true; Metadata.DeployCallback x=new Metadata.DeployCallback(); pq.out('C010',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Metadata.DeployCallback",
+      "floorExpected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Metadata.DeployCallback",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C011",
+      "group": "compile-error",
+      "code": "Object r=true; Metadata.CustomMetadata x=new Metadata.Layout(); pq.out('C011',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Metadata.Layout to Metadata.CustomMetadata",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Metadata.Layout to Metadata.CustomMetadata",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C012",
+      "group": "compile-error",
+      "code": "Object r=true; Metadata.CustomMetadata x=new Metadata.CustomMetadata(); x.values='bad'; pq.out('C012',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to List<Metadata.CustomMetadataValue>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from String to List<Metadata.CustomMetadataValue>",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C013",
+      "group": "compile-error",
+      "code": "Object r=true; Metadata.LayoutItem x=new Metadata.LayoutItem(); x.behavior='Required'; pq.out('C013',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Metadata.UiBehavior",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Metadata.UiBehavior",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C014",
+      "group": "compile-error",
+      "code": "Object r=true; Metadata.DeployStatus x=1; pq.out('C014',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Metadata.DeployStatus",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Metadata.DeployStatus",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C015",
+      "group": "compile-error",
+      "code": "Object r=true; Metadata.DeployStatus x=Metadata.DeployStatus.A44NoSuchStatus; pq.out('C015',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: A44NoSuchStatus",
+      "floorExpected": "COMPILE_ERROR\tline 6: Variable does not exist: A44NoSuchStatus",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C016",
+      "group": "compile-error",
+      "code": "Object r=true; Metadata.CustomMetadata x=new Metadata.CustomMetadata(); x.noSuchA44Field=true; pq.out('C016',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: noSuchA44Field",
+      "floorExpected": "COMPILE_ERROR\tline 6: Variable does not exist: noSuchA44Field",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C017",
+      "group": "compile-error",
+      "code": "Object r=true; Metadata.Layout x=new Metadata.Layout(); x.clone(true); pq.out('C017',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void clone(Boolean) from the type Metadata.Layout",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void clone(Boolean) from the type Metadata.Layout",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C018",
+      "group": "compile-error",
+      "code": "Object r=true; Metadata.DeployContainer x=new Metadata.DeployContainer(); x.addMetadata('bad'); pq.out('C018',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addMetadata(String) from the type Metadata.DeployContainer",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addMetadata(String) from the type Metadata.DeployContainer",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C019",
+      "group": "compile-error",
+      "code": "Object r=true; VisualEditor.DataRow x=new VisualEditor.DataRow(); pq.out('C019',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [VisualEditor.DataRow].<Constructor>()",
+      "floorExpected": "COMPILE_ERROR\tline 6: Constructor not defined: [VisualEditor.DataRow].<Constructor>()",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C020",
+      "group": "compile-error",
+      "code": "Object r=true; VisualEditor.DesignTimePageContext x=new VisualEditor.DesignTimePageContext(); x.entityName=123; pq.out('C020',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to String",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to String",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "C021",
+      "group": "visualeditor-subclass-shape",
+      "code": "Object r=true; class A44CompletePickList extends VisualEditor.DynamicPickList { public override VisualEditor.DataRow getDefaultValue(){return new VisualEditor.DataRow('A','a');} public override VisualEditor.DynamicPickListRows getValues(){return new VisualEditor.DynamicPickListRows();} } VisualEditor.DynamicPickList x=new A44CompletePickList(); r=x!=null; pq.out('C021',r);",
+      "compile": true,
+      "expected": "true",
+      "floorExpected": "true",
+      "nativeNull": false
+    }
+  ],
+  "controls": [
+    {
+      "id": "E001",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.DeployMessage());",
+      "compile": false,
+      "expected": "{\"success\":null,\"problemType\":null,\"problem\":null,\"lineNumber\":null,\"id\":null,\"fullName\":null,\"fileName\":null,\"deleted\":null,\"createdDate\":null,\"created\":null,\"componentType\":null,\"columnNumber\":null,\"changed\":null}",
+      "floorExpected": "{\"success\":null,\"problemType\":null,\"problem\":null,\"lineNumber\":null,\"id\":null,\"fullName\":null,\"fileName\":null,\"deleted\":null,\"createdDate\":null,\"created\":null,\"componentType\":null,\"columnNumber\":null,\"changed\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E002",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.DeployResult());",
+      "compile": false,
+      "expected": "{\"success\":null,\"status\":null,\"stateDetail\":null,\"startDate\":null,\"rollbackOnError\":null,\"numberComponentsTotal\":null,\"numberComponentsDeployed\":null,\"numberComponentErrors\":null,\"messages\":[],\"lastModifiedDate\":null,\"ignoreWarnings\":null,\"id\":null,\"errorStatusCode\":null,\"errorMessage\":null,\"done\":null,\"details\":null,\"createdDate\":null,\"createdByName\":null,\"createdBy\":null,\"completedDate\":null,\"checkOnly\":null,\"canceledByName\":null,\"canceledBy\":null}",
+      "floorExpected": "{\"success\":null,\"status\":null,\"stateDetail\":null,\"startDate\":null,\"rollbackOnError\":null,\"numberComponentsTotal\":null,\"numberComponentsDeployed\":null,\"numberComponentErrors\":null,\"messages\":[],\"lastModifiedDate\":null,\"ignoreWarnings\":null,\"id\":null,\"errorStatusCode\":null,\"errorMessage\":null,\"done\":null,\"details\":null,\"createdDate\":null,\"createdByName\":null,\"createdBy\":null,\"completedDate\":null,\"checkOnly\":null,\"canceledByName\":null,\"canceledBy\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E003",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.CustomMetadata());",
+      "compile": false,
+      "expected": "{\"fullName\":null,\"values\":[],\"protected_x\":null,\"label\":null,\"description\":null}",
+      "floorExpected": "{\"fullName\":null,\"values\":[],\"protected_x\":null,\"label\":null,\"description\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E004",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.LayoutItem());",
+      "compile": false,
+      "expected": "{\"width\":null,\"showScrollbars\":null,\"showLabel\":null,\"scontrol\":null,\"reportChartComponent\":null,\"page_x\":null,\"height\":null,\"field\":null,\"emptySpace\":null,\"customLink\":null,\"component\":null,\"canvas\":null,\"behavior\":null,\"analyticsCloudComponent\":null}",
+      "floorExpected": "{\"width\":null,\"showScrollbars\":null,\"showLabel\":null,\"scontrol\":null,\"reportChartComponent\":null,\"page_x\":null,\"height\":null,\"field\":null,\"emptySpace\":null,\"customLink\":null,\"component\":null,\"canvas\":null,\"behavior\":null,\"analyticsCloudComponent\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E005",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.LayoutSection());",
+      "compile": false,
+      "expected": "{\"style\":null,\"layoutColumns\":[],\"label\":null,\"editHeading\":null,\"detailHeading\":null,\"customLabel\":null}",
+      "floorExpected": "{\"style\":null,\"layoutColumns\":[],\"label\":null,\"editHeading\":null,\"detailHeading\":null,\"customLabel\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E006",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.LayoutColumn());",
+      "compile": false,
+      "expected": "{\"reserved\":null,\"layoutItems\":[]}",
+      "floorExpected": "{\"reserved\":null,\"layoutItems\":[]}",
+      "nativeNull": false
+    },
+    {
+      "id": "E007",
+      "group": "neighbour-control",
+      "code": "Metadata.DeployContainer x=new Metadata.DeployContainer(); Metadata.CustomMetadata a=new Metadata.CustomMetadata(); Metadata.CustomMetadata b=new Metadata.CustomMetadata(); a.fullName='A44.Default'; b.fullName='A44.Default'; x.addMetadata(a); x.addMetadata(b); r=x.getMetadata().size();",
+      "compile": false,
+      "expected": "2",
+      "floorExpected": "2",
+      "nativeNull": false
+    },
+    {
+      "id": "E008",
+      "group": "neighbour-control",
+      "code": "Metadata.DeployContainer x=new Metadata.DeployContainer(); x.addMetadata(new Metadata.CustomMetadata()); x.addMetadata(new Metadata.CustomMetadata()); r=x.getMetadata().size();",
+      "compile": false,
+      "expected": "2",
+      "floorExpected": "2",
+      "nativeNull": false
+    },
+    {
+      "id": "E010",
+      "group": "neighbour-control",
+      "code": "IsvPartners.AppAnalytics.logCustomInteraction('clicked'); r=true;",
+      "compile": false,
+      "expected": "EXC|System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum.",
+      "floorExpected": "EXC|System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum.",
+      "nativeNull": false
+    },
+    {
+      "id": "E011",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.Layout());",
+      "compile": false,
+      "expected": "{\"fullName\":null,\"summaryLayout\":null,\"showSubmitAndAttachButton\":null,\"showSolutionSection\":null,\"showRunAssignmentRulesCheckbox\":null,\"showKnowledgeComponent\":null,\"showInteractionLogPanel\":null,\"showHighlightsPanel\":null,\"showEmailCheckbox\":null,\"runAssignmentRulesDefault\":null,\"relatedObjects\":[],\"relatedLists\":[],\"relatedContent\":null,\"quickActionList\":null,\"platformActionList\":null,\"multilineLayoutFields\":[],\"miniLayout\":null,\"layoutSections\":[],\"headers\":[],\"feedLayout\":null,\"excludeButtons\":[],\"emailDefault\":null,\"customConsoleComponents\":null,\"customButtons\":[]}",
+      "floorExpected": "{\"fullName\":null,\"summaryLayout\":null,\"showSubmitAndAttachButton\":null,\"showSolutionSection\":null,\"showRunAssignmentRulesCheckbox\":null,\"showKnowledgeComponent\":null,\"showInteractionLogPanel\":null,\"showHighlightsPanel\":null,\"showEmailCheckbox\":null,\"runAssignmentRulesDefault\":null,\"relatedObjects\":[],\"relatedLists\":[],\"relatedContent\":null,\"quickActionList\":null,\"platformActionList\":null,\"multilineLayoutFields\":[],\"miniLayout\":null,\"layoutSections\":[],\"headers\":[],\"feedLayout\":null,\"excludeButtons\":[],\"emailDefault\":null,\"customConsoleComponents\":null,\"customButtons\":[]}",
+      "nativeNull": false
+    },
+    {
+      "id": "E012",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.MiniLayout());",
+      "compile": false,
+      "expected": "{\"relatedLists\":[],\"fields\":[]}",
+      "floorExpected": "{\"relatedLists\":[],\"fields\":[]}",
+      "nativeNull": false
+    },
+    {
+      "id": "E013",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.QuickActionList());",
+      "compile": false,
+      "expected": "{\"quickActionListItems\":[]}",
+      "floorExpected": "{\"quickActionListItems\":[]}",
+      "nativeNull": false
+    },
+    {
+      "id": "E014",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.QuickActionListItem());",
+      "compile": false,
+      "expected": "{\"quickActionName\":null}",
+      "floorExpected": "{\"quickActionName\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E015",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.RelatedContent());",
+      "compile": false,
+      "expected": "{\"relatedContentItems\":[]}",
+      "floorExpected": "{\"relatedContentItems\":[]}",
+      "nativeNull": false
+    },
+    {
+      "id": "E016",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.RelatedContentItem());",
+      "compile": false,
+      "expected": "{\"layoutItem\":null}",
+      "floorExpected": "{\"layoutItem\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E017",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.RelatedList());",
+      "compile": false,
+      "expected": "{\"name\":null,\"hideOnDetail\":null}",
+      "floorExpected": "{\"name\":null,\"hideOnDetail\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E018",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.RelatedListItem());",
+      "compile": false,
+      "expected": "{\"sortOrder\":null,\"sortField\":null,\"relatedList\":null,\"quickActions\":[],\"fields\":[],\"excludeButtons\":[],\"customButtons\":[]}",
+      "floorExpected": "{\"sortOrder\":null,\"sortField\":null,\"relatedList\":null,\"quickActions\":[],\"fields\":[],\"excludeButtons\":[],\"customButtons\":[]}",
+      "nativeNull": false
+    },
+    {
+      "id": "E019",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.ReportChartComponentLayoutItem());",
+      "compile": false,
+      "expected": "{\"size\":null,\"showTitle\":null,\"reportName\":null,\"includeContext\":null,\"hideOnError\":null,\"error\":null,\"contextFilterableField\":null,\"cacheData\":null}",
+      "floorExpected": "{\"size\":null,\"showTitle\":null,\"reportName\":null,\"includeContext\":null,\"hideOnError\":null,\"error\":null,\"contextFilterableField\":null,\"cacheData\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E020",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.AnalyticsCloudComponentLayoutItem());",
+      "compile": false,
+      "expected": "{\"width\":null,\"showTitle\":null,\"showSharing\":null,\"showHeader\":null,\"hideOnError\":null,\"height\":null,\"filter\":null,\"error\":null,\"devName\":null,\"assetType\":null}",
+      "floorExpected": "{\"width\":null,\"showTitle\":null,\"showSharing\":null,\"showHeader\":null,\"hideOnError\":null,\"height\":null,\"filter\":null,\"error\":null,\"devName\":null,\"assetType\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E021",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.SidebarComponent());",
+      "compile": false,
+      "expected": "{\"width\":null,\"updateAction\":null,\"unit\":null,\"relatedLists\":[],\"page_x\":null,\"lookup\":null,\"label\":null,\"knowledgeOneEnable\":null,\"height\":null,\"enableLinking\":null,\"createAction\":null,\"componentType\":null}",
+      "floorExpected": "{\"width\":null,\"updateAction\":null,\"unit\":null,\"relatedLists\":[],\"page_x\":null,\"lookup\":null,\"label\":null,\"knowledgeOneEnable\":null,\"height\":null,\"enableLinking\":null,\"createAction\":null,\"componentType\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E022",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.Container());",
+      "compile": false,
+      "expected": "{\"width\":null,\"unit\":null,\"style\":null,\"sidebarComponents\":[],\"region\":null,\"isContainerAutoSizeEnabled\":null,\"height\":null}",
+      "floorExpected": "{\"width\":null,\"unit\":null,\"style\":null,\"sidebarComponents\":[],\"region\":null,\"isContainerAutoSizeEnabled\":null,\"height\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E023",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.CustomConsoleComponents());",
+      "compile": false,
+      "expected": "{\"subtabComponents\":null,\"primaryTabComponents\":null}",
+      "floorExpected": "{\"subtabComponents\":null,\"primaryTabComponents\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E024",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.PrimaryTabComponents());",
+      "compile": false,
+      "expected": "{\"containers\":[],\"component\":[]}",
+      "floorExpected": "{\"containers\":[],\"component\":[]}",
+      "nativeNull": false
+    },
+    {
+      "id": "E025",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.SubtabComponents());",
+      "compile": false,
+      "expected": "{\"containers\":[],\"component\":[]}",
+      "floorExpected": "{\"containers\":[],\"component\":[]}",
+      "nativeNull": false
+    },
+    {
+      "id": "E026",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.SummaryLayout());",
+      "compile": false,
+      "expected": "{\"summaryLayoutStyle\":null,\"summaryLayoutItems\":[],\"sizeZ\":null,\"sizeY\":null,\"sizeX\":null,\"masterLabel\":null}",
+      "floorExpected": "{\"summaryLayoutStyle\":null,\"summaryLayoutItems\":[],\"sizeZ\":null,\"sizeY\":null,\"sizeX\":null,\"masterLabel\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E027",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.SummaryLayoutItem());",
+      "compile": false,
+      "expected": "{\"posZ\":null,\"posY\":null,\"posX\":null,\"field\":null,\"customLink\":null}",
+      "floorExpected": "{\"posZ\":null,\"posY\":null,\"posX\":null,\"field\":null,\"customLink\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E028",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.FeedLayout());",
+      "compile": false,
+      "expected": "{\"useInlineFiltersInConsole\":null,\"rightComponents\":[],\"leftComponents\":[],\"highlightExternalFeedItems\":null,\"hideSidebar\":null,\"fullWidthFeed\":null,\"feedFilters\":[],\"feedFilterPosition\":null,\"compactFeed\":null,\"autocollapsePublisher\":null}",
+      "floorExpected": "{\"useInlineFiltersInConsole\":null,\"rightComponents\":[],\"leftComponents\":[],\"highlightExternalFeedItems\":null,\"hideSidebar\":null,\"fullWidthFeed\":null,\"feedFilters\":[],\"feedFilterPosition\":null,\"compactFeed\":null,\"autocollapsePublisher\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E029",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.FeedLayoutFilter());",
+      "compile": false,
+      "expected": "{\"feedItemType\":null,\"feedFilterType\":null,\"feedFilterName\":null}",
+      "floorExpected": "{\"feedItemType\":null,\"feedFilterType\":null,\"feedFilterName\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E030",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.FeedLayoutComponent());",
+      "compile": false,
+      "expected": "{\"page_x\":null,\"height\":null,\"componentType\":null}",
+      "floorExpected": "{\"page_x\":null,\"height\":null,\"componentType\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E031",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.PlatformActionList());",
+      "compile": false,
+      "expected": "{\"relatedSourceEntity\":null,\"platformActionListItems\":[],\"actionListContext\":null}",
+      "floorExpected": "{\"relatedSourceEntity\":null,\"platformActionListItems\":[],\"actionListContext\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E032",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.PlatformActionListItem());",
+      "compile": false,
+      "expected": "{\"subtype\":null,\"sortOrder\":null,\"actionType\":null,\"actionName\":null}",
+      "floorExpected": "{\"subtype\":null,\"sortOrder\":null,\"actionType\":null,\"actionName\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E033",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.DeployDetails());",
+      "compile": false,
+      "expected": "{\"componentSuccesses\":[],\"componentFailures\":[]}",
+      "floorExpected": "{\"componentSuccesses\":[],\"componentFailures\":[]}",
+      "nativeNull": false
+    },
+    {
+      "id": "E034",
+      "group": "neighbour-control",
+      "code": "r=JSON.serialize(new Metadata.CustomMetadataValue());",
+      "compile": false,
+      "expected": "{\"value\":null,\"field\":null}",
+      "floorExpected": "{\"value\":null,\"field\":null}",
+      "nativeNull": false
+    },
+    {
+      "id": "E035",
+      "group": "metadata-assignment-control",
+      "code": "Object r=true; List<Metadata.CustomMetadata> rows=Metadata.Operations.retrieve(Metadata.MetadataType.CustomMetadata,new List<String>{'Feature.Default'}); pq.out('E035',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Metadata.Metadata> to List<Metadata.CustomMetadata>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Metadata.Metadata> to List<Metadata.CustomMetadata>",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "E036",
+      "group": "metadata-assignment-control",
+      "code": "Object r=true; List<Metadata.Metadata> rows=new List<Metadata.Metadata>(); List<Metadata.CustomMetadata> customRows=rows; pq.out('E036',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Metadata.Metadata> to List<Metadata.CustomMetadata>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Metadata.Metadata> to List<Metadata.CustomMetadata>",
+      "nativeNull": false,
+      "sourceLine": 6
+    },
+    {
+      "id": "E037",
+      "group": "metadata-assignment-control",
+      "code": "Object r=true; List<Metadata.Layout> layouts=new List<Metadata.Layout>(); List<Metadata.CustomMetadata> customRows=layouts; pq.out('E037',r);",
+      "compile": true,
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Metadata.Layout> to List<Metadata.CustomMetadata>",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Metadata.Layout> to List<Metadata.CustomMetadata>",
+      "nativeNull": false,
+      "sourceLine": 6
+    }
+  ],
+  "declarations": {
+    "A44Callback": "public class A44Callback implements Metadata.DeployCallback { public void handleResult(Metadata.DeployResult result,Metadata.DeployCallbackContext context){} }",
+    "A44CompletePickList": "public class A44CompletePickList extends VisualEditor.DynamicPickList { public override VisualEditor.DataRow getDefaultValue(){return new VisualEditor.DataRow('A','a');} public override VisualEditor.DynamicPickListRows getValues(){return new VisualEditor.DynamicPickListRows();} }"
+  },
+  "ticketRows": {}
+}

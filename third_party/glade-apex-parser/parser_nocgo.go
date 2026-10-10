@@ -10,6 +10,12 @@ func NewParser() *Parser {
 	return &Parser{}
 }
 
+// Close is a no-op when CGO is unavailable because there is no native parser.
+func (p *Parser) Close() {}
+
+// OpenParsersForTesting returns zero when CGO is unavailable.
+func OpenParsersForTesting() int64 { return 0 }
+
 func (p *Parser) ParseFile(path string) (File, error) {
 	if _, err := os.ReadFile(path); err != nil {
 		return File{}, err

@@ -883,7 +883,7 @@ public class Over {
 		t.Fatalf("expected ambiguous null overload error, got %#v", ambiguous.Diagnostics)
 	}
 
-	specific := analyzeDeclarationProject(t, map[string]string{
+	objectAndString := analyzeDeclarationProject(t, map[string]string{
 		"Over.cls": `
 public class Over {
   public void run(Object value) {}
@@ -892,7 +892,8 @@ public class Over {
 }
 `,
 	})
-	if declarationDiagnosticMatching(specific, "ambiguous") {
-		t.Fatalf("most-specific overload should win for null: %#v", specific.Diagnostics)
+	// A02 R167: null is ambiguous even when one overload accepts Object.
+	if !objectAndString.HasErrors() || !declarationDiagnosticMatching(objectAndString, "ambiguous") {
+		t.Fatalf("expected ambiguous Object/String null overload error: %#v", objectAndString.Diagnostics)
 	}
 }

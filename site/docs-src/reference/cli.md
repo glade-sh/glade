@@ -415,6 +415,13 @@ glade test --project . --test-timeout 2m
 ```
 
 `--write-class-shards` writes balanced `shard-NNN.txt` class lists and exits.
+An empty generated shard contains `# glade-empty-class-shard-v1` and safely
+returns `status=empty` without selecting the full suite. A hand-written empty or
+comment-only `--class-file` is a `Selector` failure (JSON: `status=failed`, exit
+code `1`). Both outcomes write requested `--junit` and `--trace` artifacts;
+`--perf-json`, `--cpu-profile`, and `--mem-profile` are rejected for empty class
+files. JSON `status=partial` identifies a run with skipped selected tests and
+no failures.
 Unfiltered, unsharded runs maintain the default duration history. Test
 `--no-cache` bypasses startup and semantic cache disk operations plus semantic
 memory reuse. On memory-constrained hosts, `--gc-aggressive` reduces heap

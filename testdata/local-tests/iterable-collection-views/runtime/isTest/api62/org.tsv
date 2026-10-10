@@ -1,0 +1,9 @@
+R001	true
+R002	true
+R003	1
+R004	1
+R005	EXC|System.QueryException|Invalid bind expression type of ANY for column of type String
+R006	EXC|System.QueryException|Invalid bind expression type of ANY for column of type String
+R007	EXC|System.TypeException|Invalid conversion from runtime type Set<Integer> to Set<String>
+R008	true
+R009	true

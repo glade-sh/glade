@@ -137,6 +137,18 @@ func TestParseComponentMetaParsesQuickActionUrlAddressableAndPlaceholders(t *tes
 	}
 }
 
+func TestParseComponentMetaAcceptsNonBooleanExposure(t *testing.T) {
+	// Native org.tsv row meta_invalid_exposed compiles at API 59 and 67.
+	path := writeComponentMeta(t, `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><isExposed>maybe</isExposed><capabilities><capability>lightning__dynamicComponent</capability></capabilities></LightningComponentBundle>`)
+	meta, err := ParseComponentMeta(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(meta.Capabilities, []string{"lightning__dynamicComponent"}) {
+		t.Fatalf("Capabilities = %#v", meta.Capabilities)
+	}
+}
+
 func writeComponentMeta(t *testing.T, contents string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "recordInspector.js-meta.xml")

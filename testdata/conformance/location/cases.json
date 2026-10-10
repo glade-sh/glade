@@ -1,0 +1,1284 @@
+[
+  {
+    "id": "L001",
+    "code": "Location.newInstance(0,0).getLatitude()",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L002",
+    "code": "Location.newInstance(0,0).getLongitude()",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L003",
+    "code": "Location p = Location.newInstance(0,0); r = p.latitude;",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L004",
+    "code": "Location p = Location.newInstance(0,0); r = p.longitude;",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L005",
+    "code": "Location.newInstance(0,0).getDistance(Location.newInstance(0,0), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L006",
+    "code": "Location.newInstance(1,1).getLatitude()",
+    "compile": false,
+    "expected": "1.0",
+    "floorExpected": "1.0"
+  },
+  {
+    "id": "L007",
+    "code": "Location.newInstance(1,1).getLongitude()",
+    "compile": false,
+    "expected": "1.0",
+    "floorExpected": "1.0"
+  },
+  {
+    "id": "L008",
+    "code": "Location p = Location.newInstance(1,1); r = p.latitude;",
+    "compile": false,
+    "expected": "1.0",
+    "floorExpected": "1.0"
+  },
+  {
+    "id": "L009",
+    "code": "Location p = Location.newInstance(1,1); r = p.longitude;",
+    "compile": false,
+    "expected": "1.0",
+    "floorExpected": "1.0"
+  },
+  {
+    "id": "L010",
+    "code": "Location.newInstance(1,1).getDistance(Location.newInstance(1,1), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L011",
+    "code": "Location.newInstance(-1,-1).getLatitude()",
+    "compile": false,
+    "expected": "-1.0",
+    "floorExpected": "-1.0"
+  },
+  {
+    "id": "L012",
+    "code": "Location.newInstance(-1,-1).getLongitude()",
+    "compile": false,
+    "expected": "-1.0",
+    "floorExpected": "-1.0"
+  },
+  {
+    "id": "L013",
+    "code": "Location p = Location.newInstance(-1,-1); r = p.latitude;",
+    "compile": false,
+    "expected": "-1.0",
+    "floorExpected": "-1.0"
+  },
+  {
+    "id": "L014",
+    "code": "Location p = Location.newInstance(-1,-1); r = p.longitude;",
+    "compile": false,
+    "expected": "-1.0",
+    "floorExpected": "-1.0"
+  },
+  {
+    "id": "L015",
+    "code": "Location.newInstance(-1,-1).getDistance(Location.newInstance(-1,-1), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L016",
+    "code": "Location.newInstance(45,90).getLatitude()",
+    "compile": false,
+    "expected": "45.0",
+    "floorExpected": "45.0"
+  },
+  {
+    "id": "L017",
+    "code": "Location.newInstance(45,90).getLongitude()",
+    "compile": false,
+    "expected": "90.0",
+    "floorExpected": "90.0"
+  },
+  {
+    "id": "L018",
+    "code": "Location p = Location.newInstance(45,90); r = p.latitude;",
+    "compile": false,
+    "expected": "45.0",
+    "floorExpected": "45.0"
+  },
+  {
+    "id": "L019",
+    "code": "Location p = Location.newInstance(45,90); r = p.longitude;",
+    "compile": false,
+    "expected": "90.0",
+    "floorExpected": "90.0"
+  },
+  {
+    "id": "L020",
+    "code": "Location.newInstance(45,90).getDistance(Location.newInstance(45,90), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L021",
+    "code": "Location.newInstance(-45,-90).getLatitude()",
+    "compile": false,
+    "expected": "-45.0",
+    "floorExpected": "-45.0"
+  },
+  {
+    "id": "L022",
+    "code": "Location.newInstance(-45,-90).getLongitude()",
+    "compile": false,
+    "expected": "-90.0",
+    "floorExpected": "-90.0"
+  },
+  {
+    "id": "L023",
+    "code": "Location p = Location.newInstance(-45,-90); r = p.latitude;",
+    "compile": false,
+    "expected": "-45.0",
+    "floorExpected": "-45.0"
+  },
+  {
+    "id": "L024",
+    "code": "Location p = Location.newInstance(-45,-90); r = p.longitude;",
+    "compile": false,
+    "expected": "-90.0",
+    "floorExpected": "-90.0"
+  },
+  {
+    "id": "L025",
+    "code": "Location.newInstance(-45,-90).getDistance(Location.newInstance(-45,-90), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L026",
+    "code": "Location.newInstance(90,180).getLatitude()",
+    "compile": false,
+    "expected": "90.0",
+    "floorExpected": "90.0"
+  },
+  {
+    "id": "L027",
+    "code": "Location.newInstance(90,180).getLongitude()",
+    "compile": false,
+    "expected": "180.0",
+    "floorExpected": "180.0"
+  },
+  {
+    "id": "L028",
+    "code": "Location p = Location.newInstance(90,180); r = p.latitude;",
+    "compile": false,
+    "expected": "90.0",
+    "floorExpected": "90.0"
+  },
+  {
+    "id": "L029",
+    "code": "Location p = Location.newInstance(90,180); r = p.longitude;",
+    "compile": false,
+    "expected": "180.0",
+    "floorExpected": "180.0"
+  },
+  {
+    "id": "L030",
+    "code": "Location.newInstance(90,180).getDistance(Location.newInstance(90,180), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L031",
+    "code": "Location.newInstance(-90,-180).getLatitude()",
+    "compile": false,
+    "expected": "-90.0",
+    "floorExpected": "-90.0"
+  },
+  {
+    "id": "L032",
+    "code": "Location.newInstance(-90,-180).getLongitude()",
+    "compile": false,
+    "expected": "-180.0",
+    "floorExpected": "-180.0"
+  },
+  {
+    "id": "L033",
+    "code": "Location p = Location.newInstance(-90,-180); r = p.latitude;",
+    "compile": false,
+    "expected": "-90.0",
+    "floorExpected": "-90.0"
+  },
+  {
+    "id": "L034",
+    "code": "Location p = Location.newInstance(-90,-180); r = p.longitude;",
+    "compile": false,
+    "expected": "-180.0",
+    "floorExpected": "-180.0"
+  },
+  {
+    "id": "L035",
+    "code": "Location.newInstance(-90,-180).getDistance(Location.newInstance(-90,-180), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L036",
+    "code": "Location.newInstance(90,-180).getLatitude()",
+    "compile": false,
+    "expected": "90.0",
+    "floorExpected": "90.0"
+  },
+  {
+    "id": "L037",
+    "code": "Location.newInstance(90,-180).getLongitude()",
+    "compile": false,
+    "expected": "-180.0",
+    "floorExpected": "-180.0"
+  },
+  {
+    "id": "L038",
+    "code": "Location p = Location.newInstance(90,-180); r = p.latitude;",
+    "compile": false,
+    "expected": "90.0",
+    "floorExpected": "90.0"
+  },
+  {
+    "id": "L039",
+    "code": "Location p = Location.newInstance(90,-180); r = p.longitude;",
+    "compile": false,
+    "expected": "-180.0",
+    "floorExpected": "-180.0"
+  },
+  {
+    "id": "L040",
+    "code": "Location.newInstance(90,-180).getDistance(Location.newInstance(90,-180), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L041",
+    "code": "Location.newInstance(-90,180).getLatitude()",
+    "compile": false,
+    "expected": "-90.0",
+    "floorExpected": "-90.0"
+  },
+  {
+    "id": "L042",
+    "code": "Location.newInstance(-90,180).getLongitude()",
+    "compile": false,
+    "expected": "180.0",
+    "floorExpected": "180.0"
+  },
+  {
+    "id": "L043",
+    "code": "Location p = Location.newInstance(-90,180); r = p.latitude;",
+    "compile": false,
+    "expected": "-90.0",
+    "floorExpected": "-90.0"
+  },
+  {
+    "id": "L044",
+    "code": "Location p = Location.newInstance(-90,180); r = p.longitude;",
+    "compile": false,
+    "expected": "180.0",
+    "floorExpected": "180.0"
+  },
+  {
+    "id": "L045",
+    "code": "Location.newInstance(-90,180).getDistance(Location.newInstance(-90,180), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L046",
+    "code": "Location.newInstance(89.999999,179.999999).getLatitude()",
+    "compile": false,
+    "expected": "89.999999",
+    "floorExpected": "89.999999"
+  },
+  {
+    "id": "L047",
+    "code": "Location.newInstance(89.999999,179.999999).getLongitude()",
+    "compile": false,
+    "expected": "179.999999",
+    "floorExpected": "179.999999"
+  },
+  {
+    "id": "L048",
+    "code": "Location p = Location.newInstance(89.999999,179.999999); r = p.latitude;",
+    "compile": false,
+    "expected": "89.999999",
+    "floorExpected": "89.999999"
+  },
+  {
+    "id": "L049",
+    "code": "Location p = Location.newInstance(89.999999,179.999999); r = p.longitude;",
+    "compile": false,
+    "expected": "179.999999",
+    "floorExpected": "179.999999"
+  },
+  {
+    "id": "L050",
+    "code": "Location.newInstance(89.999999,179.999999).getDistance(Location.newInstance(89.999999,179.999999), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L051",
+    "code": "Location.newInstance(-89.999999,-179.999999).getLatitude()",
+    "compile": false,
+    "expected": "-89.999999",
+    "floorExpected": "-89.999999"
+  },
+  {
+    "id": "L052",
+    "code": "Location.newInstance(-89.999999,-179.999999).getLongitude()",
+    "compile": false,
+    "expected": "-179.999999",
+    "floorExpected": "-179.999999"
+  },
+  {
+    "id": "L053",
+    "code": "Location p = Location.newInstance(-89.999999,-179.999999); r = p.latitude;",
+    "compile": false,
+    "expected": "-89.999999",
+    "floorExpected": "-89.999999"
+  },
+  {
+    "id": "L054",
+    "code": "Location p = Location.newInstance(-89.999999,-179.999999); r = p.longitude;",
+    "compile": false,
+    "expected": "-179.999999",
+    "floorExpected": "-179.999999"
+  },
+  {
+    "id": "L055",
+    "code": "Location.newInstance(-89.999999,-179.999999).getDistance(Location.newInstance(-89.999999,-179.999999), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L056",
+    "code": "Location.newInstance(33.71479,-117.14796).getLatitude()",
+    "compile": false,
+    "expected": "33.71479",
+    "floorExpected": "33.71479"
+  },
+  {
+    "id": "L057",
+    "code": "Location.newInstance(33.71479,-117.14796).getLongitude()",
+    "compile": false,
+    "expected": "-117.14796",
+    "floorExpected": "-117.14796"
+  },
+  {
+    "id": "L058",
+    "code": "Location p = Location.newInstance(33.71479,-117.14796); r = p.latitude;",
+    "compile": false,
+    "expected": "33.71479",
+    "floorExpected": "33.71479"
+  },
+  {
+    "id": "L059",
+    "code": "Location p = Location.newInstance(33.71479,-117.14796); r = p.longitude;",
+    "compile": false,
+    "expected": "-117.14796",
+    "floorExpected": "-117.14796"
+  },
+  {
+    "id": "L060",
+    "code": "Location.newInstance(33.71479,-117.14796).getDistance(Location.newInstance(33.71479,-117.14796), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L061",
+    "code": "Location.newInstance(51.5074,-0.1278).getLatitude()",
+    "compile": false,
+    "expected": "51.5074",
+    "floorExpected": "51.5074"
+  },
+  {
+    "id": "L062",
+    "code": "Location.newInstance(51.5074,-0.1278).getLongitude()",
+    "compile": false,
+    "expected": "-0.1278",
+    "floorExpected": "-0.1278"
+  },
+  {
+    "id": "L063",
+    "code": "Location p = Location.newInstance(51.5074,-0.1278); r = p.latitude;",
+    "compile": false,
+    "expected": "51.5074",
+    "floorExpected": "51.5074"
+  },
+  {
+    "id": "L064",
+    "code": "Location p = Location.newInstance(51.5074,-0.1278); r = p.longitude;",
+    "compile": false,
+    "expected": "-0.1278",
+    "floorExpected": "-0.1278"
+  },
+  {
+    "id": "L065",
+    "code": "Location.newInstance(51.5074,-0.1278).getDistance(Location.newInstance(51.5074,-0.1278), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L066",
+    "code": "Location.newInstance(-33.8688,151.2093).getLatitude()",
+    "compile": false,
+    "expected": "-33.8688",
+    "floorExpected": "-33.8688"
+  },
+  {
+    "id": "L067",
+    "code": "Location.newInstance(-33.8688,151.2093).getLongitude()",
+    "compile": false,
+    "expected": "151.2093",
+    "floorExpected": "151.2093"
+  },
+  {
+    "id": "L068",
+    "code": "Location p = Location.newInstance(-33.8688,151.2093); r = p.latitude;",
+    "compile": false,
+    "expected": "-33.8688",
+    "floorExpected": "-33.8688"
+  },
+  {
+    "id": "L069",
+    "code": "Location p = Location.newInstance(-33.8688,151.2093); r = p.longitude;",
+    "compile": false,
+    "expected": "151.2093",
+    "floorExpected": "151.2093"
+  },
+  {
+    "id": "L070",
+    "code": "Location.newInstance(-33.8688,151.2093).getDistance(Location.newInstance(-33.8688,151.2093), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L071",
+    "code": "Location.newInstance(0,180).getLatitude()",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L072",
+    "code": "Location.newInstance(0,180).getLongitude()",
+    "compile": false,
+    "expected": "180.0",
+    "floorExpected": "180.0"
+  },
+  {
+    "id": "L073",
+    "code": "Location p = Location.newInstance(0,180); r = p.latitude;",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L074",
+    "code": "Location p = Location.newInstance(0,180); r = p.longitude;",
+    "compile": false,
+    "expected": "180.0",
+    "floorExpected": "180.0"
+  },
+  {
+    "id": "L075",
+    "code": "Location.newInstance(0,180).getDistance(Location.newInstance(0,180), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L076",
+    "code": "Location.newInstance(0,-180).getLatitude()",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L077",
+    "code": "Location.newInstance(0,-180).getLongitude()",
+    "compile": false,
+    "expected": "-180.0",
+    "floorExpected": "-180.0"
+  },
+  {
+    "id": "L078",
+    "code": "Location p = Location.newInstance(0,-180); r = p.latitude;",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L079",
+    "code": "Location p = Location.newInstance(0,-180); r = p.longitude;",
+    "compile": false,
+    "expected": "-180.0",
+    "floorExpected": "-180.0"
+  },
+  {
+    "id": "L080",
+    "code": "Location.newInstance(0,-180).getDistance(Location.newInstance(0,-180), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L081",
+    "code": "Location.newInstance(90,0).getLatitude()",
+    "compile": false,
+    "expected": "90.0",
+    "floorExpected": "90.0"
+  },
+  {
+    "id": "L082",
+    "code": "Location.newInstance(90,0).getLongitude()",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L083",
+    "code": "Location p = Location.newInstance(90,0); r = p.latitude;",
+    "compile": false,
+    "expected": "90.0",
+    "floorExpected": "90.0"
+  },
+  {
+    "id": "L084",
+    "code": "Location p = Location.newInstance(90,0); r = p.longitude;",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L085",
+    "code": "Location.newInstance(90,0).getDistance(Location.newInstance(90,0), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L086",
+    "code": "Location.newInstance(-90,0).getLatitude()",
+    "compile": false,
+    "expected": "-90.0",
+    "floorExpected": "-90.0"
+  },
+  {
+    "id": "L087",
+    "code": "Location.newInstance(-90,0).getLongitude()",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L088",
+    "code": "Location p = Location.newInstance(-90,0); r = p.latitude;",
+    "compile": false,
+    "expected": "-90.0",
+    "floorExpected": "-90.0"
+  },
+  {
+    "id": "L089",
+    "code": "Location p = Location.newInstance(-90,0); r = p.longitude;",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L090",
+    "code": "Location.newInstance(-90,0).getDistance(Location.newInstance(-90,0), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L091",
+    "code": "Location.newInstance(0.000001,-0.000001).getLatitude()",
+    "compile": false,
+    "expected": "1.0E-6",
+    "floorExpected": "1.0E-6"
+  },
+  {
+    "id": "L092",
+    "code": "Location.newInstance(0.000001,-0.000001).getLongitude()",
+    "compile": false,
+    "expected": "-1.0E-6",
+    "floorExpected": "-1.0E-6"
+  },
+  {
+    "id": "L093",
+    "code": "Location p = Location.newInstance(0.000001,-0.000001); r = p.latitude;",
+    "compile": false,
+    "expected": "1.0E-6",
+    "floorExpected": "1.0E-6"
+  },
+  {
+    "id": "L094",
+    "code": "Location p = Location.newInstance(0.000001,-0.000001); r = p.longitude;",
+    "compile": false,
+    "expected": "-1.0E-6",
+    "floorExpected": "-1.0E-6"
+  },
+  {
+    "id": "L095",
+    "code": "Location.newInstance(0.000001,-0.000001).getDistance(Location.newInstance(0.000001,-0.000001), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L096",
+    "code": "Location.newInstance(45.5,-73.5).getLatitude()",
+    "compile": false,
+    "expected": "45.5",
+    "floorExpected": "45.5"
+  },
+  {
+    "id": "L097",
+    "code": "Location.newInstance(45.5,-73.5).getLongitude()",
+    "compile": false,
+    "expected": "-73.5",
+    "floorExpected": "-73.5"
+  },
+  {
+    "id": "L098",
+    "code": "Location p = Location.newInstance(45.5,-73.5); r = p.latitude;",
+    "compile": false,
+    "expected": "45.5",
+    "floorExpected": "45.5"
+  },
+  {
+    "id": "L099",
+    "code": "Location p = Location.newInstance(45.5,-73.5); r = p.longitude;",
+    "compile": false,
+    "expected": "-73.5",
+    "floorExpected": "-73.5"
+  },
+  {
+    "id": "L100",
+    "code": "Location.newInstance(45.5,-73.5).getDistance(Location.newInstance(45.5,-73.5), 'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "L101",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "111.195084",
+    "floorExpected": "111.195084"
+  },
+  {
+    "id": "L102",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "69.093414",
+    "floorExpected": "69.093414"
+  },
+  {
+    "id": "L103",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "111.195084",
+    "floorExpected": "111.195084"
+  },
+  {
+    "id": "L104",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(1,0),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "111.195084",
+    "floorExpected": "111.195084"
+  },
+  {
+    "id": "L105",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(1,0),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "69.093414",
+    "floorExpected": "69.093414"
+  },
+  {
+    "id": "L106",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(1,0),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "111.195084",
+    "floorExpected": "111.195084"
+  },
+  {
+    "id": "L107",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,180),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "20015.115070",
+    "floorExpected": "20015.115070"
+  },
+  {
+    "id": "L108",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,180),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "12436.814475",
+    "floorExpected": "12436.814475"
+  },
+  {
+    "id": "L109",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,180),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "20015.115070",
+    "floorExpected": "20015.115070"
+  },
+  {
+    "id": "L110",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(90,0),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "10007.557535",
+    "floorExpected": "10007.557535"
+  },
+  {
+    "id": "L111",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(90,0),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "6218.407237",
+    "floorExpected": "6218.407237"
+  },
+  {
+    "id": "L112",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(90,0),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "10007.557535",
+    "floorExpected": "10007.557535"
+  },
+  {
+    "id": "L113",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(90,0),Location.newInstance(-90,0),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "20015.115070",
+    "floorExpected": "20015.115070"
+  },
+  {
+    "id": "L114",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(90,0),Location.newInstance(-90,0),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "12436.814475",
+    "floorExpected": "12436.814475"
+  },
+  {
+    "id": "L115",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(90,0),Location.newInstance(-90,0),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "20015.115070",
+    "floorExpected": "20015.115070"
+  },
+  {
+    "id": "L116",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(1,1),Location.newInstance(-1,-1),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "314.499207",
+    "floorExpected": "314.499207"
+  },
+  {
+    "id": "L117",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(1,1),Location.newInstance(-1,-1),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "195.420724",
+    "floorExpected": "195.420724"
+  },
+  {
+    "id": "L118",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(1,1),Location.newInstance(-1,-1),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "314.499207",
+    "floorExpected": "314.499207"
+  },
+  {
+    "id": "L119",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(45,90),Location.newInstance(-45,-90),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "20015.115070",
+    "floorExpected": "20015.115070"
+  },
+  {
+    "id": "L120",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(45,90),Location.newInstance(-45,-90),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "12436.814475",
+    "floorExpected": "12436.814475"
+  },
+  {
+    "id": "L121",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(45,90),Location.newInstance(-45,-90),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "20015.115070",
+    "floorExpected": "20015.115070"
+  },
+  {
+    "id": "L122",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(33.71479,-117.14796),Location.newInstance(51.5074,-0.1278),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "8729.701155",
+    "floorExpected": "8729.701155"
+  },
+  {
+    "id": "L123",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(33.71479,-117.14796),Location.newInstance(51.5074,-0.1278),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "5424.384187",
+    "floorExpected": "5424.384187"
+  },
+  {
+    "id": "L124",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(33.71479,-117.14796),Location.newInstance(51.5074,-0.1278),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "8729.701155",
+    "floorExpected": "8729.701155"
+  },
+  {
+    "id": "L125",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,180),Location.newInstance(0,-180),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "0.000000",
+    "floorExpected": "0.000000"
+  },
+  {
+    "id": "L126",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,180),Location.newInstance(0,-180),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "0.000000",
+    "floorExpected": "0.000000"
+  },
+  {
+    "id": "L127",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,180),Location.newInstance(0,-180),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "0.000000",
+    "floorExpected": "0.000000"
+  },
+  {
+    "id": "L128",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(89.999999,179.999999),Location.newInstance(-89.999999,-179.999999),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "20015.114880",
+    "floorExpected": "20015.114880"
+  },
+  {
+    "id": "L129",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(89.999999,179.999999),Location.newInstance(-89.999999,-179.999999),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "12436.814357",
+    "floorExpected": "12436.814357"
+  },
+  {
+    "id": "L130",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(89.999999,179.999999),Location.newInstance(-89.999999,-179.999999),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "20015.114880",
+    "floorExpected": "20015.114880"
+  },
+  {
+    "id": "L131",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(0.000001,-0.000001),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "0.000157",
+    "floorExpected": "0.000157"
+  },
+  {
+    "id": "L132",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(0.000001,-0.000001),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "0.000098",
+    "floorExpected": "0.000098"
+  },
+  {
+    "id": "L133",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(0,0),Location.newInstance(0.000001,-0.000001),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "0.000157",
+    "floorExpected": "0.000157"
+  },
+  {
+    "id": "L134",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(45.5,-73.5),Location.newInstance(51.5074,-0.1278),'km'))).setScale(6)",
+    "compile": false,
+    "expected": "5216.662379",
+    "floorExpected": "5216.662379"
+  },
+  {
+    "id": "L135",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(45.5,-73.5),Location.newInstance(51.5074,-0.1278),'mi'))).setScale(6)",
+    "compile": false,
+    "expected": "3241.483347",
+    "floorExpected": "3241.483347"
+  },
+  {
+    "id": "L136",
+    "code": "Decimal.valueOf(String.valueOf(Location.getDistance(Location.newInstance(45.5,-73.5),Location.newInstance(51.5074,-0.1278),'KM'))).setScale(6)",
+    "compile": false,
+    "expected": "5216.662379",
+    "floorExpected": "5216.662379"
+  },
+  {
+    "id": "L137",
+    "code": "Location.newInstance(91,0)",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Latitude outside valid range.  Should be between -90 and 90.",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Latitude outside valid range.  Should be between -90 and 90."
+  },
+  {
+    "id": "L138",
+    "code": "Location.newInstance(-91,0)",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Latitude outside valid range.  Should be between -90 and 90.",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Latitude outside valid range.  Should be between -90 and 90."
+  },
+  {
+    "id": "L139",
+    "code": "Location.newInstance(0,181)",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Longitude outside valid range. Should be between -180 and 180.",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Longitude outside valid range. Should be between -180 and 180."
+  },
+  {
+    "id": "L140",
+    "code": "Location.newInstance(0,-181)",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Longitude outside valid range. Should be between -180 and 180.",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Longitude outside valid range. Should be between -180 and 180."
+  },
+  {
+    "id": "L141",
+    "code": "Location.newInstance(1000,1000)",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Latitude outside valid range.  Should be between -90 and 90.",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Latitude outside valid range.  Should be between -90 and 90."
+  },
+  {
+    "id": "L142",
+    "code": "Location.newInstance((Double)null,0)",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Latitude value is missing ",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Latitude value is missing "
+  },
+  {
+    "id": "L143",
+    "code": "Location.newInstance(0,(Double)null)",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Longitude value is missing ",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Longitude value is missing "
+  },
+  {
+    "id": "L144",
+    "code": "Location.newInstance((Double)null,(Double)null)",
+    "compile": false,
+    "expected": "System.Location[getLatitude=null;getLongitude=null;]",
+    "floorExpected": "System.Location[getLatitude=null;getLongitude=null;]"
+  },
+  {
+    "id": "L145",
+    "code": "Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'')",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified"
+  },
+  {
+    "id": "L146",
+    "code": "Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'kilometers')",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified"
+  },
+  {
+    "id": "L147",
+    "code": "Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'miles')",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified"
+  },
+  {
+    "id": "L148",
+    "code": "Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'m')",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified"
+  },
+  {
+    "id": "L149",
+    "code": "Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'Mi')",
+    "compile": false,
+    "expected": "69.09341374954325",
+    "floorExpected": "69.09341374954325"
+  },
+  {
+    "id": "L150",
+    "code": "Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),' km')",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified"
+  },
+  {
+    "id": "L151",
+    "code": "Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'km ')",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified"
+  },
+  {
+    "id": "L152",
+    "code": "Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'invalid')",
+    "compile": false,
+    "expected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Invalid distance unit specified"
+  },
+  {
+    "id": "L153",
+    "code": "Location.getDistance((Location)null,Location.newInstance(0,0),'km')",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 1 cannot be null"
+  },
+  {
+    "id": "L154",
+    "code": "Location.getDistance(Location.newInstance(0,0),(Location)null,'km')",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 2 cannot be null"
+  },
+  {
+    "id": "L155",
+    "code": "Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),(String)null)",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 3 cannot be null"
+  },
+  {
+    "id": "L156",
+    "code": "Location p = Location.newInstance(0,0); r = p.getDistance((Location)null,'km');",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 1 cannot be null"
+  },
+  {
+    "id": "X001",
+    "code": "Location p = Location.newInstance(0,0); p.latitude = 1; pq.out('X001', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Variable is not visible: System.Location.latitude",
+    "floorExpected": "COMPILE_ERROR\tline 6: Variable is not visible: System.Location.latitude"
+  },
+  {
+    "id": "X002",
+    "code": "Location p = Location.newInstance(0,0); p.longitude = 1; pq.out('X002', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Variable is not visible: System.Location.longitude",
+    "floorExpected": "COMPILE_ERROR\tline 6: Variable is not visible: System.Location.longitude"
+  },
+  {
+    "id": "X003",
+    "code": "Location.newInstance('1', '2'); pq.out('X003', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void newInstance(String, String) from the type System.Location",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void newInstance(String, String) from the type System.Location"
+  },
+  {
+    "id": "X004",
+    "code": "new Location(); pq.out('X004', 'compiled');",
+    "compile": true,
+    "expected": "compiled",
+    "floorExpected": "compiled"
+  },
+  {
+    "id": "C001",
+    "code": "new Location()",
+    "compile": false,
+    "expected": "System.Location[getLatitude=null;getLongitude=null;]",
+    "floorExpected": "System.Location[getLatitude=null;getLongitude=null;]"
+  },
+  {
+    "id": "C002",
+    "code": "new Location().getLatitude()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "C003",
+    "code": "new Location().getLongitude()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "C004",
+    "code": "Location.newInstance((Double)null,(Double)null).getLatitude()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "C005",
+    "code": "Location.newInstance((Double)null,(Double)null).getLongitude()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "C006",
+    "code": "Location p = Location.newInstance((Double)null,(Double)null); r = p.latitude;",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "C007",
+    "code": "Location p = Location.newInstance((Double)null,(Double)null); r = p.longitude;",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "C008",
+    "code": "Location.newInstance(0,1)",
+    "compile": false,
+    "expected": "System.Location[getLatitude=0.0;getLongitude=1.0;]",
+    "floorExpected": "System.Location[getLatitude=0.0;getLongitude=1.0;]"
+  },
+  {
+    "id": "C009",
+    "code": "Location.newInstance(0,1).toString()",
+    "compile": false,
+    "expected": "System.Location[getLatitude=0.0;getLongitude=1.0;]",
+    "floorExpected": "System.Location[getLatitude=0.0;getLongitude=1.0;]"
+  },
+  {
+    "id": "C010",
+    "code": "Location.newInstance((Double)null,(Double)null).toString()",
+    "compile": false,
+    "expected": "System.Location[getLatitude=null;getLongitude=null;]",
+    "floorExpected": "System.Location[getLatitude=null;getLongitude=null;]"
+  },
+  {
+    "id": "C011",
+    "code": "Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'km')",
+    "compile": false,
+    "expected": "111.19508372419142",
+    "floorExpected": "111.19508372419142"
+  },
+  {
+    "id": "C012",
+    "code": "Location.getDistance(Location.newInstance(0,0),Location.newInstance(0,1),'mi')",
+    "compile": false,
+    "expected": "69.09341374954325",
+    "floorExpected": "69.09341374954325"
+  },
+  {
+    "id": "C013",
+    "code": "Location.newInstance(0,0).getDistance(Location.newInstance(0,1),'km')",
+    "compile": false,
+    "expected": "111.19508372419142",
+    "floorExpected": "111.19508372419142"
+  },
+  {
+    "id": "C014",
+    "code": "Location.newInstance(0,0).getDistance(Location.newInstance(0,1),'mi')",
+    "compile": false,
+    "expected": "69.09341374954325",
+    "floorExpected": "69.09341374954325"
+  },
+  {
+    "id": "C015",
+    "code": "Location.newInstance(0,0).getDistance(Location.newInstance(0,0),'km')",
+    "compile": false,
+    "expected": "0.0",
+    "floorExpected": "0.0"
+  },
+  {
+    "id": "C016",
+    "code": "Location.newInstance(0,0).getDistance(Location.newInstance(0,1),(String)null)",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+    "floorExpected": "EXC|System.NullPointerException|Argument 2 cannot be null"
+  },
+  {
+    "id": "C017",
+    "code": "new System.Location().getLatitude()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "C018",
+    "code": "new System.Location().getLongitude()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null",
+    "expectedNull": true
+  },
+  {
+    "id": "C019",
+    "code": "System.Location.newInstance(1,2)",
+    "compile": false,
+    "expected": "System.Location[getLatitude=1.0;getLongitude=2.0;]",
+    "floorExpected": "System.Location[getLatitude=1.0;getLongitude=2.0;]"
+  },
+  {
+    "id": "T001",
+    "code": "Location.newInstance(0,0).getAltitude(); pq.out('T001', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getAltitude() from the type System.Location",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getAltitude() from the type System.Location"
+  },
+  {
+    "id": "T002",
+    "code": "System.Location p = System.Location.newInstance(0,0); p.latitude = 1; pq.out('T002', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Variable is not visible: System.Location.latitude",
+    "floorExpected": "COMPILE_ERROR\tline 6: Variable is not visible: System.Location.latitude"
+  },
+  {
+    "id": "T003",
+    "code": "System.Location p = System.Location.newInstance(0,0); p.longitude = 1; pq.out('T003', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Variable is not visible: System.Location.longitude",
+    "floorExpected": "COMPILE_ERROR\tline 6: Variable is not visible: System.Location.longitude"
+  }
+]

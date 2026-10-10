@@ -11,6 +11,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/lwc"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type WorkbenchModel struct {
@@ -42,6 +43,10 @@ type ShellRoute struct {
 	ObjectName  string            `json:"objectApiName,omitempty"`
 	RecordID    string            `json:"recordId,omitempty"`
 	TabName     string            `json:"tabName,omitempty"`
+	ItemType    string            `json:"itemType,omitempty"`
+	Color       string            `json:"color,omitempty"`
+	Content     string            `json:"content,omitempty"`
+	IconURL     string            `json:"iconUrl,omitempty"`
 	ActionName  string            `json:"actionName,omitempty"`
 	ActionType  string            `json:"actionType,omitempty"`
 	Diagnostics []Diagnostic      `json:"diagnostics,omitempty"`
@@ -75,8 +80,8 @@ type ShellComponentProperty struct {
 	Source   string `json:"source,omitempty"`
 }
 
-func BuildWorkbenchModel(p project.Project, active ShellPage, activeRoute string) WorkbenchModel {
-	routes := DiscoverShellRoutes(p)
+func BuildWorkbenchModel(p project.Project, active ShellPage, activeRoute string, registries ...storage.MetadataRegistry) WorkbenchModel {
+	routes := DiscoverShellRoutes(p, registries...)
 	appName := strings.TrimSpace(active.Context.AppName)
 	if appName == "" {
 		appName = "Local"
@@ -153,7 +158,7 @@ func routeURLForNavItem(routes []ShellRoute, item string) string {
 	return ""
 }
 
-func DiscoverShellRoutes(p project.Project) []ShellRoute {
+func DiscoverShellRoutes(p project.Project, registries ...storage.MetadataRegistry) []ShellRoute {
 	namespace := strings.TrimSpace(p.Namespace)
 	if namespace == "" {
 		namespace = "c"
@@ -240,6 +245,17 @@ func DiscoverShellRoutes(p project.Project) []ShellRoute {
 			Kind:    RenderTargetTab,
 			TabName: tab.Name,
 		}
+		if tab.Type == TabTypeLWC {
+			route.ItemType = "TabAura"
+			route.Content = route.URL
+			route.ObjectName = tabNavigationIdentity(registries, tab.Name)
+			// The captured Custom1 LWC tab uses the Heart theme. Other motifs
+			// retain their existing unspecified navigation presentation.
+			if tab.Motif == "Custom1: Heart" {
+				route.Color = "ff7b84"
+				route.IconURL = "/assets/icons/custom-sprite/svg/symbols.svg#custom1"
+			}
+		}
 		if diag := tab.UnsupportedDiagnostic(); diag.Code != "" {
 			route.Diagnostics = []Diagnostic{diag}
 		}
@@ -249,6 +265,17 @@ func DiscoverShellRoutes(p project.Project) []ShellRoute {
 	routes = appendCommunityPresetRoutes(p, routes)
 	routes = appendFlowPresetRoutes(p, routes)
 	return routes
+}
+
+func tabNavigationIdentity(registries []storage.MetadataRegistry, name string) string {
+	for _, registry := range registries {
+		for _, tab := range registry.Tabs {
+			if tab.Name == name && tab.NavigationIdentity != "" {
+				return tab.NavigationIdentity
+			}
+		}
+	}
+	return ""
 }
 
 const workbenchSampleRecordID = "001000000000001AAA"

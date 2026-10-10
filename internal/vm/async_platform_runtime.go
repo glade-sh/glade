@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
 func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
+	if vm.rejectAsyncActions {
+		return Null, vm.rejectSynchronousAsyncAction("EventBus.publish cannot cross the synchronous LWC action boundary")
+	}
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("EventBus.publish expects event record or list and optional callback")
 	}
@@ -20,60 +24,137 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 	if len(records) == 0 {
 		return List(), nil
 	}
-	if err := vm.incrementLimit("publishImmediateDml", 1); err != nil {
-		return Null, err
+	// R176: duplicate event aliases are rejected before either is published.
+	seen := make(map[uint64]bool)
+	for _, record := range records {
+		if record.Kind == ValueNull {
+			if args[0].Kind == ValueList {
+				// Native nullListElement/mixedNullElement return unstable hosted
+				// internal errors. Keep that outcome as an explicit local boundary.
+				return Null, newExceptionError("System.UnsupportedOperationException", "EventBus.publish with null list elements is unavailable locally: Salesforce returned an unstable internal error")
+			}
+			return Null, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+		}
+		if record.Ref != 0 && seen[record.Ref] {
+			return Null, newExceptionError("ListException", "Before Insert or Upsert list must not have two identically equal elements")
+		}
+		seen[record.Ref] = record.Ref != 0
+	}
+	// P011/P012: native callback publication aborts outside Apex catch.
+	// Keep this hosted boundary explicit before any local publication state.
+	if len(args) == 2 && args[1].Kind == ValueNull {
+		for _, record := range records {
+			if record.Kind == ValueObject && !record.projectClass && strings.EqualFold(runtimeObjectType(record), "BatchApexErrorEvent") {
+				return Null, newExceptionError("System.UnsupportedOperationException", "EventBus.publish for BatchApexErrorEvent with a null callback requires the hosted event service")
+			}
+		}
+	}
+	ordinaryDMLRows := 0
+	// Salesforce accounts an erased List<SObject> as ordinary DML, even
+	// when its records are immediate-publish platform events.
+	elementType, _ := collectionElementType(args[0].Type)
+	if args[0].Kind == ValueList && strings.EqualFold(elementType, "SObject") {
+		ordinaryDMLRows = len(records)
+	} else {
+		for _, record := range records {
+			if vm.Org == nil {
+				break
+			}
+			if objectName, ok := storage.ResolveObjectName(*vm.Org, record.Type); ok && strings.EqualFold(vm.Org.Objects[objectName].Definition.Metadata["publishBehavior"], "PublishAfterCommit") {
+				ordinaryDMLRows++
+			}
+		}
+	}
+	if ordinaryDMLRows > 0 {
+		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+			return Null, err
+		}
+		if err := vm.incrementLimit("dmlRows", ordinaryDMLRows); err != nil {
+			return Null, err
+		}
+	}
+	if ordinaryDMLRows < len(records) {
+		if err := vm.incrementLimit("publishImmediateDml", 1); err != nil {
+			return Null, err
+		}
 	}
 	results := make([]Value, 0, len(records))
 	triggerRecords := make([]storage.Record, 0, len(records))
 	eventUUIDs := make([]string, 0, len(records))
-	for _, record := range records {
+	// Native T/U/V controls: test-only allowance, evaluated in publish chunks.
+	quotaExceeded := false
+	for recordIndex, record := range records {
+		if vm.testContext != nil && !quotaExceeded && recordIndex%200 == 0 {
+			eligible := 0
+			for _, candidate := range records[recordIndex:min(recordIndex+200, len(records))] {
+				if vm.platformEventCanEnqueue(candidate) {
+					eligible++
+				}
+			}
+			quotaExceeded = vm.testContext.PlatformEventPublishes+eligible >= 500
+		}
 		if record.Kind != ValueObject {
 			return Null, fmt.Errorf("EventBus.publish expects SObject event record(s)")
-		}
-		if _, replayID, ok := objectFieldValue(record, "ReplayId"); !ok || replayID.Kind == ValueNull {
-			putVMFieldPath(record, "ReplayId", String(vm.nextEventBusReplayID()))
-		}
-		eventUUID, hasEventUUID := platformEventUUID(record)
-		if len(args) == 2 {
-			if !hasEventUUID {
-				return Null, fmt.Errorf("EventBus.publish with callback requires platform event records with EventUuid")
-			}
-			eventUUIDs = append(eventUUIDs, eventUUID)
 		}
 		stored, err := vm.recordFromValue(&record)
 		if err != nil {
 			return Null, err
 		}
-		if !hasSuffixFold(stored.Object, "__e") {
-			return Null, fmt.Errorf("The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.")
+		// P004-P009: an erased scalar or concrete standard-object list retains
+		// the DML rejection; a genuine List<SObject> returns a row failure.
+		if strings.EqualFold(stored.Object, "BatchApexErrorEvent") {
+			message := "DML operation INSERT not allowed on BatchApexErrorEvent"
+			runtimeElementType, _ := collectionElementType(runtimeObjectType(args[0]))
+			if args[0].Kind == ValueList && strings.EqualFold(runtimeElementType, "SObject") {
+				results = append(results, platformEventSaveResult("", false, "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", message, nil))
+				continue
+			}
+			return Null, newExceptionError("TypeException", message)
 		}
-		if field, ok := vm.missingRequiredPlatformEventField(stored); ok {
-			row := Object("Database.SaveResult")
-			row.Fields["success"] = Bool(false)
-			row.Fields["id"] = Null
-			row.Fields["error"] = String("REQUIRED_FIELD_MISSING, required field " + stored.Object + "." + field + " is missing")
-			errValue := Object("Database.Error")
-			errValue.Fields["message"] = String("required field " + stored.Object + "." + field + " is missing")
-			errValue.Fields["statusCode"] = String("REQUIRED_FIELD_MISSING")
-			errValue.Fields["fields"] = List(String(field))
-			row.Fields["errors"] = List(errValue)
-			results = append(results, row)
+		if !vm.hasPlatformEventMetadata(stored.Object) {
+			return Null, newExceptionError("UnexpectedException", "The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.")
+		}
+		eventUUID, hasEventUUID := vm.platformEventUUID(record)
+		if publishedID, ok := record.Fields[sobjectPublishedEventIDField]; ok {
+			if text, ok := idTextFromValue(publishedID); ok {
+				stored.ID = storage.ID(text)
+			}
+		}
+		if stored.ID != "" {
+			results = append(results, platformEventSaveResult(stored.ID, false, "INVALID_FIELD_FOR_INSERT_UPDATE", "The event can't be published because it contains an ID value.", nil))
 			continue
+		}
+		if code, message, fields := vm.platformEventValidationError(stored); code != "" {
+			results = append(results, platformEventSaveResult("", false, code, message, fields))
+			continue
+		}
+		if quotaExceeded {
+			results = append(results, platformEventSaveResult("", false, "LIMIT_EXCEEDED", "The number of platform event messages published from an Apex test context exceeded the limit of 500.", nil))
+			continue
+		}
+		if vm.testContext != nil {
+			vm.testContext.PlatformEventPublishes++
 		}
 		if !hasEventUUID {
 			eventUUID = vm.nextDeterministicUUID()
-			hasEventUUID = true
+			putVMFieldPath(record, "EventUuid", String(eventUUID))
 		}
+		if vm.Org != nil {
+			if _, err := vm.assignPendingInsertID(&stored); err != nil {
+				return Null, err
+			}
+			// Publishing assigns event identity without exposing a ReplayId.
+			record.Fields[sobjectPublishedEventIDField] = platformScalar("Id", string(stored.ID))
+		}
+		stored.Fields["ReplayId"] = storage.StringValue(vm.nextEventBusReplayID())
+		stored.Fields["EventUuid"] = storage.StringValue(eventUUID)
 		triggerRecords = append(triggerRecords, stored)
-		row := Object("Database.SaveResult")
-		row.Fields["success"] = Bool(true)
-		row.Fields["id"] = Null
-		row.Fields["error"] = String("")
-		row.Fields["errors"] = List()
-		if hasEventUUID {
-			row.Fields[sobjectEventOperationIDField] = String(eventUUID)
-		}
+		row := platformEventSaveResult(stored.ID, true, "OPERATION_ENQUEUED", eventUUID, nil)
+		row.Fields[sobjectEventOperationIDField] = String(eventUUID)
 		results = append(results, row)
+		if len(args) == 2 {
+			eventUUIDs = append(eventUUIDs, eventUUID)
+		}
 	}
 	if len(args) == 2 && args[1].Kind != ValueNull {
 		if args[1].Kind != ValueObject {
@@ -104,6 +185,76 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		return Null, nil
 	}
 	return results[0], nil
+}
+
+// V004: invalid records do not consume the test publication allowance.
+func (vm *VM) platformEventCanEnqueue(record Value) bool {
+	if _, published := record.Fields[sobjectPublishedEventIDField]; published {
+		return false
+	}
+	stored, err := vm.recordFromValue(&record)
+	if err != nil || !vm.hasPlatformEventMetadata(stored.Object) || stored.ID != "" {
+		return false
+	}
+	code, _, _ := vm.platformEventValidationError(stored)
+	return code == ""
+}
+
+// Platform event publication uses the captured SaveResult shape.
+func platformEventSaveResult(id storage.ID, success bool, code, message string, fields []string) Value {
+	row := Object("Database.SaveResult")
+	row.Fields["success"] = Bool(success)
+	row.Fields["id"] = Null
+	if id != "" {
+		row.Fields["id"] = platformScalar("Id", string(id))
+	}
+	row.Fields["error"] = String("")
+	errValue := Object("Database.Error")
+	errValue.Fields["message"] = String(message)
+	errValue.Fields["statusCode"] = String(code)
+	fieldValues := make([]Value, 0, len(fields))
+	for _, field := range fields {
+		fieldValues = append(fieldValues, String(field))
+	}
+	errValue.Fields["fields"] = List(fieldValues...)
+	row.Fields["errors"] = List(errValue)
+	return row
+}
+
+func (vm *VM) platformEventValidationError(record storage.Record) (string, string, []string) {
+	if field, missing := vm.missingRequiredPlatformEventField(record); missing {
+		return "REQUIRED_FIELD_MISSING", "You must enter a value: " + field, []string{field}
+	}
+	if vm.Org != nil {
+		if objectName, ok := vm.resolveObjectName(record.Object); ok {
+			definition := vm.Org.Objects[objectName].Definition
+			names := make([]string, 0, len(definition.Fields))
+			for name := range definition.Fields {
+				names = append(names, name)
+			}
+			sort.Strings(names)
+			for _, name := range names {
+				field := definition.Fields[name]
+				if value, ok := record.GetField(name); ok && field.Type == storage.FieldString && field.Length > 0 && value.Kind == storage.ValueString && len(utf16.Encode([]rune(value.String))) > field.Length {
+					return "STRING_TOO_LONG", "Value too long for field", []string{name}
+				}
+			}
+		}
+	}
+	return "", "", nil
+}
+
+// Captured event contracts use object provenance, rather than API-name spelling.
+func (vm *VM) hasPlatformEventMetadata(objectName string) bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	name, ok := vm.resolveObjectName(objectName)
+	if !ok {
+		return false
+	}
+	behavior := vm.Org.Objects[name].Definition.Metadata["publishBehavior"]
+	return strings.EqualFold(behavior, "PublishImmediately") || strings.EqualFold(behavior, "PublishAfterCommit")
 }
 
 func (vm *VM) nextEventBusReplayID() string {
@@ -187,8 +338,8 @@ func isLocalPlatformEventSystemRequiredField(field string) bool {
 	}
 }
 
-func platformEventUUID(record Value) (string, bool) {
-	if !hasSuffixFold(record.Type, "__e") {
+func (vm *VM) platformEventUUID(record Value) (string, bool) {
+	if !vm.hasPlatformEventMetadata(record.Type) {
 		return "", false
 	}
 	_, value, ok := objectFieldValue(record, "EventUuid")
@@ -497,6 +648,7 @@ func (vm *VM) clearMetadataCaches() {
 	vm.soqlExecutionCache = nil
 	vm.dmlSummaryByChild = dml.NewSummaryRelationCache()
 	vm.summarySideEffectObjects = nil
+	vm.summarySideEffectIndex = nil
 	vm.loadedChildRelCache = newLoadedChildRelationshipLookupCache()
 	vm.lazyChildRelCache = newLazyChildRelationshipLookupCache()
 	vm.objectNameCache = make(map[string]objectNameLookup)
@@ -567,14 +719,23 @@ dispatchCustomData:
 			return Null, true, err
 		}
 		cacheKey := "getInstance:" + strings.ToLower(objectName) + ":" + customDataArgsCacheKey(args)
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			// The retained legacy null-name lookup differs from R263 at the
+			// supported source APIs, so it cannot share the same cache entry.
+			cacheKey += ":" + vm.currentMethod.APIVersion
+		}
 		if cached, ok := vm.customDataCachedValue(cacheKey); ok {
 			return cached, true, nil
 		}
+		if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
+			value, err := vm.hierarchyCustomSettingInstance(objectName, kind, args)
+			if err != nil {
+				return Null, true, err
+			}
+			return vm.storeCustomDataCachedValue(cacheKey, value), true, nil
+		}
 		record, found, err := vm.customDataGetInstance(objectName, definition, kind, args)
 		if err != nil || !found {
-			if err == nil && strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
-				return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataDefaultValue(objectName, kind)), true, nil
-			}
 			if err == nil {
 				return vm.storeCustomDataCachedValue(cacheKey, typedNull(objectName)), true, nil
 			}
@@ -608,6 +769,9 @@ dispatchCustomData:
 					if !ok {
 						return Null, true, fmt.Errorf("%s.getValues expects optional setup owner Id", typeName)
 					}
+					if err := validateCustomSettingOwnerID(ownerID); err != nil {
+						return Null, true, err
+					}
 				}
 				cacheKey := "getValues:" + strings.ToLower(objectName) + ":" + customDataArgsCacheKey(args)
 				if cached, ok := vm.customDataCachedValue(cacheKey); ok {
@@ -617,7 +781,7 @@ dispatchCustomData:
 					if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, ownerID); found {
 						return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataValue(record, kind)), true, nil
 					}
-					return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataDefaultValue(objectName, kind)), true, nil
+					return vm.storeCustomDataCachedValue(cacheKey, typedNull(objectName)), true, nil
 				}
 				return vm.storeCustomDataCachedValue(cacheKey, vm.hierarchyCustomSettingOrgDefaults(objectName, kind)), true, nil
 			}
@@ -630,11 +794,15 @@ dispatchCustomData:
 			if cached, ok := vm.customDataCachedValue(cacheKey); ok {
 				return cached, true, nil
 			}
+			// A null name never selects a populated list setting.
 			if args[0].Kind == ValueNull {
-				return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataDefaultValue(objectName, kind)), true, nil
+				return vm.storeCustomDataCachedValue(cacheKey, typedNull(objectName)), true, nil
 			}
 			record, found, err := vm.customDataGetInstance(objectName, definition, kind, args)
 			if err != nil || !found {
+				if err == nil {
+					return vm.storeCustomDataCachedValue(cacheKey, typedNull(objectName)), true, nil
+				}
 				return Null, true, err
 			}
 			return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataValue(record, kind)), true, nil
@@ -718,7 +886,6 @@ func (vm *VM) ensureAsyncObjects() {
 			"Id":              {APIName: "Id", Type: storage.FieldID},
 			"State":           {APIName: "State", Type: storage.FieldString},
 			"CronExpression":  {APIName: "CronExpression", Type: storage.FieldString},
-			"CronJobDetail":   {APIName: "CronJobDetail", Type: storage.FieldString},
 			"CronJobDetailId": {APIName: "CronJobDetailId", Type: storage.FieldReference, ReferenceTo: []string{"CronJobDetail"}, RelationshipName: "CronJobDetail"},
 			"NextFireTime":    {APIName: "NextFireTime", Type: storage.FieldDateTime},
 			"TimesTriggered":  {APIName: "TimesTriggered", Type: storage.FieldInteger},

@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/glade-sh/glade/internal/dml"
@@ -77,6 +80,20 @@ type VM struct {
 	classNameSearchCache     []classNameSearchEntry
 	ownedStaticClasses       map[string]bool
 	sharedStaticClasses      bool
+	// classMapShared marks a Classes map that another VM may also hold (a
+	// frozen-shared clone and its source). The first write copies the map.
+	// classMapWritten records any write since this VM was built, after which
+	// the frozen copy plan may no longer describe the map's alias values.
+	classMapShared  atomic.Bool
+	classMapWritten bool
+	// classOverlay holds registrations made on top of a frozen generation
+	// until the next FreezeClassLookup (see class_lookup_overlay.go).
+	classOverlay *classLookupOverlay
+	// classValuesWritten records a class value write outside registration
+	// since the last freeze. Such writes keep the full rebuild path.
+	classValuesWritten bool
+	// classLookupBuilds counts O(len(Classes)) class-lookup builds on this VM.
+	classLookupBuilds int
 	// --- Org storage, triggers, and active execution frame ---
 	Org                     *storage.OrgState
 	Triggers                map[string][]Trigger
@@ -98,7 +115,16 @@ type VM struct {
 	localAsyncSeq           int
 	localAsyncDrain         bool
 	localAsyncChain         bool
+	rejectAsyncActions      bool
+	asyncActionViolation    bool
 	executionUser           Value
+	// Captured once from the runner's initial org, before test setup inserts.
+	// Clones share this immutable ID set; EnableTestContext must not recapture it.
+	testDocumentBaseline map[storage.ID]struct{}
+	// Traversals belong to this VM, independently of method frames and clones.
+	activeCollectionTraversals map[collectionTraversalKey]int
+	// Auth validation failures belong to this runtime, never a shared template.
+	authTotpFailures map[string]int
 	// --- Governor limits ---
 	limits          Limits
 	limitCaps       LimitCaps
@@ -132,18 +158,26 @@ type VM struct {
 	savepointOrder  map[string]int
 	nextSavepoint   int
 	// --- Visualforce / page context ---
-	pageMessages     []Value
-	currentPage      Value
-	vfActionInvoker  VisualforceActionInvoker
-	pageReferences   map[string]string
-	siteExperienceID string
+	pageMessages              []Value
+	currentPage               Value
+	vfActionInvoker           VisualforceActionInvoker
+	vfStandardControllerReset func(string) (Value, error)
+	vfDeleteConfirmationToken func(string) (string, error)
+	pageReferences            map[string]string
+	siteExperienceID          string
 	// --- SOQL / search results and platform cache ---
-	fixedSearchResults []Value
-	sfsqlqueryRows     []Value
-	sfsqlqueryMetadata []Value
-	platformCache      map[string]map[string]cacheEntry
-	cacheScanLocators  map[string][]cacheScanItem
-	cacheScanSeq       int
+	// Cursor JSON tokens resolve only within this VM. Allocate on first use;
+	// cloneRuntime starts with a fresh registry through newVM.
+	queryCursors map[string]Value
+	// Alternate query sources belong to this VM, including cursor JSON copies.
+	queryHandleSources    map[string]*storage.OrgState
+	fixedSearchResults    []Value
+	fixedSearchResultsSet bool
+	sfsqlqueryRows        []Value
+	sfsqlqueryMetadata    []Value
+	platformCache         map[string]map[string]cacheEntry
+	cacheScanLocators     map[string][]cacheScanItem
+	cacheScanSeq          int
 	// --- Captured side effects ---
 	capturedEmails []CapturedEmail
 	// --- REST / server request context ---
@@ -165,10 +199,12 @@ type VM struct {
 	triggerGlobals              map[string]Value
 	frameworkDomainTriggerState map[string][]Value
 	cryptoRandomSeq             uint64
-	staticInitState             map[string]staticInitState
-	frameworkIDSequences        map[string]uint64
-	lastAmbiguous               *overloadDiagnostic
-	activeConstructors          map[string]int
+	// uuidRandomReader is a per-VM test seam; nil selects crypto/rand.Reader.
+	uuidRandomReader     io.Reader
+	staticInitState      map[string]staticInitState
+	frameworkIDSequences map[string]uint64
+	lastAmbiguous        *overloadDiagnostic
+	activeConstructors   map[string]int
 	// --- Describe caches ---
 	describeCache                map[string]Value
 	fieldDescribeCache           map[string]Value
@@ -178,7 +214,8 @@ type VM struct {
 	customDataCache              map[string]Value
 	soqlExecutionCache           *soql.ExecutionCache
 	dmlSummaryByChild            *dml.SummaryRelationCache
-	summarySideEffectObjects     map[string]bool
+	summarySideEffectObjects     *summarySideEffectObjectCache
+	summarySideEffectIndex       *summarySideEffectIndexMemo
 	managedFeatureValues         map[string]Value
 	childRelCache                *childRelationshipCache
 	childRelationshipLookupCache *childRelationshipLookupCache
@@ -192,12 +229,21 @@ type VM struct {
 	metadataCacheStamp           string
 	isolationJournal             *storage.IsolationJournal
 	// --- Static-field reference tracking (alias invalidation) ---
-	staticValueRefs             map[uint64]bool
-	staticValueRefFields        map[uint64]staticFieldRefSet
-	staticAliasChildHints       map[staticAliasChildHintKey]staticAliasChildHint
-	staticAliasDirectChildren   map[staticFieldRef]staticAliasDirectChildIndex
-	localOnlyCollectionRefs     map[uint64]bool
-	localOnlyObjectRefs         map[uint64]bool
+	staticValueRefs       map[uint64]bool
+	staticValueRefFields  map[uint64]staticFieldRefSet
+	staticValueRefsShared bool
+	// Serializes lazy collection/publication by concurrent template clones.
+	// Executing a VM concurrently with cloning it is still unsupported.
+	staticValueRefsMu         sync.Mutex
+	staticAliasChildHints     map[staticAliasChildHintKey]staticAliasChildHint
+	staticAliasDirectChildren map[staticFieldRef]staticAliasDirectChildIndex
+	localOnlyCollectionRefs   map[uint64]bool
+	localOnlyObjectRefs       map[uint64]bool
+	// Exceptions to the ordinary SObject field graph are append-only. Unlike
+	// local-only provenance, they must survive runtime/static cloning.
+	sObjectCollectionAliasRefs  map[uint64]bool
+	sObjectAliasTypes           map[string]sObjectAliasTypeVerdict
+	sObjectAliasTypeOrg         *storage.OrgState
 	collectionMutationSeq       uint64
 	aliasContainmentMutationSeq uint64
 	aliasContainmentCache       map[aliasContainmentCacheKey]uint64
@@ -206,6 +252,7 @@ type VM struct {
 	classLookupPerf             *classLookupPerfShard
 	scopeAliasTraversalObserver scopeAliasTraversalObserver
 	runtimeArtifactsShared      bool
+	methodOverlay               *methodTableOverlay
 }
 
 type VisualforceActionInvoker func(actionExpr string, pageURL string) (Value, error)
@@ -425,6 +472,8 @@ type RuntimeError struct {
 	Type    string
 	Message string
 	Stack   []StackFrame
+	// Preserve the Apex message before adding local diagnostic context.
+	exceptionMessage *string
 }
 
 const maxApexCallDepth = 1000
@@ -442,6 +491,14 @@ func (e *RuntimeError) Error() string {
 		return e.Message
 	}
 	return e.Type + ": " + e.Message
+}
+
+// ExceptionMessage returns the Apex message without local diagnostic context.
+func (e *RuntimeError) ExceptionMessage() string {
+	if e.exceptionMessage != nil {
+		return *e.exceptionMessage
+	}
+	return e.Message
 }
 
 func unsupportedCallError(callee string) error {
@@ -465,8 +522,11 @@ type TestContext struct {
 	SeeAllDataSet            bool
 	AsyncJobs                []AsyncJob
 	AsyncStartIndex          int
+	FlexQueueJobs            []Value
 	EventPublishes           []eventPublishCallback
 	PlatformEvents           []storage.Record
+	PlatformEventRetries     map[string]int
+	PlatformEventPublishes   int
 	PlatformEventStartIndex  int
 	ChangeDataCaptureEnabled bool
 	Draining                 bool
@@ -494,18 +554,21 @@ type eventPublishCallback struct {
 }
 
 type AsyncJob struct {
-	ID                          string
-	Kind                        string
-	Object                      Value
-	Method                      Method
-	Args                        []Value
-	BatchSize                   int
-	Name                        string
-	Cron                        string
-	ParentJobID                 string
-	LastProcessed               string
-	LastProcessedOffset         int
-	Deferred                    bool
+	ID                  string
+	Kind                string
+	Object              Value
+	Method              Method
+	Args                []Value
+	BatchSize           int
+	Name                string
+	Cron                string
+	ParentJobID         string
+	LastProcessed       string
+	LastProcessedOffset int
+	Deferred            bool
+	// Scheduled test payloads outlive cancellation but require an active replacement to run.
+	ScheduledAborted            bool
+	ScheduledReusedBy           string
 	SuppressWorkerRecords       bool
 	QueueableDepth              int
 	QueueableMaxDepth           int
@@ -515,6 +578,7 @@ type AsyncJob struct {
 }
 
 type cacheEntry struct {
+	Immutable    bool
 	Value        Value
 	SecondaryKey string
 	ExpireAt     time.Time
@@ -566,6 +630,7 @@ func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 		triggerMatchCache:            newTriggerMatchCache(),
 		triggerNamespaceCache:        make(map[triggerNamespaceLookupKey]string),
 		Stdout:                       stdout,
+		activeCollectionTraversals:   make(map[collectionTraversalKey]int),
 		limitCaps:                    defaultLimitCaps(),
 		limitMode:                    LimitModePermissive,
 		fakeNow:                      time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
@@ -575,6 +640,8 @@ func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 		emailSavepoints:              make(map[string][]CapturedEmail),
 		savepointOrder:               make(map[string]int),
 		platformCache:                make(map[string]map[string]cacheEntry),
+		queryCursors:                 nil,
+		queryHandleSources:           nil,
 		cacheScanLocators:            make(map[string][]cacheScanItem),
 		metadataDeploys:              make(map[string]Value),
 		reportInstances:              make(map[string]Value),
@@ -637,20 +704,48 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	// Methods, MethodOverloads, MethodFolded, and Triggers are compiled
 	// artifacts that are only mutated by Register*/unregister* at setup, never
 	// during execution. Share the maps by pointer and mark them shared so
-	// CloneRuntime allocates nothing for them. The (rare) post-clone
-	// registration path copies-on-write via ensureRuntimeArtifactsOwned, so the
-	// source VM (and any cached runtime template) is never corrupted. Per-test
-	// clones never register, so they keep sharing read-only across parallel
-	// workers, which is safe for concurrent map reads.
+	// CloneRuntime allocates nothing for them. Post-clone RegisterMethod writes
+	// to a clone-local overlay; unregister and trigger registration copy-on-write
+	// via ensureRuntimeArtifactsOwned, so the source VM (and any cached runtime
+	// template) is never corrupted. The shared maps stay read-only across
+	// parallel workers, which is safe for concurrent map reads.
 	clone.Methods = vm.Methods
 	clone.MethodOverloads = vm.MethodOverloads
 	clone.MethodFolded = vm.MethodFolded
 	clone.Triggers = vm.Triggers
 	clone.runtimeArtifactsShared = true
-	if shareFrozenStatics && vm.sharedClassCopyPlan != nil {
+	clone.methodOverlay = vm.methodOverlay.clone()
+	// Alias-escape tracking indexes populated Platform Cache entries as alias roots
+	// in the static-root index under the partition name. A frozen clone copies
+	// cache values to fresh identities, so sharing the template's static refs
+	// would otherwise share an index containing the source runtime's refs. Clones
+	// with a populated cache therefore collect their own index; the empty-cache
+	// fast path is unchanged.
+	shareStaticValueRefs := shareFrozenStatics && len(vm.platformCache) == 0
+	if shareFrozenStatics && vm.canShareClassMap() {
+		// The source map already holds what the planned copy would build:
+		// every alias carries its primary's value and statics stay shared
+		// until first access. Share it by pointer and copy on first write.
+		if !vm.classMapShared.Load() {
+			vm.classMapShared.Store(true)
+		}
+		clone.Classes = vm.Classes
+		clone.classMapShared.Store(true)
+		clone.sharedClassCopyPlan = vm.sharedClassCopyPlan
+		clone.sharedStaticClasses = true
+	} else if shareFrozenStatics && vm.sharedClassCopyPlan != nil {
 		clone.Classes = copyClassMapSharedStaticsWithPlan(vm.Classes, vm.sharedClassCopyPlan)
 		clone.sharedClassCopyPlan = vm.sharedClassCopyPlan
 		clone.sharedStaticClasses = true
+		// A planned copy can normalize divergent aliases. Only reuse the
+		// source index if that leaves every static location unchanged.
+		for name, class := range clone.Classes {
+			source := vm.Classes[name]
+			if !sameMap(class.StaticFields, source.StaticFields) || runtimeClassName(class) != runtimeClassName(source) {
+				shareStaticValueRefs = false
+				break
+			}
+		}
 	} else if shareFrozenStatics {
 		clone.Classes = copyClassMapSharedStatics(vm.Classes)
 		clone.sharedStaticClasses = true
@@ -659,6 +754,23 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.sharedClassCopyPlan = vm.sharedClassCopyPlan
 	} else {
 		clone.Classes = copyClassMap(vm.Classes)
+	}
+	if shareFrozenStatics {
+		vm.staticValueRefsMu.Lock()
+		if shareStaticValueRefs {
+			if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
+				vm.staticValueRefs, vm.staticValueRefFields = vm.collectStaticValueRefs()
+			}
+			clone.staticValueRefs = vm.staticValueRefs
+			clone.staticValueRefFields = vm.staticValueRefFields
+			clone.staticValueRefsShared = true
+			vm.staticValueRefsShared = true
+		}
+		// The source may run again after cloning, including when it was
+		// itself a clone with already-owned statics. Both sides must detach.
+		vm.sharedStaticClasses = true
+		vm.ownedStaticClasses = nil
+		vm.staticValueRefsMu.Unlock()
 	}
 	// frozenClassLookup binds canonical class-name results to one exact runtime
 	// generation. Clones share that immutable artifact by pointer and resolve
@@ -671,6 +783,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.classLookup = nil
 		clone.classNameSearchCache = vm.classNameSearchCache
 		clone.topLevelClassLookup = vm.topLevelClassLookup
+		clone.classValuesWritten = vm.classValuesWritten
 	} else {
 		clone.rebuildClassLookup()
 	}
@@ -692,6 +805,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.soqlExecutionCache = vm.soqlExecutionCache
 		clone.dmlSummaryByChild = vm.dmlSummaryByChild
 		clone.summarySideEffectObjects = vm.summarySideEffectObjects
+		clone.summarySideEffectIndex = vm.summarySideEffectIndex
 		clone.loadedChildRelCache = vm.loadedChildRelCache
 		clone.lazyChildRelCache = vm.lazyChildRelCache
 	} else {
@@ -706,19 +820,50 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	}
 	clone.traceEnabled = vm.traceEnabled
 	clone.toolingExecuteAnonymous = vm.toolingExecuteAnonymous
+	clone.rejectAsyncActions = vm.rejectAsyncActions
+	clone.asyncActionViolation = vm.asyncActionViolation
 	clone.staticInitState = nil
 	clone.pageReferences = copyStringMap(vm.pageReferences)
 	clone.platformCache = copyCacheMap(vm.platformCache)
 	clone.managedFeatureValues = copyValueMap(vm.managedFeatureValues)
 	clone.isolationJournal = vm.isolationJournal
+	clone.testDocumentBaseline = vm.testDocumentBaseline
+	if len(vm.sObjectCollectionAliasRefs) != 0 {
+		clone.sObjectCollectionAliasRefs = make(map[uint64]bool, len(vm.sObjectCollectionAliasRefs))
+		for ref := range vm.sObjectCollectionAliasRefs {
+			clone.sObjectCollectionAliasRefs[ref] = true
+		}
+		// Static/cache copies can allocate fresh record identities. Resolve
+		// their types against the source schema during this private scan;
+		// callers still install their own org on the returned runtime.
+		clone.Org = vm.Org
+		for _, class := range clone.Classes {
+			for _, field := range class.StaticFields {
+				clone.registerSObjectAliasRecord(field.Value)
+				clone.registerSObjectAliasRecord(field.InitialValue)
+			}
+		}
+		for _, partition := range clone.platformCache {
+			for _, entry := range partition {
+				clone.registerSObjectAliasRecord(entry.Value)
+			}
+		}
+		for _, value := range clone.managedFeatureValues {
+			clone.registerSObjectAliasRecord(value)
+		}
+		clone.Org = nil
+		clone.sObjectAliasTypes = nil
+		clone.sObjectAliasTypeOrg = nil
+	}
 	return clone
 }
 
 // ensureRuntimeArtifactsOwned performs the copy-on-write step for the compiled
 // method and trigger maps shared by CloneRuntime. The first mutation after a
-// clone (only the setup-time Register*/unregister* path reaches here) gives this
-// VM private copies so the shared source maps stay intact. Per-test clones never
-// register, so the flag remains set and no copy is made.
+// clone through unregisterMethod or RegisterTrigger gives this VM private copies,
+// merged with any method overlay, so the shared source maps stay intact.
+// RegisterMethod on a shared clone (per-test registration in the apextest
+// runner) writes to the small method overlay instead and copies nothing.
 func (vm *VM) ensureRuntimeArtifactsOwned() {
 	if vm == nil || !vm.runtimeArtifactsShared {
 		return
@@ -728,6 +873,27 @@ func (vm *VM) ensureRuntimeArtifactsOwned() {
 	vm.MethodOverloads = copyMethodSliceMap(vm.MethodOverloads)
 	vm.MethodFolded = copyMethodSliceMap(vm.MethodFolded)
 	vm.Triggers = copyTriggerSliceMap(vm.Triggers)
+	vm.methodOverlay.applyTo(vm.Methods, vm.MethodOverloads, vm.MethodFolded)
+	vm.methodOverlay = nil
+}
+
+// canShareClassMap reports whether a frozen-shared clone may take vm.Classes
+// by pointer instead of building the planned copy. That needs a frozen plan
+// whose aliases all hold their primary's value, and no write since freeze
+// that could have made one alias diverge.
+func (vm *VM) canShareClassMap() bool {
+	return vm.sharedClassCopyPlan != nil && vm.sharedClassCopyPlan.uniformAliases && !vm.classMapWritten
+}
+
+// prepareClassMapWrite runs before every write to vm.Classes. A map shared
+// with another VM is copied first so neither side sees the other's writes.
+func (vm *VM) prepareClassMapWrite() {
+	vm.classMapWritten = true
+	if !vm.classMapShared.Load() {
+		return
+	}
+	vm.classMapShared.Store(false)
+	vm.Classes = copyClassMapSharedStatics(vm.Classes)
 }
 
 func (vm *VM) SetIsolationJournal(journal *storage.IsolationJournal) {
@@ -813,33 +979,190 @@ var classCopyDedupPool = sync.Pool{
 // metadata; per-test static isolation is preserved because copyClass still
 // copies each primary's mutable StaticFields per clone, and aliases share the
 // same copied Class exactly as the unplanned path does.
+//
+// uniformAliases records that every alias already held a value identical to
+// its primary's when the plan was built. The shared-statics planned copy is
+// then an exact copy of the map, so frozen-shared clones may share the map.
+//
+// A derived plan (base != nil) describes a clone that registered a few classes
+// over a frozen root: the base plan's names minus skip, followed by its own
+// primaries and aliases. It is built in O(registered names) by
+// deriveClassCopyPlan and partitions the names exactly as a full build would.
 type classCopyPlan struct {
-	primaries []string
-	aliases   map[string]string
+	primaries      []string
+	aliases        map[string]string
+	uniformAliases bool
+
+	// Root plans only: the primary of each classCopyKey group, the
+	// primaries that at least one alias points at, and the aliases whose
+	// value differed from their primary's when the plan was built.
+	primaryByKey     map[string]string
+	aliasedPrimaries map[string]struct{}
+	divergentAliases []string
+
+	// Derived plans only.
+	base *classCopyPlan
+	skip map[string]struct{}
 }
 
 func buildClassCopyPlan(in map[string]Class) *classCopyPlan {
 	plan := &classCopyPlan{
-		primaries: make([]string, 0, len(in)),
-		aliases:   make(map[string]string),
+		primaries:        make([]string, 0, len(in)),
+		aliases:          make(map[string]string),
+		uniformAliases:   true,
+		aliasedPrimaries: make(map[string]struct{}),
 	}
 	primaryByCanonical := make(map[string]string, len(in))
 	for name, class := range in {
 		canonical := classCopyKey(name, class)
 		if primary, ok := primaryByCanonical[canonical]; ok {
 			plan.aliases[name] = primary
+			plan.aliasedPrimaries[primary] = struct{}{}
 			continue
 		}
 		primaryByCanonical[canonical] = name
 		plan.primaries = append(plan.primaries, name)
 	}
+	plan.primaryByKey = primaryByCanonical
+	for alias, primary := range plan.aliases {
+		if !sameClassValue(in[alias], in[primary]) {
+			plan.uniformAliases = false
+			plan.divergentAliases = append(plan.divergentAliases, alias)
+		}
+	}
 	return plan
+}
+
+// deriveClassCopyPlan builds the plan for classes, which equal the root plan's
+// map except for the written names. It returns nil when a written name was a
+// root primary that other names alias; the caller then builds a full plan.
+func deriveClassCopyPlan(root *classCopyPlan, classes map[string]Class, written map[string]struct{}) *classCopyPlan {
+	if root == nil || root.base != nil || root.primaryByKey == nil {
+		return nil
+	}
+	for name := range written {
+		if _, ok := root.aliasedPrimaries[name]; ok {
+			return nil
+		}
+	}
+	plan := &classCopyPlan{
+		aliases:        make(map[string]string),
+		uniformAliases: true,
+		base:           root,
+		skip:           written,
+	}
+	// Root aliases that matched their primary still do: every runtime on
+	// this generation holds the root map, a planned copy of it, or a copy
+	// with only the written names changed. Recheck the ones that did not.
+	for _, alias := range root.divergentAliases {
+		if !plan.planSkips(alias) && !sameClassValue(classes[alias], classes[root.aliases[alias]]) {
+			plan.uniformAliases = false
+			break
+		}
+	}
+	primaryByKey := make(map[string]string, len(written))
+	for _, name := range sortedNameSet(written) {
+		class, ok := classes[name]
+		if !ok {
+			continue
+		}
+		key := classCopyKey(name, class)
+		if primary, ok := primaryByKey[key]; ok {
+			plan.aliases[name] = primary
+			continue
+		}
+		if primary, ok := root.primaryByKey[key]; ok {
+			if _, rewritten := written[primary]; !rewritten {
+				plan.aliases[name] = primary
+				continue
+			}
+		}
+		primaryByKey[key] = name
+		plan.primaries = append(plan.primaries, name)
+	}
+	if plan.uniformAliases {
+		for alias, primary := range plan.aliases {
+			if !sameClassValue(classes[alias], classes[primary]) {
+				plan.uniformAliases = false
+				break
+			}
+		}
+	}
+	return plan
+}
+
+func sortedNameSet(names map[string]struct{}) []string {
+	out := make([]string, 0, len(names))
+	for name := range names {
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// planSkips reports whether a derived plan drops name from its base.
+func (p *classCopyPlan) planSkips(name string) bool {
+	_, ok := p.skip[name]
+	return ok
+}
+
+// sameClassValue reports whether two Class values are the same value: equal
+// scalars, and maps and slices with the same backing storage.
+func sameClassValue(a, b Class) bool {
+	return a.Name == b.Name &&
+		a.Namespace == b.Namespace &&
+		a.APIVersion == b.APIVersion &&
+		a.SuperClass == b.SuperClass &&
+		a.Access == b.Access &&
+		a.IsAbstract == b.IsAbstract &&
+		a.IsInterface == b.IsInterface &&
+		a.IsTest == b.IsTest &&
+		a.Dependency == b.Dependency &&
+		sameMap(a.Fields, b.Fields) &&
+		sameMap(a.StaticFields, b.StaticFields) &&
+		sameMap(a.Methods, b.Methods) &&
+		sameSlice(a.Interfaces, b.Interfaces) &&
+		sameSlice(a.FieldOrder, b.FieldOrder) &&
+		sameSlice(a.StaticFieldOrder, b.StaticFieldOrder) &&
+		sameSlice(a.Constructors, b.Constructors) &&
+		sameSlice(a.StaticInitializers, b.StaticInitializers) &&
+		sameSlice(a.InstanceInitializers, b.InstanceInitializers) &&
+		sameSlice(a.EnumValues, b.EnumValues) &&
+		sameSlice(a.Modifiers, b.Modifiers)
+}
+
+func sameMap[K comparable, V any](a, b map[K]V) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return reflect.ValueOf(a).Pointer() == reflect.ValueOf(b).Pointer()
+}
+
+func sameSlice[T any](a, b []T) bool {
+	if len(a) != len(b) || cap(a) != cap(b) || (a == nil) != (b == nil) {
+		return false
+	}
+	return cap(a) == 0 || reflect.ValueOf(a).Pointer() == reflect.ValueOf(b).Pointer()
 }
 
 func copyClassMapWithPlan(in map[string]Class, plan *classCopyPlan) map[string]Class {
 	out := make(map[string]Class, len(in))
+	if base := plan.base; base != nil {
+		for _, name := range base.primaries {
+			if !plan.planSkips(name) {
+				out[name] = copyClass(in[name])
+			}
+		}
+	}
 	for _, name := range plan.primaries {
 		out[name] = copyClass(in[name])
+	}
+	if base := plan.base; base != nil {
+		for alias, primary := range base.aliases {
+			if !plan.planSkips(alias) {
+				out[alias] = out[primary]
+			}
+		}
 	}
 	for alias, primary := range plan.aliases {
 		out[alias] = out[primary]
@@ -849,8 +1172,22 @@ func copyClassMapWithPlan(in map[string]Class, plan *classCopyPlan) map[string]C
 
 func copyClassMapSharedStaticsWithPlan(in map[string]Class, plan *classCopyPlan) map[string]Class {
 	out := make(map[string]Class, len(in))
+	if base := plan.base; base != nil {
+		for _, name := range base.primaries {
+			if !plan.planSkips(name) {
+				out[name] = in[name]
+			}
+		}
+	}
 	for _, name := range plan.primaries {
 		out[name] = in[name]
+	}
+	if base := plan.base; base != nil {
+		for alias, primary := range base.aliases {
+			if !plan.planSkips(alias) {
+				out[alias] = out[primary]
+			}
+		}
 	}
 	for alias, primary := range plan.aliases {
 		out[alias] = out[primary]
@@ -901,7 +1238,14 @@ func (vm *VM) ensureMutableClass(name string) (Class, bool) {
 	if vm.ownedStaticClasses != nil && vm.ownedStaticClasses[canonical] {
 		return class, true
 	}
-	class.StaticFields = copyFieldMap(class.StaticFields)
+	previousFields := class.StaticFields
+	class.StaticFields = copyFieldMap(previousFields)
+	// copyFieldMap renews Value.Ref identities. A shared index describes
+	// the old fields; refresh just this class when its statics detach.
+	for fieldName, field := range class.StaticFields {
+		location := canonicalStaticFieldLocationForClass(class, name, fieldName)
+		vm.replaceStaticValueRefsInField(previousFields[fieldName].Value, field.Value, location)
+	}
 	if vm.ownedStaticClasses == nil {
 		vm.ownedStaticClasses = make(map[string]bool)
 	}
@@ -916,7 +1260,9 @@ func (vm *VM) storeMutableClassAtAlias(alias string, class Class) {
 		vm.storeClassValue(class)
 		return
 	}
-	vm.Classes[alias] = class
+	vm.prepareClassMapWrite()
+	vm.classValuesWritten = true
+	vm.writeClassValue(alias, class)
 }
 
 func staticFieldValueMayMutate(field Field) bool {
@@ -1110,6 +1456,7 @@ func (vm *VM) SetCurrentPageURLNull() {
 }
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
+	vm.sObjectAliasTypes = nil
 	nextStamp := runtimeSchemaStampHintForOrg(org)
 	if nextStamp == "" {
 		nextStamp = schemaCacheStampForOrg(org)
@@ -1122,6 +1469,17 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 		vm.metadataCacheStamp = nextStamp
 	}
 	vm.Org = org
+	// Host code may install schema after supplying values. Recheck those
+	// roots before newly resolved SObject types become eligible for pruning.
+	for _, value := range vm.Globals {
+		vm.registerSObjectAliasRecord(value)
+	}
+	for _, class := range vm.Classes {
+		for _, field := range class.StaticFields {
+			vm.registerSObjectAliasRecord(field.Value)
+			vm.registerSObjectAliasRecord(field.InitialValue)
+		}
+	}
 	if vm.Org != nil && strings.TrimSpace(vm.metadataCacheStamp) != "" && vm.soqlExecutionCache == nil {
 		vm.soqlExecutionCache = soql.NewExecutionCache()
 	}
@@ -1167,6 +1525,11 @@ func (vm *VM) PrimeMetadataSchema(org *storage.OrgState) {
 	}
 	if stamp != "" {
 		vm.metadataCacheStamp = stamp
+		// Clones share this pointer; create it here so the first clone whose
+		// org still carries this stamp builds the summary index for all.
+		if vm.summarySideEffectObjects == nil || vm.summarySideEffectObjects.stamp != stamp {
+			vm.summarySideEffectObjects = newSummarySideEffectObjectCache(stamp)
+		}
 	}
 }
 
@@ -1177,6 +1540,7 @@ func PrimeRuntimeTemplateSchema(template *storage.RuntimeTemplate) {
 	stamp := schemaCacheStampForOrg(&template.Org)
 	template.RuntimeSchemaStamp = stamp
 	template.Org.RuntimeSchemaStamp = stamp
+	storage.PrimeObjectNameIndex(template.Org)
 }
 
 // runtimeSchemaStampHintForOrg returns the stamp computed when an immutable
@@ -1234,11 +1598,14 @@ func schemaStampHashLower(h uint64, s string) uint64 {
 }
 
 // schemaCacheStampForOrg returns a compact structural fingerprint of the org
-// schema. It streams the same canonical content the previous implementation
-// serialized, but accumulates it into a 64-bit FNV-1a hash instead of
-// materializing a multi-megabyte string on every SetOrg. The fingerprint is not
-// a complete manifest of describe-visible metadata and must not authorize cache
-// retention across a SetOrg boundary.
+// schema. Each object's canonical content is hashed into its own 64-bit FNV-1a
+// value, and the stamp folds those values in sorted object order. The
+// fingerprint is not a complete manifest of describe-visible metadata and must
+// not authorize cache retention across a SetOrg boundary.
+//
+// Known standard objects reuse a memoized per-object hash only after their
+// current content matches a private snapshot of every hashed input, so an
+// in-place map or slice write is always seen (see schemaStampObjectMemo).
 func schemaCacheStampForOrg(org *storage.OrgState) string {
 	if org == nil {
 		return ""
@@ -1255,54 +1622,194 @@ func schemaCacheStampForOrg(org *storage.OrgState) string {
 	}
 	sort.Strings(objectNames)
 	for _, objectName := range objectNames {
-		object := org.Objects[objectName]
-		definition := object.Definition
-		h = schemaStampHashLower(h, objectName)
-		h = schemaStampHashByte(h, '=')
-		h = schemaStampHashLower(h, definition.APIName)
-		h = schemaStampHashByte(h, ',')
-		h = schemaStampHash(h, definition.KeyPrefix)
-		h = schemaStampHashByte(h, ',')
-		h = schemaStampHash(h, definition.Label)
-		h = schemaStampHashByte(h, ',')
-		h = schemaStampHash(h, definition.PluralLabel)
-		h = schemaStampHashByte(h, ';')
-
-		fieldNames := make([]string, 0, len(definition.Fields))
-		for fieldName := range definition.Fields {
-			fieldNames = append(fieldNames, fieldName)
+		objectHash := schemaStampObjectHash(objectName, org.Objects[objectName].Definition)
+		for shift := 0; shift < 64; shift += 8 {
+			h = schemaStampHashByte(h, byte(objectHash>>shift))
 		}
-		sort.Strings(fieldNames)
-		for _, fieldName := range fieldNames {
-			field := definition.Fields[fieldName]
-			h = schemaStampHashLower(h, fieldName)
-			h = schemaStampHashByte(h, ':')
-			h = schemaStampHash(h, field.APIName)
-			h = schemaStampHashByte(h, ':')
-			h = schemaStampHashRaw(h, string(field.Type))
-			h = schemaStampHashByte(h, ':')
-			h = schemaStampHash(h, field.RelationshipName)
-			h = schemaStampHashByte(h, ':')
-			h = schemaStampHash(h, field.ChildRelationshipName)
-			h = schemaStampHashByte(h, ':')
-			h = schemaStampHashReferenceList(h, field.ReferenceTo)
-			h = schemaStampHashByte(h, ';')
-		}
-
-		for _, relation := range definition.Relations {
-			h = schemaStampHash(h, relation.Field)
-			h = schemaStampHashByte(h, ':')
-			h = schemaStampHash(h, relation.ParentRelationship)
-			h = schemaStampHashByte(h, ':')
-			h = schemaStampHash(h, relation.ChildRelationship)
-			h = schemaStampHashByte(h, ':')
-			h = schemaStampHashReferenceList(h, relation.ParentObjects)
-			h = schemaStampHashByte(h, ';')
-		}
-		h = schemaStampHashRaw(h, strconv.Itoa(len(definition.RecordTypes)))
-		h = schemaStampHashByte(h, '|')
 	}
 	return strconv.FormatUint(h, 16)
+}
+
+// schemaStampObjectMemos maps an exact object name to the immutable
+// *schemaStampObjectMemo of the last standard definition hashed under it.
+var schemaStampObjectMemos sync.Map
+
+// schemaStampObjectsHashed counts per-object hashes computed from scratch.
+var schemaStampObjectsHashed atomic.Int64
+
+// schemaStampObjectMemo is a private copy of every input the per-object stamp
+// hash reads. A memo is reused only when the current definition is equal to it
+// input by input, so it is keyed by content, not by map or slice identity:
+// frozen definitions share their maps with every runtime clone, and a write
+// into a shared map keeps its identity while changing its content.
+type schemaStampObjectMemo struct {
+	apiName     string
+	keyPrefix   string
+	label       string
+	pluralLabel string
+	recordTypes int
+	fields      map[string]schemaStampFieldInputs
+	relations   []schemaStampRelationInputs
+	hash        uint64
+}
+
+type schemaStampFieldInputs struct {
+	apiName               string
+	fieldType             storage.FieldType
+	relationshipName      string
+	childRelationshipName string
+	referenceTo           []string
+}
+
+type schemaStampRelationInputs struct {
+	inheritedFrom      string
+	field              string
+	parentRelationship string
+	childRelationship  string
+	parentObjects      []string
+}
+
+// schemaStampObjectHash returns the per-object stamp hash. Standard objects
+// are memoized; custom and unknown objects are always hashed.
+func schemaStampObjectHash(objectName string, definition storage.ObjectDefinition) uint64 {
+	standard := storage.IsKnownStandardObject(objectName)
+	if standard {
+		if cached, ok := schemaStampObjectMemos.Load(objectName); ok {
+			if memo := cached.(*schemaStampObjectMemo); memo.matches(definition) {
+				return memo.hash
+			}
+		}
+	}
+	hash := schemaStampHashObject(objectName, definition)
+	if standard {
+		schemaStampObjectMemos.Store(objectName, newSchemaStampObjectMemo(definition, hash))
+	}
+	return hash
+}
+
+func newSchemaStampObjectMemo(definition storage.ObjectDefinition, hash uint64) *schemaStampObjectMemo {
+	memo := &schemaStampObjectMemo{
+		apiName:     definition.APIName,
+		keyPrefix:   definition.KeyPrefix,
+		label:       definition.Label,
+		pluralLabel: definition.PluralLabel,
+		recordTypes: len(definition.RecordTypes),
+		fields:      make(map[string]schemaStampFieldInputs, len(definition.Fields)),
+		relations:   make([]schemaStampRelationInputs, len(definition.Relations)),
+		hash:        hash,
+	}
+	for name, field := range definition.Fields {
+		memo.fields[name] = schemaStampFieldInputs{
+			apiName:               field.APIName,
+			fieldType:             field.Type,
+			relationshipName:      field.RelationshipName,
+			childRelationshipName: field.ChildRelationshipName,
+			referenceTo:           append([]string(nil), field.ReferenceTo...),
+		}
+	}
+	for i, relation := range definition.Relations {
+		memo.relations[i] = schemaStampRelationInputs{
+			inheritedFrom:      relation.InheritedFrom,
+			field:              relation.Field,
+			parentRelationship: relation.ParentRelationship,
+			childRelationship:  relation.ChildRelationship,
+			parentObjects:      append([]string(nil), relation.ParentObjects...),
+		}
+	}
+	return memo
+}
+
+// matches reports whether definition has exactly the hashed inputs recorded
+// in the memo. Exact equality is stricter than the trimmed and lowercased
+// hash input, so a match always reproduces the memoized hash.
+func (memo *schemaStampObjectMemo) matches(definition storage.ObjectDefinition) bool {
+	if definition.APIName != memo.apiName ||
+		definition.KeyPrefix != memo.keyPrefix ||
+		definition.Label != memo.label ||
+		definition.PluralLabel != memo.pluralLabel ||
+		len(definition.RecordTypes) != memo.recordTypes ||
+		len(definition.Fields) != len(memo.fields) ||
+		len(definition.Relations) != len(memo.relations) {
+		return false
+	}
+	for name, field := range definition.Fields {
+		inputs, ok := memo.fields[name]
+		if !ok ||
+			field.APIName != inputs.apiName ||
+			field.Type != inputs.fieldType ||
+			field.RelationshipName != inputs.relationshipName ||
+			field.ChildRelationshipName != inputs.childRelationshipName ||
+			!slices.Equal(field.ReferenceTo, inputs.referenceTo) {
+			return false
+		}
+	}
+	for i, relation := range definition.Relations {
+		inputs := memo.relations[i]
+		if relation.InheritedFrom != inputs.inheritedFrom ||
+			relation.Field != inputs.field ||
+			relation.ParentRelationship != inputs.parentRelationship ||
+			relation.ChildRelationship != inputs.childRelationship ||
+			!slices.Equal(relation.ParentObjects, inputs.parentObjects) {
+			return false
+		}
+	}
+	return true
+}
+
+// schemaStampHashObject streams one object's canonical stamp content into a
+// fresh FNV-1a hash.
+func schemaStampHashObject(objectName string, definition storage.ObjectDefinition) uint64 {
+	schemaStampObjectsHashed.Add(1)
+	h := schemaStampFNVOffset
+	h = schemaStampHashLower(h, objectName)
+	h = schemaStampHashByte(h, '=')
+	h = schemaStampHashLower(h, definition.APIName)
+	h = schemaStampHashByte(h, ',')
+	h = schemaStampHash(h, definition.KeyPrefix)
+	h = schemaStampHashByte(h, ',')
+	h = schemaStampHash(h, definition.Label)
+	h = schemaStampHashByte(h, ',')
+	h = schemaStampHash(h, definition.PluralLabel)
+	h = schemaStampHashByte(h, ';')
+
+	fieldNames := make([]string, 0, len(definition.Fields))
+	for fieldName := range definition.Fields {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	sort.Strings(fieldNames)
+	for _, fieldName := range fieldNames {
+		field := definition.Fields[fieldName]
+		h = schemaStampHashLower(h, fieldName)
+		h = schemaStampHashByte(h, ':')
+		h = schemaStampHash(h, field.APIName)
+		h = schemaStampHashByte(h, ':')
+		h = schemaStampHashRaw(h, string(field.Type))
+		h = schemaStampHashByte(h, ':')
+		h = schemaStampHash(h, field.RelationshipName)
+		h = schemaStampHashByte(h, ':')
+		h = schemaStampHash(h, field.ChildRelationshipName)
+		h = schemaStampHashByte(h, ':')
+		h = schemaStampHashReferenceList(h, field.ReferenceTo)
+		h = schemaStampHashByte(h, ';')
+	}
+
+	for _, relation := range definition.Relations {
+		h = schemaStampHash(h, relation.Field)
+		h = schemaStampHashByte(h, ':')
+		h = schemaStampHash(h, relation.ParentRelationship)
+		h = schemaStampHashByte(h, ':')
+		h = schemaStampHash(h, relation.ChildRelationship)
+		h = schemaStampHashByte(h, ':')
+		h = schemaStampHashReferenceList(h, relation.ParentObjects)
+		if relation.InheritedFrom != "" {
+			h = schemaStampHashByte(h, ':')
+			h = schemaStampHash(h, relation.InheritedFrom)
+		}
+		h = schemaStampHashByte(h, ';')
+	}
+	h = schemaStampHashRaw(h, strconv.Itoa(len(definition.RecordTypes)))
+	h = schemaStampHashByte(h, '|')
+	return h
 }
 
 // schemaStampHashReferenceList hashes a sorted, comma-joined string list,
@@ -1385,6 +1892,9 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	engine.FlowActionInvoker = func(action storage.FlowAction, record storage.Record) error {
 		return vm.invokeFlowAction(action, record, result)
 	}
+	engine.FlowActionInvokerWithContext = func(action storage.FlowAction, record storage.Record, context dml.FlowActionContext) error {
+		return vm.invokeFlowActionWithContext(action, record, context, result)
+	}
 	engine.WorkflowEmailer = func(alert storage.WorkflowEmailAlert, record storage.Record) error {
 		return vm.captureWorkflowEmail(alert, record, result)
 	}
@@ -1409,6 +1919,10 @@ func (vm *VM) applyBeforeSaveFlows(records []storage.Record, result *Result) err
 }
 
 func (vm *VM) invokeFlowAction(action storage.FlowAction, record storage.Record, result *Result) error {
+	return vm.invokeFlowActionWithContext(action, record, dml.FlowActionContext{}, result)
+}
+
+func (vm *VM) invokeFlowActionWithContext(action storage.FlowAction, record storage.Record, context dml.FlowActionContext, result *Result) error {
 	method, ok, err := vm.resolveFlowInvocableMethod(action)
 	if err != nil {
 		return err
@@ -1416,11 +1930,27 @@ func (vm *VM) invokeFlowAction(action storage.FlowAction, record storage.Record,
 	if !ok {
 		return fmt.Errorf("flow action %s: no static @InvocableMethod found on %s", action.Name, flowActionTargetName(action))
 	}
-	if len(method.Params) != 1 || collectionBase(method.Params[0].Type) != "List" {
-		return fmt.Errorf("flow action %s: %s must accept exactly one List parameter", action.Name, method.Name)
+	var args []Value
+	if len(method.Params) == 0 {
+		// Salesforce packages in the corpus include invocable actions that use
+		// the action call only as a transaction boundary and intentionally take
+		// no input (for example, a deferred-rollup commit action).
+		args = nil
+	} else {
+		if len(method.Params) != 1 || collectionBase(method.Params[0].Type) != "List" {
+			return fmt.Errorf("flow action %s: %s must accept exactly one List parameter", action.Name, method.Name)
+		}
+		elementType, _ := collectionElementType(method.Params[0].Type)
+		// Nested invocable input classes are commonly emitted as an unqualified
+		// type in the method signature (for example List<FlowInput> inside
+		// Rollup). Runtime values still need the owning class qualification so
+		// member lookup sees the nested class fields.
+		elementType = vm.qualifyFlowActionElementType(method, elementType)
+		item := vm.flowActionInputObject(action, record, context, elementType)
+		arg := List(item)
+		arg.Type = method.Params[0].Type
+		args = []Value{arg}
 	}
-	arg := List(vm.vmValueFromRecord(record))
-	arg.Type = method.Params[0].Type
 	appendTrace(result, "apex.flow.action", "apex.flow", map[string]any{
 		"action": action.Name,
 		"class":  method.ClassName,
@@ -1428,7 +1958,7 @@ func (vm *VM) invokeFlowAction(action storage.FlowAction, record storage.Record,
 		"record": string(record.ID),
 		"object": record.Object,
 	})
-	_, err = vm.callMethod(method, []Value{arg}, result)
+	_, err = vm.callMethod(method, args, result)
 	if err != nil {
 		var thrown *apexThrowError
 		if errors.As(err, &thrown) {
@@ -1441,6 +1971,233 @@ func (vm *VM) invokeFlowAction(action storage.FlowAction, record storage.Record,
 	return err
 }
 
+func (vm *VM) qualifyFlowActionElementType(method Method, elementType string) string {
+	elementType = strings.TrimSpace(elementType)
+	if elementType == "" {
+		return elementType
+	}
+	if _, ok := vm.lookupClass(elementType); ok {
+		return elementType
+	}
+	owner := strings.TrimSpace(method.ClassName)
+	if owner == "" || strings.Contains(elementType, ".") {
+		return elementType
+	}
+	candidate := owner + "." + elementType
+	if _, ok := vm.lookupClass(candidate); ok {
+		return candidate
+	}
+	return elementType
+}
+
+func (vm *VM) flowActionInputObject(action storage.FlowAction, record storage.Record, context dml.FlowActionContext, elementType string) Value {
+	if len(action.Inputs) == 0 {
+		return vm.vmValueFromRecord(record)
+	}
+	item := Object(elementType)
+	vm.initializeFields(&item, elementType)
+	for _, input := range action.Inputs {
+		name := strings.TrimSpace(input.Name)
+		if name == "" {
+			continue
+		}
+		value, ok := vm.flowActionInputValue(input, record, context)
+		if !ok {
+			value = Null
+		}
+		item.Fields[name] = value
+	}
+	return item
+}
+
+func (vm *VM) flowActionInputValue(input storage.WorkflowFieldUpdate, record storage.Record, context dml.FlowActionContext) (Value, bool) {
+	if source := strings.TrimSpace(input.SourceField); source != "" {
+		if value, ok := vm.flowActionContextReference(source, record, context); ok {
+			return value, true
+		}
+	}
+	if literal := strings.TrimSpace(input.LiteralValue); literal != "" {
+		switch strings.ToLower(literal) {
+		case "true":
+			return Bool(true), true
+		case "false":
+			return Bool(false), true
+		}
+		if decimal, err := decimalFromText(literal); err == nil && strings.ContainsAny(literal, ".eE") {
+			return decimal, true
+		}
+		if integer, err := strconv.ParseInt(literal, 10, 64); err == nil {
+			return Int(integer), true
+		}
+		return String(literal), true
+	}
+	return Null, true
+}
+
+func (vm *VM) flowActionContextReference(reference string, record storage.Record, context dml.FlowActionContext) (Value, bool) {
+	reference = strings.TrimSpace(reference)
+	if reference == "" {
+		return Value{}, false
+	}
+	key := strings.ToLower(reference)
+	if records, ok := context.Collections[key]; ok {
+		return vm.flowActionRecordCollection(records), true
+	}
+	if records, ok := context.LookupCollections[key]; ok {
+		return vm.flowActionRecordCollection(records), true
+	}
+	if value, ok := context.Scalars[key]; ok {
+		return vmValueFromStorage(value), true
+	}
+	if referenceRecord, ok := context.Records[key]; ok {
+		return vm.vmValueFromRecord(referenceRecord), true
+	}
+	if referenceRecord, ok := context.LookupOutputs[key]; ok {
+		return vm.vmValueFromRecord(referenceRecord), true
+	}
+	if value, ok := vm.flowActionRecordField(vm.flowActionRecordValue(record), reference); ok {
+		return value, true
+	}
+	for root, candidate := range context.Records {
+		prefix := root + "."
+		if strings.HasPrefix(key, prefix) {
+			if value, ok := vm.flowActionRecordField(vm.flowActionRecordValue(candidate), reference[len(prefix):]); ok {
+				return value, true
+			}
+		}
+	}
+	for root, candidate := range context.LookupOutputs {
+		prefix := root + "."
+		if strings.HasPrefix(key, prefix) {
+			if value, ok := vm.flowActionRecordField(vm.flowActionRecordValue(candidate), reference[len(prefix):]); ok {
+				return value, true
+			}
+		}
+	}
+	return Value{}, false
+}
+
+func (vm *VM) flowActionRecordCollection(records []storage.Record) Value {
+	values := make([]Value, 0, len(records))
+	for _, record := range records {
+		if record.Object == "" && record.ID == "" && len(record.Fields) == 0 && len(record.ExplicitNulls) == 0 {
+			values = append(values, Null)
+			continue
+		}
+		values = append(values, vm.flowActionRecordValue(record))
+	}
+	value := List(values...)
+	value.Type = "List<SObject>"
+	return value
+}
+
+// Flow Apex actions receive records from the Flow interview rather than from
+// a SOQL projection. Materialize lightweight parent relationship shells from
+// lookup ids so action code that evaluates a relationship path (for example
+// Account.Name in a where clause) can read the stored parent fields.
+func (vm *VM) flowActionRecordValue(record storage.Record) Value {
+	value := vmValueFromRecord(record)
+	vm.flowActionParentRelationships(&value, make(map[string]bool), 0)
+	return value
+}
+
+func (vm *VM) flowActionParentRelationships(value *Value, visited map[string]bool, depth int) {
+	if vm == nil || vm.Org == nil || value == nil || value.Kind != ValueObject || depth > 8 {
+		return
+	}
+	objectName, ok := vm.resolveObjectName(value.Type)
+	if !ok {
+		objectName = value.Type
+	}
+	id := sObjectIDFromFields(value.Fields)
+	key := strings.ToLower(objectName) + ":" + strings.ToLower(string(id))
+	if visited[key] {
+		return
+	}
+	visited[key] = true
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return
+	}
+	for _, relation := range object.Definition.Relations {
+		if strings.TrimSpace(relation.ParentRelationship) == "" {
+			continue
+		}
+		if _, existing, exists := objectFieldValue(*value, relation.ParentRelationship); exists && existing.Kind == ValueObject {
+			vm.markFlowActionParentProjection(&existing)
+			value.Fields[relation.ParentRelationship] = existing
+			continue
+		}
+		_, lookup, exists := objectFieldValue(*value, relation.Field)
+		if !exists || lookup.Kind == ValueNull {
+			continue
+		}
+		parent, exists := vm.flowActionParentRelationshipFromLookupID(relation, lookup)
+		if !exists || parent.Kind != ValueObject {
+			continue
+		}
+		vm.markFlowActionParentProjection(&parent)
+		value.Fields[relation.ParentRelationship] = parent
+	}
+}
+
+func (vm *VM) markFlowActionParentProjection(value *Value) {
+	if value == nil || value.Kind != ValueObject {
+		return
+	}
+	if value.Fields == nil {
+		value.Fields = make(map[string]Value)
+	}
+	value.Fields[sobjectParentProjectionField] = Bool(true)
+	vm.ensureQueriedSObjectFieldMarker(value, value.Type)
+	for field := range value.Fields {
+		if !isInternalSObjectField(field) {
+			markQueriedSObjectField(value, field)
+		}
+	}
+}
+
+func (vm *VM) flowActionParentRelationshipFromLookupID(relation storage.Relationship, lookupValue Value) (Value, bool) {
+	if vm == nil || vm.Org == nil {
+		return Null, false
+	}
+	lookupID, ok := sObjectIDFromValue(lookupValue)
+	if !ok || lookupID == "" {
+		return Null, false
+	}
+	for _, parentName := range relation.ParentObjects {
+		parentObject, ok := vm.resolveObjectName(parentName)
+		if !ok {
+			parentObject = parentName
+		}
+		if strings.TrimSpace(parentObject) == "" {
+			continue
+		}
+		if stored, found := vm.findOrgRecord(parentObject, lookupID); found {
+			stored.Object = parentObject
+			return vmValueFromRecord(stored), true
+		}
+	}
+	return vm.parentRelationshipShellFromLookupID(relation, lookupValue)
+}
+
+func (vm *VM) flowActionRecordField(record Value, reference string) (Value, bool) {
+	parts := strings.Split(reference, ".")
+	current := record
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		_, value, ok := objectFieldValue(current, part)
+		if !ok {
+			return Value{}, false
+		}
+		current = value
+	}
+	return current, true
+}
+
 func (vm *VM) resolveFlowInvocableMethod(action storage.FlowAction) (Method, bool, error) {
 	className := strings.TrimSpace(action.ClassName)
 	if className == "" {
@@ -1451,9 +2208,9 @@ func (vm *VM) resolveFlowInvocableMethod(action storage.FlowAction) (Method, boo
 	}
 	methodName := strings.TrimSpace(action.MethodName)
 	if methodName != "" {
-		candidates := vm.MethodOverloads[className+"."+methodName]
+		candidates := vm.registeredOverloads(className + "." + methodName)
 		if len(candidates) == 0 {
-			candidates = vm.MethodFolded[strings.ToLower(className+"."+methodName)]
+			candidates = vm.registeredFolded(strings.ToLower(className + "." + methodName))
 		}
 		if len(candidates) == 0 {
 			class, ok := vm.Classes[className]
@@ -1559,6 +2316,17 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 	return nil
 }
 
+func cloneStorageRecords(records []storage.Record) []storage.Record {
+	if len(records) == 0 {
+		return nil
+	}
+	out := make([]storage.Record, 0, len(records))
+	for _, record := range records {
+		out = append(out, record.Clone())
+	}
+	return out
+}
+
 func (vm *VM) refireAutomationUpdateTriggers(objectName string, id storage.ID, oldRecord storage.Record, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
 	if vm == nil || vm.Org == nil || objectName == "" || id == "" {
 		return nil
@@ -1657,6 +2425,23 @@ func (vm *VM) SetTestSeeAllData(enabled bool) {
 	vm.testContext.SeeAllDataSet = true
 }
 
+// SetTestDocumentBaseline captures the pre-test Document rows. The runner calls
+// it on its private base VM before static initializers or @TestSetup execute.
+// Documents subsequently inserted by tests remain visible in ordinary SOQL.
+func (vm *VM) SetTestDocumentBaseline(org *storage.OrgState) {
+	vm.testDocumentBaseline = make(map[storage.ID]struct{})
+	if org == nil {
+		return
+	}
+	name, ok := storage.ResolveObjectName(*org, "Document")
+	if !ok {
+		return
+	}
+	for id := range org.Objects[name].Records {
+		vm.testDocumentBaseline[id] = struct{}{}
+	}
+}
+
 func (vm *VM) defaultTestCurrentUser() Value {
 	if vm.executionUser.Kind != "" && vm.executionUser.Kind != ValueNull {
 		return vm.executionUser
@@ -1668,17 +2453,57 @@ func (vm *VM) defaultTestCurrentUser() Value {
 }
 
 func (vm *VM) defaultOrgUser() Value {
-	if vm.Org == nil {
+	record, ok := vm.defaultOrgUserRecord()
+	if !ok {
 		return Value{}
+	}
+	return vmValueFromRecord(record)
+}
+
+// defaultOrgUserID returns userInfoFieldValue(defaultOrgUser(), "Id") without
+// converting the whole User record. It answers only when the record's Id slot
+// cannot be shadowed by a stored field, child relationship, explicit null or
+// explicit-field marker; otherwise ok is false and callers convert the record.
+func (vm *VM) defaultOrgUserID() (string, bool) {
+	record, ok := vm.defaultOrgUserRecord()
+	if !ok || record.ID == "" {
+		return "", false
+	}
+	for field := range record.Fields {
+		if defaultOrgUserIDShadowed(field) {
+			return "", false
+		}
+	}
+	for relationship := range record.Children {
+		if defaultOrgUserIDShadowed(relationship) {
+			return "", false
+		}
+	}
+	for field := range record.ExplicitNulls {
+		if defaultOrgUserIDShadowed(field) {
+			return "", false
+		}
+	}
+	return string(record.ID), true
+}
+
+func defaultOrgUserIDShadowed(field string) bool {
+	head, _, _ := strings.Cut(field, ".")
+	return strings.EqualFold(head, "Id") || head == sobjectExplicitFieldsField
+}
+
+func (vm *VM) defaultOrgUserRecord() (storage.Record, bool) {
+	if vm.Org == nil {
+		return storage.Record{}, false
 	}
 	users, ok := vm.Org.Objects["User"]
 	if !ok || len(users.Records) == 0 {
-		return Value{}
+		return storage.Record{}, false
 	}
 	for _, preferredID := range []storage.ID{storage.ID("005-local-user"), storage.ID("005000000000001")} {
 		if preferred, ok := users.Records[preferredID]; ok {
 			if !strings.EqualFold(recordFieldString(preferred, "UserType"), "AutomatedProcess") {
-				return vmValueFromRecord(preferred)
+				return preferred, true
 			}
 		}
 	}
@@ -1699,7 +2524,7 @@ func (vm *VM) defaultOrgUser() Value {
 	if first == "" {
 		first = fallback
 	}
-	return vmValueFromRecord(users.Records[first])
+	return users.Records[first], true
 }
 
 func (vm *VM) ResetStatics() error {
@@ -1901,6 +2726,50 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 
 func (vm *VM) AdvanceDeterministicTime(delta time.Duration) {
 	vm.fakeNow = vm.fakeNow.Add(delta)
+}
+
+// SetSynchronousActionBoundary makes framework actions fail closed when they
+// attempt to cross an asynchronous delivery boundary that the caller cannot
+// drain and commit as part of the same request.
+func (vm *VM) SetSynchronousActionBoundary(enabled bool) {
+	if vm != nil {
+		vm.rejectAsyncActions = enabled
+		if !enabled {
+			vm.asyncActionViolation = false
+		}
+	}
+}
+
+// rejectSynchronousAsyncAction records a boundary violation even when Apex
+// catches and converts the UnsupportedFeature into an ordinary return value.
+// The request owner must still reject the transaction before publishing any
+// earlier DML. This flag is intentionally outside org/savepoint state.
+func (vm *VM) rejectSynchronousAsyncAction(message string) error {
+	if vm != nil {
+		vm.asyncActionViolation = true
+	}
+	return UnsupportedFeature(message)
+}
+
+// HasRejectedAsyncAction reports an attempted asynchronous action that was
+// caught or otherwise converted into a successful-looking Apex result.
+func (vm *VM) HasRejectedAsyncAction() bool {
+	return vm != nil && vm.asyncActionViolation
+}
+
+// HasPendingAsyncWork reports asynchronous work that would outlive the
+// current VM invocation if the caller committed only the org state.
+func (vm *VM) HasPendingAsyncWork() bool {
+	if vm == nil {
+		return false
+	}
+	if len(vm.localAsyncJobs) > 0 {
+		return true
+	}
+	if vm.testContext == nil {
+		return false
+	}
+	return len(vm.testContext.AsyncJobs) > 0 || len(vm.testContext.PlatformEvents) > 0 || len(vm.testContext.EventPublishes) > 0
 }
 
 func (vm *VM) DrainAsync(result *Result) error {

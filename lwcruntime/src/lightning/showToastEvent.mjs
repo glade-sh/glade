@@ -4,7 +4,11 @@ export { recordToast };
 export const SHOW_TOAST_EVENT_NAME = "lightning__showtoast";
 export class ShowToastEvent extends CustomEvent {
   constructor(detail = {}) {
-    super(SHOW_TOAST_EVENT_NAME, { bubbles: true, composed: true, cancelable: true, detail });
+    const options = { ...detail };
+    super(SHOW_TOAST_EVENT_NAME, {
+      bubbles: true, composed: true, cancelable: true,
+      detail: { label: options.title ?? "" },
+    });
   }
 }
 export default ShowToastEvent;

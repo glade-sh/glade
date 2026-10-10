@@ -1,0 +1,1849 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "source": "Salesforce API 62.0 and 67.0 owned governor observations; floor and ceiling org.tsv are byte-identical. Hosted resource usage and emitted log filtering are outside these observations. Actual overflow rows R257/R258 are guarded admission only.",
+  "caseRows": {
+    "run-as-limits": [
+      "R055",
+      "R056",
+      "R057",
+      "R058",
+      "R059",
+      "R060",
+      "R061",
+      "R062",
+      "R063",
+      "R064",
+      "R065",
+      "R066",
+      "R067",
+      "R068",
+      "R069",
+      "R070",
+      "R071",
+      "R072",
+      "R073",
+      "R074",
+      "R075"
+    ]
+  },
+  "Declarations": {
+    "GovernorDebugValue": "public class GovernorDebugValue {\n public Integer calls=0;\n public override String toString(){calls++;return 'A29-debug';}\n}",
+    "GovernorControlException": "public class GovernorControlException extends Exception {}",
+    "GovernorShadowReader": "public class GovernorShadowReader {\n public Integer getQueries(Integer n){return 40+n;}\n}",
+    "GovernorFieldShadow": "public class GovernorFieldShadow {\n public GovernorShadowReader Limits=new GovernorShadowReader();\n public Integer fieldQueries(){return Limits.getQueries(1);}\n public Integer qualifiedFieldQueries(){return this.Limits.getQueries(2);}\n public Integer localQueries(){GovernorShadowReader Limits=new GovernorShadowReader();return Limits.getQueries(3);}\n public Integer parameterQueries(GovernorShadowReader Limits){return Limits.getQueries(4);}\n}"
+  },
+  "Cases": [
+    {
+      "ID": "R001",
+      "Code": "r=Limits.getLimitAggregateQueries();",
+      "Expected": "300",
+      "Compile": false
+    },
+    {
+      "ID": "R002",
+      "Code": "Integer n=Limits.getAggregateQueries(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R003",
+      "Code": "Integer n=Limits.getLimitAggregateQueries(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "300|300",
+      "Compile": false
+    },
+    {
+      "ID": "R004",
+      "Code": "r=Limits.getLimitQueries();",
+      "Expected": "100",
+      "Compile": false
+    },
+    {
+      "ID": "R005",
+      "Code": "Integer n=Limits.getQueries(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R006",
+      "Code": "Integer n=Limits.getLimitQueries(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "100|100",
+      "Compile": false
+    },
+    {
+      "ID": "R007",
+      "Code": "r=Limits.getLimitQueryRows();",
+      "Expected": "50000",
+      "Compile": false
+    },
+    {
+      "ID": "R008",
+      "Code": "Integer n=Limits.getQueryRows(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R009",
+      "Code": "Integer n=Limits.getLimitQueryRows(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "50000|50000",
+      "Compile": false
+    },
+    {
+      "ID": "R010",
+      "Code": "r=Limits.getLimitQueryLocatorRows();",
+      "Expected": "10000",
+      "Compile": false
+    },
+    {
+      "ID": "R011",
+      "Code": "Integer n=Limits.getQueryLocatorRows(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R012",
+      "Code": "Integer n=Limits.getLimitQueryLocatorRows(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "10000|10000",
+      "Compile": false
+    },
+    {
+      "ID": "R013",
+      "Code": "r=Limits.getLimitDMLStatements();",
+      "Expected": "150",
+      "Compile": false
+    },
+    {
+      "ID": "R014",
+      "Code": "Integer n=Limits.getDMLStatements(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R015",
+      "Code": "Integer n=Limits.getLimitDMLStatements(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "150|150",
+      "Compile": false
+    },
+    {
+      "ID": "R016",
+      "Code": "r=Limits.getLimitDMLRows();",
+      "Expected": "10000",
+      "Compile": false
+    },
+    {
+      "ID": "R017",
+      "Code": "Integer n=Limits.getDMLRows(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R018",
+      "Code": "Integer n=Limits.getLimitDMLRows(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "10000|10000",
+      "Compile": false
+    },
+    {
+      "ID": "R019",
+      "Code": "r=Limits.getLimitCallouts();",
+      "Expected": "100",
+      "Compile": false
+    },
+    {
+      "ID": "R020",
+      "Code": "Integer n=Limits.getCallouts(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R021",
+      "Code": "Integer n=Limits.getLimitCallouts(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "100|100",
+      "Compile": false
+    },
+    {
+      "ID": "R022",
+      "Code": "r=Limits.getLimitEmailInvocations();",
+      "Expected": "10",
+      "Compile": false
+    },
+    {
+      "ID": "R023",
+      "Code": "Integer n=Limits.getEmailInvocations(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R024",
+      "Code": "Integer n=Limits.getLimitEmailInvocations(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "10|10",
+      "Compile": false
+    },
+    {
+      "ID": "R025",
+      "Code": "r=Limits.getLimitFutureCalls();",
+      "Expected": "50",
+      "Compile": false
+    },
+    {
+      "ID": "R026",
+      "Code": "Integer n=Limits.getFutureCalls(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R027",
+      "Code": "Integer n=Limits.getLimitFutureCalls(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "50|50",
+      "Compile": false
+    },
+    {
+      "ID": "R028",
+      "Code": "r=Limits.getLimitQueueableJobs();",
+      "Expected": "50",
+      "Compile": false
+    },
+    {
+      "ID": "R029",
+      "Code": "Integer n=Limits.getQueueableJobs(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R030",
+      "Code": "Integer n=Limits.getLimitQueueableJobs(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "50|50",
+      "Compile": false
+    },
+    {
+      "ID": "R031",
+      "Code": "r=Limits.getLimitSoslQueries();",
+      "Expected": "20",
+      "Compile": false
+    },
+    {
+      "ID": "R032",
+      "Code": "Integer n=Limits.getSoslQueries(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R033",
+      "Code": "Integer n=Limits.getLimitSoslQueries(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "20|20",
+      "Compile": false
+    },
+    {
+      "ID": "R034",
+      "Code": "r=Limits.getLimitFindSimilarCalls();",
+      "Expected": "20",
+      "Compile": false
+    },
+    {
+      "ID": "R035",
+      "Code": "Integer n=Limits.getFindSimilarCalls(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R036",
+      "Code": "Integer n=Limits.getLimitFindSimilarCalls(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "20|20",
+      "Compile": false
+    },
+    {
+      "ID": "R037",
+      "Code": "r=Limits.getLimitMobilePushApexCalls();",
+      "Expected": "10",
+      "Compile": false
+    },
+    {
+      "ID": "R038",
+      "Code": "Integer n=Limits.getMobilePushApexCalls(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R039",
+      "Code": "Integer n=Limits.getLimitMobilePushApexCalls(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "10|10",
+      "Compile": false
+    },
+    {
+      "ID": "R040",
+      "Code": "r=Limits.getLimitApexCursors();",
+      "Expected": "50",
+      "Compile": false
+    },
+    {
+      "ID": "R041",
+      "Code": "Integer n=Limits.getApexCursors(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R042",
+      "Code": "Integer n=Limits.getLimitApexCursors(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "50|50",
+      "Compile": false
+    },
+    {
+      "ID": "R043",
+      "Code": "r=Limits.getLimitApexCursorRows();",
+      "Expected": "50000000",
+      "Compile": false
+    },
+    {
+      "ID": "R044",
+      "Code": "Integer n=Limits.getApexCursorRows(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R045",
+      "Code": "Integer n=Limits.getLimitApexCursorRows(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "50000000|50000000",
+      "Compile": false
+    },
+    {
+      "ID": "R046",
+      "Code": "r=Limits.getLimitFetchCallsOnApexCursor();",
+      "Expected": "100",
+      "Compile": false
+    },
+    {
+      "ID": "R047",
+      "Code": "Integer n=Limits.getFetchCallsOnApexCursor(); Object boxed=n; r=boxed instanceof Integer;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R048",
+      "Code": "Integer n=Limits.getLimitFetchCallsOnApexCursor(); Long wide=n; Decimal dec=n; r=String.valueOf(wide)+'|'+String.valueOf(dec);",
+      "Expected": "100|100",
+      "Compile": false
+    },
+    {
+      "ID": "R049",
+      "Code": "Integer n=Limits.getCpuTime(); r=n!=null && n>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R050",
+      "Code": "r=Limits.getLimitCpuTime();",
+      "Expected": "10000",
+      "Compile": false
+    },
+    {
+      "ID": "R051",
+      "Code": "Integer n=Limits.getHeapSize(); r=n!=null && n>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R052",
+      "Code": "r=Limits.getLimitHeapSize();",
+      "Expected": "6000000",
+      "Compile": false
+    },
+    {
+      "ID": "R053",
+      "Code": "Integer n=Limits.getDatabaseTime(); r=n!=null && n>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R054",
+      "Code": "r=Limits.getLimitDatabaseTime();",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R055",
+      "Code": "r=Limits.getLimitRunAs();",
+      "Expected": "150",
+      "Compile": false
+    },
+    {
+      "ID": "R056",
+      "Code": "r=Limits.getLimitRunAs()==Limits.getLimitDMLStatements();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R057",
+      "Code": "r=Limits.getRunAs()==Limits.getDMLStatements();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R058",
+      "Code": "Integer b=Limits.getRunAs(); Integer d=Limits.getDMLStatements(); List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-alias')); insert xs; r=String.valueOf(Limits.getRunAs()-b)+'|'+(Limits.getDMLStatements()-d); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R059",
+      "Code": "Integer b=Limits.getRunAs(); Integer d=Limits.getDMLStatements(); List<Account> xs=new List<Account>(); for(Integer i=0;i<3;i++)xs.add(new Account(Name='A29-alias')); insert xs; r=String.valueOf(Limits.getRunAs()-b)+'|'+(Limits.getDMLStatements()-d); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R060",
+      "Code": "Integer b=Limits.getRunAs(); Integer d=Limits.getDMLStatements(); Savepoint sp=Database.setSavepoint(); r=String.valueOf(Limits.getRunAs()-b)+'|'+(Limits.getDMLStatements()-d); Database.rollback(sp); Database.releaseSavepoint(sp);",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R061",
+      "Code": "Savepoint sp=Database.setSavepoint(); Integer b=Limits.getRunAs(); Integer d=Limits.getDMLStatements(); Database.rollback(sp); r=String.valueOf(Limits.getRunAs()-b)+'|'+(Limits.getDMLStatements()-d); Database.releaseSavepoint(sp);",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R062",
+      "Code": "r=Limits.getLimitSavepoints();",
+      "Expected": "150",
+      "Compile": false
+    },
+    {
+      "ID": "R063",
+      "Code": "r=Limits.getLimitSavepoints()==Limits.getLimitDMLStatements();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R064",
+      "Code": "r=Limits.getSavepoints()==Limits.getDMLStatements();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R065",
+      "Code": "Integer b=Limits.getSavepoints(); Integer d=Limits.getDMLStatements(); List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-alias')); insert xs; r=String.valueOf(Limits.getSavepoints()-b)+'|'+(Limits.getDMLStatements()-d); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R066",
+      "Code": "Integer b=Limits.getSavepoints(); Integer d=Limits.getDMLStatements(); List<Account> xs=new List<Account>(); for(Integer i=0;i<3;i++)xs.add(new Account(Name='A29-alias')); insert xs; r=String.valueOf(Limits.getSavepoints()-b)+'|'+(Limits.getDMLStatements()-d); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R067",
+      "Code": "Integer b=Limits.getSavepoints(); Integer d=Limits.getDMLStatements(); Savepoint sp=Database.setSavepoint(); r=String.valueOf(Limits.getSavepoints()-b)+'|'+(Limits.getDMLStatements()-d); Database.rollback(sp); Database.releaseSavepoint(sp);",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R068",
+      "Code": "Savepoint sp=Database.setSavepoint(); Integer b=Limits.getSavepoints(); Integer d=Limits.getDMLStatements(); Database.rollback(sp); r=String.valueOf(Limits.getSavepoints()-b)+'|'+(Limits.getDMLStatements()-d); Database.releaseSavepoint(sp);",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R069",
+      "Code": "r=Limits.getLimitSavepointRollbacks();",
+      "Expected": "150",
+      "Compile": false
+    },
+    {
+      "ID": "R070",
+      "Code": "r=Limits.getLimitSavepointRollbacks()==Limits.getLimitDMLStatements();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R071",
+      "Code": "r=Limits.getSavepointRollbacks()==Limits.getDMLStatements();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R072",
+      "Code": "Integer b=Limits.getSavepointRollbacks(); Integer d=Limits.getDMLStatements(); List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-alias')); insert xs; r=String.valueOf(Limits.getSavepointRollbacks()-b)+'|'+(Limits.getDMLStatements()-d); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R073",
+      "Code": "Integer b=Limits.getSavepointRollbacks(); Integer d=Limits.getDMLStatements(); List<Account> xs=new List<Account>(); for(Integer i=0;i<3;i++)xs.add(new Account(Name='A29-alias')); insert xs; r=String.valueOf(Limits.getSavepointRollbacks()-b)+'|'+(Limits.getDMLStatements()-d); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R074",
+      "Code": "Integer b=Limits.getSavepointRollbacks(); Integer d=Limits.getDMLStatements(); Savepoint sp=Database.setSavepoint(); r=String.valueOf(Limits.getSavepointRollbacks()-b)+'|'+(Limits.getDMLStatements()-d); Database.rollback(sp); Database.releaseSavepoint(sp);",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R075",
+      "Code": "Savepoint sp=Database.setSavepoint(); Integer b=Limits.getSavepointRollbacks(); Integer d=Limits.getDMLStatements(); Database.rollback(sp); r=String.valueOf(Limits.getSavepointRollbacks()-b)+'|'+(Limits.getDMLStatements()-d); Database.releaseSavepoint(sp);",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R076",
+      "Code": "Integer b=Limits.getQueries(); List<Account> xs=[SELECT Id FROM Account WHERE Id=null]; r=Limits.getQueries()-b;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R077",
+      "Code": "Integer b=Limits.getQueryRows(); List<Account> xs=[SELECT Id FROM Account WHERE Id=null]; r=Limits.getQueryRows()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R078",
+      "Code": "Integer b=Limits.getAggregateQueries(); List<Account> xs=[SELECT Id FROM Account WHERE Id=null]; r=Limits.getAggregateQueries()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R079",
+      "Code": "Integer b=Limits.getQueries(); List<Account> xs=Database.query('SELECT Id FROM Account WHERE Id=null'); r=Limits.getQueries()-b;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R080",
+      "Code": "Integer b=Limits.getQueryRows(); List<Account> xs=Database.query('SELECT Id FROM Account WHERE Id=null'); r=Limits.getQueryRows()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R081",
+      "Code": "Integer b=Limits.getAggregateQueries(); List<Account> xs=Database.query('SELECT Id FROM Account WHERE Id=null'); r=Limits.getAggregateQueries()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R082",
+      "Code": "Integer b=Limits.getQueries(); Integer n=[SELECT COUNT() FROM Account WHERE Id=null]; r=Limits.getQueries()-b;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R083",
+      "Code": "Integer b=Limits.getQueryRows(); Integer n=[SELECT COUNT() FROM Account WHERE Id=null]; r=Limits.getQueryRows()-b;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R084",
+      "Code": "Integer b=Limits.getAggregateQueries(); Integer n=[SELECT COUNT() FROM Account WHERE Id=null]; r=Limits.getAggregateQueries()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R085",
+      "Code": "Integer b=Limits.getQueries(); List<AggregateResult> xs=[SELECT COUNT(Id) n FROM Account WHERE Id=null]; r=Limits.getQueries()-b;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R086",
+      "Code": "Integer b=Limits.getQueryRows(); List<AggregateResult> xs=[SELECT COUNT(Id) n FROM Account WHERE Id=null]; r=Limits.getQueryRows()-b;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R087",
+      "Code": "Integer b=Limits.getAggregateQueries(); List<AggregateResult> xs=[SELECT COUNT(Id) n FROM Account WHERE Id=null]; r=Limits.getAggregateQueries()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R088",
+      "Code": "Integer b=Limits.getQueries(); for(Account x:[SELECT Id FROM Account WHERE Id=null]){} r=Limits.getQueries()-b;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R089",
+      "Code": "Integer b=Limits.getQueryRows(); for(Account x:[SELECT Id FROM Account WHERE Id=null]){} r=Limits.getQueryRows()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R090",
+      "Code": "Integer b=Limits.getAggregateQueries(); for(Account x:[SELECT Id FROM Account WHERE Id=null]){} r=Limits.getAggregateQueries()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R091",
+      "Code": "Integer b=Limits.getQueries(); List<Account> xs=[SELECT Id,(SELECT Id FROM Contacts) FROM Account WHERE Id=null]; r=Limits.getQueries()-b;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R092",
+      "Code": "Integer b=Limits.getQueryRows(); List<Account> xs=[SELECT Id,(SELECT Id FROM Contacts) FROM Account WHERE Id=null]; r=Limits.getQueryRows()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R093",
+      "Code": "Integer b=Limits.getAggregateQueries(); List<Account> xs=[SELECT Id,(SELECT Id FROM Contacts) FROM Account WHERE Id=null]; r=Limits.getAggregateQueries()-b;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R094",
+      "Code": "Integer b=Limits.getQueries(); List<Account> xs=[SELECT Id FROM Account WHERE Id=null LIMIT 0]; r=Limits.getQueries()-b;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R095",
+      "Code": "Integer b=Limits.getQueryRows(); List<Account> xs=[SELECT Id FROM Account WHERE Id=null LIMIT 0]; r=Limits.getQueryRows()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R096",
+      "Code": "Integer b=Limits.getAggregateQueries(); List<Account> xs=[SELECT Id FROM Account WHERE Id=null LIMIT 0]; r=Limits.getAggregateQueries()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R097",
+      "Code": "Integer b=Limits.getQueries(); for(Integer i=0;i<0;i++){List<Account> xs=[SELECT Id FROM Account WHERE Id=null];} r=Limits.getQueries()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R098",
+      "Code": "Integer b=Limits.getQueryRows(); for(Integer i=0;i<0;i++){List<Account> xs=[SELECT Id FROM Account WHERE Id=null];} r=Limits.getQueryRows()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R099",
+      "Code": "Integer b=Limits.getQueries(); for(Integer i=0;i<1;i++){List<Account> xs=[SELECT Id FROM Account WHERE Id=null];} r=Limits.getQueries()-b;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R100",
+      "Code": "Integer b=Limits.getQueryRows(); for(Integer i=0;i<1;i++){List<Account> xs=[SELECT Id FROM Account WHERE Id=null];} r=Limits.getQueryRows()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R101",
+      "Code": "Integer b=Limits.getQueries(); for(Integer i=0;i<3;i++){List<Account> xs=[SELECT Id FROM Account WHERE Id=null];} r=Limits.getQueries()-b;",
+      "Expected": "3",
+      "Compile": false
+    },
+    {
+      "ID": "R102",
+      "Code": "Integer b=Limits.getQueryRows(); for(Integer i=0;i<3;i++){List<Account> xs=[SELECT Id FROM Account WHERE Id=null];} r=Limits.getQueryRows()-b;",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R103",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-query')); insert xs; Set<Id> ids=new Map<Id,Account>(xs).keySet(); Integer q=Limits.getQueries(); Integer b=Limits.getQueryRows(); Object rows=Database.query('SELECT Id FROM Account WHERE Id IN :ids'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getQueryRows()-b); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R104",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-query')); insert xs; Set<Id> ids=new Map<Id,Account>(xs).keySet(); Integer q=Limits.getQueries(); Integer b=Limits.getQueryRows(); Object rows=Database.query('SELECT COUNT() FROM Account WHERE Id IN :ids'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getQueryRows()-b); delete xs;",
+      "Expected": "EXC|System.QueryException|use countQuery() for [select count()...] queries",
+      "Compile": false
+    },
+    {
+      "ID": "R105",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-query')); insert xs; Set<Id> ids=new Map<Id,Account>(xs).keySet(); Integer q=Limits.getQueries(); Integer b=Limits.getQueryRows(); Object rows=Database.query('SELECT COUNT(Id) n FROM Account WHERE Id IN :ids'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getQueryRows()-b); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R106",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<2;i++)xs.add(new Account(Name='A29-query')); insert xs; Set<Id> ids=new Map<Id,Account>(xs).keySet(); Integer q=Limits.getQueries(); Integer b=Limits.getQueryRows(); Object rows=Database.query('SELECT Id FROM Account WHERE Id IN :ids'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getQueryRows()-b); delete xs;",
+      "Expected": "1|2",
+      "Compile": false
+    },
+    {
+      "ID": "R107",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<2;i++)xs.add(new Account(Name='A29-query')); insert xs; Set<Id> ids=new Map<Id,Account>(xs).keySet(); Integer q=Limits.getQueries(); Integer b=Limits.getQueryRows(); Object rows=Database.query('SELECT COUNT() FROM Account WHERE Id IN :ids'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getQueryRows()-b); delete xs;",
+      "Expected": "EXC|System.QueryException|use countQuery() for [select count()...] queries",
+      "Compile": false
+    },
+    {
+      "ID": "R108",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<2;i++)xs.add(new Account(Name='A29-query')); insert xs; Set<Id> ids=new Map<Id,Account>(xs).keySet(); Integer q=Limits.getQueries(); Integer b=Limits.getQueryRows(); Object rows=Database.query('SELECT COUNT(Id) n FROM Account WHERE Id IN :ids'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getQueryRows()-b); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R109",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<4;i++)xs.add(new Account(Name='A29-query')); insert xs; Set<Id> ids=new Map<Id,Account>(xs).keySet(); Integer q=Limits.getQueries(); Integer b=Limits.getQueryRows(); Object rows=Database.query('SELECT Id FROM Account WHERE Id IN :ids'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getQueryRows()-b); delete xs;",
+      "Expected": "1|4",
+      "Compile": false
+    },
+    {
+      "ID": "R110",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<4;i++)xs.add(new Account(Name='A29-query')); insert xs; Set<Id> ids=new Map<Id,Account>(xs).keySet(); Integer q=Limits.getQueries(); Integer b=Limits.getQueryRows(); Object rows=Database.query('SELECT COUNT() FROM Account WHERE Id IN :ids'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getQueryRows()-b); delete xs;",
+      "Expected": "EXC|System.QueryException|use countQuery() for [select count()...] queries",
+      "Compile": false
+    },
+    {
+      "ID": "R111",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<4;i++)xs.add(new Account(Name='A29-query')); insert xs; Set<Id> ids=new Map<Id,Account>(xs).keySet(); Integer q=Limits.getQueries(); Integer b=Limits.getQueryRows(); Object rows=Database.query('SELECT COUNT(Id) n FROM Account WHERE Id IN :ids'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getQueryRows()-b); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R112",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<0;i++)xs.add(new Account(Name='A29-insert')); Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); insert xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R113",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<0;i++)xs.add(new Account(Name='A29-insert')); Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Database.insert(xs,false); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R114",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<0;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); update xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R115",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<0;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); upsert xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R116",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<0;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); delete xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); ",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R117",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<0;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Database.update(xs,false); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R118",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<0;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Database.delete(xs,false); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); ",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R119",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<0;i++)xs.add(new Account(Name='A29-undelete')); insert xs; delete xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); undelete xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R120",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-insert')); Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); insert xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R121",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-insert')); Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Database.insert(xs,false); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R122",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); update xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R123",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); upsert xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R124",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); delete xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); ",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R125",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Database.update(xs,false); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R126",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Database.delete(xs,false); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); ",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R127",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<1;i++)xs.add(new Account(Name='A29-undelete')); insert xs; delete xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); undelete xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R128",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<3;i++)xs.add(new Account(Name='A29-insert')); Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); insert xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|3",
+      "Compile": false
+    },
+    {
+      "ID": "R129",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<3;i++)xs.add(new Account(Name='A29-insert')); Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Database.insert(xs,false); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|3",
+      "Compile": false
+    },
+    {
+      "ID": "R130",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<3;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); update xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|3",
+      "Compile": false
+    },
+    {
+      "ID": "R131",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<3;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); upsert xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|3",
+      "Compile": false
+    },
+    {
+      "ID": "R132",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<3;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); delete xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); ",
+      "Expected": "1|3",
+      "Compile": false
+    },
+    {
+      "ID": "R133",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<3;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Database.update(xs,false); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|3",
+      "Compile": false
+    },
+    {
+      "ID": "R134",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<3;i++)xs.add(new Account(Name='A29-mutation')); insert xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Database.delete(xs,false); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); ",
+      "Expected": "1|3",
+      "Compile": false
+    },
+    {
+      "ID": "R135",
+      "Code": "List<Account> xs=new List<Account>(); for(Integer i=0;i<3;i++)xs.add(new Account(Name='A29-undelete')); insert xs; delete xs; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); undelete xs; r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); delete xs;",
+      "Expected": "1|3",
+      "Compile": false
+    },
+    {
+      "ID": "R136",
+      "Code": "List<Account> xs=new List<Account>{new Account()}; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); String error='none'; try{insert xs;}catch(DmlException e){error=e.getTypeName();} r=error+'|'+(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b);",
+      "Expected": "System.DmlException|1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R137",
+      "Code": "List<Account> xs=new List<Account>{new Account()}; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); String error='none'; try{Database.insert(xs,false);}catch(DmlException e){error=e.getTypeName();} r=error+'|'+(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b);",
+      "Expected": "none|1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R138",
+      "Code": "List<Account> xs=new List<Account>{new Account()}; Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); String error='none'; try{Database.insert(xs,true);}catch(DmlException e){error=e.getTypeName();} r=error+'|'+(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b);",
+      "Expected": "System.DmlException|1|1",
+      "Compile": false
+    },
+    {
+      "ID": "R139",
+      "Code": " Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Savepoint sp=Database.setSavepoint(); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); Database.releaseSavepoint(sp);",
+      "Expected": "1|0",
+      "Compile": false
+    },
+    {
+      "ID": "R140",
+      "Code": "Savepoint sp=Database.setSavepoint(); Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Database.rollback(sp); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); Database.releaseSavepoint(sp);",
+      "Expected": "1|0",
+      "Compile": false
+    },
+    {
+      "ID": "R141",
+      "Code": "Savepoint sp=Database.setSavepoint(); Integer d=Limits.getDMLStatements(); Integer b=Limits.getDMLRows(); Database.releaseSavepoint(sp); r=String.valueOf(Limits.getDMLStatements()-d)+'|'+(Limits.getDMLRows()-b); ",
+      "Expected": "1|0",
+      "Compile": false
+    },
+    {
+      "ID": "R142",
+      "Code": "List<Account> xs=null; insert xs; r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false
+    },
+    {
+      "ID": "R143",
+      "Code": "List<Account> xs=null; update xs; r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false
+    },
+    {
+      "ID": "R144",
+      "Code": "List<Account> xs=null; delete xs; r='returned';",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false
+    },
+    {
+      "ID": "R145",
+      "Code": "LoggingLevel level=LoggingLevel.NONE; r=String.valueOf(level);",
+      "Expected": "NONE",
+      "Compile": false
+    },
+    {
+      "ID": "R146",
+      "Code": "System.debug(LoggingLevel.NONE,null); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R147",
+      "Code": "System.debug(LoggingLevel.NONE,'A29 message'); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R148",
+      "Code": "System.debug(LoggingLevel.NONE,new List<Integer>{1,null,3}); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R149",
+      "Code": "System.debug(LoggingLevel.NONE,new Account(Name='A29 debug')); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R150",
+      "Code": "GovernorDebugValue v=new GovernorDebugValue(); System.debug(LoggingLevel.NONE,v); r=v.calls;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R151",
+      "Code": "Integer q=Limits.getQueries(); Integer d=Limits.getDMLStatements(); System.debug(LoggingLevel.NONE,'A29'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getDMLStatements()-d);",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R152",
+      "Code": "LoggingLevel level=LoggingLevel.ERROR; r=String.valueOf(level);",
+      "Expected": "ERROR",
+      "Compile": false
+    },
+    {
+      "ID": "R153",
+      "Code": "System.debug(LoggingLevel.ERROR,null); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R154",
+      "Code": "System.debug(LoggingLevel.ERROR,'A29 message'); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R155",
+      "Code": "System.debug(LoggingLevel.ERROR,new List<Integer>{1,null,3}); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R156",
+      "Code": "System.debug(LoggingLevel.ERROR,new Account(Name='A29 debug')); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R157",
+      "Code": "GovernorDebugValue v=new GovernorDebugValue(); System.debug(LoggingLevel.ERROR,v); r=v.calls;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R158",
+      "Code": "Integer q=Limits.getQueries(); Integer d=Limits.getDMLStatements(); System.debug(LoggingLevel.ERROR,'A29'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getDMLStatements()-d);",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R159",
+      "Code": "LoggingLevel level=LoggingLevel.WARN; r=String.valueOf(level);",
+      "Expected": "WARN",
+      "Compile": false
+    },
+    {
+      "ID": "R160",
+      "Code": "System.debug(LoggingLevel.WARN,null); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R161",
+      "Code": "System.debug(LoggingLevel.WARN,'A29 message'); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R162",
+      "Code": "System.debug(LoggingLevel.WARN,new List<Integer>{1,null,3}); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R163",
+      "Code": "System.debug(LoggingLevel.WARN,new Account(Name='A29 debug')); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R164",
+      "Code": "GovernorDebugValue v=new GovernorDebugValue(); System.debug(LoggingLevel.WARN,v); r=v.calls;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R165",
+      "Code": "Integer q=Limits.getQueries(); Integer d=Limits.getDMLStatements(); System.debug(LoggingLevel.WARN,'A29'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getDMLStatements()-d);",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R166",
+      "Code": "LoggingLevel level=LoggingLevel.INFO; r=String.valueOf(level);",
+      "Expected": "INFO",
+      "Compile": false
+    },
+    {
+      "ID": "R167",
+      "Code": "System.debug(LoggingLevel.INFO,null); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R168",
+      "Code": "System.debug(LoggingLevel.INFO,'A29 message'); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R169",
+      "Code": "System.debug(LoggingLevel.INFO,new List<Integer>{1,null,3}); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R170",
+      "Code": "System.debug(LoggingLevel.INFO,new Account(Name='A29 debug')); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R171",
+      "Code": "GovernorDebugValue v=new GovernorDebugValue(); System.debug(LoggingLevel.INFO,v); r=v.calls;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R172",
+      "Code": "Integer q=Limits.getQueries(); Integer d=Limits.getDMLStatements(); System.debug(LoggingLevel.INFO,'A29'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getDMLStatements()-d);",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R173",
+      "Code": "LoggingLevel level=LoggingLevel.DEBUG; r=String.valueOf(level);",
+      "Expected": "DEBUG",
+      "Compile": false
+    },
+    {
+      "ID": "R174",
+      "Code": "System.debug(LoggingLevel.DEBUG,null); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R175",
+      "Code": "System.debug(LoggingLevel.DEBUG,'A29 message'); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R176",
+      "Code": "System.debug(LoggingLevel.DEBUG,new List<Integer>{1,null,3}); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R177",
+      "Code": "System.debug(LoggingLevel.DEBUG,new Account(Name='A29 debug')); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R178",
+      "Code": "GovernorDebugValue v=new GovernorDebugValue(); System.debug(LoggingLevel.DEBUG,v); r=v.calls;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R179",
+      "Code": "Integer q=Limits.getQueries(); Integer d=Limits.getDMLStatements(); System.debug(LoggingLevel.DEBUG,'A29'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getDMLStatements()-d);",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R180",
+      "Code": "LoggingLevel level=LoggingLevel.FINE; r=String.valueOf(level);",
+      "Expected": "FINE",
+      "Compile": false
+    },
+    {
+      "ID": "R181",
+      "Code": "System.debug(LoggingLevel.FINE,null); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R182",
+      "Code": "System.debug(LoggingLevel.FINE,'A29 message'); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R183",
+      "Code": "System.debug(LoggingLevel.FINE,new List<Integer>{1,null,3}); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R184",
+      "Code": "System.debug(LoggingLevel.FINE,new Account(Name='A29 debug')); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R185",
+      "Code": "GovernorDebugValue v=new GovernorDebugValue(); System.debug(LoggingLevel.FINE,v); r=v.calls;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R186",
+      "Code": "Integer q=Limits.getQueries(); Integer d=Limits.getDMLStatements(); System.debug(LoggingLevel.FINE,'A29'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getDMLStatements()-d);",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R187",
+      "Code": "LoggingLevel level=LoggingLevel.FINER; r=String.valueOf(level);",
+      "Expected": "FINER",
+      "Compile": false
+    },
+    {
+      "ID": "R188",
+      "Code": "System.debug(LoggingLevel.FINER,null); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R189",
+      "Code": "System.debug(LoggingLevel.FINER,'A29 message'); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R190",
+      "Code": "System.debug(LoggingLevel.FINER,new List<Integer>{1,null,3}); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R191",
+      "Code": "System.debug(LoggingLevel.FINER,new Account(Name='A29 debug')); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R192",
+      "Code": "GovernorDebugValue v=new GovernorDebugValue(); System.debug(LoggingLevel.FINER,v); r=v.calls;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R193",
+      "Code": "Integer q=Limits.getQueries(); Integer d=Limits.getDMLStatements(); System.debug(LoggingLevel.FINER,'A29'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getDMLStatements()-d);",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R194",
+      "Code": "LoggingLevel level=LoggingLevel.FINEST; r=String.valueOf(level);",
+      "Expected": "FINEST",
+      "Compile": false
+    },
+    {
+      "ID": "R195",
+      "Code": "System.debug(LoggingLevel.FINEST,null); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R196",
+      "Code": "System.debug(LoggingLevel.FINEST,'A29 message'); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R197",
+      "Code": "System.debug(LoggingLevel.FINEST,new List<Integer>{1,null,3}); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R198",
+      "Code": "System.debug(LoggingLevel.FINEST,new Account(Name='A29 debug')); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R199",
+      "Code": "GovernorDebugValue v=new GovernorDebugValue(); System.debug(LoggingLevel.FINEST,v); r=v.calls;",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R200",
+      "Code": "Integer q=Limits.getQueries(); Integer d=Limits.getDMLStatements(); System.debug(LoggingLevel.FINEST,'A29'); r=String.valueOf(Limits.getQueries()-q)+'|'+(Limits.getDMLStatements()-d);",
+      "Expected": "0|0",
+      "Compile": false
+    },
+    {
+      "ID": "R201",
+      "Code": "System.debug(null); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R202",
+      "Code": "System.debug('A29 default'); r='returned';",
+      "Expected": "returned",
+      "Compile": false
+    },
+    {
+      "ID": "R203",
+      "Code": "LoggingLevel level=null; System.debug(level,'A29'); r='returned';",
+      "Expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "Compile": false
+    },
+    {
+      "ID": "R204",
+      "Code": "LoggingLevel level=null; r=level.name();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false
+    },
+    {
+      "ID": "R205",
+      "Code": "r=LoggingLevel.valueOf('ERROR');",
+      "Expected": "ERROR",
+      "Compile": false
+    },
+    {
+      "ID": "R206",
+      "Code": "r=LoggingLevel.valueOf('error');",
+      "Expected": "ERROR",
+      "Compile": false
+    },
+    {
+      "ID": "R207",
+      "Code": "r=LoggingLevel.valueOf('BOGUS');",
+      "Expected": "EXC|System.NoSuchElementException|No enum value found called BOGUS",
+      "Compile": false
+    },
+    {
+      "ID": "R208",
+      "Code": "r=LoggingLevel.valueOf(null);",
+      "Expected": "EXC|System.NoSuchElementException|No enum value found called null",
+      "Compile": false
+    },
+    {
+      "ID": "R209",
+      "Code": "List<System.OrgLimit> xs=OrgLimits.getAll(); r=xs!=null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R210",
+      "Code": "List<System.OrgLimit> xs=OrgLimits.getAll(); r=!xs.isEmpty();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R211",
+      "Code": "Map<String,System.OrgLimit> xs=OrgLimits.getMap(); r=xs!=null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R212",
+      "Code": "Map<String,System.OrgLimit> xs=OrgLimits.getMap(); r=!xs.isEmpty();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R213",
+      "Code": "r=OrgLimits.getAll().size()==OrgLimits.getMap().size();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R214",
+      "Code": "Boolean valid=true; for(OrgLimit x:OrgLimits.getAll()){valid=valid && x!=null && x.getName()!=null;} r=valid;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R215",
+      "Code": "Boolean valid=true; for(String key:OrgLimits.getMap().keySet()){valid=valid && key==OrgLimits.getMap().get(key).getName();} r=valid;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R216",
+      "Code": "Boolean valid=true; for(OrgLimit x:OrgLimits.getAll()){valid=valid && x.getValue()>=0 && x.getLimit()>=0;} r=valid;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R217",
+      "Code": "r=OrgLimits.getMap().get('A29-NoSuchLimit')==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R218",
+      "Code": "r=OrgLimits.getMap().get(null)==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R219",
+      "Code": "OrgLimit x=null; r=x.getName();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false
+    },
+    {
+      "ID": "R220",
+      "Code": "OrgLimit x=null; r=x.getValue();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false
+    },
+    {
+      "ID": "R221",
+      "Code": "OrgLimit x=null; r=x.getLimit();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false
+    },
+    {
+      "ID": "R222",
+      "Code": "OrgLimit x=null; r=x?.getName();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R223",
+      "Code": "OrgLimit x=null; r=x?.getValue();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R224",
+      "Code": "OrgLimit x=null; r=x?.getLimit();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R225",
+      "Code": "List<OrgLimit> xs=OrgLimits.getAll(); xs.clear(); r=!OrgLimits.getAll().isEmpty();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R226",
+      "Code": "Map<String,OrgLimit> xs=OrgLimits.getMap(); xs.clear(); r=!OrgLimits.getMap().isEmpty();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R227",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyApiRequests'); r=x==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R228",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyApiRequests'); r=x==null ? null : x.getName();",
+      "Expected": "DailyApiRequests",
+      "Compile": false
+    },
+    {
+      "ID": "R229",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyApiRequests'); r=x==null ? null : x.getLimit()>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R230",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyApiRequests'); r=x==null ? null : x.getValue()>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R231",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyAsyncApexExecutions'); r=x==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R232",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyAsyncApexExecutions'); r=x==null ? null : x.getName();",
+      "Expected": "DailyAsyncApexExecutions",
+      "Compile": false
+    },
+    {
+      "ID": "R233",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyAsyncApexExecutions'); r=x==null ? null : x.getLimit()>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R234",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyAsyncApexExecutions'); r=x==null ? null : x.getValue()>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R235",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyBulkApiRequests'); r=x==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R236",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyBulkApiRequests'); r=x==null ? null : x.getName();",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R237",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyBulkApiRequests'); r=x==null ? null : x.getLimit()>=0;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R238",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DailyBulkApiRequests'); r=x==null ? null : x.getValue()>=0;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R239",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DataStorageMB'); r=x==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R240",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DataStorageMB'); r=x==null ? null : x.getName();",
+      "Expected": "DataStorageMB",
+      "Compile": false
+    },
+    {
+      "ID": "R241",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DataStorageMB'); r=x==null ? null : x.getLimit()>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R242",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('DataStorageMB'); r=x==null ? null : x.getValue()>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R243",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('FileStorageMB'); r=x==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R244",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('FileStorageMB'); r=x==null ? null : x.getName();",
+      "Expected": "FileStorageMB",
+      "Compile": false
+    },
+    {
+      "ID": "R245",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('FileStorageMB'); r=x==null ? null : x.getLimit()>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R246",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('FileStorageMB'); r=x==null ? null : x.getValue()>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R247",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('SingleEmail'); r=x==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R248",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('SingleEmail'); r=x==null ? null : x.getName();",
+      "Expected": "SingleEmail",
+      "Compile": false
+    },
+    {
+      "ID": "R249",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('SingleEmail'); r=x==null ? null : x.getLimit()>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R250",
+      "Code": "OrgLimit x=OrgLimits.getMap().get('SingleEmail'); r=x==null ? null : x.getValue()>=0;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R251",
+      "Code": "LimitException x=null; r=x==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R252",
+      "Code": "Exception x=null; r=x instanceof LimitException;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R253",
+      "Code": "LimitException x=new LimitException('A29'); r=x.getTypeName();",
+      "Expected": "System.LimitException",
+      "Compile": false
+    },
+    {
+      "ID": "R254",
+      "Code": "LimitException x=new LimitException('A29'); r=x.getMessage();",
+      "Expected": "A29",
+      "Compile": false
+    },
+    {
+      "ID": "R255",
+      "Code": "try{r='normal';}catch(LimitException e){r='caught';}finally{r=String.valueOf(r)+'|finally';}",
+      "Expected": "normal|finally",
+      "Compile": false
+    },
+    {
+      "ID": "R256",
+      "Code": "try{throw new GovernorControlException('control');}catch(LimitException e){r='limit';}catch(Exception e){r=e.getTypeName();}",
+      "Expected": "GovernorControlException",
+      "Compile": false
+    },
+    {
+      "ID": "R257",
+      "Code": "if(false){for(Integer i=0;i<=Limits.getLimitQueries();i++){List<Account> xs=[SELECT Id FROM Account WHERE Id=null];}} r='guarded-query-overflow';",
+      "Expected": "guarded-query-overflow",
+      "Compile": false
+    },
+    {
+      "ID": "R258",
+      "Code": "if(false){for(Integer i=0;i<=Limits.getLimitDMLStatements();i++){insert new Account(Name='A29-guarded');}} r='guarded-dml-overflow';",
+      "Expected": "guarded-dml-overflow",
+      "Compile": false
+    },
+    {
+      "ID": "C001",
+      "Code": "Integer x=Limits.getChildRelationshipsDescribes(); pq.out('C001','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getChildRelationshipsDescribes",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C002",
+      "Code": "Integer x=Limits.getLimitChildRelationshipsDescribes(); pq.out('C002','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getLimitChildRelationshipsDescribes",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C003",
+      "Code": "Integer x=Limits.getFieldSetsDescribes(); pq.out('C003','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getFieldSetsDescribes",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C004",
+      "Code": "Integer x=Limits.getLimitFieldSetsDescribes(); pq.out('C004','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getLimitFieldSetsDescribes",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C005",
+      "Code": "Integer x=Limits.getFieldsDescribes(); pq.out('C005','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getFieldsDescribes",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C006",
+      "Code": "Integer x=Limits.getLimitFieldsDescribes(); pq.out('C006','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getLimitFieldsDescribes",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C007",
+      "Code": "Integer x=Limits.getPicklistDescribes(); pq.out('C007','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getPicklistDescribes",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C008",
+      "Code": "Integer x=Limits.getLimitPicklistDescribes(); pq.out('C008','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getLimitPicklistDescribes",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C009",
+      "Code": "Integer x=Limits.getRecordTypesDescribes(); pq.out('C009','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getRecordTypesDescribes",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C010",
+      "Code": "Integer x=Limits.getLimitRecordTypesDescribes(); pq.out('C010','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getLimitRecordTypesDescribes",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C011",
+      "Code": "Integer x=Limits.getScriptStatements(); pq.out('C011','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getScriptStatements",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C012",
+      "Code": "Integer x=Limits.getLimitScriptStatements(); pq.out('C012','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method was removed after version 30.0: getLimitScriptStatements",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C013",
+      "Code": "Integer x=Limits.getQueries(1); pq.out('C013','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getQueries(Integer) from the type Limit",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C014",
+      "Code": "Limits.setLimitQueries(1); pq.out('C014','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setLimitQueries(Integer) from the type Limit",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C015",
+      "Code": "String x=Limits.getQueries(); pq.out('C015','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to String",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C016",
+      "Code": "Boolean x=Limits.getDMLRows(); pq.out('C016','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to Boolean",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C017",
+      "Code": "Limits x=new Limits(); pq.out('C017','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: Limits",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C018",
+      "Code": "OrgLimits x=new OrgLimits(); pq.out('C018','accepted');",
+      "Expected": "accepted",
+      "Compile": true
+    },
+    {
+      "ID": "C019",
+      "Code": "OrgLimit x=new OrgLimit(); pq.out('C019','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.OrgLimit].<Constructor>()",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C020",
+      "Code": "OrgLimit x=new OrgLimit('A29',1,0); pq.out('C020','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.OrgLimit].<Constructor>(String, Integer, Integer)",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C021",
+      "Code": "List<String> xs=OrgLimits.getAll(); pq.out('C021','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from List<System.OrgLimit> to List<String>",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C022",
+      "Code": "Map<String,Integer> xs=OrgLimits.getMap(); pq.out('C022','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Map<String,System.OrgLimit> to Map<String,Integer>",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C023",
+      "Code": "OrgLimits.getAll('A29'); pq.out('C023','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getAll(String) from the type System.OrgLimits",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C024",
+      "Code": "OrgLimits.getMap(null); pq.out('C024','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getMap(NULL) from the type System.OrgLimits",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C025",
+      "Code": "OrgLimit x; x.setValue(0); pq.out('C025','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setValue(Integer) from the type System.OrgLimit",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C026",
+      "Code": "OrgLimit x; String n=x.getValue(); pq.out('C026','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to String",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C027",
+      "Code": "System.debug('ERROR','A29'); pq.out('C027','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void debug(String, String) from the type System",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C028",
+      "Code": "System.debug(1); pq.out('C028','accepted');",
+      "Expected": "accepted",
+      "Compile": true
+    },
+    {
+      "ID": "C029",
+      "Code": "LoggingLevel x=1; pq.out('C029','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to System.LoggingLevel",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C030",
+      "Code": "LoggingLevel x='ERROR'; pq.out('C030','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to System.LoggingLevel",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C031",
+      "Code": "System.debug(); pq.out('C031','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void debug() from the type System",
+      "Compile": true,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C032",
+      "Code": "LimitException x=new LimitException(); pq.out('C032','accepted');",
+      "Expected": "accepted",
+      "Compile": true
+    },
+    {
+      "ID": "C033",
+      "Code": "class A29Exception extends LimitException {} pq.out('C033','accepted');",
+      "Expected": "COMPILE_ERROR\tline 6: Non-virtual and non-abstract type cannot be extended: System.LimitException",
+      "Compile": true,
+      "NativeLine": 6
+    }
+  ],
+  "Remaining": [],
+  "Controls": [
+    {
+      "ID": "S001",
+      "Code": "GovernorFieldShadow x=new GovernorFieldShadow(); r=x.fieldQueries();",
+      "Expected": "41",
+      "Compile": false
+    },
+    {
+      "ID": "S002",
+      "Code": "GovernorFieldShadow x=new GovernorFieldShadow(); r=x.qualifiedFieldQueries();",
+      "Expected": "42",
+      "Compile": false
+    },
+    {
+      "ID": "S003",
+      "Code": "GovernorFieldShadow x=new GovernorFieldShadow(); r=x.localQueries();",
+      "Expected": "43",
+      "Compile": false
+    },
+    {
+      "ID": "S004",
+      "Code": "GovernorFieldShadow x=new GovernorFieldShadow(); r=x.parameterQueries(new GovernorShadowReader());",
+      "Expected": "44",
+      "Compile": false
+    }
+  ]
+}

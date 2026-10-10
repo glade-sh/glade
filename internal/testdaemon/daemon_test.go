@@ -22,6 +22,7 @@ import (
 )
 
 func TestDaemonWarningBearingEditRebuildsOnceAndKeepsScope(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	classPath := filepath.Join(root, "force-app/main/default/classes/Service.cls")
 	otherPath := filepath.Join(root, "force-app/main/default/classes/Other.cls")
@@ -83,6 +84,7 @@ func TestDaemonWarningBearingEditRebuildsOnceAndKeepsScope(t *testing.T) {
 }
 
 func TestDaemonLateFallbackReloadsInsideProofWindow(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	classPath := filepath.Join(root, "force-app/main/default/classes/Service.cls")
 	secondPath := filepath.Join(root, "force-app/main/default/classes/Second.cls")
@@ -132,6 +134,7 @@ func TestDaemonLateFallbackReloadsInsideProofWindow(t *testing.T) {
 }
 
 func TestDaemonFallbackRejectsHiddenConfigIdentityChange(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	manifestPath := filepath.Join(root, "sfdx-project.json")
 	classPath := filepath.Join(root, "force-app/main/default/classes/Service.cls")
@@ -160,6 +163,7 @@ func TestDaemonFallbackRejectsHiddenConfigIdentityChange(t *testing.T) {
 }
 
 func TestDaemonFallbackProofDriftRetriesWithoutIntermediatePublish(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	classPath := filepath.Join(root, "force-app/main/default/classes/Service.cls")
 	otherPath := filepath.Join(root, "force-app/main/default/classes/Other.cls")
@@ -226,6 +230,7 @@ func TestDaemonFallbackProofDriftRetriesWithoutIntermediatePublish(t *testing.T)
 }
 
 func TestDaemonFallbackBuildAndCaptureErrorsRetainOldState(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	classPath := filepath.Join(root, "force-app/main/default/classes/Service.cls")
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -272,6 +277,7 @@ func TestDaemonFallbackBuildAndCaptureErrorsRetainOldState(t *testing.T) {
 }
 
 func TestDaemonUpdateChangesDoesNotPublishFailedFallback(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	manifestPath := filepath.Join(root, "sfdx-project.json")
 	classPath := filepath.Join(root, "force-app/main/default/classes/Stable.cls")
@@ -414,6 +420,7 @@ func TestDaemonWatchScopeSnapshotReturnsOwnedProjectScope(t *testing.T) {
 }
 
 func TestDaemonReadsRemainAvailableWhileUpdateBuildIsBlocked(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	testPath := filepath.Join(root, "force-app/main/default/classes/BlockedTest.cls")
@@ -825,6 +832,7 @@ private class NewServiceTest {
 }
 
 func TestDaemonReloadAndUpdateChangesSerializeWriters(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	d, err := New(root)
@@ -920,6 +928,7 @@ func TestDaemonReloadAndUpdateChangesSerializeWriters(t *testing.T) {
 }
 
 func TestDaemonReloadPreparedStableUsesOneProjectForScopeBuildAndPublication(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	d, err := New(root)
@@ -998,6 +1007,7 @@ func TestDaemonReloadPreparedStableUsesOneProjectForScopeBuildAndPublication(t *
 }
 
 func TestDaemonReloadPreparedStableRejectsInputDriftBeforePublication(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	manifestPath := filepath.Join(root, "sfdx-project.json")
 	classPath := filepath.Join(root, "force-app/main/default/classes/Stable.cls")
@@ -1035,6 +1045,7 @@ func TestDaemonReloadPreparedStableRejectsInputDriftBeforePublication(t *testing
 }
 
 func TestDaemonRunsFilterAgainstWarmProject(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/WarmOneTest.cls"), `
@@ -1065,6 +1076,7 @@ private class WarmTwoTest {
 }
 
 func TestDaemonConcurrentRunsKeepOneGenerationPairedInternally(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	helperPath := filepath.Join(root, "force-app/main/default/classes/GenerationHelper.cls")
@@ -1174,6 +1186,7 @@ func TestDaemonConcurrentRunsKeepOneGenerationPairedInternally(t *testing.T) {
 }
 
 func TestDaemonWarmBlocksGenerationPublicationUntilCapturedGenerationCompletes(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	path := filepath.Join(root, "force-app/main/default/classes/WarmTest.cls")
@@ -1214,6 +1227,7 @@ func TestDaemonWarmBlocksGenerationPublicationUntilCapturedGenerationCompletes(t
 }
 
 func TestDaemonRunSelectionNarrowsMultipleDirectClasses(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/WarmOneTest.cls"), `
@@ -1253,6 +1267,9 @@ private class WarmThreeTest {
 
 func newDaemonLifecycleProject(t *testing.T) string {
 	t.Helper()
+	// Each project has its own path, so the runtimes cached for it are dead
+	// weight once the test that owns it ends.
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	parent := t.TempDir()
 	root := filepath.Join(parent, "project")
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

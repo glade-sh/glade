@@ -1,0 +1,260 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "oracle": {
+    "routes": [
+      "anonymous",
+      "named"
+    ],
+    "rows": 30,
+    "apiEndpointsIdentical": true,
+    "routesIdentical": false,
+    "differingIds": [
+      "R004",
+      "R005",
+      "C005"
+    ],
+    "compileDiagnosticDifferingIds": [
+      "R008",
+      "C008"
+    ]
+  },
+  "files": {
+    "Folder.cls": "public class Folder { public Object Name; }\n"
+  },
+  "anonymousPrelude": "class Folder { public Object Name; }",
+  "cases": [
+    {
+      "id": "R001",
+      "oracleId": "R001",
+      "shadow": true,
+      "code": "String observed='R001:shadow:'; Type resolved; try { resolved=Type.forName('Schema.Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "R001:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted"
+    },
+    {
+      "id": "C001",
+      "oracleId": "C001",
+      "shadow": true,
+      "code": "String observed='C001:shadow:'; Type resolved; try { resolved=Schema.Folder.class; observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "C001:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted"
+    },
+    {
+      "id": "R002",
+      "oracleId": "R002",
+      "shadow": true,
+      "code": "String observed='R002:shadow:'; Type resolved; try { resolved=Type.forName('Schema.Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)Type.forName('Schema.Folder').newInstance(); castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', new Map<String,String>()); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } } r=observed;",
+      "expected": "R002:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted|putName=EXC|System.SObjectException|Illegal assignment from Map<String,String> to String"
+    },
+    {
+      "id": "C002",
+      "oracleId": "C002",
+      "shadow": true,
+      "code": "String observed='C002:shadow:'; Type resolved; try { resolved=Type.forName('Schema.Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)Type.forName('Schema.Folder').newInstance(); castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', 'x'); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(wrote) { try { observed+='|getNameField='+String.valueOf(record.get('Name')); } catch(Exception e) { observed+='|getNameField=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } } } r=observed;",
+      "expected": "C002:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted|putName=accepted|getNameField=x"
+    },
+    {
+      "id": "R003",
+      "oracleId": "R003",
+      "shadow": true,
+      "code": "String observed='R003:shadow:'; Type resolved; try { resolved=Type.forName('Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "R003:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted"
+    },
+    {
+      "id": "C003",
+      "oracleId": "C003",
+      "shadow": true,
+      "code": "String observed='C003:shadow:'; Type resolved; try { resolved=Folder.class; observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "C003:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=false|isUserFolder=true|castSObject=EXC|System.TypeException|Invalid conversion from runtime type Folder to SObject"
+    },
+    {
+      "id": "R004",
+      "oracleId": "R004",
+      "shadow": true,
+      "code": "String observed='R004:shadow:'; Type resolved; try { resolved=Type.forName('', 'Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "R004:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted",
+      "expectedByRoute": {
+        "anonymous": "R004:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted",
+        "named": "R004:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=false|isUserFolder=true|castSObject=EXC|System.TypeException|Invalid conversion from runtime type Folder to SObject"
+      }
+    },
+    {
+      "id": "C004",
+      "oracleId": "C004",
+      "shadow": true,
+      "code": "String observed='C004:shadow:'; Type resolved; try { resolved=Type.forName('Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "C004:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted"
+    },
+    {
+      "id": "R005",
+      "oracleId": "R005",
+      "shadow": true,
+      "code": "String observed='R005:shadow:'; Type resolved; try { resolved=Type.forName(null, 'Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "R005:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted",
+      "expectedByRoute": {
+        "anonymous": "R005:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted",
+        "named": "R005:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=false|isUserFolder=true|castSObject=EXC|System.TypeException|Invalid conversion from runtime type Folder to SObject"
+      }
+    },
+    {
+      "id": "C005",
+      "oracleId": "C005",
+      "shadow": true,
+      "code": "String observed='C005:shadow:'; Type resolved; try { resolved=Type.forName('', 'Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "C005:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted",
+      "expectedByRoute": {
+        "anonymous": "C005:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted",
+        "named": "C005:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=false|isUserFolder=true|castSObject=EXC|System.TypeException|Invalid conversion from runtime type Folder to SObject"
+      }
+    },
+    {
+      "id": "R006",
+      "oracleId": "R006",
+      "shadow": true,
+      "code": "String observed='R006:shadow:'; Type resolved; try { resolved=Type.forName('Schema', 'Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "R006:shadow:|typeNull=true"
+    },
+    {
+      "id": "C006",
+      "oracleId": "C006",
+      "shadow": true,
+      "code": "String observed='C006:shadow:'; Type resolved; try { resolved=Type.forName('Schema.Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "C006:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted"
+    },
+    {
+      "id": "R007",
+      "oracleId": "R007",
+      "shadow": true,
+      "code": "String observed='R007:shadow:'; Object value; Boolean created=false; try { value=new Schema.Folder(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|construct=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', new Map<String,String>()); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "R007:shadow:|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted|putName=EXC|System.SObjectException|Illegal assignment from Map<String,String> to String"
+    },
+    {
+      "id": "C007",
+      "oracleId": "C007",
+      "shadow": true,
+      "code": "String observed='C007:shadow:'; Object value; Boolean created=false; try { value=new Schema.Folder(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|construct=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', 'x'); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(wrote) { try { observed+='|getNameField='+String.valueOf(record.get('Name')); } catch(Exception e) { observed+='|getNameField=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } } r=observed;",
+      "expected": "C007:shadow:|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted|putName=accepted|getNameField=x"
+    },
+    {
+      "id": "R008",
+      "oracleId": "R008",
+      "shadow": true,
+      "code": "String observed='R008:shadow:'; Object value; Boolean created=false; try { value=Schema.SObjectType.Folder.newSObject(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|construct=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', new Map<String,String>()); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void newSObject() from the type Schema.DescribeSObjectResult",
+      "expectedByRoute": {
+        "anonymous": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void newSObject() from the type Schema.DescribeSObjectResult",
+        "named": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void newSObject() from the type Schema.DescribeSObjectResult"
+      }
+    },
+    {
+      "id": "C008",
+      "oracleId": "C008",
+      "shadow": true,
+      "code": "String observed='C008:shadow:'; Object value; Boolean created=false; try { value=Schema.SObjectType.Folder.newSObject(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|construct=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', 'x'); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(wrote) { try { observed+='|getNameField='+String.valueOf(record.get('Name')); } catch(Exception e) { observed+='|getNameField=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } } r=observed;",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void newSObject() from the type Schema.DescribeSObjectResult",
+      "expectedByRoute": {
+        "anonymous": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void newSObject() from the type Schema.DescribeSObjectResult",
+        "named": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void newSObject() from the type Schema.DescribeSObjectResult"
+      }
+    },
+    {
+      "id": "R009",
+      "oracleId": "R009",
+      "shadow": true,
+      "code": "String observed='R009:shadow:'; Object value; Boolean created=false; try { value=Schema.getGlobalDescribe().get('Folder').newSObject(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|construct=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', new Map<String,String>()); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "R009:shadow:|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted|putName=EXC|System.SObjectException|Illegal assignment from Map<String,String> to String"
+    },
+    {
+      "id": "C009",
+      "oracleId": "C009",
+      "shadow": true,
+      "code": "String observed='C009:shadow:'; Object value; Boolean created=false; try { value=Schema.getGlobalDescribe().get('Folder').newSObject(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|construct=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', 'x'); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(wrote) { try { observed+='|getNameField='+String.valueOf(record.get('Name')); } catch(Exception e) { observed+='|getNameField=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } } r=observed;",
+      "expected": "C009:shadow:|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted|putName=accepted|getNameField=x"
+    },
+    {
+      "id": "R010",
+      "oracleId": "R010",
+      "shadow": true,
+      "code": "String observed='R010:shadow:'; Object value; Boolean created=false; try { value=new Folder(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|construct=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } r=observed;",
+      "expected": "R010:shadow:|instanceNull=false|isSObject=false|isUserFolder=true|castSObject=EXC|System.TypeException|Invalid conversion from runtime type Folder to SObject"
+    },
+    {
+      "id": "C010",
+      "oracleId": "C010",
+      "shadow": true,
+      "code": "String observed='C010:shadow:'; Object value; Boolean created=false; try { value=new Folder(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|construct=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } try { Folder userValue=(Folder)value; userValue.Name='x'; observed+='|userName='+String.valueOf(userValue.Name); } catch(Exception e) { observed+='|userName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } r=observed;",
+      "expected": "C010:shadow:|instanceNull=false|isSObject=false|isUserFolder=true|castSObject=EXC|System.TypeException|Invalid conversion from runtime type Folder to SObject|userName=x"
+    },
+    {
+      "id": "R011",
+      "oracleId": "R011",
+      "shadow": true,
+      "code": "String observed='R011:shadow:'; Type resolved; try { resolved=Type.forName('schema.folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "R011:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted"
+    },
+    {
+      "id": "C011",
+      "oracleId": "C011",
+      "shadow": true,
+      "code": "String observed='C011:shadow:'; Type resolved; try { resolved=Type.forName('Schema.Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "C011:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted"
+    },
+    {
+      "id": "R012",
+      "oracleId": "R012",
+      "shadow": true,
+      "code": "String observed='R012:shadow:'; Type resolved; try { resolved=Type.forName('SCHEMA.Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "R012:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted"
+    },
+    {
+      "id": "C012",
+      "oracleId": "C012",
+      "shadow": true,
+      "code": "String observed='C012:shadow:'; Type resolved; try { resolved=Type.forName('Schema.Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "C012:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted"
+    },
+    {
+      "id": "R013",
+      "oracleId": "R013",
+      "shadow": true,
+      "code": "String observed='R013:shadow:'; Type resolved; try { resolved=Type.forName('folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "R013:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted"
+    },
+    {
+      "id": "C013",
+      "oracleId": "C013",
+      "shadow": true,
+      "code": "String observed='C013:shadow:'; Type resolved; try { resolved=Type.forName('Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); observed+='|isUserFolder='+String.valueOf(value instanceof Folder); SObject record; Boolean castOkay=false; try { record=(SObject)value; castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } r=observed;",
+      "expected": "C013:shadow:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|isUserFolder=false|castSObject=accepted"
+    },
+    {
+      "id": "R014",
+      "oracleId": "R014",
+      "shadow": false,
+      "code": "String observed='R014:baseline:'; Type resolved; try { resolved=Type.forName('Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); SObject record; Boolean castOkay=false; try { record=(SObject)Type.forName('Folder').newInstance(); castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', new Map<String,String>()); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } } r=observed;",
+      "expected": "R014:baseline:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|castSObject=accepted|putName=EXC|System.SObjectException|Illegal assignment from Map<String,String> to String"
+    },
+    {
+      "id": "C014",
+      "oracleId": "C014",
+      "shadow": false,
+      "code": "String observed='C014:baseline:'; Type resolved; try { resolved=Type.forName('Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); SObject record; Boolean castOkay=false; try { record=(SObject)Type.forName('Folder').newInstance(); castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', 'x'); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(wrote) { try { observed+='|getNameField='+String.valueOf(record.get('Name')); } catch(Exception e) { observed+='|getNameField=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } } } r=observed;",
+      "expected": "C014:baseline:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|castSObject=accepted|putName=accepted|getNameField=x"
+    },
+    {
+      "id": "R015",
+      "oracleId": "R015",
+      "shadow": false,
+      "code": "String observed='R015:baseline:'; Type resolved; try { resolved=Type.forName('Schema.Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); SObject record; Boolean castOkay=false; try { record=(SObject)Type.forName('Schema.Folder').newInstance(); castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', new Map<String,String>()); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } } r=observed;",
+      "expected": "R015:baseline:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|castSObject=accepted|putName=EXC|System.SObjectException|Illegal assignment from Map<String,String> to String"
+    },
+    {
+      "id": "C015",
+      "oracleId": "C015",
+      "shadow": false,
+      "code": "String observed='C015:baseline:'; Type resolved; try { resolved=Type.forName('Schema.Folder'); observed+='|typeNull='+String.valueOf(resolved==null); } catch(Exception e) { observed+='|lookup=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(resolved!=null) { try { observed+='|getTypeName='+resolved.getName(); } catch(Exception e) { observed+='|getTypeName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } Object value; Boolean created=false; try { value=resolved.newInstance(); created=true; observed+='|instanceNull='+String.valueOf(value==null); } catch(Exception e) { observed+='|newInstance=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(created) { observed+='|isSObject='+String.valueOf(value instanceof SObject); SObject record; Boolean castOkay=false; try { record=(SObject)Type.forName('Schema.Folder').newInstance(); castOkay=true; observed+='|castSObject=accepted'; } catch(Exception e) { observed+='|castSObject=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(castOkay) { Boolean wrote=false; try { record.put('Name', 'x'); wrote=true; observed+='|putName=accepted'; } catch(Exception e) { observed+='|putName=EXC|'+e.getTypeName()+'|'+e.getMessage(); } if(wrote) { try { observed+='|getNameField='+String.valueOf(record.get('Name')); } catch(Exception e) { observed+='|getNameField=EXC|'+e.getTypeName()+'|'+e.getMessage(); } } } } } r=observed;",
+      "expected": "C015:baseline:|typeNull=false|getTypeName=Folder|instanceNull=false|isSObject=true|castSObject=accepted|putName=accepted|getNameField=x"
+    }
+  ]
+}

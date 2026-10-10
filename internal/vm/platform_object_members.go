@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value, bool) {
@@ -1095,7 +1096,7 @@ func (vm *VM) generatedOptionalWrapperType(typeName string) bool {
 	return true
 }
 
-func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Value, methodName string, args []Value) (Value, bool) {
+func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Value, methodName string, args []Value, result *Result) (Value, bool) {
 	for _, receiverType := range vm.generatedPlatformReceiverTypes(receiverName, receiver) {
 		if waveEnumLikeRuntimeType(receiverType) && strings.EqualFold(methodName, "ordinal") {
 			if len(args) != 0 {
@@ -1124,7 +1125,7 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 			continue
 		}
 		if strings.EqualFold(receiverType, "Invocable.Action") {
-			if value, handled := vm.callInvocableActionMember(receiver, methodName, args); handled {
+			if value, handled := vm.callInvocableActionMember(receiver, methodName, args, result); handled {
 				return value, true
 			}
 		}
@@ -1143,7 +1144,7 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 	return Null, false
 }
 
-func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args []Value) (Value, bool) {
+func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args []Value, executionResult *Result) (Value, bool) {
 	switch {
 	case strings.EqualFold(methodName, "addInvocation"):
 		if len(args) != 0 {
@@ -1207,7 +1208,7 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 		if len(args) != 0 {
 			return Null, false
 		}
-		return String(invocableActionType(receiver)), true
+		return receiver.Fields["type"], true
 	case strings.EqualFold(methodName, "getVersion"):
 		if len(args) != 0 {
 			return Null, false
@@ -1226,6 +1227,10 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 			return Null, false
 		}
 		invocations := invocableActionInvocations(receiver)
+		if len(invocations.List) == 0 {
+			invocations = List(typedMap("Map<String,Object>"))
+			receiver.Fields["invocations"] = invocations
+		}
 		results := typedList("List<Invocable.Action.Result>")
 		for _, invocation := range invocations.List {
 			if invocation.Kind != ValueMap {
@@ -1235,8 +1240,24 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 			result.Fields["action"] = receiver
 			result.Fields["errors"] = typedList("List<Invocable.Action.Error>")
 			result.Fields["invocationParameters"] = invocation
-			result.Fields["outputParameters"] = typedMap("Map<String,Object>")
-			result.Fields["success"] = Bool(true)
+			outputs := typedMap("Map<String,Object>")
+			success := true
+			var err error
+			if !strings.EqualFold(invocableActionType(receiver), "chatterPost") {
+				outputs, success, err = vm.invokeCustomApexAction(receiver, invocation, executionResult)
+			} else {
+				success = false
+				err = unsupportedCallError("Invocable.Action.invoke hosted standard action " + invocableActionType(receiver))
+			}
+			result.Fields["outputParameters"] = outputs
+			result.Fields["success"] = Bool(success)
+			if err != nil {
+				result.Fields["outputParameters"] = Null
+				result.Fields["errors"] = invocableActionErrors(err)
+				if _, missing := err.(*invocableMissingActionError); missing {
+					result.Fields["errors"].List[0].Fields["code"] = String("MISSING_RECORD")
+				}
+			}
 			results.List = append(results.List, result)
 		}
 		return results, true
@@ -1245,11 +1266,127 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 	}
 }
 
+// invokeCustomApexAction adapts Invocable.Action's named parameter map to the
+// request DTO expected by a local @InvocableMethod, then exposes the returned
+// DTO fields as the action output parameter map. Salesforce invokes Apex
+// actions through this same request/response shape.
+func (vm *VM) invokeCustomApexAction(action Value, invocation Value, result *Result) (Value, bool, error) {
+	name := invocableActionDisplayName(action)
+	if strings.EqualFold(invocableActionType(action), "flow") {
+		if _, found := vm.autolaunchedFlowRule(name); !found {
+			return Null, false, &invocableMissingActionError{name: name}
+		}
+		return Null, false, unsupportedCallError("Invocable.Action.invoke hosted Flow action " + name)
+	}
+	if strings.EqualFold(invocableActionType(action), "quickAction") {
+		if _, found := vm.quickActionByName(name); !found {
+			return Null, false, &invocableMissingActionError{name: name}
+		}
+		return Null, false, unsupportedCallError("Invocable.Action.invoke hosted QuickAction action " + name)
+	}
+	namespace := invocableActionStringField(action, "namespace")
+	className := name
+	if namespace != "" {
+		className = namespace + "." + name
+	}
+	method, ok, err := vm.resolveFlowInvocableMethod(storage.FlowAction{
+		Name:       name,
+		ActionType: invocableActionType(action),
+		ActionName: name,
+		ClassName:  className,
+	})
+	if err != nil {
+		return typedMap("Map<String,Object>"), false, err
+	}
+	if !ok || len(method.Params) != 1 {
+		return Null, false, &invocableMissingActionError{name: name}
+	}
+	elementType, ok := collectionElementType(method.Params[0].Type)
+	if !ok {
+		return typedMap("Map<String,Object>"), false, fmt.Errorf("custom Apex action %s parameter is not a list", name)
+	}
+	request := Object(elementType)
+	primitiveInput := invocablePrimitiveElement(elementType)
+	if primitiveInput {
+		request = Null
+		if invocation.Kind == ValueMap {
+			for _, key := range invocation.MapOrder {
+				parameter := invocation.MapKeys[key]
+				if parameter.Kind != ValueString || parameter.Text != method.Params[0].Name {
+					return Null, false, fmt.Errorf("Unknown invocation parameter: %s", parameter.String())
+				}
+				request = invocation.Map[key]
+			}
+		}
+	} else if invocation.Kind == ValueMap {
+		for _, encoded := range invocation.MapOrder {
+			keyValue, found := invocation.MapKeys[encoded]
+			if !found || keyValue.Kind != ValueString {
+				continue
+			}
+			request.Fields[keyValue.Text] = invocation.Map[encoded]
+		}
+	}
+	input := typedList(method.Params[0].Type)
+	input.List = append(input.List, request)
+	if result == nil {
+		result = &Result{}
+	}
+	output, err := vm.callMethod(method, []Value{input}, result)
+	if err != nil {
+		return typedMap("Map<String,Object>"), false, err
+	}
+	outputs := typedMap("Map<String,Object>")
+	if output.Kind != ValueList {
+		return outputs, true, nil
+	}
+	if outputElement, ok := collectionElementType(method.ReturnType); ok && invocablePrimitiveElement(outputElement) {
+		value := Null
+		if len(output.List) > 0 {
+			value = output.List[0]
+		}
+		key := String("output")
+		outputs.Map[mapKey(key)] = value
+		outputs.MapKeys[mapKey(key)] = key
+		outputs.MapOrder = append(outputs.MapOrder, mapKey(key))
+		return outputs, true, nil
+	}
+	for _, item := range output.List {
+		if item.Kind != ValueObject {
+			continue
+		}
+		for field, value := range item.Fields {
+			if strings.HasPrefix(field, "__") {
+				continue
+			}
+			encoded := mapKey(String(field))
+			outputs.Map[encoded] = value
+			outputs.MapKeys[encoded] = String(field)
+			outputs.MapOrder = append(outputs.MapOrder, encoded)
+		}
+	}
+	return outputs, true, nil
+}
+
+func invocableActionErrors(err error) Value {
+	errors := typedList("List<Invocable.Action.Error>")
+	errorValue := Object("Invocable.Action.Error")
+	errorValue.Fields["message"] = String(err.Error())
+	errors.List = append(errors.List, errorValue)
+	return errors
+}
+
 func newInvocableAction(methodName string, args []Value) (Value, bool) {
 	if !strings.EqualFold(methodName, "createCustomAction") && !strings.EqualFold(methodName, "createStandardAction") {
 		return Null, false
 	}
 	action := Object("Invocable.Action")
+	action.Fields["apiVersion"] = Null
+	action.Fields["namespace"] = Null
+	action.Fields["version"] = Null
+	action.Fields["invokeFromLightningComponent"] = Bool(false)
+	action.Fields["invocations"] = typedList("List<Map<String,Object>>")
+	action.Fields["name"] = Null
 	if len(args) > 0 {
 		action.Fields["type"] = args[0]
 	}
@@ -1266,9 +1403,6 @@ func newInvocableAction(methodName string, args []Value) (Value, bool) {
 		}
 		action.Fields["standard"] = Bool(false)
 		return action, true
-	}
-	if len(args) > 0 {
-		action.Fields["name"] = args[0]
 	}
 	if len(args) > 1 {
 		action.Fields["version"] = args[1]
@@ -1767,10 +1901,21 @@ func (vm *VM) generatedPlatformMethodForArgs(className, methodName string, args 
 func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value, args []Value) Value {
 	returnType := vm.resolveTypeNameInClass(method.ClassName, method.ReturnType)
 	methodName := apexMethodMemberName(method.Name)
+	if value, updated, mutated, handled := vm.reportsDTOAccessor(receiver, methodName, args); handled {
+		if mutated {
+			suffix, _ := passiveAccessorSuffix(methodName, "set")
+			field := passiveAccessorFieldName(updated, suffix)
+			vm.setGraphFieldValue(&receiver, field, updated.Fields[field])
+		}
+		return value
+	}
 	if value, handled, err := vm.callGeneratedOptionalWrapperMember(receiver, apexMethodMemberName(method.Name), args); handled && err == nil {
 		return value
 	}
 	if receiver.Kind == ValueObject && strings.EqualFold(methodName, "clone") {
+		if metadataCapturedDTOType(receiver.Type) || strings.EqualFold(receiver.Type, "Metadata.Metadata") {
+			return cloneMetadataDTO(receiver)
+		}
 		cloned := cloneValue(receiver)
 		cloned.Ref = newValueRef()
 		return cloned
@@ -1790,7 +1935,10 @@ func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value
 			}
 		}
 		if suffix, ok := passiveAccessorSuffix(methodName, "set"); ok && len(args) == 1 {
-			vm.setGraphFieldValue(&receiver, passiveAccessorFieldName(receiver, suffix), args[0])
+			field := passiveAccessorFieldName(receiver, suffix)
+			if !vm.assignSingleEmailRecipientField(&receiver, field, args[0]) {
+				vm.setGraphFieldValue(&receiver, field, args[0])
+			}
 		}
 	}
 	switch strings.ToLower(returnType) {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 func assertContains(t *testing.T, haystack, needle string) {
@@ -28,7 +29,7 @@ func TestRemotingDiscoveryAndEnvelopeDispatch(t *testing.T) {
 	page := Page{Controller: "RemoteController", Extensions: []string{"AuditExtension"}}
 	idx := typesys.Index{Types: []typesys.TypeSymbol{
 		{Name: "RemoteController", Members: []typesys.MemberSymbol{
-			{Kind: apexast.DeclarationMethod, Name: "echo", Modifiers: []string{"public", "static", "@RemoteAction"}},
+			{Kind: apexast.DeclarationMethod, Name: "echo", Modifiers: []string{"public", "static", "@RemoteAction"}, Parameters: []apexast.Parameter{{Name: "value", Type: "String"}}},
 			{Kind: apexast.DeclarationMethod, Name: "helper", Modifiers: []string{"public", "static"}},
 		}},
 		{Name: "AuditExtension", Members: []typesys.MemberSymbol{
@@ -45,6 +46,9 @@ func TestRemotingDiscoveryAndEnvelopeDispatch(t *testing.T) {
 	}
 	if len(metadata.Actions) != 2 || metadata.Actions[0].Action != "AuditExtension.stamp" || metadata.Actions[1].Action != "RemoteController.echo" {
 		t.Fatalf("actions = %#v, want controller and extension remote actions", metadata.Actions)
+	}
+	if action := metadata.Actions[1]; action.ParameterCount != 1 || len(action.ParameterTypes) != 1 || action.ParameterTypes[0] != "String" {
+		t.Fatalf("parameter metadata = %#v", action)
 	}
 
 	responses := DispatchRemotingRequests(metadata, []RemotingRequest{{
@@ -125,13 +129,55 @@ func TestRemotingMetadataScriptInstallsLocalBrowserManager(t *testing.T) {
 	assertContains(t, script, `"Content-Type":"application/json"`)
 	assertContains(t, script, `body:JSON.stringify([request])`)
 	assertContains(t, script, `ctx:{page:window.location.pathname,viewState:read("`+ViewStateFormFieldName()+`"),csrf:read("__vf_csrf")}`)
-	assertContains(t, script, `var isOptions=function(value){return value&&typeof value=="object"&&!Array.isArray(value)&&("escape" in value||"timeout" in value||"buffer" in value||"abortable" in value);}`)
-	assertContains(t, script, `if(callback&&values.length&&isOptions(values[values.length-1])){values.pop();}`)
 	assertContains(t, script, `tid:Visualforce.remoting.Manager._tid++`)
 	assertContains(t, script, `status:!!(response&&response.status)`)
-	assertContains(t, script, `callback(response?response.result:null,event)`)
+	// r_option_null_config and r_invoke_null_return capture these native cases.
+	assertContains(t, script, `options=values.pop()||{}`)
+	assertContains(t, script, `callback(result,event)`)
 	assertContains(t, script, `return response;`)
 	assertContains(t, script, `RemoteController.echo=function()`)
+}
+
+func TestRemotingPageBootstrapMatchesNativeExposure(t *testing.T) {
+	// r_invoke_direct exposes its declared action; r_error_unannotated leaves
+	// Manager absent. Other controllers must not add actions to this page.
+	for _, annotated := range []bool{true, false} {
+		t.Run(map[bool]string{true: "remote-action", false: "unannotated"}[annotated], func(t *testing.T) {
+			machine := vm.New(nil)
+			modifiers := []string{"public", "static"}
+			if annotated {
+				modifiers = append(modifiers, "@RemoteAction")
+			}
+			for _, method := range []vm.Method{
+				{Name: "RemoteController.echo", ClassName: "RemoteController", IsStatic: true, Modifiers: modifiers, Params: []vm.Param{{Name: "value", Type: "String"}}},
+				{Name: "OtherController.hidden", ClassName: "OtherController", IsStatic: true, Modifiers: []string{"public", "static", "@RemoteAction"}},
+			} {
+				if err := machine.RegisterMethod(method); err != nil {
+					t.Fatal(err)
+				}
+			}
+			tree, err := ParseMarkupTree(`<apex:page controller="RemoteController"><script>window.owned=1;</script><span>owned</span></apex:page>`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			rendered, err := RenderMarkupTree(tree, &RenderContext{VM: machine})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Contains(rendered, "Visualforce.remoting.Manager.invokeAction") != annotated {
+				t.Fatalf("bootstrap exposure annotated=%t: %s", annotated, rendered)
+			}
+			assertNotContains(t, rendered, "OtherController.hidden")
+			assertContains(t, rendered, `<span>owned</span>`)
+			if annotated {
+				bootstrap := strings.Index(rendered, "RemoteController.echo=function()")
+				if bootstrap < 0 || bootstrap > strings.Index(rendered, "window.owned=1") {
+					t.Fatalf("remote action must be available before page scripts: %s", rendered)
+				}
+				assertContains(t, rendered, `"ParameterCount":1`)
+			}
+		})
+	}
 }
 
 func TestRemotingRequestLimitAndTimeoutBounds(t *testing.T) {

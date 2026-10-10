@@ -1,0 +1,464 @@
+{
+  "version": "glade.storage.v1",
+  "objects": [
+    {
+      "name": "User",
+      "records": [
+        {
+          "id": "005000000000001",
+          "fields": {
+            "LocaleSidKey": {
+              "kind": "string",
+              "string": "en_US"
+            },
+            "TimeZoneSidKey": {
+              "kind": "string",
+              "string": "America/Los_Angeles"
+            },
+            "LanguageLocaleKey": {
+              "kind": "string",
+              "string": "en_US"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "BusinessHours",
+      "records": [
+        {
+          "id": "01m000000000101",
+          "fields": {
+            "Name": {
+              "kind": "string",
+              "string": "A27_UTC"
+            },
+            "IsActive": {
+              "kind": "boolean",
+              "boolean": true
+            },
+            "IsDefault": {
+              "kind": "boolean",
+              "boolean": false
+            },
+            "TimeZoneSidKey": {
+              "kind": "string",
+              "string": "GMT"
+            },
+            "SundayStartTime": {
+              "kind": "null"
+            },
+            "SundayEndTime": {
+              "kind": "null"
+            },
+            "MondayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "MondayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "TuesdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "TuesdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "WednesdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "WednesdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "ThursdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "ThursdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "FridayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "FridayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "SaturdayStartTime": {
+              "kind": "null"
+            },
+            "SaturdayEndTime": {
+              "kind": "null"
+            }
+          }
+        },
+        {
+          "id": "01m000000000102",
+          "fields": {
+            "Name": {
+              "kind": "string",
+              "string": "A27_Holiday"
+            },
+            "IsActive": {
+              "kind": "boolean",
+              "boolean": true
+            },
+            "IsDefault": {
+              "kind": "boolean",
+              "boolean": false
+            },
+            "TimeZoneSidKey": {
+              "kind": "string",
+              "string": "GMT"
+            },
+            "SundayStartTime": {
+              "kind": "null"
+            },
+            "SundayEndTime": {
+              "kind": "null"
+            },
+            "MondayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "MondayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "TuesdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "TuesdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "WednesdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "WednesdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "ThursdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "ThursdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "FridayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "FridayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "SaturdayStartTime": {
+              "kind": "null"
+            },
+            "SaturdayEndTime": {
+              "kind": "null"
+            }
+          }
+        },
+        {
+          "id": "01m000000000103",
+          "fields": {
+            "Name": {
+              "kind": "string",
+              "string": "A27_Pacific"
+            },
+            "IsActive": {
+              "kind": "boolean",
+              "boolean": true
+            },
+            "IsDefault": {
+              "kind": "boolean",
+              "boolean": false
+            },
+            "TimeZoneSidKey": {
+              "kind": "string",
+              "string": "America/Los_Angeles"
+            },
+            "SundayStartTime": {
+              "kind": "null"
+            },
+            "SundayEndTime": {
+              "kind": "null"
+            },
+            "MondayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "MondayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "TuesdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "TuesdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "WednesdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "WednesdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "ThursdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "ThursdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "FridayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "FridayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "SaturdayStartTime": {
+              "kind": "null"
+            },
+            "SaturdayEndTime": {
+              "kind": "null"
+            }
+          }
+        },
+        {
+          "id": "01m000000000104",
+          "fields": {
+            "Name": {
+              "kind": "string",
+              "string": "A27_Kathmandu"
+            },
+            "IsActive": {
+              "kind": "boolean",
+              "boolean": true
+            },
+            "IsDefault": {
+              "kind": "boolean",
+              "boolean": false
+            },
+            "TimeZoneSidKey": {
+              "kind": "string",
+              "string": "Asia/Kathmandu"
+            },
+            "SundayStartTime": {
+              "kind": "null"
+            },
+            "SundayEndTime": {
+              "kind": "null"
+            },
+            "MondayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "MondayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "TuesdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "TuesdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "WednesdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "WednesdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "ThursdayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "ThursdayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "FridayStartTime": {
+              "kind": "string",
+              "string": "09:00:00.000Z"
+            },
+            "FridayEndTime": {
+              "kind": "string",
+              "string": "17:00:00.000Z"
+            },
+            "SaturdayStartTime": {
+              "kind": "null"
+            },
+            "SaturdayEndTime": {
+              "kind": "null"
+            }
+          }
+        },
+        {
+          "id": "01m000000000105",
+          "fields": {
+            "Name": {
+              "kind": "string",
+              "string": "A27_Pacific24"
+            },
+            "IsActive": {
+              "kind": "boolean",
+              "boolean": true
+            },
+            "IsDefault": {
+              "kind": "boolean",
+              "boolean": false
+            },
+            "TimeZoneSidKey": {
+              "kind": "string",
+              "string": "America/Los_Angeles"
+            },
+            "SundayStartTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "SundayEndTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "MondayStartTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "MondayEndTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "TuesdayStartTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "TuesdayEndTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "WednesdayStartTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "WednesdayEndTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "ThursdayStartTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "ThursdayEndTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "FridayStartTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "FridayEndTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "SaturdayStartTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            },
+            "SaturdayEndTime": {
+              "kind": "string",
+              "string": "00:00:00.000Z"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Holiday",
+      "records": [
+        {
+          "id": "0Ho000000000101",
+          "fields": {
+            "Name": {
+              "kind": "string",
+              "string": "A27_Full_20261012"
+            },
+            "ActivityDate": {
+              "kind": "date",
+              "string": "2026-10-12"
+            },
+            "IsAllDay": {
+              "kind": "boolean",
+              "boolean": true
+            },
+            "IsRecurrence": {
+              "kind": "boolean",
+              "boolean": false
+            },
+            "BusinessHoursId": {
+              "kind": "id",
+              "id": "01m000000000102"
+            }
+          }
+        },
+        {
+          "id": "0Ho000000000102",
+          "fields": {
+            "Name": {
+              "kind": "string",
+              "string": "A27_Partial_20261013"
+            },
+            "ActivityDate": {
+              "kind": "date",
+              "string": "2026-10-13"
+            },
+            "IsAllDay": {
+              "kind": "boolean",
+              "boolean": false
+            },
+            "IsRecurrence": {
+              "kind": "boolean",
+              "boolean": false
+            },
+            "BusinessHoursId": {
+              "kind": "id",
+              "id": "01m000000000102"
+            },
+            "StartTimeInMinutes": {
+              "kind": "integer",
+              "integer": 720
+            },
+            "EndTimeInMinutes": {
+              "kind": "integer",
+              "integer": 840
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

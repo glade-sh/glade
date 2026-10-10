@@ -29,10 +29,10 @@ type Value struct {
 
 type PropertyBag map[string]Value
 
-func StringValue(s string) Value  { return Value{Kind: ValueString, String: s} }
-func IntValue(i int64) Value      { return Value{Kind: ValueInt, Int: i} }
-func BoolValue(b bool) Value      { return Value{Kind: ValueBool, Bool: b} }
-func NullValue() Value            { return Value{Kind: ValueNull} }
+func StringValue(s string) Value { return Value{Kind: ValueString, String: s} }
+func IntValue(i int64) Value     { return Value{Kind: ValueInt, Int: i} }
+func BoolValue(b bool) Value     { return Value{Kind: ValueBool, Bool: b} }
+func NullValue() Value           { return Value{Kind: ValueNull} }
 func ObjectValue(fields map[string]Value) Value {
 	return Value{Kind: ValueObject, Fields: fields}
 }
@@ -101,15 +101,13 @@ func Truthy(v Value) bool {
 	case ValueBool:
 		return v.Bool
 	case ValueString:
-		return strings.TrimSpace(v.String) != ""
+		return v.String != ""
 	case ValueInt:
 		return v.Int != 0
 	case ValueNull:
 		return false
-	case ValueArray:
-		return len(v.Items) > 0
-	case ValueObject:
-		return len(v.Fields) > 0
+	case ValueArray, ValueObject:
+		return true
 	default:
 		return false
 	}

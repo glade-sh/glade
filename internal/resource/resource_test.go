@@ -125,7 +125,7 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	if got := registry.QuickActions[0].PredefinedFieldValues; len(got) != 2 || got[0].Field != "Name" || got[0].Value != "Seed Account" || got[1].Field != "Phone" || got[1].Value != "555-0100" {
 		t.Fatalf("quick action defaults = %#v", got)
 	}
-	if len(registry.FieldSets) != 2 || registry.FieldSets[0].ObjectName != "Account" || registry.FieldSets[0].Name != "InlineSummary" || len(registry.FieldSets[0].Fields) != 1 || !registry.FieldSets[0].Fields[0].Required || registry.FieldSets[1].Name != "Summary" || len(registry.FieldSets[1].Fields) != 2 {
+	if len(registry.FieldSets) != 2 || registry.FieldSets[0].ObjectName != "Account" || registry.FieldSets[0].Name != "InlineSummary" || len(registry.FieldSets[0].Fields) != 1 || !registry.FieldSets[0].Fields[0].Required || registry.FieldSets[1].Name != "Summary" || len(registry.FieldSets[1].Fields) != 1 || registry.FieldSets[1].Fields[0].Field != "Name" || !registry.FieldSets[1].Fields[0].Required {
 		t.Fatalf("field sets = %#v", registry.FieldSets)
 	}
 	if len(registry.EmailTemplates) != 1 || registry.EmailTemplates[0].DeveloperName != "welcome" || registry.EmailTemplates[0].Body != "Hello {!Recipient.FirstName}" {
@@ -181,6 +181,51 @@ func TestApplyProjectIndexesMetadataOnlyVisualforcePage(t *testing.T) {
 		if page.Fields["Name"].String != "MetadataOnly" || page.Fields["MasterLabel"].String != "Metadata Only" {
 			t.Fatalf("ApexPage record = %#v", page)
 		}
+	}
+}
+
+func TestApplyProjectUsesVisualforceSidecarVersionAndProjectFallback(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	sidecarPath := filepath.Join(root, "force-app/main/default/pages/Sidecar.page")
+	fallbackPath := filepath.Join(root, "force-app/main/default/pages/Fallback.page")
+	writeFile(t, sidecarPath, `<apex:page/>`)
+	writeFile(t, sidecarPath+"-meta.xml", `<ApexPage><apiVersion>61.0</apiVersion></ApexPage>`)
+	writeFile(t, fallbackPath, `<apex:page/>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	if err := ApplyProject(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	byName := make(map[string]storage.Record)
+	for _, record := range org.Objects["ApexPage"].Records {
+		byName[record.Fields["Name"].String] = record
+	}
+	if got := byName["Sidecar"].Fields["ApiVersion"].Decimal; got != "61.0" {
+		t.Fatalf("sidecar API version = %q, want 61.0", got)
+	}
+	if got := byName["Fallback"].Fields["ApiVersion"].Decimal; got != "65.0" {
+		t.Fatalf("fallback API version = %q, want 65.0", got)
+	}
+}
+
+func TestApplyProjectRejectsInvalidVisualforceSidecarVersion(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/pages/Probe.page")
+	writeFile(t, path, `<apex:page/>`)
+	writeFile(t, path+"-meta.xml", `<ApexPage><apiVersion>67.1</apiVersion></ApexPage>`)
+	org := storage.NewOrgState()
+	err := ApplyProject(&org, project.Project{
+		Root:                 root,
+		SourceAPIVersion:     "65.0",
+		VisualforcePageFiles: []string{path},
+	})
+	if err == nil || !strings.Contains(err.Error(), "unsupported Visualforce source API version") {
+		t.Fatalf("ApplyProject error = %v, want invalid sidecar version", err)
 	}
 }
 
@@ -416,5 +461,20 @@ func writeFile(t *testing.T, path, content string) {
 	}
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestFieldSetDisplayedMembersPreserveOrderAndRequiredness(t *testing.T) {
+	raw := fieldSetXML{
+		DisplayedFields: []fieldSetMemberXML{{Field: " Email "}, {Field: "LastName", Required: true}},
+		AvailableFields: []fieldSetMemberXML{{Field: "CreatedDate", Required: true}},
+	}
+	got := fieldSetFromXML(raw, "Contact", "Summary", "pkg", "source.xml")
+	if len(got.Fields) != 2 || got.Fields[0].Field != "Email" || got.Fields[0].Required || got.Fields[1].Field != "LastName" || !got.Fields[1].Required {
+		t.Fatalf("displayed fields = %#v", got.Fields)
+	}
+	raw.DisplayedFields = nil
+	if fields := fieldSetFromXML(raw, "Contact", "Empty", "pkg", "source.xml").Fields; len(fields) != 0 {
+		t.Fatalf("available-only fields = %#v", fields)
 	}
 }

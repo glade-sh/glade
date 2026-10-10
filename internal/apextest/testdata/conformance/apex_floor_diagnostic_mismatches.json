@@ -1,0 +1,676 @@
+{
+  "apiVersion": "62.0",
+  "mismatches": [
+    {
+      "family": "Integer and Long",
+      "rowId": "K01",
+      "nativeText": "COMPILE_ERROR\tline 6: Illegal integer",
+      "localTexts": {
+        "anonymous": "COMPILE_ERROR\tline 2: Illegal integer",
+        "@IsTest": "COMPILE_ERROR\tline 15: Illegal integer"
+      },
+      "reason": "capture/local wrapper line differs; diagnostic wording matches"
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K02",
+      "nativeText": "COMPILE_ERROR\tline 6: Illegal integer",
+      "localTexts": {
+        "anonymous": "COMPILE_ERROR\tline 2: Illegal integer",
+        "@IsTest": "COMPILE_ERROR\tline 15: Illegal integer"
+      },
+      "reason": "capture/local wrapper line differs; diagnostic wording matches"
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K03",
+      "nativeText": "COMPILE_ERROR\tline 6: Illegal integer",
+      "localTexts": {
+        "anonymous": "COMPILE_ERROR\tline 2: Illegal integer",
+        "@IsTest": "COMPILE_ERROR\tline 15: Illegal integer"
+      },
+      "reason": "capture/local wrapper line differs; diagnostic wording matches"
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K05",
+      "nativeText": "COMPILE_ERROR\tline 6: Unexpected token 'i'.",
+      "localTexts": {
+        "anonymous": "COMPILE_ERROR\tline 1: invalid numeric literal at byte 46",
+        "@IsTest": "COMPILE_ERROR\tline 15: syntax error"
+      },
+      "reason": "Malformed hexadecimal literal lacks the native declarator diagnostic; parser-context repair deferred."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K18",
+      "nativeText": "COMPILE_ERROR\tline 6: Unexpected token 'i'.",
+      "localTexts": {
+        "anonymous": "COMPILE_ERROR\tline 1: invalid numeric literal at byte 46",
+        "@IsTest": "COMPILE_ERROR\tline 15: invalid numeric literal at byte 47"
+      },
+      "reason": "Numeric separators lose the native declarator diagnostic; parser-context repair deferred."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K35",
+      "nativeText": "COMPILE_ERROR\tline 6: Unexpected token 'd'.",
+      "localTexts": {
+        "anonymous": "COMPILE_ERROR\tline 1: scientific notation is not an Apex numeric literal at byte 45",
+        "@IsTest": "COMPILE_ERROR\tline 15: IntegerLongProbe has invalid source contract: scientific notation is not valid Apex numeric literal syntax"
+      },
+      "reason": "Scientific notation is diagnosed before its declarator; parser-context repair deferred."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "K05",
+      "nativeText": "COMPILE_ERROR\tline 6: Unexpected token 'd'.",
+      "localTexts": {
+        "anonymous": "COMPILE_ERROR\tline 1: scientific notation is not an Apex numeric literal at byte 42",
+        "@IsTest": "COMPILE_ERROR\tline 1: NumericFamilyProbe has invalid source contract: scientific notation is not valid Apex numeric literal syntax"
+      },
+      "reason": "Scientific notation is diagnosed before its declarator; parser-context repair deferred."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "K06",
+      "nativeText": "COMPILE_ERROR\tline 6: Unexpected token 'd'.",
+      "localTexts": {
+        "anonymous": "COMPILE_ERROR\tline 1: scientific notation is not an Apex numeric literal at byte 43",
+        "@IsTest": "COMPILE_ERROR\tline 1: NumericFamilyProbe has invalid source contract: scientific notation is not valid Apex numeric literal syntax"
+      },
+      "reason": "Scientific notation is diagnosed before its declarator; parser-context repair deferred."
+    },
+    {
+      "family": "collections",
+      "rowId": "C012",
+      "nativeText": "COMPILE_ERROR\tline 6: Illegal assignment from Object to Integer",
+      "localTexts": {
+        "anonymous": "COMPILE_ERROR\tline 1: method \"execute\" initializes y with void",
+        "@IsTest": "COMPILE_ERROR\tline 1: method \"run\" initializes Integer local \"y\" with void"
+      },
+      "reason": "List.add returns local void but native reports Object in this assignment; return-diagnostic modeling deferred."
+    }
+  ],
+  "lineFraming": [
+    {
+      "family": "Integer and Long",
+      "rowId": "K01",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K02",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K03",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K04",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K06",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K07",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K08",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K13",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K17",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K19",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K21",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K22",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K23",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K26",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K27",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K29",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K30",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K31",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "K32",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "N11",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 39; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "P29",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 32; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "Z01",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "Z02",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "Z03",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "Z04",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Integer and Long",
+      "rowId": "Z05",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 2, @IsTest line 15 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "E04",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 26; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "E05",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 26; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "F04",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 21; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "K03",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "K04",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "K08",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "K09",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "K10",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "K11",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "K12",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "V17",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 34; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "Double and Decimal",
+      "rowId": "V34",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 50; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "String",
+      "rowId": "K01",
+      "routes": [
+        "anonymous"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "String",
+      "rowId": "K02",
+      "routes": [
+        "anonymous"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "String",
+      "rowId": "K03",
+      "routes": [
+        "anonymous"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "String",
+      "rowId": "K04",
+      "routes": [
+        "anonymous"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "String",
+      "rowId": "K05",
+      "routes": [
+        "anonymous"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "String",
+      "rowId": "K06",
+      "routes": [
+        "anonymous"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C001",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C002",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C003",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C004",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C005",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C006",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C007",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C008",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C009",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C010",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C011",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C013",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C014",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C015",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C016",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "R056",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 11; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "R063",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 17; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "R125",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 30; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "R132",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 36; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "R194",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 49; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "R201",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    }
+  ]
+}

@@ -3,10 +3,11 @@ package storage
 import "fmt"
 
 type IsolationJournal struct {
-	org       *OrgState
-	inserted  []journalRecordKey
-	updated   []journalRecordBefore
-	sequences []journalSequenceBefore
+	org           *OrgState
+	inserted      []journalRecordKey
+	updated       []journalRecordBefore
+	sequences     []journalSequenceBefore
+	recordingMark IsolationMark
 }
 
 type IsolationMark struct {
@@ -48,11 +49,14 @@ func (j *IsolationJournal) Mark() IsolationMark {
 	if j == nil {
 		return IsolationMark{}
 	}
-	return IsolationMark{
+	// A new rollback point needs its own before-images, including for records
+	// inserted or updated before this point. Deduplicate only within this span.
+	j.recordingMark = IsolationMark{
 		inserted:  len(j.inserted),
 		updated:   len(j.updated),
 		sequences: len(j.sequences),
 	}
+	return j.recordingMark
 }
 
 func (j *IsolationJournal) RecordSequence(object string) {
@@ -96,15 +100,6 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 		return nil
 	}
 	touchedObjects := make(map[string]bool)
-	for i := len(j.inserted) - 1; i >= mark.inserted; i-- {
-		key := j.inserted[i]
-		touchedObjects[key.object] = true
-		object := j.org.Objects[key.object]
-		if object.Records != nil {
-			delete(object.Records, key.id)
-			j.org.Objects[key.object] = object
-		}
-	}
 	for i := len(j.updated) - 1; i >= mark.updated; i-- {
 		before := j.updated[i]
 		touchedObjects[before.object] = true
@@ -122,6 +117,16 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 		}
 		j.org.Objects[before.object] = object
 	}
+	// Remove inserts after restoring updates so outer rollback cannot resurrect them.
+	for i := len(j.inserted) - 1; i >= mark.inserted; i-- {
+		key := j.inserted[i]
+		touchedObjects[key.object] = true
+		object := j.org.Objects[key.object]
+		if object.Records != nil {
+			delete(object.Records, key.id)
+			j.org.Objects[key.object] = object
+		}
+	}
 	for i := len(j.sequences) - 1; i >= mark.sequences; i-- {
 		before := j.sequences[i]
 		if j.org.IDSequences == nil {
@@ -136,6 +141,7 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 	j.inserted = j.inserted[:mark.inserted]
 	j.updated = j.updated[:mark.updated]
 	j.sequences = j.sequences[:mark.sequences]
+	j.recordingMark = mark
 	for objectName := range touchedObjects {
 		RebuildObjectIndexes(j.org, objectName)
 	}
@@ -143,7 +149,7 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 }
 
 func (j *IsolationJournal) recordBeforeRecorded(object string, id ID) bool {
-	for i := len(j.updated) - 1; i >= 0; i-- {
+	for i := len(j.updated) - 1; i >= j.recordingMark.updated; i-- {
 		before := j.updated[i]
 		if before.object == object && before.id == id {
 			return true
@@ -153,7 +159,7 @@ func (j *IsolationJournal) recordBeforeRecorded(object string, id ID) bool {
 }
 
 func (j *IsolationJournal) recordInsertRecorded(object string, id ID) bool {
-	for i := len(j.inserted) - 1; i >= 0; i-- {
+	for i := len(j.inserted) - 1; i >= j.recordingMark.inserted; i-- {
 		inserted := j.inserted[i]
 		if inserted.object == object && inserted.id == id {
 			return true
@@ -163,7 +169,7 @@ func (j *IsolationJournal) recordInsertRecorded(object string, id ID) bool {
 }
 
 func (j *IsolationJournal) sequenceRecordedSinceMark(object string) bool {
-	for i := len(j.sequences) - 1; i >= 0; i-- {
+	for i := len(j.sequences) - 1; i >= j.recordingMark.sequences; i-- {
 		if j.sequences[i].object == object {
 			return true
 		}

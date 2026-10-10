@@ -29,6 +29,9 @@ func runToolchain(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func runToolchainInstall(ctx context.Context, args []string, w io.Writer) error {
+	if len(args) > 0 && args[0] == "dataweave" {
+		return runDataWeaveToolchainInstall(ctx, args[1:], w)
+	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -65,6 +68,9 @@ type toolchainStatusJSON struct {
 }
 
 func runToolchainStatus(args []string, w io.Writer) error {
+	if len(args) > 0 && args[0] == "dataweave" {
+		return runDataWeaveToolchainStatus(args[1:], w)
+	}
 	jsonOut := false
 	for _, arg := range args {
 		switch arg {
@@ -92,4 +98,63 @@ func runToolchainStatus(args []string, w io.Writer) error {
 	}
 	fmt.Fprintf(w, "LWC toolchain: %s (%s)\n", path, detail)
 	return fmt.Errorf("toolchain not ready")
+}
+
+func runDataWeaveToolchainInstall(ctx context.Context, args []string, w io.Writer) error {
+	javaHome := ""
+	jsonOut := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--java-home":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--java-home requires a Java17 JDK path")
+			}
+			javaHome = args[i+1]
+			i++
+		case "--json", "-j":
+			jsonOut = true
+		case "--help", "-h":
+			_, err := fmt.Fprintln(w, "Usage: glade toolchain install dataweave --java-home <Java17-JDK> [--json]")
+			return err
+		default:
+			return fmt.Errorf("unknown DataWeave install argument %q", args[i])
+		}
+	}
+	status, err := gladehome.InstallDataWeave(ctx, javaHome)
+	if err != nil {
+		return err
+	}
+	if jsonOut {
+		return json.NewEncoder(w).Encode(status)
+	}
+	_, err = fmt.Fprintf(w, "Installed DataWeave %s toolchain to %s\n", status.EngineVersion, status.Path)
+	return err
+}
+func runDataWeaveToolchainStatus(args []string, w io.Writer) error {
+	jsonOut := false
+	for _, arg := range args {
+		switch arg {
+		case "--json", "-j":
+			jsonOut = true
+		case "--help", "-h":
+			_, err := fmt.Fprintln(w, "Usage: glade toolchain status dataweave [--json]")
+			return err
+		default:
+			return fmt.Errorf("unknown DataWeave status argument %q", arg)
+		}
+	}
+	status := gladehome.DataWeaveStatus()
+	if jsonOut {
+		if err := json.NewEncoder(w).Encode(status); err != nil {
+			return err
+		}
+	} else {
+		if _, err := fmt.Fprintf(w, "DataWeave toolchain: %s (%s)\n", status.Path, status.Detail); err != nil {
+			return err
+		}
+	}
+	if !status.OK {
+		return fmt.Errorf("DataWeave toolchain not ready")
+	}
+	return nil
 }

@@ -1,0 +1,158 @@
+[
+  {
+    "ids": [
+      "c_control_metadata_target_owned_missing"
+    ],
+    "mapping": {
+      "familyL12220": "c_control_metadata_target_owned_missing"
+    },
+    "individual": true,
+    "exit": 1,
+    "success": false,
+    "status": "Failed",
+    "cli_status": 1,
+    "errors": [
+      {
+        "fullName": "familyL12220",
+        "fileName": "lwc/familyL12220/familyL12220.js",
+        "problem": "lightning__OwnedMissing is not a valid TARGETS",
+        "problemType": "Error"
+      }
+    ],
+    "components": {
+      "componentSuccesses": [
+        {
+          "fullName": "familyL12220",
+          "fileName": "lwc/familyL12220",
+          "componentType": "LightningComponentBundle",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "package.xml",
+          "fileName": "package.xml",
+          "componentType": "",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        }
+      ],
+      "componentFailures": [
+        {
+          "fullName": "familyL12220",
+          "fileName": "lwc/familyL12220/familyL12220.js",
+          "componentType": "LightningComponentBundle",
+          "success": false,
+          "problem": "lightning__OwnedMissing is not a valid TARGETS",
+          "problemType": "Error",
+          "lineNumber": null,
+          "columnNumber": null
+        }
+      ]
+    },
+    "source_sha256": "544a49103ad089a8d5801d60b0073caef02915952232744326cbb766dda7a5d9"
+  },
+  {
+    "ids": [
+      "c_control_metadata_target_bogus"
+    ],
+    "mapping": {
+      "familyL12221": "c_control_metadata_target_bogus"
+    },
+    "individual": true,
+    "exit": 1,
+    "success": false,
+    "status": "Failed",
+    "cli_status": 1,
+    "errors": [
+      {
+        "fullName": "familyL12221",
+        "fileName": "lwc/familyL12221/familyL12221.js",
+        "problem": "lightning__Bogus is not a valid TARGETS",
+        "problemType": "Error"
+      }
+    ],
+    "components": {
+      "componentSuccesses": [
+        {
+          "fullName": "familyL12221",
+          "fileName": "lwc/familyL12221",
+          "componentType": "LightningComponentBundle",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "package.xml",
+          "fileName": "package.xml",
+          "componentType": "",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        }
+      ],
+      "componentFailures": [
+        {
+          "fullName": "familyL12221",
+          "fileName": "lwc/familyL12221/familyL12221.js",
+          "componentType": "LightningComponentBundle",
+          "success": false,
+          "problem": "lightning__Bogus is not a valid TARGETS",
+          "problemType": "Error",
+          "lineNumber": null,
+          "columnNumber": null
+        }
+      ]
+    },
+    "source_sha256": "2d21c1dd8e87d2aac4c3da8ac4d4768651d8157c52447906ba040e79cf18e96f"
+  },
+  {
+    "ids": [
+      "c_control_metadata_target_tab"
+    ],
+    "mapping": {
+      "familyL12222": "c_control_metadata_target_tab"
+    },
+    "individual": true,
+    "exit": 0,
+    "success": true,
+    "status": "Succeeded",
+    "cli_status": 0,
+    "errors": [],
+    "components": {
+      "componentSuccesses": [
+        {
+          "fullName": "familyL12222",
+          "fileName": "lwc/familyL12222",
+          "componentType": "LightningComponentBundle",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        },
+        {
+          "fullName": "package.xml",
+          "fileName": "package.xml",
+          "componentType": "",
+          "success": true,
+          "problem": null,
+          "problemType": null,
+          "lineNumber": null,
+          "columnNumber": null
+        }
+      ],
+      "componentFailures": []
+    },
+    "source_sha256": "a7b456b74aa0c987bc0a67b7f599e4f927750c520bbe8aaf4c815f004ff670da"
+  }
+]

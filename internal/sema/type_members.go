@@ -1,6 +1,8 @@
 package sema
 
 import (
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -14,11 +16,13 @@ import (
 
 type typeMembers struct {
 	name                              string
+	effectiveAPIVersion               string
 	shortKey                          string
 	namespace                         string
 	dependency                        bool
 	platform                          bool
 	sobject                           bool
+	platformEvent                     bool
 	externalPackageSObject            bool
 	partialSObject                    bool
 	nestingDepth                      int
@@ -39,6 +43,19 @@ type semaTypeMemberModel struct {
 	members         map[string]typeMembers
 	shortCandidates map[string][]string
 	platform        *semaLazyPlatformTypeMemberModel
+	// sourceTypesByFile retains duplicate source-backed type variants that
+	// share a global Apex name. A repository can contain independent SFDX
+	// packages with the same class name; method-body analysis must overlay the
+	// nested types from the file currently being checked instead of borrowing
+	// whichever duplicate won the global precedence map.
+	sourceTypesByFile map[string][]typesys.TypeSymbol
+	// sourceMembersByUnit groups source-backed type members by their nearest
+	// nested SFDX project and source tree. Aggregate corpus roots can contain
+	// many independent projects, and a project can retain both force-app and
+	// mdapi representations with the same Apex names.
+	sourceMembersByUnit       map[string]map[string]typeMembers
+	sourceUnitsWithDuplicates map[string]bool
+	sourceUnitByFile          map[string]string
 }
 
 type semaLazyPlatformTypeMemberModel struct {
@@ -99,10 +116,11 @@ type semaTypeMemberState struct {
 }
 
 type semaTypeMemberView struct {
-	state     *semaTypeMemberState
-	current   map[string]typeMembers
-	hydrated  map[string]typeMembers
-	canonical *semaCanonicalNames
+	state      *semaTypeMemberState
+	current    map[string]typeMembers
+	hydrated   map[string]typeMembers
+	canonical  *semaCanonicalNames
+	sourceUnit string
 }
 
 func newSemaTypeMemberState(base *semaTypeMemberModel) *semaTypeMemberState {
@@ -133,6 +151,13 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 	}
 	if members, ok := v.hydrated[key]; ok {
 		return members, true
+	}
+	if v.state.base != nil && v.sourceUnit != "" {
+		if sourceMembers := v.state.base.sourceMembersByUnit[v.sourceUnit]; sourceMembers != nil {
+			if members, ok := sourceMembers[key]; ok {
+				return members, true
+			}
+		}
 	}
 	if v.state.base != nil {
 		if members, ok := v.state.base.lookup(key); ok {
@@ -343,6 +368,7 @@ func (m *semaLazyPlatformTypeMemberModel) hasField(key string) bool {
 func semaTypeMembersFromPlatformSymbol(symbol typesys.TypeSymbol) typeMembers {
 	members := typeMembers{
 		name:                      semaTypeMembersName(symbol),
+		effectiveAPIVersion:       symbol.EffectiveAPIVersion,
 		shortKey:                  semaShortTypeKey(symbol.Name),
 		namespace:                 symbol.Namespace,
 		dependency:                true,
@@ -476,7 +502,7 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 			continue
 		}
 		bodyModel := model
-		if duplicateTypes[semaTypeSymbolKey(typ)] > 1 {
+		if duplicateTypes[semaTypeSymbolKey(typ)] > 1 || semaSourceUnitHasDuplicate(model, typ) {
 			bodyModel = semaModelWithCurrentType(model, typ)
 		}
 		for workItemIndex < len(workItems) && workItems[workItemIndex].typeIndex == typeIndex {
@@ -650,7 +676,7 @@ func (a *Analyzer) checkSemaMethodBodyTask(index typesys.Index, task semaMethodB
 	}()
 	typ := index.Types[task.typeIndex]
 	bodyModel := model
-	if duplicateTypes[semaTypeSymbolKey(typ)] > 1 {
+	if duplicateTypes[semaTypeSymbolKey(typ)] > 1 || semaSourceUnitHasDuplicate(model, typ) {
 		bodyModel = semaModelWithCurrentType(model, typ)
 	}
 	for workItemIndex := task.workItemStart; workItemIndex < task.workItemEnd; workItemIndex++ {
@@ -818,6 +844,88 @@ func semaDuplicateTypeKeys(index typesys.Index) map[string]int {
 	return counts
 }
 
+// semaSourceUnitKey identifies the nearest nested SFDX project containing a
+// source file. Aggregate corpus roots intentionally contain many independent
+// projects, so SourceRoot alone is insufficient to disambiguate duplicate
+// Apex names. When no project marker is available, the physical file itself
+// is the safest fallback and still groups a top-level type with its nested
+// symbols.
+func semaSourceUnitKey(file, sourceRoot string) string {
+	return semaSourceUnitKeyCached(file, sourceRoot, nil)
+}
+
+func semaSourceUnitKeyCached(file, sourceRoot string, cache map[string]string) string {
+	file, dir, ok := semaSourceUnitFile(file)
+	if !ok {
+		return ""
+	}
+	if cache != nil {
+		if key, ok := cache[dir]; ok {
+			return key
+		}
+	}
+	key := ""
+	semaSourceUnitMarkerWalk(dir, sourceRoot, func(marker string) bool {
+		if _, err := os.Stat(marker); err == nil {
+			key = semaSourceTreeKey(filepath.Dir(marker), file)
+			return true
+		}
+		return false
+	})
+	if key == "" {
+		key = "file:" + file
+	}
+	if cache != nil {
+		cache[dir] = key
+	}
+	return key
+}
+
+// semaSourceUnitFile cleans a type's source path for the source-unit lookup
+// and returns it with its directory. ok is false for an empty path.
+func semaSourceUnitFile(file string) (cleaned, dir string, ok bool) {
+	cleaned = filepath.Clean(strings.TrimSpace(file))
+	if cleaned == "" || cleaned == "." {
+		return "", "", false
+	}
+	return cleaned, filepath.Dir(cleaned), true
+}
+
+// semaSourceUnitMarkerWalk passes visit each sfdx-project.json path the
+// source-unit lookup probes for a file in dir, nearest first, until visit
+// returns true. The walk stops at sourceRoot or the filesystem root.
+func semaSourceUnitMarkerWalk(dir, sourceRoot string, visit func(marker string) bool) {
+	root := filepath.Clean(strings.TrimSpace(sourceRoot))
+	for current := dir; current != "" && current != "."; current = filepath.Dir(current) {
+		if visit(filepath.Join(current, "sfdx-project.json")) {
+			return
+		}
+		if root != "." && root != "" && current == root {
+			break
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			break
+		}
+	}
+}
+
+func semaSourceTreeKey(projectRoot, file string) string {
+	rel, err := filepath.Rel(projectRoot, file)
+	if err != nil || rel == "." || rel == "" {
+		return "sfdx:" + projectRoot
+	}
+	parts := strings.Split(rel, string(filepath.Separator))
+	if len(parts) == 0 || strings.Contains(parts[0], ".") {
+		return "sfdx:" + projectRoot
+	}
+	tree := parts[0]
+	if tree == "packages" && len(parts) > 1 {
+		tree += string(filepath.Separator) + parts[1]
+	}
+	return "sfdx:" + projectRoot + ":" + tree
+}
+
 func semaTypeSymbolKey(typ typesys.TypeSymbol) string {
 	if typ.Namespace != "" {
 		return normalizeName(typ.Namespace + "." + typ.Name)
@@ -831,43 +939,107 @@ func semaModelWithCurrentType(model *semaTypeMemberView, typ typesys.TypeSymbol)
 		current:  make(map[string]typeMembers, 2),
 		hydrated: model.hydrated,
 	}
-	members := semaTypeMembersFromSymbol(typ)
-	out.current[normalizeName(typ.Name)] = members
-	if typ.Namespace != "" {
-		out.current[normalizeName(typ.Namespace+"."+typ.Name)] = members
+	addCurrent := func(currentType typesys.TypeSymbol) {
+		currentMembers := semaTypeMembersFromSymbol(currentType)
+		out.current[normalizeName(currentMembers.name)] = currentMembers
+		if currentType.Namespace != "" {
+			out.current[normalizeName(currentType.Namespace+"."+currentMembers.name)] = currentMembers
+		}
 	}
-	members.superClass = resolveNestedTypeName(out, members.name, members.superClass)
+	if model != nil && model.state != nil && model.state.base != nil {
+		out.sourceUnit = model.state.base.sourceUnitByFile[typ.File]
+		if out.sourceUnit == "" {
+			out.sourceUnit = semaSourceUnitKey(typ.File, typ.SourceRoot)
+		}
+	}
+	addCurrent(typ)
+	// The global model intentionally keeps one winner for an ambiguous Apex
+	// name. During duplicate-type analysis, retain the nested classes belonging
+	// to the current source file so `List<Requests>` resolves to the matching
+	// package-local `Owner.Requests` variant.
+	if model != nil && model.state != nil && model.state.base != nil {
+		for _, candidate := range model.state.base.sourceTypesByFile[typ.File] {
+			if candidate.Name == typ.Name || !strings.HasPrefix(candidate.Name, typ.Name+".") {
+				continue
+			}
+			addCurrent(candidate)
+		}
+	}
+	for key, currentMembers := range out.current {
+		currentMembers.superClass = resolveNestedTypeName(out, currentMembers.name, currentMembers.superClass)
+		for i, iface := range currentMembers.interfaces {
+			currentMembers.interfaces[i] = resolveNestedTypeName(out, currentMembers.name, iface)
+		}
+		for fieldKey, field := range currentMembers.fields {
+			field.Type = resolveNestedTypeReference(out, currentMembers.name, field.Type)
+			currentMembers.fields[fieldKey] = field
+		}
+		for methodKey, overloads := range currentMembers.methods {
+			for i := range overloads {
+				overloads[i].Type = resolveNestedTypeReference(out, currentMembers.name, overloads[i].Type)
+				for j := range overloads[i].Parameters {
+					overloads[i].Parameters[j].Type = resolveNestedTypeReference(out, currentMembers.name, overloads[i].Parameters[j].Type)
+				}
+			}
+			currentMembers.methods[methodKey] = overloads
+		}
+		for i := range currentMembers.constructors {
+			for j := range currentMembers.constructors[i].Parameters {
+				currentMembers.constructors[i].Parameters[j].Type = resolveNestedTypeReference(out, currentMembers.name, currentMembers.constructors[i].Parameters[j].Type)
+			}
+		}
+		out.current[key] = currentMembers
+	}
+	return out
+}
+
+func semaResolveTypeMembers(model *semaTypeMemberView, members typeMembers) typeMembers {
+	if members.shortKey == "" {
+		members.shortKey = semaShortTypeKey(members.name)
+	}
+	if members.syntheticStandardSObject {
+		return members
+	}
+	members.superClass = resolveNestedTypeName(model, members.name, members.superClass)
 	for i, iface := range members.interfaces {
-		members.interfaces[i] = resolveNestedTypeName(out, members.name, iface)
+		members.interfaces[i] = resolveNestedTypeName(model, members.name, iface)
 	}
 	for fieldKey, field := range members.fields {
-		field.Type = resolveNestedTypeReference(out, members.name, field.Type)
+		field.Type = resolveNestedTypeReference(model, members.name, field.Type)
 		members.fields[fieldKey] = field
 	}
 	for methodKey, overloads := range members.methods {
 		for i := range overloads {
-			overloads[i].Type = resolveNestedTypeReference(out, members.name, overloads[i].Type)
+			overloads[i].Type = resolveNestedTypeReference(model, members.name, overloads[i].Type)
 			for j := range overloads[i].Parameters {
-				overloads[i].Parameters[j].Type = resolveNestedTypeReference(out, members.name, overloads[i].Parameters[j].Type)
+				overloads[i].Parameters[j].Type = resolveNestedTypeReference(model, members.name, overloads[i].Parameters[j].Type)
 			}
 		}
 		members.methods[methodKey] = overloads
 	}
 	for i := range members.constructors {
 		for j := range members.constructors[i].Parameters {
-			members.constructors[i].Parameters[j].Type = resolveNestedTypeReference(out, members.name, members.constructors[i].Parameters[j].Type)
+			members.constructors[i].Parameters[j].Type = resolveNestedTypeReference(model, members.name, members.constructors[i].Parameters[j].Type)
 		}
 	}
-	out.current[normalizeName(typ.Name)] = members
-	if typ.Namespace != "" {
-		out.current[normalizeName(typ.Namespace+"."+typ.Name)] = members
+	return members
+}
+
+func semaSourceUnitHasDuplicate(model *semaTypeMemberView, typ typesys.TypeSymbol) bool {
+	if model == nil || model.state == nil || model.state.base == nil {
+		return false
 	}
-	return out
+	unit := model.state.base.sourceUnitByFile[typ.File]
+	if unit == "" {
+		unit = semaSourceUnitKey(typ.File, typ.SourceRoot)
+	}
+	return model.state.base.sourceUnitsWithDuplicates[unit]
 }
 
 func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 	members := typeMembers{
 		name:                      semaTypeMembersName(typ),
+		effectiveAPIVersion:       typ.EffectiveAPIVersion,
 		shortKey:                  semaShortTypeKey(typ.Name),
 		namespace:                 typ.Namespace,
 		dependency:                typ.Dependency,
@@ -918,10 +1090,19 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 	}
 	out := make(map[string]typeMembers)
 	shortAliases := make(map[string][]string)
+	sourceTypesByFile := make(map[string][]typesys.TypeSymbol)
+	sourceMembersByUnit := make(map[string]map[string]typeMembers)
+	sourceUnitCache := make(map[string]string)
+	sourceUnitByFile := make(map[string]string)
 	projectNamespace := index.Project.Namespace
 	for _, typ := range index.Types {
+		if typ.File != "" {
+			sourceTypesByFile[typ.File] = append(sourceTypesByFile[typ.File], typ)
+			sourceUnitByFile[typ.File] = semaSourceUnitKeyCached(typ.File, typ.SourceRoot, sourceUnitCache)
+		}
 		members := typeMembers{
 			name:                      semaTypeMembersName(typ),
+			effectiveAPIVersion:       typ.EffectiveAPIVersion,
 			shortKey:                  semaShortTypeKey(typ.Name),
 			namespace:                 typ.Namespace,
 			dependency:                typ.Dependency,
@@ -995,6 +1176,16 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 				}
 			}
 		}
+		if typ.File != "" {
+			unit := sourceUnitByFile[typ.File]
+			if sourceMembersByUnit[unit] == nil {
+				sourceMembersByUnit[unit] = make(map[string]typeMembers)
+			}
+			sourceMembersByUnit[unit][normalizeName(members.name)] = members
+			if typ.Namespace != "" {
+				sourceMembersByUnit[unit][normalizeName(typ.Namespace+"."+members.name)] = members
+			}
+		}
 		if !semaRequiresQualifiedDependencyName(typ) {
 			key := normalizeName(typ.Name)
 			if semaShouldStoreTypeMembers(out[key], typ) {
@@ -1011,12 +1202,19 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			shortAliases[normalizeName(short)] = append(shortAliases[normalizeName(short)], typ.Name)
 		}
 	}
+	// Standard-object lookups can retain a project-local parent name. Resolve
+	// that alias before storing child members, so a later canonical object does
+	// not replace the relationship-bearing placeholder at its local alias.
+	projectObjectAliases := make(map[string]string)
 	for _, object := range index.Objects {
-		objectKey := normalizeName(object.Name)
-		objectMembers, objectOK := out[objectKey]
-		if objectOK && !objectMembers.sobject && !semaShouldMergeStandardSObjectMembers(object.Name, objectMembers) {
-			continue
+		if localName, ok := semaProjectLocalAPIName(projectNamespace, object.Name); ok {
+			projectObjectAliases[normalizeName(localName)] = object.Name
 		}
+	}
+	for _, object := range index.Objects {
+		objectMemberName := semaObjectMemberStorageName(out, object.Name)
+		objectKey := normalizeName(objectMemberName)
+		objectMembers, objectOK := out[objectKey]
 		if !objectOK {
 			objectMembers = typeMembers{
 				name:                   object.Name,
@@ -1031,6 +1229,9 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			}
 		}
 		objectMembers.sobject = true
+		// Event contracts follow explicit object metadata, not API-name
+		// spelling. Partial field-only metadata must not erase this provenance.
+		objectMembers.platformEvent = objectMembers.platformEvent || strings.EqualFold(object.PublishBehavior, "PublishImmediately") || strings.EqualFold(object.PublishBehavior, "PublishAfterCommit")
 		objectMembers.partialSObject = objectMembers.partialSObject || object.Partial
 		if objectMembers.namespace == "" {
 			objectMembers.namespace = semaNamespaceFromAPIName(object.Name)
@@ -1060,7 +1261,11 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 				continue
 			}
 			for _, parent := range field.ReferenceTo {
-				parentKey := normalizeName(parent)
+				if canonical, ok := projectObjectAliases[normalizeName(parent)]; ok {
+					parent = canonical
+				}
+				parentMemberName := semaObjectMemberStorageName(out, parent)
+				parentKey := normalizeName(parentMemberName)
 				if parentKey == "" {
 					continue
 				}
@@ -1118,14 +1323,15 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 				if parentKey == objectKey {
 					objectMembers = parentMembers
 				} else {
-					semaStoreSObjectTypeMembers(out, projectNamespace, parent, parentMembers)
+					semaStoreSObjectTypeMembers(out, projectNamespace, parentMemberName, parentMembers)
 				}
 			}
 		}
-		semaStoreSObjectTypeMembers(out, projectNamespace, object.Name, objectMembers)
+		semaStoreSObjectTypeMembers(out, projectNamespace, objectMemberName, objectMembers)
 	}
-	semaApplyPlatformInterfaceOverlays(out)
-	semaApplyPlatformFieldOverlays(out)
+	semaApplyQualifiedSystemTypeAliases(out, platform)
+	semaApplyPlatformInterfaceOverlays(out, platform)
+	semaApplyPlatformFieldOverlays(out, platform)
 	for short, names := range shortAliases {
 		if len(names) == 1 {
 			if _, exists := out[short]; exists {
@@ -1134,39 +1340,31 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			out[short] = out[normalizeName(names[0])]
 		}
 	}
-	model := &semaTypeMemberModel{members: out}
-	view := newSemaTypeMemberStateWithPlatform(model, platform).view()
-	for key, members := range out {
-		if members.shortKey == "" {
-			members.shortKey = semaShortTypeKey(members.name)
-		}
-		if members.syntheticStandardSObject {
-			out[key] = members
+	sourceUnitsWithDuplicates := make(map[string]bool)
+	duplicateKeys := semaDuplicateTypeKeys(index)
+	for _, typ := range index.Types {
+		if typ.File == "" || duplicateKeys[semaTypeSymbolKey(typ)] < 2 {
 			continue
 		}
-		members.superClass = resolveNestedTypeName(view, members.name, members.superClass)
-		for i, iface := range members.interfaces {
-			members.interfaces[i] = resolveNestedTypeName(view, members.name, iface)
+		sourceUnitsWithDuplicates[sourceUnitByFile[typ.File]] = true
+	}
+	model := &semaTypeMemberModel{
+		members:                   out,
+		sourceTypesByFile:         sourceTypesByFile,
+		sourceMembersByUnit:       sourceMembersByUnit,
+		sourceUnitsWithDuplicates: sourceUnitsWithDuplicates,
+		sourceUnitByFile:          sourceUnitByFile,
+	}
+	view := newSemaTypeMemberStateWithPlatform(model, platform).view()
+	for unit, membersByKey := range sourceMembersByUnit {
+		unitView := *view
+		unitView.sourceUnit = unit
+		for key, members := range membersByKey {
+			membersByKey[key] = semaResolveTypeMembers(&unitView, members)
 		}
-		for fieldKey, field := range members.fields {
-			field.Type = resolveNestedTypeReference(view, members.name, field.Type)
-			members.fields[fieldKey] = field
-		}
-		for methodKey, overloads := range members.methods {
-			for i := range overloads {
-				overloads[i].Type = resolveNestedTypeReference(view, members.name, overloads[i].Type)
-				for j := range overloads[i].Parameters {
-					overloads[i].Parameters[j].Type = resolveNestedTypeReference(view, members.name, overloads[i].Parameters[j].Type)
-				}
-			}
-			members.methods[methodKey] = overloads
-		}
-		for i := range members.constructors {
-			for j := range members.constructors[i].Parameters {
-				members.constructors[i].Parameters[j].Type = resolveNestedTypeReference(view, members.name, members.constructors[i].Parameters[j].Type)
-			}
-		}
-		out[key] = members
+	}
+	for key, members := range out {
+		out[key] = semaResolveTypeMembers(view, members)
 	}
 	model.shortCandidates = buildSemaShortCandidateIndex(out, semaTypeMemberCandidateKeys(index))
 	return model
@@ -1432,6 +1630,15 @@ func semaLocationComponentFieldNames(fieldName string) []string {
 	}
 	base := strings.TrimSuffix(fieldName, "__c")
 	return []string{base + "__Latitude__s", base + "__Longitude__s"}
+}
+
+// Keep schema fields and child relationships separate from a same-named Apex
+// class. Both schema construction paths must choose the same qualified entry.
+func semaObjectMemberStorageName(out map[string]typeMembers, objectName string) string {
+	if members, ok := out[normalizeName(objectName)]; ok && !members.sobject && !semaShouldMergeStandardSObjectMembers(objectName, members) {
+		return "Schema." + objectName
+	}
+	return objectName
 }
 
 func semaStoreSObjectTypeMembers(out map[string]typeMembers, namespace, objectName string, members typeMembers) {
@@ -1724,8 +1931,33 @@ func semaChangeEventBaseObjectName(objectName string) (string, bool) {
 	return "", false
 }
 
-func semaApplyPlatformInterfaceOverlays(model map[string]typeMembers) {
-	semaSetPlatformInterface(model, "Callable", []string{"System.Callable"}, []typesys.MemberSymbol{{
+// Keep the qualified System path separate from a same-named project type. The
+// short entry remains project-owned when present; System.Name always resolves
+// through the immutable platform symbol layer.
+func semaApplyQualifiedSystemTypeAliases(model map[string]typeMembers, platform *semaTypeMemberModel) {
+	for _, name := range []string{
+		"Callable", "Finalizer", "FinalizerContext", "HttpCalloutMock", "HttpRequest", "HttpResponse",
+		"ParentJobResult", "RestContext", "RestRequest", "RestResponse", "Schedulable", "SchedulableContext",
+	} {
+		members, ok := semaPlatformTypeMembers(platform, name)
+		if !ok {
+			continue
+		}
+		members.name = "System." + name
+		members.platform = true
+		if name == "FinalizerContext" {
+			members.kind = apexast.DeclarationInterface
+		}
+		model[normalizeName(members.name)] = members
+		if _, exists := model[normalizeName(name)]; !exists {
+			model[normalizeName(name)] = members
+		}
+	}
+}
+
+func semaApplyPlatformInterfaceOverlays(model map[string]typeMembers, platform *semaTypeMemberModel) {
+	semaApplySecurityInterfaceOverlay(model, platform)
+	semaSetPlatformInterface(model, platform, "Callable", []string{"System.Callable"}, []typesys.MemberSymbol{{
 		Kind: apexast.DeclarationMethod,
 		Name: "call",
 		Type: "Object",
@@ -1734,7 +1966,7 @@ func semaApplyPlatformInterfaceOverlays(model map[string]typeMembers) {
 			{Name: "args", Type: "Map<String,Object>"},
 		},
 	}})
-	semaSetPlatformInterface(model, "StubProvider", []string{"System.StubProvider"}, []typesys.MemberSymbol{{
+	semaSetPlatformInterface(model, platform, "StubProvider", []string{"System.StubProvider"}, []typesys.MemberSymbol{{
 		Kind: apexast.DeclarationMethod,
 		Name: "handleMethodCall",
 		Type: "Object",
@@ -1747,7 +1979,7 @@ func semaApplyPlatformInterfaceOverlays(model map[string]typeMembers) {
 			{Name: "listOfArgs", Type: "List<Object>"},
 		},
 	}})
-	semaSetPlatformInterface(model, "HttpCalloutMock", []string{"System.HttpCalloutMock"}, []typesys.MemberSymbol{{
+	semaSetPlatformInterface(model, platform, "HttpCalloutMock", []string{"System.HttpCalloutMock"}, []typesys.MemberSymbol{{
 		Kind: apexast.DeclarationMethod,
 		Name: "respond",
 		Type: "HttpResponse",
@@ -1757,17 +1989,14 @@ func semaApplyPlatformInterfaceOverlays(model map[string]typeMembers) {
 	}})
 }
 
-func semaSetPlatformInterface(model map[string]typeMembers, name string, aliases []string, methods []typesys.MemberSymbol) {
-	members, ok := model[normalizeName(name)]
+func semaSetPlatformInterface(model map[string]typeMembers, platform *semaTypeMemberModel, name string, aliases []string, methods []typesys.MemberSymbol) {
+	members, ok := semaPlatformTypeMembers(platform, name)
 	if !ok {
-		members = typeMembers{
-			name:     name,
-			shortKey: semaShortTypeKey(name),
-			kind:     apexast.DeclarationInterface,
-			methods:  make(map[string][]typesys.MemberSymbol),
-			fields:   make(map[string]typesys.MemberSymbol),
-		}
+		members = typeMembers{name: name, shortKey: semaShortTypeKey(name), kind: apexast.DeclarationInterface}
 	}
+	members.name = "System." + name
+	members.platform = true
+	members.kind = apexast.DeclarationInterface
 	if members.methods == nil {
 		members.methods = make(map[string][]typesys.MemberSymbol)
 	}
@@ -1783,17 +2012,17 @@ func semaSetPlatformInterface(model map[string]typeMembers, name string, aliases
 			members.methods[key] = append(members.methods[key], method)
 		}
 	}
-	model[normalizeName(name)] = members
 	for _, alias := range aliases {
-		if _, exists := model[normalizeName(alias)]; !exists {
-			model[normalizeName(alias)] = members
-		}
+		model[normalizeName(alias)] = members
+	}
+	if _, exists := model[normalizeName(name)]; !exists {
+		model[normalizeName(name)] = members
 	}
 }
 
-func semaApplyPlatformFieldOverlays(model map[string]typeMembers) {
-	semaSetPlatformField(model, "RestContext", "request", "RestRequest", true)
-	semaSetPlatformField(model, "RestContext", "response", "RestResponse", true)
+func semaApplyPlatformFieldOverlays(model map[string]typeMembers, platform *semaTypeMemberModel) {
+	semaSetPlatformField(model, platform, "RestContext", "request", "RestRequest", true)
+	semaSetPlatformField(model, platform, "RestContext", "response", "RestResponse", true)
 	for _, field := range []struct {
 		name string
 		typ  string
@@ -1806,7 +2035,7 @@ func semaApplyPlatformFieldOverlays(model map[string]typeMembers) {
 		{"requestURI", "String"},
 		{"resourcePath", "String"},
 	} {
-		semaSetPlatformField(model, "RestRequest", field.name, field.typ, false)
+		semaSetPlatformField(model, platform, "RestRequest", field.name, field.typ, false)
 	}
 	for _, field := range []struct {
 		name string
@@ -1816,16 +2045,22 @@ func semaApplyPlatformFieldOverlays(model map[string]typeMembers) {
 		{"responseBody", "Blob"},
 		{"statusCode", "Integer"},
 	} {
-		semaSetPlatformField(model, "RestResponse", field.name, field.typ, false)
+		semaSetPlatformField(model, platform, "RestResponse", field.name, field.typ, false)
 	}
 }
 
-func semaSetPlatformField(model map[string]typeMembers, typeName, fieldName, fieldType string, static bool) {
+func semaSetPlatformField(model map[string]typeMembers, platform *semaTypeMemberModel, typeName, fieldName, fieldType string, static bool) {
 	key := normalizeName(typeName)
-	members, ok := model[key]
+	qualifiedKey := normalizeName("System." + typeName)
+	members, ok := model[qualifiedKey]
+	if !ok {
+		members, ok = semaPlatformTypeMembers(platform, typeName)
+	}
 	if !ok {
 		members = typeMembers{name: typeName, shortKey: semaShortTypeKey(typeName), methods: make(map[string][]typesys.MemberSymbol), fields: make(map[string]typesys.MemberSymbol)}
 	}
+	members.name = "System." + typeName
+	members.platform = true
 	if members.fields == nil {
 		members.fields = make(map[string]typesys.MemberSymbol)
 	}
@@ -1838,7 +2073,17 @@ func semaSetPlatformField(model map[string]typeMembers, typeName, fieldName, fie
 		field.Modifiers = semaWithModifier(field.Modifiers, "static")
 	}
 	members.fields[normalizeName(fieldName)] = field
-	model[key] = members
+	model[qualifiedKey] = members
+	if _, exists := model[key]; !exists {
+		model[key] = members
+	}
+}
+
+func semaPlatformTypeMembers(platform *semaTypeMemberModel, name string) (typeMembers, bool) {
+	if platform == nil {
+		return typeMembers{}, false
+	}
+	return platform.lookup(normalizeName(name))
 }
 
 func semaWithModifier(modifiers []string, modifier string) []string {
@@ -1923,12 +2168,33 @@ func semaAddSObjectProviderMembers(members *typeMembers, provider semaSObjectFie
 			fieldType = "EventBus.ChangeEventHeader"
 		}
 		if fieldType != "" {
-			semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, typesys.MemberSymbol{
+			member := typesys.MemberSymbol{
 				Kind:      apexast.DeclarationField,
 				Name:      field.Name,
 				Type:      fieldType,
 				Modifiers: []string{"public"},
-			})
+			}
+			if strings.TrimSpace(field.Formula) != "" {
+				member.Modifiers = append(member.Modifiers, semaCalculatedFieldModifier)
+			}
+			// SObjectType is a static token on most SObjects, but a small set of
+			// platform objects also exposes an instance String field with the same
+			// case-insensitive name. A project-backed object must retain that
+			// instance field so assignments such as FieldPermissions.SobjectType =
+			// 'Account' use the Salesforce field type.
+			fieldKey := normalizeName(field.Name)
+			if strings.EqualFold(field.Name, "SobjectType") {
+				if existing, exists := members.fields[fieldKey]; exists &&
+					strings.EqualFold(existing.Name, "SObjectType") &&
+					hasModifier(existing.Modifiers, "static") &&
+					hasModifier(existing.Modifiers, semaSyntheticStandardSObjectFieldModifier) {
+					members.fields[fieldKey] = member
+				} else {
+					semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, member)
+				}
+			} else {
+				semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, member)
+			}
 		}
 		if strings.EqualFold(field.Type, "Location") {
 			for _, componentName := range semaLocationComponentFieldNames(field.Name) {
@@ -2308,19 +2574,39 @@ func resolveNestedTypeName(model *semaTypeMemberView, owner, typeName string) st
 	if typeName == "" {
 		return typeName
 	}
+	ownerIsSystem := len(owner) >= len("system.") && strings.EqualFold(owner[:len("system.")], "system.")
+	typeIsSystem := len(typeName) >= len("system.") && strings.EqualFold(typeName[:len("system.")], "system.")
+	if ownerIsSystem || typeIsSystem {
+		canonical := semaCanonicalPlatformAlias(typeName)
+		if semaSystemBuiltinBase(canonical) {
+			return canonical
+		}
+	}
 	if semaShouldPreserveExplicitPlatformType(typeName) {
 		return typeName
 	}
+	if ownerIsSystem {
+		candidate := "System." + typeName
+		if semaExplicitPlatformQualifiedName(candidate) {
+			return candidate
+		}
+	}
 	if strings.Contains(typeName, ".") {
+		// A qualified dependency/member type is already canonical when the model
+		// contains that exact key. Resolve it before trying to qualify it relative
+		// to the owner; otherwise a second member-model pass turns
+		// pkgx.GatewayService into pkgx.pkgx.GatewayService.
+		if _, ok := model.lookupName(typeName); ok {
+			return typeName
+		}
 		if owner != "" {
 			candidate := owner + "." + typeName
 			if _, ok := model.lookupName(candidate); ok {
 				return candidate
 			}
 		}
-		ownerParts := strings.Split(owner, ".")
-		for i := len(ownerParts) - 1; i > 0; i-- {
-			candidate := strings.Join(append(append([]string{}, ownerParts[:i]...), typeName), ".")
+		for end := strings.LastIndexByte(owner, '.'); end >= 0; end = strings.LastIndexByte(owner[:end], '.') {
+			candidate := owner[:end] + "." + typeName
 			if _, ok := model.lookupName(candidate); ok {
 				return candidate
 			}
@@ -2330,8 +2616,8 @@ func resolveNestedTypeName(model *semaTypeMemberView, owner, typeName string) st
 		}
 		return semaCanonicalPlatformAlias(typeName)
 	}
-	ownerParts := strings.Split(owner, ".")
-	if len(ownerParts) > 0 && strings.EqualFold(ownerParts[0], typeName) {
+	firstOwner, _, _ := strings.Cut(owner, ".")
+	if strings.EqualFold(firstOwner, typeName) {
 		return typeName
 	}
 	if semaIsCustomAPIName(typeName) {
@@ -2352,14 +2638,14 @@ func resolveNestedTypeName(model *semaTypeMemberView, owner, typeName string) st
 			return candidate
 		}
 	}
-	for i := len(ownerParts) - 1; i > 0; i-- {
-		candidate := strings.Join(append(append([]string{}, ownerParts[:i]...), typeName), ".")
+	for end := strings.LastIndexByte(owner, '.'); end >= 0; end = strings.LastIndexByte(owner[:end], '.') {
+		candidate := owner[:end] + "." + typeName
 		if _, ok := model.lookupName(candidate); ok {
 			return candidate
 		}
 	}
-	for i := len(ownerParts) - 1; i > 0; i-- {
-		enclosing := strings.Join(ownerParts[:i], ".")
+	for end := strings.LastIndexByte(owner, '.'); end >= 0; end = strings.LastIndexByte(owner[:end], '.') {
+		enclosing := owner[:end]
 		if resolved := resolveNestedTypeNameFromSuperclasses(model, enclosing, typeName); resolved != "" {
 			return resolved
 		}
@@ -2368,6 +2654,18 @@ func resolveNestedTypeName(model *semaTypeMemberView, owner, typeName string) st
 		return resolved
 	}
 	return semaCanonicalPlatformAlias(typeName)
+}
+
+// Built-in values use canonical names in operators and collection signatures.
+// Qualifying platform class identities must not qualify these value types.
+func semaSystemBuiltinBase(typeName string) bool {
+	switch normalizeName(typeName) {
+	case "void", "boolean", "integer", "long", "decimal", "double", "string", "id", "date", "datetime", "time", "blob", "object", "sobject",
+		"list", "set", "map", "iterable", "iterator":
+		return true
+	default:
+		return false
+	}
 }
 
 func resolveNestedTypeNameFromSuperclasses(model *semaTypeMemberView, owner, typeName string) string {
@@ -2412,11 +2710,11 @@ func resolveNestedTypeReference(model *semaTypeMemberView, owner, typeName strin
 	if len(args) == 0 {
 		return resolveNestedTypeName(model, owner, typeName)
 	}
-	resolvedArgs := make([]string, len(args))
+	// semaGenericBaseAndArgs owns this freshly parsed slice.
 	for i, arg := range args {
-		resolvedArgs[i] = resolveNestedTypeReference(model, owner, arg)
+		args[i] = resolveNestedTypeReference(model, owner, arg)
 	}
-	return resolveNestedTypeName(model, owner, base) + "<" + strings.Join(resolvedArgs, ",") + ">"
+	return resolveNestedTypeName(model, owner, base) + "<" + strings.Join(args, ",") + ">"
 }
 
 func buildConstructability(index typesys.Index) map[string]typesys.TypeSymbol {

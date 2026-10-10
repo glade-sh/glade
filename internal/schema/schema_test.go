@@ -25,7 +25,7 @@ func TestLoadProject(t *testing.T) {
 	recordTypePath := filepath.Join(root, "force-app/main/objects/Thing__c/recordTypes/Business.recordType-meta.xml")
 	lowercaseRecordTypePath := filepath.Join(root, "force-app/main/objects/Thing__c/recordTypes/Consumer.recordtype-meta.xml")
 	validationRulePath := filepath.Join(root, "force-app/main/objects/Thing__c/validationRules/Block.validationRule-meta.xml")
-	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label><pluralLabel>Things</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>`)
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label><pluralLabel>Things</pluralLabel><sharingModel>ReadWrite</sharingModel><enableSharing>true</enableSharing></CustomObject>`)
 	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Parent__c</fullName><label>Parent</label><type>Picklist</type><referenceTo>Thing__c</referenceTo><referenceTo>Account</referenceTo><relationshipName>Parent__r</relationshipName><childRelationshipName>Children__r</childRelationshipName><deleteConstraint>Cascade</deleteConstraint><lookupFilter><active>true</active><filterItems><field>Account.Name</field><operation>equals</operation><value>Acme</value></filterItems><isOptional>true</isOptional></lookupFilter><valueSet><valueSetDefinition><value><fullName>Hot</fullName><default>true</default><label>Hot Label</label></value><value><fullName>Cold</fullName><isActive>false</isActive></value></valueSetDefinition></valueSet></CustomField>`)
 	writeFile(t, globalPicklistFieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>State__c</fullName><label>State</label><type>Picklist</type><valueSet><restricted>true</restricted><valueSetName>States</valueSetName></valueSet></CustomField>`)
 	writeFile(t, valueSetPath, `<GlobalValueSet xmlns="http://soap.sforce.com/2006/04/metadata"><customValue><fullName>AL</fullName><default>false</default><label>Alabama</label></customValue><customValue><fullName>PA</fullName><isActive>false</isActive><label>Pennsylvania</label></customValue></GlobalValueSet>`)
@@ -45,6 +45,9 @@ func TestLoadProject(t *testing.T) {
 	}
 	if s.Objects[0].Partial {
 		t.Fatalf("object metadata-backed object marked partial: %#v", s.Objects[0])
+	}
+	if !s.Objects[0].EnableSharing {
+		t.Fatalf("enable sharing was not preserved: %#v", s.Objects[0])
 	}
 	if len(s.Objects[0].Fields) != 5 {
 		t.Fatalf("fields = %#v", s.Objects[0].Fields)
@@ -74,6 +77,9 @@ func TestLoadProject(t *testing.T) {
 	}
 	if !parent.FilteredLookupInfo.OptionalFilter || !parent.FilteredLookupInfo.Dependent || len(parent.FilteredLookupInfo.ControllingFields) != 1 || parent.FilteredLookupInfo.ControllingFields[0] != "Account.Name" {
 		t.Fatalf("filtered lookup info = %#v", parent.FilteredLookupInfo)
+	}
+	if !parent.FilteredLookupInfo.Active || len(parent.FilteredLookupInfo.FilterItems) != 1 || parent.FilteredLookupInfo.FilterItems[0].Operation != "equals" || parent.FilteredLookupInfo.FilterItems[0].Value != "Acme" {
+		t.Fatalf("executable lookup criteria = %#v", parent.FilteredLookupInfo)
 	}
 	values := parent.PicklistValues
 	if len(values) != 2 || values[0].FullName != "Hot" || !values[0].Default || !values[0].Active || values[0].Label != "Hot Label" {
@@ -105,6 +111,20 @@ func TestLoadProject(t *testing.T) {
 	rules := s.Objects[0].ValidationRules
 	if len(rules) != 1 || rules[0].Name != "Block" || !rules[0].Active || rules[0].ErrorMessage != `blocked by "rule" and 'apostrophe'` || rules[0].ErrorDisplayField != "Parent__c" {
 		t.Fatalf("validation rules = %#v", rules)
+	}
+}
+
+func TestLoadObjectPreservesExplicitTextNameFieldLength(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "force-app/main/objects/ExplicitName__c/ExplicitName__c.object-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Explicit Name</label><pluralLabel>Explicit Names</pluralLabel><nameField><label>Explicit Text Name</label><type>Text</type><length>40</length></nameField></CustomObject>`)
+
+	object, err := loadObject(objectPath, project.Project{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := object.NameField.Length; got != 40 {
+		t.Fatalf("name field length = %d, want 40", got)
 	}
 }
 
@@ -163,7 +183,7 @@ func TestLoadProjectInfersMissingReferencedCustomObjects(t *testing.T) {
 	objectPath := filepath.Join(root, "force-app/main/objects/Line__c/Line__c.object-meta.xml")
 	fieldPath := filepath.Join(root, "force-app/main/objects/Line__c/fields/ManagedCart__c.field-meta.xml")
 	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Line</label></CustomObject>`)
-	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>ManagedCart__c</fullName><label>Managed Cart</label><type>Lookup</type><referenceTo>pkg__CartItemLine__c</referenceTo><referenceTo>Account</referenceTo><relationshipName>ManagedCart__r</relationshipName></CustomField>`)
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>ManagedCart__c</fullName><label>Managed Cart</label><type>Lookup</type><referenceTo>pkg__BasketLine__c</referenceTo><referenceTo>Account</referenceTo><relationshipName>ManagedCart__r</relationshipName></CustomField>`)
 
 	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}})
 	if err != nil {
@@ -174,7 +194,7 @@ func TestLoadProjectInfersMissingReferencedCustomObjects(t *testing.T) {
 	if _, ok := objects["Line__c"]; !ok {
 		t.Fatalf("missing local object: %#v", s.Objects)
 	}
-	if inferred, ok := objects["pkg__CartItemLine__c"]; !ok || len(inferred.Fields) != 0 {
+	if inferred, ok := objects["pkg__BasketLine__c"]; !ok || len(inferred.Fields) != 0 {
 		t.Fatalf("missing inferred managed package object: %#v", s.Objects)
 	}
 	if _, ok := objects["Account"]; ok {
@@ -562,5 +582,24 @@ func TestLoadProjectUsesPinnedSchemaSnapshot(t *testing.T) {
 				t.Fatal("expected incomplete snapshot binding error")
 			}
 		})
+	}
+}
+
+func TestLoadProjectPreservesLookupFilterPaths(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "objects/Child__c/Child__c.object-meta.xml")
+	fieldPath := filepath.Join(root, "objects/Child__c/fields/Target__c.field-meta.xml")
+	writeFile(t, objectPath, `<CustomObject><label>Child</label></CustomObject>`)
+	writeFile(t, fieldPath, `<CustomField><fullName>Target__c</fullName><type>Lookup</type><referenceTo>Target__c</referenceTo><lookupFilter><active>true</active><booleanFilter>1 OR 2</booleanFilter><errorMessage>Target is inactive</errorMessage><filterItems><field>Target__c.Active__c</field><operation>equals</operation><value>True</value></filterItems><filterItems><field>$Source.Payment__c</field><operation>notEqual</operation><value/></filterItems><isOptional>false</isOptional></lookupFilter></CustomField>`)
+	loaded, err := LoadProject(project.Project{Namespace: "pkg", ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	info := objectsByName(loaded.Objects)["pkg__Child__c"].Fields[0].FilteredLookupInfo
+	if !info.Active || info.OptionalFilter || info.BooleanFilter != "1 OR 2" || info.ErrorMessage != "Target is inactive" || len(info.FilterItems) != 2 {
+		t.Fatalf("criteria = %#v", info)
+	}
+	if info.FilterItems[0].Field != "pkg__Target__c.pkg__Active__c" || info.FilterItems[1].Field != "$Source.pkg__Payment__c" || info.FilterItems[1].Value != "" {
+		t.Fatalf("criteria paths/literal = %#v", info.FilterItems)
 	}
 }

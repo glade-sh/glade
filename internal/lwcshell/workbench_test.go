@@ -7,7 +7,53 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/storage"
 )
+
+func TestL11TabNavigationMetadataScope(t *testing.T) {
+	root := t.TempDir()
+	var paths []string
+	for _, tab := range []struct{ name, source string }{
+		{"Native_Tab", `<label>Native tab</label><lwcComponent>c:nativeProbe</lwcComponent><motif>Custom1: Heart</motif>`},
+		{"Other_Tab", `<label>Other tab</label><lwcComponent>c:otherProbe</lwcComponent><motif>Custom2: Fan</motif>`},
+		{"Object_Tab", `<label>Object tab</label><customObject>true</customObject><sobjectName>Account</sobjectName><motif>Custom1: Heart</motif>`},
+	} {
+		paths = append(paths, writeProjectFile(t, root, "force-app/main/default/tabs/"+tab.name+".tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">`+tab.source+`</CustomTab>`))
+	}
+	p := project.Project{Root: root, TabFiles: paths}
+	registry := storage.MetadataRegistry{Tabs: []storage.TabMetadata{
+		{Name: "Native_Tab", NavigationIdentity: "0Rb000000000042"},
+		{Name: "Unrelated_Tab", NavigationIdentity: "0Rb000000000043"},
+		{Name: "Object_Tab", SObjectName: "Account", NavigationIdentity: "0Rb000000000044"},
+	}}
+	model := BuildWorkbenchModel(p, ShellPage{}, "/lwc", registry)
+	routes := map[string]ShellRoute{}
+	for _, route := range model.Routes {
+		if route.Kind == RenderTargetTab {
+			routes[route.TabName] = route
+		}
+	}
+	if len(routes) != 3 {
+		t.Fatalf("tab routes = %#v", routes)
+	}
+	native := routes["Native_Tab"]
+	if native.ItemType != "TabAura" || native.ObjectName != "0Rb000000000042" || native.Color != "ff7b84" || native.Content != native.URL || native.Content != "/lwc/preview/tab/Native_Tab" || native.IconURL != "/assets/icons/custom-sprite/svg/symbols.svg#custom1" {
+		t.Fatalf("native tab navigation = %#v", native)
+	}
+	other := routes["Other_Tab"]
+	if other.ItemType != "TabAura" || other.Content != other.URL || other.Color != "" || other.IconURL != "" || other.ObjectName != "" {
+		t.Fatalf("unrelated LWC tab navigation = %#v", other)
+	}
+	object := routes["Object_Tab"]
+	if object.ItemType != "" || object.Content != "" || object.Color != "" || object.IconURL != "" || object.ObjectName != "" {
+		t.Fatalf("object tab received LWC navigation metadata: %#v", object)
+	}
+	for _, route := range DiscoverShellRoutes(p) {
+		if route.Kind == RenderTargetTab && route.ObjectName != "" {
+			t.Fatalf("unseeded tab acquired navigation identity: %#v", route)
+		}
+	}
+}
 
 func TestBuildWorkbenchModelUsesCustomApplicationNavigation(t *testing.T) {
 	root := t.TempDir()

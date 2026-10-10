@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>FamilyL11Temp_59_0_r_updateList_nested_dto</fullName><columns>NAME</columns><columns>Sort__c</columns><filterScope>Everything</filterScope><filters><field>NAME</field><operation>startsWith</operation><value>L11 </value></filters><label>L11 temporary</label></ListView>

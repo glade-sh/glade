@@ -1,0 +1,2130 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "Declarations": {
+    "SR": "public class SR {\n public String keys(SObject row) {\n  List<String> xs=new List<String>(row.getPopulatedFieldsAsMap().keySet());\n  xs.sort(); return String.join(xs,'|');\n }\n public String childNames(List<Contact> rows) {\n  List<String> xs=new List<String>();\n  for(Contact row:rows) xs.add(row.LastName);\n  return String.join(xs,'|');\n }\n public String names(List<SObject> rows,String field) {\n  List<String> xs=new List<String>();\n  for(SObject row:rows) xs.add(String.valueOf(row.get(field)));\n  return String.join(xs,'|');\n }\n public String kind(SObject row) {\n  return row==null?'null':String.valueOf(row.getSObjectType());\n }\n}"
+  },
+  "Prelude": "\n\nSR sr=new SR();\nString marker='A32-oracle-20261004';\nString dealMarker=marker+'-Deal';\ndelete [SELECT Id FROM Task WHERE Subject=:marker];\ndelete [SELECT Id FROM Opportunity WHERE Name=:dealMarker];\ndelete [SELECT Id FROM Contact WHERE Department=:marker];\ndelete [SELECT Id FROM Lead WHERE Company=:marker];\ndelete [SELECT Id FROM Account WHERE AccountNumber=:marker];\nList<Account> accounts=new List<Account>{\n new Account(Name='Root',AccountNumber=marker,Phone='100',AnnualRevenue=10,NumberOfEmployees=1),\n new Account(Name='Branch',AccountNumber=marker,Phone=null,AnnualRevenue=null,NumberOfEmployees=2),\n new Account(Name='Leaf',AccountNumber=marker,Phone='300',AnnualRevenue=30,NumberOfEmployees=null),\n new Account(Name='Empty',AccountNumber=marker)\n};\ninsert accounts;\naccounts[1].ParentId=accounts[0].Id;\naccounts[2].ParentId=accounts[1].Id;\nupdate accounts;\nSet<Id> aids=new Map<Id,Account>(accounts).keySet();\nList<Contact> contacts=new List<Contact>{\n new Contact(LastName='Able',Department=marker,AccountId=accounts[0].Id,Email='able@example.invalid'),\n new Contact(LastName='Baker',Department=marker,AccountId=accounts[0].Id),\n new Contact(LastName='Child',Department=marker,AccountId=accounts[1].Id),\n new Contact(LastName='Orphan',Department=marker)\n};\ninsert contacts;\ncontacts[1].ReportsToId=contacts[0].Id;\ncontacts[2].ReportsToId=contacts[1].Id;\nupdate contacts;\nSet<Id> cids=new Map<Id,Contact>(contacts).keySet();\nString stage;\nfor(Schema.PicklistEntry entry:Opportunity.StageName.getDescribe().getPicklistValues()){\n if(entry.isActive()){stage=entry.getValue();break;}\n}\nOpportunity deal=new Opportunity(Name=dealMarker,Description=marker,AccountId=accounts[0].Id,\n StageName=stage,CloseDate=Date.newInstance(2030,1,1),Amount=12.5);\ninsert deal;\nLead lead=new Lead(LastName='Prospect',Company=marker);\ninsert lead;\nList<Task> tasks=new List<Task>{\n new Task(Subject=marker,WhatId=accounts[0].Id,WhoId=contacts[0].Id),\n new Task(Subject=marker,WhatId=deal.Id,WhoId=contacts[1].Id),\n new Task(Subject=marker,WhoId=lead.Id),\n new Task(Subject=marker)\n};\ninsert tasks;\nSet<Id> tids=new Map<Id,Task>(tasks).keySet();\n",
+  "Cases": [
+    {
+      "ID": "R001",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.Account.Name;",
+      "Expected": "Root",
+      "Compile": false
+    },
+    {
+      "ID": "R002",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.AccountId==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R003",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.getSObject('Account')==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R004",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.Account?.Phone;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone",
+      "Compile": false
+    },
+    {
+      "ID": "R005",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=sr.keys(x);",
+      "Expected": "Account|AccountId|Id",
+      "Compile": false
+    },
+    {
+      "ID": "R006",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.Account.Name;",
+      "Expected": "Root",
+      "Compile": false
+    },
+    {
+      "ID": "R007",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.AccountId==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R008",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.getSObject('Account')==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R009",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.Account?.Phone;",
+      "Expected": "100",
+      "Compile": false
+    },
+    {
+      "ID": "R010",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=sr.keys(x);",
+      "Expected": "Account|AccountId|Id",
+      "Compile": false
+    },
+    {
+      "ID": "R011",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.Account.Name;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "Compile": false
+    },
+    {
+      "ID": "R012",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.AccountId==null;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.AccountId",
+      "Compile": false
+    },
+    {
+      "ID": "R013",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.getSObject('Account')==null;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "Compile": false
+    },
+    {
+      "ID": "R014",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.Account?.Phone;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "Compile": false
+    },
+    {
+      "ID": "R015",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=sr.keys(x);",
+      "Expected": "Id|LastName",
+      "Compile": false
+    },
+    {
+      "ID": "R016",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.Account.Name;",
+      "Expected": "Branch",
+      "Compile": false
+    },
+    {
+      "ID": "R017",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.AccountId==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R018",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.getSObject('Account')==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R019",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.Account?.Phone;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone",
+      "Compile": false
+    },
+    {
+      "ID": "R020",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=sr.keys(x);",
+      "Expected": "Account|AccountId|Id",
+      "Compile": false
+    },
+    {
+      "ID": "R021",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.Account.Name;",
+      "Expected": "Branch",
+      "Compile": false
+    },
+    {
+      "ID": "R022",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.AccountId==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R023",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.getSObject('Account')==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R024",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.Account?.Phone;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R025",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=sr.keys(x);",
+      "Expected": "Account|AccountId|Id",
+      "Compile": false
+    },
+    {
+      "ID": "R026",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.Account.Name;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "Compile": false
+    },
+    {
+      "ID": "R027",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.AccountId==null;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.AccountId",
+      "Compile": false
+    },
+    {
+      "ID": "R028",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.getSObject('Account')==null;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "Compile": false
+    },
+    {
+      "ID": "R029",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.Account?.Phone;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "Compile": false
+    },
+    {
+      "ID": "R030",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=sr.keys(x);",
+      "Expected": "Id|LastName",
+      "Compile": false
+    },
+    {
+      "ID": "R031",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.Account.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R032",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.AccountId==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R033",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.getSObject('Account')==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R034",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.Account?.Phone;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R035",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=sr.keys(x);",
+      "Expected": "Id",
+      "Compile": false
+    },
+    {
+      "ID": "R036",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.Account.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R037",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.AccountId==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R038",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.getSObject('Account')==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R039",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=x.Account?.Phone;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R040",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,AccountId,Account.Name,Account.Phone FROM Contact WHERE Id=:cid]; r=sr.keys(x);",
+      "Expected": "Id",
+      "Compile": false
+    },
+    {
+      "ID": "R041",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.Account.Name;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "Compile": false
+    },
+    {
+      "ID": "R042",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.AccountId==null;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.AccountId",
+      "Compile": false
+    },
+    {
+      "ID": "R043",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.getSObject('Account')==null;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "Compile": false
+    },
+    {
+      "ID": "R044",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=x.Account?.Phone;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "Compile": false
+    },
+    {
+      "ID": "R045",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,LastName FROM Contact WHERE Id=:cid]; r=sr.keys(x);",
+      "Expected": "Id|LastName",
+      "Compile": false
+    },
+    {
+      "ID": "R046",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R047",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Parent?.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R048",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Parent?.Parent?.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R049",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.ParentId==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R050",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Phone;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R051",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent.Name;",
+      "Expected": "Root",
+      "Compile": false
+    },
+    {
+      "ID": "R052",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Parent?.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R053",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Parent?.Parent?.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R054",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.ParentId==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R055",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Phone;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone",
+      "Compile": false
+    },
+    {
+      "ID": "R056",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent.Name;",
+      "Expected": "Branch",
+      "Compile": false
+    },
+    {
+      "ID": "R057",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Parent?.Name;",
+      "Expected": "Root",
+      "Compile": false
+    },
+    {
+      "ID": "R058",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Parent?.Parent?.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R059",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.ParentId==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R060",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Phone;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone",
+      "Compile": false
+    },
+    {
+      "ID": "R061",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R062",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Parent?.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R063",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Parent?.Parent?.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R064",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.ParentId==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R065",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,ParentId,Parent.Name,Parent.Parent.Name,Parent.Parent.Parent.Name FROM Account WHERE Id=:aid]; r=x.Parent?.Phone;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R066",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsTo?.LastName;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R067",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsTo?.ReportsTo?.LastName;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R068",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsToId==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R069",
+      "Code": "Id cid=contacts[1].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsTo?.LastName;",
+      "Expected": "Able",
+      "Compile": false
+    },
+    {
+      "ID": "R070",
+      "Code": "Id cid=contacts[1].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsTo?.ReportsTo?.LastName;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R071",
+      "Code": "Id cid=contacts[1].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsToId==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R072",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsTo?.LastName;",
+      "Expected": "Baker",
+      "Compile": false
+    },
+    {
+      "ID": "R073",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsTo?.ReportsTo?.LastName;",
+      "Expected": "Able",
+      "Compile": false
+    },
+    {
+      "ID": "R074",
+      "Code": "Id cid=contacts[2].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsToId==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R075",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsTo?.LastName;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R076",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsTo?.ReportsTo?.LastName;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R077",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,ReportsToId,ReportsTo.LastName,ReportsTo.ReportsTo.LastName FROM Contact WHERE Id=:cid]; r=x.ReportsToId==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R078",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids AND Account.Name = \\'Root\\' ORDER BY LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Able|Baker",
+      "Compile": false
+    },
+    {
+      "ID": "R079",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids AND Account.Name = null ORDER BY LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Orphan",
+      "Compile": false
+    },
+    {
+      "ID": "R080",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids AND AccountId = null ORDER BY LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Orphan",
+      "Compile": false
+    },
+    {
+      "ID": "R081",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids AND Account.Phone = null ORDER BY LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Child|Orphan",
+      "Compile": false
+    },
+    {
+      "ID": "R082",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids AND Account.Parent.Name = \\'Root\\' ORDER BY LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Child",
+      "Compile": false
+    },
+    {
+      "ID": "R083",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids AND Account.ParentId = null ORDER BY LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Able|Baker|Orphan",
+      "Compile": false
+    },
+    {
+      "ID": "R084",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids AND ReportsTo.LastName = \\'Able\\' ORDER BY LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Baker",
+      "Compile": false
+    },
+    {
+      "ID": "R085",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids AND ReportsTo.ReportsTo.LastName = \\'Able\\' ORDER BY LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Child",
+      "Compile": false
+    },
+    {
+      "ID": "R086",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids ORDER BY Account.Name ASC NULLS FIRST,LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Orphan|Child|Able|Baker",
+      "Compile": false
+    },
+    {
+      "ID": "R087",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids ORDER BY Account.Name ASC NULLS LAST,LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Child|Able|Baker|Orphan",
+      "Compile": false
+    },
+    {
+      "ID": "R088",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids ORDER BY Account.Name DESC NULLS FIRST,LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Orphan|Able|Baker|Child",
+      "Compile": false
+    },
+    {
+      "ID": "R089",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,LastName FROM Contact WHERE Id IN :cids ORDER BY Account.Name DESC NULLS LAST,LastName'); r=sr.names(rows,'LastName');",
+      "Expected": "Able|Baker|Child|Orphan",
+      "Compile": false
+    },
+    {
+      "ID": "R090",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "2|Able|Baker",
+      "Compile": false
+    },
+    {
+      "ID": "R091",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName DESC) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "2|Baker|Able",
+      "Compile": false
+    },
+    {
+      "ID": "R092",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "1|Able",
+      "Compile": false
+    },
+    {
+      "ID": "R093",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 0) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R094",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts WHERE Email != null ORDER BY LastName) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "1|Able",
+      "Compile": false
+    },
+    {
+      "ID": "R095",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1 OFFSET 1) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "COMPILE_ERROR\tline 117: SOQL OFFSET clause may not appear in a sub-query where the parent query retrieves more than one record",
+      "Compile": true,
+      "NativeLine": 117,
+      "RuntimeCompile": true
+    },
+    {
+      "ID": "R096",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "1|Child",
+      "Compile": false
+    },
+    {
+      "ID": "R097",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName DESC) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "1|Child",
+      "Compile": false
+    },
+    {
+      "ID": "R098",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "1|Child",
+      "Compile": false
+    },
+    {
+      "ID": "R099",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 0) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R100",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts WHERE Email != null ORDER BY LastName) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R101",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1 OFFSET 1) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "COMPILE_ERROR\tline 73: SOQL OFFSET clause may not appear in a sub-query where the parent query retrieves more than one record",
+      "Compile": true,
+      "NativeLine": 73,
+      "RuntimeCompile": true
+    },
+    {
+      "ID": "R102",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R103",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName DESC) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R104",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R105",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 0) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R106",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts WHERE Email != null ORDER BY LastName) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R107",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1 OFFSET 1) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "COMPILE_ERROR\tline 78: SOQL OFFSET clause may not appear in a sub-query where the parent query retrieves more than one record",
+      "Compile": true,
+      "NativeLine": 78,
+      "RuntimeCompile": true
+    },
+    {
+      "ID": "R108",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R109",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName DESC) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R110",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R111",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 0) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R112",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts WHERE Email != null ORDER BY LastName) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R113",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1 OFFSET 1) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "COMPILE_ERROR\tline 83: SOQL OFFSET clause may not appear in a sub-query where the parent query retrieves more than one record",
+      "Compile": true,
+      "NativeLine": 83,
+      "RuntimeCompile": true
+    },
+    {
+      "ID": "R114",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.Contacts.isEmpty();",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R115",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.getSObjects('Contacts').size();",
+      "Expected": "2",
+      "Compile": false
+    },
+    {
+      "ID": "R116",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.Contacts[0].LastName;",
+      "Expected": "Able",
+      "Compile": false
+    },
+    {
+      "ID": "R117",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=sr.keys(x);",
+      "Expected": "Contacts|Id",
+      "Compile": false
+    },
+    {
+      "ID": "R118",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.isSet('Contacts');",
+      "Expected": "EXC|System.SObjectException|Invalid field: Contacts",
+      "Compile": false
+    },
+    {
+      "ID": "R119",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.Contacts[0].Email;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Email",
+      "Compile": false
+    },
+    {
+      "ID": "R120",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.Contacts[0].AccountId==x.Id;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R121",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.Contacts[0].Account.Name;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Contact.Account",
+      "Compile": false
+    },
+    {
+      "ID": "R122",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.Contacts.isEmpty();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R123",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.getSObjects('Contacts').size();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false
+    },
+    {
+      "ID": "R124",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.Contacts[0].LastName;",
+      "Expected": "EXC|System.ListException|List index out of bounds: 0",
+      "Compile": false
+    },
+    {
+      "ID": "R125",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=sr.keys(x);",
+      "Expected": "Id",
+      "Compile": false
+    },
+    {
+      "ID": "R126",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.isSet('Contacts');",
+      "Expected": "EXC|System.SObjectException|Invalid field: Contacts",
+      "Compile": false
+    },
+    {
+      "ID": "R127",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.Contacts[0].Email;",
+      "Expected": "EXC|System.ListException|List index out of bounds: 0",
+      "Compile": false
+    },
+    {
+      "ID": "R128",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.Contacts[0].AccountId==x.Id;",
+      "Expected": "EXC|System.ListException|List index out of bounds: 0",
+      "Compile": false
+    },
+    {
+      "ID": "R129",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName,AccountId FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.Contacts[0].Account.Name;",
+      "Expected": "EXC|System.ListException|List index out of bounds: 0",
+      "Compile": false
+    },
+    {
+      "ID": "R130",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,Name FROM ChildAccounts) FROM Account WHERE Id=:aid]; r=sr.names(x.ChildAccounts,'Name');",
+      "Expected": "Branch",
+      "Compile": false
+    },
+    {
+      "ID": "R131",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,Name FROM ChildAccounts WHERE Phone != null) FROM Account WHERE Id=:aid]; r=sr.names(x.ChildAccounts,'Name');",
+      "Expected": "",
+      "Compile": false
+    },
+    {
+      "ID": "R132",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,Name FROM ChildAccounts ORDER BY Name DESC) FROM Account WHERE Id=:aid]; r=sr.names(x.ChildAccounts,'Name');",
+      "Expected": "Branch",
+      "Compile": false
+    },
+    {
+      "ID": "R133",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,Name FROM ChildAccounts ORDER BY Name LIMIT 1) FROM Account WHERE Id=:aid]; r=sr.names(x.ChildAccounts,'Name');",
+      "Expected": "Branch",
+      "Compile": false
+    },
+    {
+      "ID": "R134",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts),(SELECT Id,Name FROM Opportunities) FROM Account WHERE Id=:aid]; r=String.valueOf(x.Contacts.size())+'|'+x.Opportunities.size();",
+      "Expected": "2|1",
+      "Compile": false
+    },
+    {
+      "ID": "R135",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName,Account.Name FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=x.Contacts[0].Account.Name;",
+      "Expected": "Root",
+      "Compile": false
+    },
+    {
+      "ID": "R136",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; r=sr.childNames(x.Contacts);",
+      "Expected": "Child",
+      "Compile": false
+    },
+    {
+      "ID": "R137",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id FROM Account WHERE Id=:aid]; r=x.Contacts.size();",
+      "Expected": "0",
+      "Compile": false
+    },
+    {
+      "ID": "R138",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id FROM Account WHERE Id=:aid]; r=x.getSObjects('Contacts');",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Contacts",
+      "Compile": false
+    },
+    {
+      "ID": "R139",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; Integer n=0; for(Contact child:x.Contacts){n++;} r=n;",
+      "Expected": "2",
+      "Compile": false
+    },
+    {
+      "ID": "R140",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; List<SObject> ys=x.getSObjects('Contacts'); r=(ys[0] instanceof Contact);",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R141",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName) FROM Account WHERE Id=:aid]; Contact child=x.Contacts[0]; child.LastName='Changed'; r=x.Contacts[0].LastName;",
+      "Expected": "Changed",
+      "Compile": false
+    },
+    {
+      "ID": "R142",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=sr.kind(x.getSObject('What'));",
+      "Expected": "Account",
+      "Compile": false
+    },
+    {
+      "ID": "R143",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.WhatId==tasks[0].WhatId;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R144",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.getSObject('What')==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R145",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.What?.Name;",
+      "Expected": "Root",
+      "Compile": false
+    },
+    {
+      "ID": "R146",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.getSObject('What')==null?'null':sr.keys(x.getSObject('What'));",
+      "Expected": "Id|Name|Phone",
+      "Compile": false
+    },
+    {
+      "ID": "R147",
+      "Code": "Id tid=tasks[1].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=sr.kind(x.getSObject('What'));",
+      "Expected": "Opportunity",
+      "Compile": false
+    },
+    {
+      "ID": "R148",
+      "Code": "Id tid=tasks[1].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.WhatId==tasks[1].WhatId;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R149",
+      "Code": "Id tid=tasks[1].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.getSObject('What')==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R150",
+      "Code": "Id tid=tasks[1].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.What?.Name;",
+      "Expected": "A32-oracle-20261004-Deal",
+      "Compile": false
+    },
+    {
+      "ID": "R151",
+      "Code": "Id tid=tasks[1].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.getSObject('What')==null?'null':sr.keys(x.getSObject('What'));",
+      "Expected": "Amount|Id|Name",
+      "Compile": false
+    },
+    {
+      "ID": "R152",
+      "Code": "Id tid=tasks[2].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=sr.kind(x.getSObject('What'));",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R153",
+      "Code": "Id tid=tasks[2].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.WhatId==tasks[2].WhatId;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R154",
+      "Code": "Id tid=tasks[2].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.getSObject('What')==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R155",
+      "Code": "Id tid=tasks[2].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.What?.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R156",
+      "Code": "Id tid=tasks[2].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.getSObject('What')==null?'null':sr.keys(x.getSObject('What'));",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R157",
+      "Code": "Id tid=tasks[3].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=sr.kind(x.getSObject('What'));",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R158",
+      "Code": "Id tid=tasks[3].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.WhatId==tasks[3].WhatId;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R159",
+      "Code": "Id tid=tasks[3].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.getSObject('What')==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R160",
+      "Code": "Id tid=tasks[3].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.What?.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R161",
+      "Code": "Id tid=tasks[3].Id; Task x=[SELECT Id,WhatId,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount ELSE Name END FROM Task WHERE Id=:tid]; r=x.getSObject('What')==null?'null':sr.keys(x.getSObject('What'));",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R162",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount END FROM Task WHERE Id=:tid]; r=((Account)x.getSObject('What')).Phone;",
+      "Expected": "100",
+      "Compile": false
+    },
+    {
+      "ID": "R163",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount END FROM Task WHERE Id=:tid]; r=((Opportunity)x.getSObject('What')).Amount;",
+      "Expected": "EXC|System.TypeException|Invalid conversion from runtime type Account to Opportunity",
+      "Compile": false
+    },
+    {
+      "ID": "R164",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount END FROM Task WHERE Id=:tid]; r=x.getSObject('What') instanceof Account;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R165",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount END FROM Task WHERE Id=:tid]; r=x.getSObject('What') instanceof Opportunity;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R166",
+      "Code": "Id tid=tasks[1].Id; Task x=[SELECT Id,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount END FROM Task WHERE Id=:tid]; r=((Account)x.getSObject('What')).Phone;",
+      "Expected": "EXC|System.TypeException|Invalid conversion from runtime type Opportunity to Account",
+      "Compile": false
+    },
+    {
+      "ID": "R167",
+      "Code": "Id tid=tasks[1].Id; Task x=[SELECT Id,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount END FROM Task WHERE Id=:tid]; r=((Opportunity)x.getSObject('What')).Amount;",
+      "Expected": "12.50",
+      "Compile": false
+    },
+    {
+      "ID": "R168",
+      "Code": "Id tid=tasks[1].Id; Task x=[SELECT Id,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount END FROM Task WHERE Id=:tid]; r=x.getSObject('What') instanceof Account;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R169",
+      "Code": "Id tid=tasks[1].Id; Task x=[SELECT Id,TYPEOF What WHEN Account THEN Name,Phone WHEN Opportunity THEN Name,Amount END FROM Task WHERE Id=:tid]; r=x.getSObject('What') instanceof Opportunity;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R170",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,WhoId,TYPEOF Who WHEN Contact THEN Name,LastName WHEN Lead THEN Name,Company ELSE Name END FROM Task WHERE Id=:tid]; r=sr.kind(x.getSObject('Who'));",
+      "Expected": "Contact",
+      "Compile": false
+    },
+    {
+      "ID": "R171",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,WhoId,TYPEOF Who WHEN Contact THEN Name,LastName WHEN Lead THEN Name,Company ELSE Name END FROM Task WHERE Id=:tid]; r=x.Who?.Name;",
+      "Expected": "Able",
+      "Compile": false
+    },
+    {
+      "ID": "R172",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,WhoId,TYPEOF Who WHEN Contact THEN Name,LastName WHEN Lead THEN Name,Company ELSE Name END FROM Task WHERE Id=:tid]; r=x.WhoId==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R173",
+      "Code": "Id tid=tasks[2].Id; Task x=[SELECT Id,WhoId,TYPEOF Who WHEN Contact THEN Name,LastName WHEN Lead THEN Name,Company ELSE Name END FROM Task WHERE Id=:tid]; r=sr.kind(x.getSObject('Who'));",
+      "Expected": "Lead",
+      "Compile": false
+    },
+    {
+      "ID": "R174",
+      "Code": "Id tid=tasks[2].Id; Task x=[SELECT Id,WhoId,TYPEOF Who WHEN Contact THEN Name,LastName WHEN Lead THEN Name,Company ELSE Name END FROM Task WHERE Id=:tid]; r=x.Who?.Name;",
+      "Expected": "Prospect",
+      "Compile": false
+    },
+    {
+      "ID": "R175",
+      "Code": "Id tid=tasks[2].Id; Task x=[SELECT Id,WhoId,TYPEOF Who WHEN Contact THEN Name,LastName WHEN Lead THEN Name,Company ELSE Name END FROM Task WHERE Id=:tid]; r=x.WhoId==null;",
+      "Expected": "false",
+      "Compile": false
+    },
+    {
+      "ID": "R176",
+      "Code": "Id tid=tasks[3].Id; Task x=[SELECT Id,WhoId,TYPEOF Who WHEN Contact THEN Name,LastName WHEN Lead THEN Name,Company ELSE Name END FROM Task WHERE Id=:tid]; r=sr.kind(x.getSObject('Who'));",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": false
+    },
+    {
+      "ID": "R177",
+      "Code": "Id tid=tasks[3].Id; Task x=[SELECT Id,WhoId,TYPEOF Who WHEN Contact THEN Name,LastName WHEN Lead THEN Name,Company ELSE Name END FROM Task WHERE Id=:tid]; r=x.Who?.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R178",
+      "Code": "Id tid=tasks[3].Id; Task x=[SELECT Id,WhoId,TYPEOF Who WHEN Contact THEN Name,LastName WHEN Lead THEN Name,Company ELSE Name END FROM Task WHERE Id=:tid]; r=x.WhoId==null;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R179",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,TYPEOF What WHEN Account THEN Name END FROM Task WHERE Id IN :tids'); r=rows.size();",
+      "Expected": "4",
+      "Compile": false
+    },
+    {
+      "ID": "R180",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,TYPEOF What WHEN Opportunity THEN Amount ELSE Name END FROM Task WHERE Id IN :tids'); r=rows.size();",
+      "Expected": "4",
+      "Compile": false
+    },
+    {
+      "ID": "R181",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,TYPEOF What WHEN Opportunity THEN Amount WHEN Account THEN Phone END FROM Task WHERE Id IN :tids'); r=rows.size();",
+      "Expected": "4",
+      "Compile": false
+    },
+    {
+      "ID": "R182",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,TYPEOF What WHEN Account THEN Name END,TYPEOF Who WHEN Contact THEN LastName WHEN Lead THEN Company END FROM Task WHERE Id IN :tids'); r=rows.size();",
+      "Expected": "4",
+      "Compile": false
+    },
+    {
+      "ID": "R183",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,TYPEOF What WHEN Account THEN Name END FROM Task WHERE Id IN :tids AND What.Type = \\'Account\\''); r=rows.size();",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R184",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,TYPEOF What WHEN Account THEN Name END FROM Task WHERE Id IN :tids AND What.Type = \\'Opportunity\\''); r=rows.size();",
+      "Expected": "1",
+      "Compile": false
+    },
+    {
+      "ID": "R185",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,TYPEOF What WHEN Account THEN Name END FROM Task WHERE Id IN :tids AND WhatId = null'); r=rows.size();",
+      "Expected": "2",
+      "Compile": false
+    },
+    {
+      "ID": "R186",
+      "Code": "Id tid=tasks[0].Id; Task x=[SELECT Id,What.Name,What.Type,Who.Name,Who.Type FROM Task WHERE Id=:tid]; r=String.valueOf(x.What?.Name)+'|'+x.What?.Type+'|'+x.Who?.Name+'|'+x.Who?.Type;",
+      "Expected": "Root|Account|Able|Contact",
+      "Compile": false
+    },
+    {
+      "ID": "R187",
+      "Code": "Id tid=tasks[1].Id; Task x=[SELECT Id,What.Name,What.Type,Who.Name,Who.Type FROM Task WHERE Id=:tid]; r=String.valueOf(x.What?.Name)+'|'+x.What?.Type+'|'+x.Who?.Name+'|'+x.Who?.Type;",
+      "Expected": "A32-oracle-20261004-Deal|Opportunity|Baker|Contact",
+      "Compile": false
+    },
+    {
+      "ID": "R188",
+      "Code": "Id tid=tasks[2].Id; Task x=[SELECT Id,What.Name,What.Type,Who.Name,Who.Type FROM Task WHERE Id=:tid]; r=String.valueOf(x.What?.Name)+'|'+x.What?.Type+'|'+x.Who?.Name+'|'+x.Who?.Type;",
+      "Expected": "null|null|Prospect|Lead",
+      "Compile": false
+    },
+    {
+      "ID": "R189",
+      "Code": "Id tid=tasks[3].Id; Task x=[SELECT Id,What.Name,What.Type,Who.Name,Who.Type FROM Task WHERE Id=:tid]; r=String.valueOf(x.What?.Name)+'|'+x.What?.Type+'|'+x.Who?.Name+'|'+x.Who?.Type;",
+      "Expected": "null|null|null|null",
+      "Compile": false
+    },
+    {
+      "ID": "R190",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Name FROM Account WHERE Id=:aid]; r=x.Id==aid;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R191",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id FROM Account WHERE Id=:aid]; r=x.Name;",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Name",
+      "Compile": false
+    },
+    {
+      "ID": "R192",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,Phone FROM Account WHERE Id=:aid]; r=x.Phone;",
+      "Expected": "100",
+      "Compile": false
+    },
+    {
+      "ID": "R193",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,Phone FROM Account WHERE Id=:aid]; r=x.Phone;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R194",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,Phone FROM Account WHERE Id=:aid]; r=x.isSet('Phone');",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R195",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,Phone FROM Account WHERE Id=:aid]; r=sr.keys(x);",
+      "Expected": "Id",
+      "Compile": false
+    },
+    {
+      "ID": "R196",
+      "Code": "List<Account> xs=[SELECT Id FROM Account WHERE Id=null]; r=xs.isEmpty();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R197",
+      "Code": "Account x=[SELECT Id FROM Account WHERE Id=null]; r=x==null;",
+      "Expected": "EXC|System.QueryException|List has no rows for assignment to SObject",
+      "Compile": false
+    },
+    {
+      "ID": "R198",
+      "Code": "Account x=[SELECT Id FROM Account WHERE Id IN :aids]; r=x==null;",
+      "Expected": "EXC|System.QueryException|List has more than 1 row for assignment to SObject",
+      "Compile": false
+    },
+    {
+      "ID": "R199",
+      "Code": "Account x=[SELECT Id,Name FROM Account WHERE Id IN :aids ORDER BY Name LIMIT 1]; r=x.Name;",
+      "Expected": "Branch",
+      "Compile": false
+    },
+    {
+      "ID": "R200",
+      "Code": "List<Account> xs=[SELECT Id,Name FROM Account WHERE Id IN :aids ORDER BY Name]; r=xs.size();",
+      "Expected": "4",
+      "Compile": false
+    },
+    {
+      "ID": "R201",
+      "Code": "List<SObject> xs=[SELECT Id,Name FROM Account WHERE Id IN :aids ORDER BY Name]; r=xs[0] instanceof Account;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R202",
+      "Code": "SObject x=Database.query('SELECT Id,Name FROM Account WHERE Id IN :aids ORDER BY Name LIMIT 1'); r=x.get('Name');",
+      "Expected": "Branch",
+      "Compile": false
+    },
+    {
+      "ID": "R203",
+      "Code": "SObject x=Database.query('SELECT Id FROM Account WHERE Id=null'); r=x==null;",
+      "Expected": "EXC|System.QueryException|List has no rows for assignment to SObject",
+      "Compile": false
+    },
+    {
+      "ID": "R204",
+      "Code": "List<Account> xs=Database.query('SELECT Id,Name FROM Account WHERE Id IN :aids ORDER BY Name'); r=xs[0].Name;",
+      "Expected": "Branch",
+      "Compile": false
+    },
+    {
+      "ID": "R205",
+      "Code": "List<SObject> xs=Database.query('SELECT Id,Name FROM Account WHERE Id IN :aids'); r=(xs instanceof List<Account>);",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R206",
+      "Code": "List<SObject> xs=Database.query('SELECT Id,Name FROM Account WHERE Id IN :aids'); r=((List<Account>)xs).size();",
+      "Expected": "4",
+      "Compile": false
+    },
+    {
+      "ID": "R207",
+      "Code": "List<SObject> xs=Database.query('SELECT Id,Name FROM Account WHERE Id IN :aids'); r=((List<Contact>)xs).size();",
+      "Expected": "EXC|System.TypeException|Invalid conversion from runtime type List<Account> to List<Contact>",
+      "Compile": false
+    },
+    {
+      "ID": "R208",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,Name FROM Account WHERE Id=:aid]; x.Name='Changed'; r=x.Name;",
+      "Expected": "Changed",
+      "Compile": false
+    },
+    {
+      "ID": "R209",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,Name FROM Account WHERE Id=:aid]; x.Name='Changed'; Account y=[SELECT Id,Name FROM Account WHERE Id=:aid]; r=y.Name;",
+      "Expected": "Root",
+      "Compile": false
+    },
+    {
+      "ID": "R210",
+      "Code": "Map<Id,Account> xs=new Map<Id,Account>([SELECT Id,Name FROM Account WHERE Id IN :aids]); r=xs.size();",
+      "Expected": "4",
+      "Compile": false
+    },
+    {
+      "ID": "R211",
+      "Code": "Integer n=0; for(Account x:[SELECT Id,Name FROM Account WHERE Id IN :aids]){n++;}r=n;",
+      "Expected": "4",
+      "Compile": false
+    },
+    {
+      "ID": "R212",
+      "Code": "Integer n=0; for(List<Account> xs:[SELECT Id,Name FROM Account WHERE Id IN :aids]){n+=xs.size();}r=n;",
+      "Expected": "4",
+      "Compile": false
+    },
+    {
+      "ID": "R213",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.Account.getSObjectType()==Account.SObjectType;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R214",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.Account.Id==accounts[0].Id;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R215",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.Account.get('Phone');",
+      "Expected": "EXC|System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone",
+      "Compile": false
+    },
+    {
+      "ID": "R216",
+      "Code": "Id cid=contacts[0].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=sr.keys(x.Account);",
+      "Expected": "Id|Name",
+      "Compile": false
+    },
+    {
+      "ID": "R217",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,Owner.Id FROM Account WHERE Id=:aid]; r=x.Owner.Id==UserInfo.getUserId();",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R218",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,Owner.Id FROM Account WHERE Id=:aid]; r=x.getSObject('Owner').getSObjectType()==User.SObjectType;",
+      "Expected": "true",
+      "Compile": false
+    },
+    {
+      "ID": "R219",
+      "Code": "Id cid=contacts[3].Id; Contact x=[SELECT Id,Account.Name FROM Contact WHERE Id=:cid]; r=x.Account?.Name;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true
+    },
+    {
+      "ID": "R220",
+      "Code": " List<SObject> rows=Database.query('SELECT Account.Name FROM Account WHERE Id IN :aids'); r=rows.size();",
+      "Expected": "4",
+      "Compile": false
+    },
+    {
+      "ID": "R221",
+      "Code": " List<SObject> rows=Database.query('SELECT Parent.NoSuchField__c FROM Account WHERE Id IN :aids'); r=rows.size();",
+      "Expected": "EXC|System.QueryException|No such column 'NoSuchField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false
+    },
+    {
+      "ID": "R222",
+      "Code": " List<SObject> rows=Database.query('SELECT Account.Parent.NoSuchField__c FROM Contact WHERE Id IN :cids'); r=rows.size();",
+      "Expected": "EXC|System.QueryException|No such column 'NoSuchField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false
+    },
+    {
+      "ID": "R223",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,(SELECT Id FROM NoSuchChildren__r) FROM Account WHERE Id IN :aids'); r=rows.size();",
+      "Expected": "EXC|System.QueryException|Didn't understand relationship 'NoSuchChildren__r' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false
+    },
+    {
+      "ID": "R224",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,(SELECT Id FROM Account) FROM Account WHERE Id IN :aids'); r=rows.size();",
+      "Expected": "EXC|System.QueryException|Didn't understand relationship 'Account' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false
+    },
+    {
+      "ID": "R225",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,(SELECT Id,(SELECT Id FROM Contacts) FROM ChildAccounts) FROM Account WHERE Id IN :aids'); r=rows.size();",
+      "Expected": "4",
+      "Compile": false
+    },
+    {
+      "ID": "R226",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,TYPEOF Name WHEN Account THEN Name END FROM Account WHERE Id IN :aids'); r=rows.size();",
+      "Expected": "EXC|System.QueryException|No such relation 'Name' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false
+    },
+    {
+      "ID": "R227",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,TYPEOF What WHEN Account THEN Amount END FROM Task WHERE Id IN :tids'); r=rows.size();",
+      "Expected": "EXC|System.QueryException|No such column 'Amount' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false
+    },
+    {
+      "ID": "R228",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,TYPEOF What WHEN Account THEN Name WHEN Account THEN Phone END FROM Task WHERE Id IN :tids'); r=rows.size();",
+      "Expected": "EXC|System.QueryException|WHEN clause operand [Account] is not unique",
+      "Compile": false
+    },
+    {
+      "ID": "R229",
+      "Code": " List<SObject> rows=Database.query('SELECT Id,TYPEOF What WHEN Account THEN Name ELSE Amount END FROM Task WHERE Id IN :tids'); r=rows.size();",
+      "Expected": "EXC|System.QueryException|No such column 'Amount' on entity 'Name'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": false
+    },
+    {
+      "ID": "R230",
+      "Code": "Id aid=accounts[0].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1 OFFSET 1) FROM Account WHERE Id=:aid LIMIT 1]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "1|Baker",
+      "Compile": false
+    },
+    {
+      "ID": "R231",
+      "Code": "Id aid=accounts[1].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1 OFFSET 1) FROM Account WHERE Id=:aid LIMIT 1]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R232",
+      "Code": "Id aid=accounts[2].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1 OFFSET 1) FROM Account WHERE Id=:aid LIMIT 1]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "R233",
+      "Code": "Id aid=accounts[3].Id; Account x=[SELECT Id,(SELECT Id,LastName FROM Contacts ORDER BY LastName LIMIT 1 OFFSET 1) FROM Account WHERE Id=:aid LIMIT 1]; r=String.valueOf(x.Contacts.size())+'|'+sr.childNames(x.Contacts);",
+      "Expected": "0|",
+      "Compile": false
+    },
+    {
+      "ID": "C001",
+      "Code": "try { Object r; List<Contact> xs=[SELECT Id,Account.Name,Account.Parent.Name FROM Contact WHERE Id=null]; r=xs.size(); pq.out('C001',r); } catch(Exception e) { pq.err('C001',e); }",
+      "Expected": "0",
+      "Compile": true
+    },
+    {
+      "ID": "C002",
+      "Code": "try { Object r; List<Contact> xs=[SELECT Id,Account.NoSuchField__c FROM Contact WHERE Id=null]; r=xs.size(); pq.out('C002',r); } catch(Exception e) { pq.err('C002',e); }",
+      "Expected": "COMPILE_ERROR\tline 6:  SELECT Id,Account.NoSuchField__c FROM Contact            ^ ERROR at Row:1:Column:12 No such column 'NoSuchField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for ",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C003",
+      "Code": "try { Object r; List<Contact> xs=[SELECT Id,NoSuchParent__r.Name FROM Contact WHERE Id=null]; r=xs.size(); pq.out('C003',r); } catch(Exception e) { pq.err('C003',e); }",
+      "Expected": "COMPILE_ERROR\tline 6:  SELECT Id,NoSuchParent__r.Name FROM Contact            ^ ERROR at Row:1:Column:12 Didn't understand relationship 'NoSuchParent__r' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C004",
+      "Code": "try { Object r; Contact x=new Contact(); r=x.Account.NoSuchField__c; pq.out('C004',r); } catch(Exception e) { pq.err('C004',e); }",
+      "Expected": "COMPILE_ERROR\tline 6: Variable does not exist: NoSuchField__c",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C005",
+      "Code": "try { Object r; List<Account> xs=[SELECT Id,(SELECT Id FROM Contacts) FROM Account WHERE Id=null]; r=xs.size(); pq.out('C005',r); } catch(Exception e) { pq.err('C005',e); }",
+      "Expected": "0",
+      "Compile": true
+    },
+    {
+      "ID": "C006",
+      "Code": "try { Object r; List<Account> xs=[SELECT Id,(SELECT Id FROM NoSuchChildren__r) FROM Account WHERE Id=null]; r=xs.size(); pq.out('C006',r); } catch(Exception e) { pq.err('C006',e); }",
+      "Expected": "COMPILE_ERROR\tline 6:  SELECT Id,(SELECT Id FROM NoSuchChildren__r) FROM Account WHERE                            ^ ERROR at Row:1:Column:28 Didn't understand relationship 'NoSuchChildren__r' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the cust",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C007",
+      "Code": "try { Object r; List<Account> xs=[SELECT Id,(SELECT NoSuchField__c FROM Contacts) FROM Account WHERE Id=null]; r=xs.size(); pq.out('C007',r); } catch(Exception e) { pq.err('C007',e); }",
+      "Expected": "COMPILE_ERROR\tline 6:  SELECT Id,(SELECT NoSuchField__c FROM Contacts) FROM                    ^ ERROR at Row:1:Column:20 No such column 'NoSuchField__c' on entity 'Contact'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the des",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C008",
+      "Code": "try { Object r; List<Account> xs=[SELECT Id,(SELECT Id FROM Contacts LIMIT -1) FROM Account WHERE Id=null]; r=xs.size(); pq.out('C008',r); } catch(Exception e) { pq.err('C008',e); }",
+      "Expected": "COMPILE_ERROR\tline 6: Limit must be a non-negative value",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C009",
+      "Code": "try { Object r; List<Account> xs=[SELECT Id,(SELECT Id FROM Contacts),(SELECT Id FROM Contacts) FROM Account WHERE Id=null]; r=xs.size(); pq.out('C009',r); } catch(Exception e) { pq.err('C009',e); }",
+      "Expected": "COMPILE_ERROR\tline 6:  FROM Contacts),(SELECT Id FROM Contacts) FROM Account WHERE Id=null                                  ^ ERROR at Row:1:Column:55 Cannot follow the same aggregate relationship twice: Contacts",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C010",
+      "Code": "try { Object r; List<Account> xs=[SELECT Id,(SELECT Id,(SELECT Id FROM Contacts) FROM ChildAccounts) FROM Account WHERE Id=null]; r=xs.size(); pq.out('C010',r); } catch(Exception e) { pq.err('C010',e); }",
+      "Expected": "0",
+      "Compile": true
+    },
+    {
+      "ID": "C011",
+      "Code": "try { Object r; List<Task> xs=[SELECT Id,TYPEOF What WHEN Account THEN Name WHEN Opportunity THEN Amount END FROM Task WHERE Id=null]; r=xs.size(); pq.out('C011',r); } catch(Exception e) { pq.err('C011',e); }",
+      "Expected": "0",
+      "Compile": true
+    },
+    {
+      "ID": "C012",
+      "Code": "try { Object r; List<Task> xs=[SELECT Id,TYPEOF Who WHEN Contact THEN LastName WHEN Lead THEN Company END FROM Task WHERE Id=null]; r=xs.size(); pq.out('C012',r); } catch(Exception e) { pq.err('C012',e); }",
+      "Expected": "0",
+      "Compile": true
+    },
+    {
+      "ID": "C013",
+      "Code": "try { Object r; List<Account> xs=[SELECT Id,TYPEOF Parent WHEN Account THEN Name END FROM Account WHERE Id=null]; r=xs.size(); pq.out('C013',r); } catch(Exception e) { pq.err('C013',e); }",
+      "Expected": "COMPILE_ERROR\tline 6: TYPEOF operand 'Parent' is not a polymorphic relationship field",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C014",
+      "Code": "try { Object r; List<Task> xs=[SELECT Id,TYPEOF What WHEN Account THEN Amount END FROM Task WHERE Id=null]; r=xs.size(); pq.out('C014',r); } catch(Exception e) { pq.err('C014',e); }",
+      "Expected": "COMPILE_ERROR\tline 6: No such column 'Amount' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C015",
+      "Code": "try { Object r; List<Task> xs=[SELECT Id,TYPEOF What WHEN NoSuchType__c THEN Name END FROM Task WHERE Id=null]; r=xs.size(); pq.out('C015',r); } catch(Exception e) { pq.err('C015',e); }",
+      "Expected": "COMPILE_ERROR\tline 6:  SELECT Id,TYPEOF What WHEN NoSuchType__c THEN Name END FROM                             ^ ERROR at Row:1:Column:29 sObject type 'NoSuchType__c' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or th",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C016",
+      "Code": "try { Object r; List<Task> xs=[SELECT Id,TYPEOF What WHEN Account THEN Name FROM Task WHERE Id=null]; r=xs.size(); pq.out('C016',r); } catch(Exception e) { pq.err('C016',e); }",
+      "Expected": "COMPILE_ERROR\tline 6: Missing 'END' at 'FROM'",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C017",
+      "Code": "try { Object r; List<Task> xs=[SELECT Id,TYPEOF What WHEN Account THEN Name WHEN Account THEN Phone END FROM Task WHERE Id=null]; r=xs.size(); pq.out('C017',r); } catch(Exception e) { pq.err('C017',e); }",
+      "Expected": "COMPILE_ERROR\tline 6: WHEN clause operand [Account] is not unique",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C018",
+      "Code": "try { Object r; Contact x=[SELECT Id FROM Account WHERE Id=null]; r=x; pq.out('C018',r); } catch(Exception e) { pq.err('C018',e); }",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Account> to Contact",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C019",
+      "Code": "try { Object r; List<Contact> xs=[SELECT Id FROM Account WHERE Id=null]; r=xs.size(); pq.out('C019',r); } catch(Exception e) { pq.err('C019',e); }",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from List<Account> to List<Contact>",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C020",
+      "Code": "try { Object r; Account x=new Account(); Contact child=x.Contacts; r=child; pq.out('C020',r); } catch(Exception e) { pq.err('C020',e); }",
+      "Expected": "EXC|System.QueryException|List has no rows for assignment to SObject",
+      "Compile": true
+    },
+    {
+      "ID": "C021",
+      "Code": "try { Object r; Contact x=new Contact(); List<Account> parent=x.Account; r=parent; pq.out('C021',r); } catch(Exception e) { pq.err('C021',e); }",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Account to List<Account>",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    },
+    {
+      "ID": "C022",
+      "Code": "try { Object r; List<Account> xs=[SELECT Id,Parent.Parent.Parent.Parent.Parent.Parent.Name FROM Account WHERE Id=null]; r=xs.size(); pq.out('C022',r); } catch(Exception e) { pq.err('C022',e); }",
+      "Expected": "COMPILE_ERROR\tline 6:  SELECT Id,Parent.Parent.Parent.Parent.Parent.Parent.Name            ^ ERROR at Row:1:Column:12 cannot query foreign key relationships more than 5 levels away from the root SObject",
+      "Compile": true,
+      "NativeLine": 6,
+      "RuntimeCompile": false
+    }
+  ],
+  "Remaining": [],
+  "CaseRows": {
+    "all": [
+      "R001",
+      "R002",
+      "R003",
+      "R004",
+      "R005",
+      "R006",
+      "R007",
+      "R008",
+      "R009",
+      "R010",
+      "R011",
+      "R012",
+      "R013",
+      "R014",
+      "R015",
+      "R016",
+      "R017",
+      "R018",
+      "R019",
+      "R020",
+      "R021",
+      "R022",
+      "R023",
+      "R024",
+      "R025",
+      "R026",
+      "R027",
+      "R028",
+      "R029",
+      "R030",
+      "R031",
+      "R032",
+      "R033",
+      "R034",
+      "R035",
+      "R036",
+      "R037",
+      "R038",
+      "R039",
+      "R040",
+      "R041",
+      "R042",
+      "R043",
+      "R044",
+      "R045",
+      "R046",
+      "R047",
+      "R048",
+      "R049",
+      "R050",
+      "R051",
+      "R052",
+      "R053",
+      "R054",
+      "R055",
+      "R056",
+      "R057",
+      "R058",
+      "R059",
+      "R060",
+      "R061",
+      "R062",
+      "R063",
+      "R064",
+      "R065",
+      "R066",
+      "R067",
+      "R068",
+      "R069",
+      "R070",
+      "R071",
+      "R072",
+      "R073",
+      "R074",
+      "R075",
+      "R076",
+      "R077",
+      "R078",
+      "R079",
+      "R080",
+      "R081",
+      "R082",
+      "R083",
+      "R084",
+      "R085",
+      "R086",
+      "R087",
+      "R088",
+      "R089",
+      "R090",
+      "R091",
+      "R092",
+      "R093",
+      "R094",
+      "R095",
+      "R096",
+      "R097",
+      "R098",
+      "R099",
+      "R100",
+      "R101",
+      "R102",
+      "R103",
+      "R104",
+      "R105",
+      "R106",
+      "R107",
+      "R108",
+      "R109",
+      "R110",
+      "R111",
+      "R112",
+      "R113",
+      "R114",
+      "R115",
+      "R116",
+      "R117",
+      "R118",
+      "R119",
+      "R120",
+      "R121",
+      "R122",
+      "R123",
+      "R124",
+      "R125",
+      "R126",
+      "R127",
+      "R128",
+      "R129",
+      "R130",
+      "R131",
+      "R132",
+      "R133",
+      "R134",
+      "R135",
+      "R136",
+      "R137",
+      "R138",
+      "R139",
+      "R140",
+      "R141",
+      "R142",
+      "R143",
+      "R144",
+      "R145",
+      "R146",
+      "R147",
+      "R148",
+      "R149",
+      "R150",
+      "R151",
+      "R152",
+      "R153",
+      "R154",
+      "R155",
+      "R156",
+      "R157",
+      "R158",
+      "R159",
+      "R160",
+      "R161",
+      "R162",
+      "R163",
+      "R164",
+      "R165",
+      "R166",
+      "R167",
+      "R168",
+      "R169",
+      "R170",
+      "R171",
+      "R172",
+      "R173",
+      "R174",
+      "R175",
+      "R176",
+      "R177",
+      "R178",
+      "R179",
+      "R180",
+      "R181",
+      "R182",
+      "R183",
+      "R184",
+      "R185",
+      "R186",
+      "R187",
+      "R188",
+      "R189",
+      "R190",
+      "R191",
+      "R192",
+      "R193",
+      "R194",
+      "R195",
+      "R196",
+      "R197",
+      "R198",
+      "R199",
+      "R200",
+      "R201",
+      "R202",
+      "R203",
+      "R204",
+      "R205",
+      "R206",
+      "R207",
+      "R208",
+      "R209",
+      "R210",
+      "R211",
+      "R212",
+      "R213",
+      "R214",
+      "R215",
+      "R216",
+      "R217",
+      "R218",
+      "R219",
+      "R220",
+      "R221",
+      "R222",
+      "R223",
+      "R224",
+      "R225",
+      "R226",
+      "R227",
+      "R228",
+      "R229",
+      "R230",
+      "R231",
+      "R232",
+      "R233",
+      "C001",
+      "C002",
+      "C003",
+      "C004",
+      "C005",
+      "C006",
+      "C007",
+      "C008",
+      "C009",
+      "C010",
+      "C011",
+      "C012",
+      "C013",
+      "C014",
+      "C015",
+      "C016",
+      "C017",
+      "C018",
+      "C019",
+      "C020",
+      "C021",
+      "C022"
+    ]
+  },
+  "Groups": {
+    "R001": "parent-paths-and-nulls/projection",
+    "R002": "parent-paths-and-nulls/projection",
+    "R003": "parent-paths-and-nulls/projection",
+    "R004": "parent-paths-and-nulls/projection",
+    "R005": "parent-paths-and-nulls/projection",
+    "R006": "parent-paths-and-nulls/projection",
+    "R007": "parent-paths-and-nulls/projection",
+    "R008": "parent-paths-and-nulls/projection",
+    "R009": "parent-paths-and-nulls/projection",
+    "R010": "parent-paths-and-nulls/projection",
+    "R011": "parent-paths-and-nulls/projection",
+    "R012": "parent-paths-and-nulls/projection",
+    "R013": "parent-paths-and-nulls/projection",
+    "R014": "parent-paths-and-nulls/projection",
+    "R015": "parent-paths-and-nulls/projection",
+    "R016": "parent-paths-and-nulls/projection",
+    "R017": "parent-paths-and-nulls/projection",
+    "R018": "parent-paths-and-nulls/projection",
+    "R019": "parent-paths-and-nulls/projection",
+    "R020": "parent-paths-and-nulls/projection",
+    "R021": "parent-paths-and-nulls/projection",
+    "R022": "parent-paths-and-nulls/projection",
+    "R023": "parent-paths-and-nulls/projection",
+    "R024": "parent-paths-and-nulls/projection",
+    "R025": "parent-paths-and-nulls/projection",
+    "R026": "parent-paths-and-nulls/projection",
+    "R027": "parent-paths-and-nulls/projection",
+    "R028": "parent-paths-and-nulls/projection",
+    "R029": "parent-paths-and-nulls/projection",
+    "R030": "parent-paths-and-nulls/projection",
+    "R031": "parent-paths-and-nulls/projection",
+    "R032": "parent-paths-and-nulls/projection",
+    "R033": "parent-paths-and-nulls/projection",
+    "R034": "parent-paths-and-nulls/projection",
+    "R035": "parent-paths-and-nulls/projection",
+    "R036": "parent-paths-and-nulls/projection",
+    "R037": "parent-paths-and-nulls/projection",
+    "R038": "parent-paths-and-nulls/projection",
+    "R039": "parent-paths-and-nulls/projection",
+    "R040": "parent-paths-and-nulls/projection",
+    "R041": "parent-paths-and-nulls/projection",
+    "R042": "parent-paths-and-nulls/projection",
+    "R043": "parent-paths-and-nulls/projection",
+    "R044": "parent-paths-and-nulls/projection",
+    "R045": "parent-paths-and-nulls/projection",
+    "R046": "parent-paths-and-nulls/self-hierarchy",
+    "R047": "parent-paths-and-nulls/self-hierarchy",
+    "R048": "parent-paths-and-nulls/self-hierarchy",
+    "R049": "parent-paths-and-nulls/self-hierarchy",
+    "R050": "parent-paths-and-nulls/self-hierarchy",
+    "R051": "parent-paths-and-nulls/self-hierarchy",
+    "R052": "parent-paths-and-nulls/self-hierarchy",
+    "R053": "parent-paths-and-nulls/self-hierarchy",
+    "R054": "parent-paths-and-nulls/self-hierarchy",
+    "R055": "parent-paths-and-nulls/self-hierarchy",
+    "R056": "parent-paths-and-nulls/self-hierarchy",
+    "R057": "parent-paths-and-nulls/self-hierarchy",
+    "R058": "parent-paths-and-nulls/self-hierarchy",
+    "R059": "parent-paths-and-nulls/self-hierarchy",
+    "R060": "parent-paths-and-nulls/self-hierarchy",
+    "R061": "parent-paths-and-nulls/self-hierarchy",
+    "R062": "parent-paths-and-nulls/self-hierarchy",
+    "R063": "parent-paths-and-nulls/self-hierarchy",
+    "R064": "parent-paths-and-nulls/self-hierarchy",
+    "R065": "parent-paths-and-nulls/self-hierarchy",
+    "R066": "parent-paths-and-nulls/reports-to",
+    "R067": "parent-paths-and-nulls/reports-to",
+    "R068": "parent-paths-and-nulls/reports-to",
+    "R069": "parent-paths-and-nulls/reports-to",
+    "R070": "parent-paths-and-nulls/reports-to",
+    "R071": "parent-paths-and-nulls/reports-to",
+    "R072": "parent-paths-and-nulls/reports-to",
+    "R073": "parent-paths-and-nulls/reports-to",
+    "R074": "parent-paths-and-nulls/reports-to",
+    "R075": "parent-paths-and-nulls/reports-to",
+    "R076": "parent-paths-and-nulls/reports-to",
+    "R077": "parent-paths-and-nulls/reports-to",
+    "R078": "parent-paths-and-nulls/filter",
+    "R079": "parent-paths-and-nulls/filter",
+    "R080": "parent-paths-and-nulls/filter",
+    "R081": "parent-paths-and-nulls/filter",
+    "R082": "parent-paths-and-nulls/filter",
+    "R083": "parent-paths-and-nulls/filter",
+    "R084": "parent-paths-and-nulls/filter",
+    "R085": "parent-paths-and-nulls/filter",
+    "R086": "parent-paths-and-nulls/order",
+    "R087": "parent-paths-and-nulls/order",
+    "R088": "parent-paths-and-nulls/order",
+    "R089": "parent-paths-and-nulls/order",
+    "R090": "child-subqueries/cardinality-and-clauses",
+    "R091": "child-subqueries/cardinality-and-clauses",
+    "R092": "child-subqueries/cardinality-and-clauses",
+    "R093": "child-subqueries/cardinality-and-clauses",
+    "R094": "child-subqueries/cardinality-and-clauses",
+    "R095": "child-subqueries/cardinality-and-clauses",
+    "R096": "child-subqueries/cardinality-and-clauses",
+    "R097": "child-subqueries/cardinality-and-clauses",
+    "R098": "child-subqueries/cardinality-and-clauses",
+    "R099": "child-subqueries/cardinality-and-clauses",
+    "R100": "child-subqueries/cardinality-and-clauses",
+    "R101": "child-subqueries/cardinality-and-clauses",
+    "R102": "child-subqueries/cardinality-and-clauses",
+    "R103": "child-subqueries/cardinality-and-clauses",
+    "R104": "child-subqueries/cardinality-and-clauses",
+    "R105": "child-subqueries/cardinality-and-clauses",
+    "R106": "child-subqueries/cardinality-and-clauses",
+    "R107": "child-subqueries/cardinality-and-clauses",
+    "R108": "child-subqueries/cardinality-and-clauses",
+    "R109": "child-subqueries/cardinality-and-clauses",
+    "R110": "child-subqueries/cardinality-and-clauses",
+    "R111": "child-subqueries/cardinality-and-clauses",
+    "R112": "child-subqueries/cardinality-and-clauses",
+    "R113": "child-subqueries/cardinality-and-clauses",
+    "R114": "child-subqueries/loaded-shape-and-exceptions",
+    "R115": "child-subqueries/loaded-shape-and-exceptions",
+    "R116": "child-subqueries/loaded-shape-and-exceptions",
+    "R117": "child-subqueries/loaded-shape-and-exceptions",
+    "R118": "child-subqueries/loaded-shape-and-exceptions",
+    "R119": "child-subqueries/loaded-shape-and-exceptions",
+    "R120": "child-subqueries/loaded-shape-and-exceptions",
+    "R121": "child-subqueries/loaded-shape-and-exceptions",
+    "R122": "child-subqueries/loaded-shape-and-exceptions",
+    "R123": "child-subqueries/loaded-shape-and-exceptions",
+    "R124": "child-subqueries/loaded-shape-and-exceptions",
+    "R125": "child-subqueries/loaded-shape-and-exceptions",
+    "R126": "child-subqueries/loaded-shape-and-exceptions",
+    "R127": "child-subqueries/loaded-shape-and-exceptions",
+    "R128": "child-subqueries/loaded-shape-and-exceptions",
+    "R129": "child-subqueries/loaded-shape-and-exceptions",
+    "R130": "child-subqueries/self-relationship",
+    "R131": "child-subqueries/self-relationship",
+    "R132": "child-subqueries/self-relationship",
+    "R133": "child-subqueries/self-relationship",
+    "R134": "child-subqueries/materialization",
+    "R135": "child-subqueries/materialization",
+    "R136": "child-subqueries/materialization",
+    "R137": "child-subqueries/materialization",
+    "R138": "child-subqueries/materialization",
+    "R139": "child-subqueries/materialization",
+    "R140": "child-subqueries/materialization",
+    "R141": "child-subqueries/materialization",
+    "R142": "typeof/what-polymorphism",
+    "R143": "typeof/what-polymorphism",
+    "R144": "typeof/what-polymorphism",
+    "R145": "typeof/what-polymorphism",
+    "R146": "typeof/what-polymorphism",
+    "R147": "typeof/what-polymorphism",
+    "R148": "typeof/what-polymorphism",
+    "R149": "typeof/what-polymorphism",
+    "R150": "typeof/what-polymorphism",
+    "R151": "typeof/what-polymorphism",
+    "R152": "typeof/what-polymorphism",
+    "R153": "typeof/what-polymorphism",
+    "R154": "typeof/what-polymorphism",
+    "R155": "typeof/what-polymorphism",
+    "R156": "typeof/what-polymorphism",
+    "R157": "typeof/what-polymorphism",
+    "R158": "typeof/what-polymorphism",
+    "R159": "typeof/what-polymorphism",
+    "R160": "typeof/what-polymorphism",
+    "R161": "typeof/what-polymorphism",
+    "R162": "typeof/conversion-and-cast-exception",
+    "R163": "typeof/conversion-and-cast-exception",
+    "R164": "typeof/conversion-and-cast-exception",
+    "R165": "typeof/conversion-and-cast-exception",
+    "R166": "typeof/conversion-and-cast-exception",
+    "R167": "typeof/conversion-and-cast-exception",
+    "R168": "typeof/conversion-and-cast-exception",
+    "R169": "typeof/conversion-and-cast-exception",
+    "R170": "typeof/who-polymorphism",
+    "R171": "typeof/who-polymorphism",
+    "R172": "typeof/who-polymorphism",
+    "R173": "typeof/who-polymorphism",
+    "R174": "typeof/who-polymorphism",
+    "R175": "typeof/who-polymorphism",
+    "R176": "typeof/who-polymorphism",
+    "R177": "typeof/who-polymorphism",
+    "R178": "typeof/who-polymorphism",
+    "R179": "typeof/branches-and-filter",
+    "R180": "typeof/branches-and-filter",
+    "R181": "typeof/branches-and-filter",
+    "R182": "typeof/branches-and-filter",
+    "R183": "typeof/branches-and-filter",
+    "R184": "typeof/branches-and-filter",
+    "R185": "typeof/branches-and-filter",
+    "R186": "typeof/common-polymorphic-parent",
+    "R187": "typeof/common-polymorphic-parent",
+    "R188": "typeof/common-polymorphic-parent",
+    "R189": "typeof/common-polymorphic-parent",
+    "R190": "result-shape/cardinality-conversion-and-loading",
+    "R191": "result-shape/cardinality-conversion-and-loading",
+    "R192": "result-shape/cardinality-conversion-and-loading",
+    "R193": "result-shape/cardinality-conversion-and-loading",
+    "R194": "result-shape/cardinality-conversion-and-loading",
+    "R195": "result-shape/cardinality-conversion-and-loading",
+    "R196": "result-shape/cardinality-conversion-and-loading",
+    "R197": "result-shape/cardinality-conversion-and-loading",
+    "R198": "result-shape/cardinality-conversion-and-loading",
+    "R199": "result-shape/cardinality-conversion-and-loading",
+    "R200": "result-shape/cardinality-conversion-and-loading",
+    "R201": "result-shape/cardinality-conversion-and-loading",
+    "R202": "result-shape/cardinality-conversion-and-loading",
+    "R203": "result-shape/cardinality-conversion-and-loading",
+    "R204": "result-shape/cardinality-conversion-and-loading",
+    "R205": "result-shape/cardinality-conversion-and-loading",
+    "R206": "result-shape/cardinality-conversion-and-loading",
+    "R207": "result-shape/cardinality-conversion-and-loading",
+    "R208": "result-shape/cardinality-conversion-and-loading",
+    "R209": "result-shape/cardinality-conversion-and-loading",
+    "R210": "result-shape/cardinality-conversion-and-loading",
+    "R211": "result-shape/cardinality-conversion-and-loading",
+    "R212": "result-shape/cardinality-conversion-and-loading",
+    "R213": "result-shape/cardinality-conversion-and-loading",
+    "R214": "result-shape/cardinality-conversion-and-loading",
+    "R215": "result-shape/cardinality-conversion-and-loading",
+    "R216": "result-shape/cardinality-conversion-and-loading",
+    "R217": "result-shape/cardinality-conversion-and-loading",
+    "R218": "result-shape/cardinality-conversion-and-loading",
+    "R219": "result-shape/cardinality-conversion-and-loading",
+    "R220": "result-shape/dynamic-boundary-errors",
+    "R221": "result-shape/dynamic-boundary-errors",
+    "R222": "result-shape/dynamic-boundary-errors",
+    "R223": "result-shape/dynamic-boundary-errors",
+    "R224": "result-shape/dynamic-boundary-errors",
+    "R225": "result-shape/dynamic-boundary-errors",
+    "R226": "result-shape/dynamic-boundary-errors",
+    "R227": "result-shape/dynamic-boundary-errors",
+    "R228": "result-shape/dynamic-boundary-errors",
+    "R229": "result-shape/dynamic-boundary-errors",
+    "R230": "child-subqueries/offset-single-parent-control",
+    "R231": "child-subqueries/offset-single-parent-control",
+    "R232": "child-subqueries/offset-single-parent-control",
+    "R233": "child-subqueries/offset-single-parent-control",
+    "C001": "parent-paths-and-nulls/compile-boundary",
+    "C002": "parent-paths-and-nulls/compile-boundary",
+    "C003": "parent-paths-and-nulls/compile-boundary",
+    "C004": "parent-paths-and-nulls/compile-boundary",
+    "C005": "child-subqueries/compile-boundary",
+    "C006": "child-subqueries/compile-boundary",
+    "C007": "child-subqueries/compile-boundary",
+    "C008": "child-subqueries/compile-boundary",
+    "C009": "child-subqueries/compile-boundary",
+    "C010": "child-subqueries/compile-boundary",
+    "C011": "typeof/compile-boundary",
+    "C012": "typeof/compile-boundary",
+    "C013": "typeof/compile-boundary",
+    "C014": "typeof/compile-boundary",
+    "C015": "typeof/compile-boundary",
+    "C016": "typeof/compile-boundary",
+    "C017": "typeof/compile-boundary",
+    "C018": "result-shape/compile-boundary",
+    "C019": "result-shape/compile-boundary",
+    "C020": "result-shape/compile-boundary",
+    "C021": "result-shape/compile-boundary",
+    "C022": "result-shape/compile-boundary"
+  }
+}

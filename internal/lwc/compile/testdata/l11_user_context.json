@@ -1,0 +1,16 @@
+{
+  "59.0": {
+    "settings": {
+      "LanguageLocaleKey": "en_US",
+      "LocaleSidKey": "en_US",
+      "TimeZoneSidKey": "America/Los_Angeles"
+    }
+  },
+  "67.0": {
+    "settings": {
+      "LanguageLocaleKey": "en_US",
+      "LocaleSidKey": "en_US",
+      "TimeZoneSidKey": "America/Los_Angeles"
+    }
+  }
+}

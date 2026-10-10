@@ -15,12 +15,13 @@ type jsonParserFrame struct {
 	expectingName bool
 	currentName   string
 	valueName     string
+	line, column  int
 }
 
 func newJSONParser(text string) (Value, error) {
 	tokens, err := jsonParserTokenize(text)
 	if err != nil {
-		return Null, jsonParserException("JSONParser invalid JSON input: %v", err)
+		return Null, jsonParserException("%s", jsonParserInputErrorMessage(err, text))
 	}
 	parser := Object("JSONParser")
 	parser.Fields["tokens"] = List(tokens...)
@@ -75,9 +76,9 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("JSONParser.getText expects 0 arguments")
 		}
-		token, err := jsonParserRequireCurrent(receiver, "getText")
-		if err != nil {
-			return Null, receiver, false, true, err
+		token, ok := jsonParserCurrent(receiver)
+		if !ok {
+			return Null, receiver, false, true, nil
 		}
 		return String(jsonParserTokenText(token)), receiver, false, true, nil
 	case "getCurrentName":
@@ -136,6 +137,18 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 			return Null, receiver, false, true, err
 		}
 		if _, err := time.Parse("2006-01-02", text); err != nil {
+			parts := strings.Split(text, "-")
+			if len(parts) == 3 {
+				year, yearErr := strconv.Atoi(parts[0])
+				month, monthErr := strconv.Atoi(parts[1])
+				day, dayErr := strconv.Atoi(parts[2])
+				if yearErr == nil && monthErr == nil && dayErr == nil && month >= 1 && month <= 12 {
+					lastDay := time.Date(year, time.Month(month)+1, 0, 0, 0, 0, 0, time.UTC).Day()
+					if day < 1 || day > lastDay {
+						return Null, receiver, false, true, jsonParserException("Cannot parse %q: Value %d for dayOfMonth must be in the range [1,%d]", text, day, lastDay)
+					}
+				}
+			}
 			return Null, receiver, false, true, jsonParserException("JSONParser.getDateValue cannot parse Date %q", text)
 		}
 		return platformScalar("Date", text), receiver, false, true, nil
@@ -151,7 +164,7 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 		if err != nil {
 			return Null, receiver, false, true, jsonParserException("JSONParser.%s cannot parse Datetime %q: %v", method, text, err)
 		}
-		return platformScalar("Datetime", value.UTC().Format(time.RFC3339)), receiver, false, true, nil
+		return platformScalar("Datetime", value.UTC().Format(time.RFC3339Nano)), receiver, false, true, nil
 	case "getTimeValue":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("JSONParser.getTimeValue expects 0 arguments")
@@ -174,7 +187,7 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 			return Null, receiver, false, true, err
 		}
 		if err := validateApexID(text); err != nil {
-			return Null, receiver, false, true, jsonParserException("JSONParser.getIdValue cannot parse Id %q: %v", text, err)
+			return Null, receiver, false, true, newExceptionError("System.StringException", strings.TrimPrefix(err.Error(), "System.StringException: "))
 		}
 		return platformScalar("Id", text), receiver, false, true, nil
 	case "getBlobValue":
@@ -228,6 +241,7 @@ func canonicalJSONParserMethod(method string) string {
 
 func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value, strict bool) (Value, Value, error) {
 	typeName := typeValueName(typeArg)
+	_, recordType := vm.explicitSchemaRecordType(typeValueIdentityName(typeArg))
 	if typeName == "" {
 		return Null, receiver, fmt.Errorf("JSONParser.readValueAs expects Type")
 	}
@@ -241,7 +255,7 @@ func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value, strict bool) 
 	if index >= 0 {
 		tokens := jsonParserTokens(receiver)
 		var next int64
-		raw, next, err = jsonParserRawValueAt(tokens.List, index)
+		raw, next, err = jsonParserRawValueAt(tokens.List, index, source.Text)
 		if err != nil {
 			return Null, receiver, jsonDeserializeException("JSONParser.readValueAs invalid JSON input: %v", err)
 		}
@@ -256,11 +270,14 @@ func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value, strict bool) 
 			receiver.Fields["index"] = Int(int64(len(tokens.List) - 1))
 		}
 	}
-	value, err := vm.typedValueFromJSON(typeName, raw, strict)
+	value, err := vm.typedValueFromJSON(typeName, jsonTypedInput{value: raw, sObjectRecord: recordType}, strict)
+	if err == nil {
+		receiver.Fields["cleared"] = Bool(true)
+	}
 	return value, receiver, err
 }
 
-func jsonParserRawValueAt(tokens []Value, index int64) (any, int64, error) {
+func jsonParserRawValueAt(tokens []Value, index int64, source string) (any, int64, error) {
 	if index < 0 || index >= int64(len(tokens)) {
 		return nil, index, fmt.Errorf("JSONParser.readValueAs requires a current token")
 	}
@@ -276,11 +293,12 @@ func jsonParserRawValueAt(tokens []Value, index int64) (any, int64, error) {
 				return out, i + 1, nil
 			case "FIELD_NAME":
 				name := jsonParserTokenText(current)
-				value, next, err := jsonParserRawValueAt(tokens, i+1)
+				value, next, err := jsonParserRawValueAt(tokens, i+1, source)
 				if err != nil {
 					return nil, index, err
 				}
-				out = append(out, orderedJSONField{name: name, value: value})
+				out = append(out, orderedJSONField{name: name, value: value, source: source,
+					start: int(current.Fields["start"].Int), end: int(tokens[next-1].Fields["end"].Int)})
 				i = next
 			default:
 				return nil, index, fmt.Errorf("JSONParser.readValueAs expected object field name, got %s", jsonParserTokenKind(current))
@@ -294,7 +312,7 @@ func jsonParserRawValueAt(tokens []Value, index int64) (any, int64, error) {
 			if jsonParserTokenKind(tokens[i]) == "END_ARRAY" {
 				return out, i + 1, nil
 			}
-			value, next, err := jsonParserRawValueAt(tokens, i)
+			value, next, err := jsonParserRawValueAt(tokens, i, source)
 			if err != nil {
 				return nil, index, err
 			}
@@ -324,12 +342,13 @@ func jsonParserTokenize(text string) ([]Value, error) {
 	var stack []jsonParserFrame
 	rootWritten := false
 	for {
+		start := jsonTokenInputStart(text, int(decoder.InputOffset()))
 		raw, err := decoder.Token()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, jsonSyntaxErrorAtInput(err, text, int(decoder.InputOffset()))
 		}
 		switch token := raw.(type) {
 		case json.Delim:
@@ -340,14 +359,16 @@ func jsonParserTokenize(text string) ([]Value, error) {
 					return nil, err
 				}
 				tokens = append(tokens, jsonParserToken("START_OBJECT", "{", name, ""))
-				stack = append(stack, jsonParserFrame{kind: "object", expectingName: true, currentName: name, valueName: name})
+				line, column := jsonInputPosition(text, start)
+				stack = append(stack, jsonParserFrame{kind: "object", expectingName: true, currentName: name, valueName: name, line: line, column: column - 1})
 			case '[':
 				name, err := jsonParserBeforeValue(&stack, &rootWritten)
 				if err != nil {
 					return nil, err
 				}
 				tokens = append(tokens, jsonParserToken("START_ARRAY", "[", name, ""))
-				stack = append(stack, jsonParserFrame{kind: "array", currentName: name, valueName: name})
+				line, column := jsonInputPosition(text, start)
+				stack = append(stack, jsonParserFrame{kind: "array", currentName: name, valueName: name, line: line, column: column - 1})
 			case '}':
 				if len(stack) == 0 || stack[len(stack)-1].kind != "object" {
 					return nil, fmt.Errorf("JSONParser encountered unmatched object end")
@@ -368,6 +389,7 @@ func jsonParserTokenize(text string) ([]Value, error) {
 				stack[len(stack)-1].expectingName = false
 				stack[len(stack)-1].currentName = token
 				tokens = append(tokens, jsonParserToken("FIELD_NAME", token, token, ""))
+				jsonParserSetTokenLocation(&tokens[len(tokens)-1], start, int(decoder.InputOffset()))
 				continue
 			}
 			name, err := jsonParserBeforeValue(&stack, &rootWritten)
@@ -376,6 +398,11 @@ func jsonParserTokenize(text string) ([]Value, error) {
 			}
 			tokens = append(tokens, jsonParserToken("VALUE_STRING", token, name, ""))
 		case json.Number:
+			end := int(decoder.InputOffset())
+			if strings.TrimPrefix(token.String(), "-") == "0" && end < len(text) && text[end] >= '0' && text[end] <= '9' {
+				line, column := jsonInputPosition(text, end)
+				return nil, jsonParserException("Invalid numeric value: Leading zeroes not allowed at input location [%d,%d]", line, column)
+			}
 			name, err := jsonParserBeforeValue(&stack, &rootWritten)
 			if err != nil {
 				return nil, err
@@ -384,7 +411,8 @@ func jsonParserTokenize(text string) ([]Value, error) {
 			if strings.ContainsAny(token.String(), ".eE") {
 				kind = "VALUE_NUMBER_FLOAT"
 			}
-			tokens = append(tokens, jsonParserToken(kind, token.String(), name, "number"))
+			value := jsonParserToken(kind, token.String(), name, "number")
+			tokens = append(tokens, value)
 		case bool:
 			name, err := jsonParserBeforeValue(&stack, &rootWritten)
 			if err != nil {
@@ -402,6 +430,7 @@ func jsonParserTokenize(text string) ([]Value, error) {
 			}
 			tokens = append(tokens, jsonParserToken("VALUE_NULL", "null", name, ""))
 		}
+		jsonParserSetTokenLocation(&tokens[len(tokens)-1], start, int(decoder.InputOffset()))
 		if rootWritten && len(stack) == 0 {
 			break
 		}
@@ -410,9 +439,43 @@ func jsonParserTokenize(text string) ([]Value, error) {
 		return nil, fmt.Errorf("JSONParser input is empty")
 	}
 	if len(stack) != 0 {
-		return nil, fmt.Errorf("JSONParser input ended with open JSON containers")
+		frame := stack[len(stack)-1]
+		line, column := jsonEOFPosition(text, false)
+		return nil, jsonParserException("Unexpected end-of-input: expected close marker for %s (from [Source: java.io.StringReader@0; line: %d, column: %d]) at input location [%d,%d]", strings.ToUpper(frame.kind), frame.line, frame.column, line, column)
 	}
 	return tokens, nil
+}
+
+func jsonParserInputErrorMessage(err error, source string) string {
+	if thrown, ok := err.(*apexThrowError); ok {
+		return thrown.value.Fields["message"].Text
+	}
+	converted := jsonUnexpectedCharacterError(err, source)
+	if character, ok := converted.(*jsonCharacterInputError); ok {
+		return fmt.Sprintf("Unexpected character ('%c' (code %d)): %s at input location [%d,%d]", character.char, character.char, jsonExpectedValueDescription(character.char), character.line, character.column)
+	}
+	if quoted, ok := jsonStringEOFError(err, source).(*jsonStringInputError); ok {
+		message := quoted.Error()
+		at := strings.LastIndex(message, " at [line:")
+		return message[:at] + fmt.Sprintf(" at input location [%d,%d]", quoted.line, quoted.column)
+	}
+	return fmt.Sprintf("JSONParser invalid JSON input: %v", err)
+}
+
+func jsonParserSetTokenLocation(token *Value, start, end int) {
+	token.Fields["start"], token.Fields["end"] = Int(int64(start)), Int(int64(end))
+}
+
+func jsonParserInputLocation(receiver, token Value) (int, int) {
+	source := receiver.Fields["source"].Text
+	start, end := int(token.Fields["start"].Int), int(token.Fields["end"].Int)
+	switch jsonParserTokenKind(token) {
+	case "VALUE_NUMBER_INT", "VALUE_NUMBER_FLOAT", "VALUE_TRUE", "VALUE_FALSE", "VALUE_NULL":
+		return jsonNumericInputPosition(source, end)
+	case "VALUE_STRING":
+		return jsonInputPosition(source, start+1)
+	}
+	return jsonInputPosition(source, start)
 }
 
 func jsonParserBeforeValue(stack *[]jsonParserFrame, rootWritten *bool) (string, error) {
@@ -503,31 +566,28 @@ func jsonParserSkipChildren(receiver Value) (Value, error) {
 }
 
 func jsonParserIntegerValue(receiver Value, method string) (Value, error) {
-	token, err := jsonParserRequireCurrent(receiver, method)
+	token, err := jsonParserRequireNumeric(receiver)
 	if err != nil {
 		return Null, err
 	}
-	if jsonParserTokenKind(token) != "VALUE_NUMBER_INT" {
-		return Null, jsonParserException("JSONParser.%s requires VALUE_NUMBER_INT", method)
-	}
-	value, err := strconv.ParseInt(jsonParserTokenText(token), 10, 64)
-	if err != nil {
-		return Null, jsonParserException("JSONParser.%s cannot parse integer: %v", method, err)
+	value, valid := jsonTruncatedIntegralNumber(json.Number(jsonParserTokenText(token)))
+	if !valid {
+		return Null, jsonParserException("JSONParser.%s cannot parse integer", method)
 	}
 	if strings.EqualFold(method, "getLongValue") {
 		return longIntValue(value), nil
+	}
+	if value < -2147483648 || value > 2147483647 {
+		line, column := jsonParserInputLocation(receiver, token)
+		return Null, jsonParserException("Numeric value (%s) out of range of int at input location [%d,%d]", jsonParserTokenText(token), line, column)
 	}
 	return Int(value), nil
 }
 
 func jsonParserDecimalValue(receiver Value, method string) (Value, error) {
-	token, err := jsonParserRequireCurrent(receiver, method)
+	token, err := jsonParserRequireNumeric(receiver)
 	if err != nil {
 		return Null, err
-	}
-	kind := jsonParserTokenKind(token)
-	if kind != "VALUE_NUMBER_INT" && kind != "VALUE_NUMBER_FLOAT" {
-		return Null, jsonParserException("JSONParser.%s requires numeric token", method)
 	}
 	text := jsonParserTokenText(token)
 	if strings.EqualFold(method, "getDoubleValue") {
@@ -555,8 +615,25 @@ func jsonParserBooleanValue(receiver Value) (Value, error) {
 	case "VALUE_FALSE":
 		return Bool(false), nil
 	default:
-		return Null, jsonParserException("JSONParser.getBooleanValue requires VALUE_TRUE or VALUE_FALSE")
+		line, column := jsonParserInputLocation(receiver, token)
+		return Null, jsonParserException("Current token (%s) not of boolean type at input location [%d,%d]", jsonParserTokenKind(token), line, column)
 	}
+}
+
+func jsonParserRequireNumeric(receiver Value) (Value, error) {
+	token, current := jsonParserCurrent(receiver)
+	if current {
+		kind := jsonParserTokenKind(token)
+		if kind == "VALUE_NUMBER_INT" || kind == "VALUE_NUMBER_FLOAT" {
+			return token, nil
+		}
+	}
+	kind, line, column := "null", 1, 1
+	if current {
+		kind = jsonParserTokenKind(token)
+		line, column = jsonParserInputLocation(receiver, token)
+	}
+	return Null, jsonParserException("Current token (%s) not numeric, can not use numeric value accessors at input location [%d,%d]", kind, line, column)
 }
 
 func jsonParserStringValue(receiver Value, method string) (string, error) {

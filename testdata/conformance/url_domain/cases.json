@@ -1,0 +1,1905 @@
+[
+  {
+    "id": "D001",
+    "code": "new URL('https://example.test').getProtocol()",
+    "compile": false,
+    "expected": "https",
+    "floorExpected": "https"
+  },
+  {
+    "id": "D002",
+    "code": "new URL('https://example.test').getHost()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D003",
+    "code": "new URL('https://example.test').getPort()",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "D004",
+    "code": "new URL('https://example.test').getAuthority()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D005",
+    "code": "new URL('https://example.test').getPath()",
+    "compile": false,
+    "expected": "",
+    "floorExpected": ""
+  },
+  {
+    "id": "D006",
+    "code": "new URL('https://example.test').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D007",
+    "code": "new URL('https://example.test').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D008",
+    "code": "new URL('https://example.test').getFile()",
+    "compile": false,
+    "expected": "",
+    "floorExpected": ""
+  },
+  {
+    "id": "D009",
+    "code": "new URL('https://example.test').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test",
+    "floorExpected": "https://example.test"
+  },
+  {
+    "id": "D010",
+    "code": "new URL('https://example.test/').getProtocol()",
+    "compile": false,
+    "expected": "https",
+    "floorExpected": "https"
+  },
+  {
+    "id": "D011",
+    "code": "new URL('https://example.test/').getHost()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D012",
+    "code": "new URL('https://example.test/').getPort()",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "D013",
+    "code": "new URL('https://example.test/').getAuthority()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D014",
+    "code": "new URL('https://example.test/').getPath()",
+    "compile": false,
+    "expected": "/",
+    "floorExpected": "/"
+  },
+  {
+    "id": "D015",
+    "code": "new URL('https://example.test/').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D016",
+    "code": "new URL('https://example.test/').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D017",
+    "code": "new URL('https://example.test/').getFile()",
+    "compile": false,
+    "expected": "/",
+    "floorExpected": "/"
+  },
+  {
+    "id": "D018",
+    "code": "new URL('https://example.test/').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test/",
+    "floorExpected": "https://example.test/"
+  },
+  {
+    "id": "D019",
+    "code": "new URL('https://example.test/path').getProtocol()",
+    "compile": false,
+    "expected": "https",
+    "floorExpected": "https"
+  },
+  {
+    "id": "D020",
+    "code": "new URL('https://example.test/path').getHost()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D021",
+    "code": "new URL('https://example.test/path').getPort()",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "D022",
+    "code": "new URL('https://example.test/path').getAuthority()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D023",
+    "code": "new URL('https://example.test/path').getPath()",
+    "compile": false,
+    "expected": "/path",
+    "floorExpected": "/path"
+  },
+  {
+    "id": "D024",
+    "code": "new URL('https://example.test/path').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D025",
+    "code": "new URL('https://example.test/path').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D026",
+    "code": "new URL('https://example.test/path').getFile()",
+    "compile": false,
+    "expected": "/path",
+    "floorExpected": "/path"
+  },
+  {
+    "id": "D027",
+    "code": "new URL('https://example.test/path').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test/path",
+    "floorExpected": "https://example.test/path"
+  },
+  {
+    "id": "D028",
+    "code": "new URL('https://example.test/path?').getProtocol()",
+    "compile": false,
+    "expected": "https",
+    "floorExpected": "https"
+  },
+  {
+    "id": "D029",
+    "code": "new URL('https://example.test/path?').getHost()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D030",
+    "code": "new URL('https://example.test/path?').getPort()",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "D031",
+    "code": "new URL('https://example.test/path?').getAuthority()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D032",
+    "code": "new URL('https://example.test/path?').getPath()",
+    "compile": false,
+    "expected": "/path",
+    "floorExpected": "/path"
+  },
+  {
+    "id": "D033",
+    "code": "new URL('https://example.test/path?').getQuery()",
+    "compile": false,
+    "expected": "",
+    "floorExpected": ""
+  },
+  {
+    "id": "D034",
+    "code": "new URL('https://example.test/path?').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D035",
+    "code": "new URL('https://example.test/path?').getFile()",
+    "compile": false,
+    "expected": "/path?",
+    "floorExpected": "/path?"
+  },
+  {
+    "id": "D036",
+    "code": "new URL('https://example.test/path?').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test/path?",
+    "floorExpected": "https://example.test/path?"
+  },
+  {
+    "id": "D037",
+    "code": "new URL('https://example.test/path#').getProtocol()",
+    "compile": false,
+    "expected": "https",
+    "floorExpected": "https"
+  },
+  {
+    "id": "D038",
+    "code": "new URL('https://example.test/path#').getHost()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D039",
+    "code": "new URL('https://example.test/path#').getPort()",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "D040",
+    "code": "new URL('https://example.test/path#').getAuthority()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D041",
+    "code": "new URL('https://example.test/path#').getPath()",
+    "compile": false,
+    "expected": "/path",
+    "floorExpected": "/path"
+  },
+  {
+    "id": "D042",
+    "code": "new URL('https://example.test/path#').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D043",
+    "code": "new URL('https://example.test/path#').getRef()",
+    "compile": false,
+    "expected": "",
+    "floorExpected": ""
+  },
+  {
+    "id": "D044",
+    "code": "new URL('https://example.test/path#').getFile()",
+    "compile": false,
+    "expected": "/path",
+    "floorExpected": "/path"
+  },
+  {
+    "id": "D045",
+    "code": "new URL('https://example.test/path#').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test/path#",
+    "floorExpected": "https://example.test/path#"
+  },
+  {
+    "id": "D046",
+    "code": "new URL('https://example.test/path?x=1#frag').getProtocol()",
+    "compile": false,
+    "expected": "https",
+    "floorExpected": "https"
+  },
+  {
+    "id": "D047",
+    "code": "new URL('https://example.test/path?x=1#frag').getHost()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D048",
+    "code": "new URL('https://example.test/path?x=1#frag').getPort()",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "D049",
+    "code": "new URL('https://example.test/path?x=1#frag').getAuthority()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D050",
+    "code": "new URL('https://example.test/path?x=1#frag').getPath()",
+    "compile": false,
+    "expected": "/path",
+    "floorExpected": "/path"
+  },
+  {
+    "id": "D051",
+    "code": "new URL('https://example.test/path?x=1#frag').getQuery()",
+    "compile": false,
+    "expected": "x=1",
+    "floorExpected": "x=1"
+  },
+  {
+    "id": "D052",
+    "code": "new URL('https://example.test/path?x=1#frag').getRef()",
+    "compile": false,
+    "expected": "frag",
+    "floorExpected": "frag"
+  },
+  {
+    "id": "D053",
+    "code": "new URL('https://example.test/path?x=1#frag').getFile()",
+    "compile": false,
+    "expected": "/path?x=1",
+    "floorExpected": "/path?x=1"
+  },
+  {
+    "id": "D054",
+    "code": "new URL('https://example.test/path?x=1#frag').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test/path?x=1#frag",
+    "floorExpected": "https://example.test/path?x=1#frag"
+  },
+  {
+    "id": "D055",
+    "code": "new URL('http://user:pass@example.test:8080/a/b?x=1&x=2#z').getProtocol()",
+    "compile": false,
+    "expected": "http",
+    "floorExpected": "http"
+  },
+  {
+    "id": "D056",
+    "code": "new URL('http://user:pass@example.test:8080/a/b?x=1&x=2#z').getHost()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D057",
+    "code": "new URL('http://user:pass@example.test:8080/a/b?x=1&x=2#z').getPort()",
+    "compile": false,
+    "expected": "8080",
+    "floorExpected": "8080"
+  },
+  {
+    "id": "D058",
+    "code": "new URL('http://user:pass@example.test:8080/a/b?x=1&x=2#z').getAuthority()",
+    "compile": false,
+    "expected": "user:pass@example.test:8080",
+    "floorExpected": "user:pass@example.test:8080"
+  },
+  {
+    "id": "D059",
+    "code": "new URL('http://user:pass@example.test:8080/a/b?x=1&x=2#z').getPath()",
+    "compile": false,
+    "expected": "/a/b",
+    "floorExpected": "/a/b"
+  },
+  {
+    "id": "D060",
+    "code": "new URL('http://user:pass@example.test:8080/a/b?x=1&x=2#z').getQuery()",
+    "compile": false,
+    "expected": "x=1&x=2",
+    "floorExpected": "x=1&x=2"
+  },
+  {
+    "id": "D061",
+    "code": "new URL('http://user:pass@example.test:8080/a/b?x=1&x=2#z').getRef()",
+    "compile": false,
+    "expected": "z",
+    "floorExpected": "z"
+  },
+  {
+    "id": "D062",
+    "code": "new URL('http://user:pass@example.test:8080/a/b?x=1&x=2#z').getFile()",
+    "compile": false,
+    "expected": "/a/b?x=1&x=2",
+    "floorExpected": "/a/b?x=1&x=2"
+  },
+  {
+    "id": "D063",
+    "code": "new URL('http://user:pass@example.test:8080/a/b?x=1&x=2#z').toExternalForm()",
+    "compile": false,
+    "expected": "http://user:pass@example.test:8080/a/b?x=1&x=2#z",
+    "floorExpected": "http://user:pass@example.test:8080/a/b?x=1&x=2#z"
+  },
+  {
+    "id": "D064",
+    "code": "new URL('HTTPS://EXAMPLE.TEST/A').getProtocol()",
+    "compile": false,
+    "expected": "HTTPS",
+    "floorExpected": "HTTPS"
+  },
+  {
+    "id": "D065",
+    "code": "new URL('HTTPS://EXAMPLE.TEST/A').getHost()",
+    "compile": false,
+    "expected": "EXAMPLE.TEST",
+    "floorExpected": "EXAMPLE.TEST"
+  },
+  {
+    "id": "D066",
+    "code": "new URL('HTTPS://EXAMPLE.TEST/A').getPort()",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "D067",
+    "code": "new URL('HTTPS://EXAMPLE.TEST/A').getAuthority()",
+    "compile": false,
+    "expected": "EXAMPLE.TEST",
+    "floorExpected": "EXAMPLE.TEST"
+  },
+  {
+    "id": "D068",
+    "code": "new URL('HTTPS://EXAMPLE.TEST/A').getPath()",
+    "compile": false,
+    "expected": "/A",
+    "floorExpected": "/A"
+  },
+  {
+    "id": "D069",
+    "code": "new URL('HTTPS://EXAMPLE.TEST/A').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D070",
+    "code": "new URL('HTTPS://EXAMPLE.TEST/A').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D071",
+    "code": "new URL('HTTPS://EXAMPLE.TEST/A').getFile()",
+    "compile": false,
+    "expected": "/A",
+    "floorExpected": "/A"
+  },
+  {
+    "id": "D072",
+    "code": "new URL('HTTPS://EXAMPLE.TEST/A').toExternalForm()",
+    "compile": false,
+    "expected": "HTTPS://EXAMPLE.TEST/A",
+    "floorExpected": "HTTPS://EXAMPLE.TEST/A"
+  },
+  {
+    "id": "D073",
+    "code": "new URL('https://[::1]:8443/a').getProtocol()",
+    "compile": false,
+    "expected": "https",
+    "floorExpected": "https"
+  },
+  {
+    "id": "D074",
+    "code": "new URL('https://[::1]:8443/a').getHost()",
+    "compile": false,
+    "expected": "[::1]",
+    "floorExpected": "[::1]"
+  },
+  {
+    "id": "D075",
+    "code": "new URL('https://[::1]:8443/a').getPort()",
+    "compile": false,
+    "expected": "8443",
+    "floorExpected": "8443"
+  },
+  {
+    "id": "D076",
+    "code": "new URL('https://[::1]:8443/a').getAuthority()",
+    "compile": false,
+    "expected": "[::1]:8443",
+    "floorExpected": "[::1]:8443"
+  },
+  {
+    "id": "D077",
+    "code": "new URL('https://[::1]:8443/a').getPath()",
+    "compile": false,
+    "expected": "/a",
+    "floorExpected": "/a"
+  },
+  {
+    "id": "D078",
+    "code": "new URL('https://[::1]:8443/a').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D079",
+    "code": "new URL('https://[::1]:8443/a').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D080",
+    "code": "new URL('https://[::1]:8443/a').getFile()",
+    "compile": false,
+    "expected": "/a",
+    "floorExpected": "/a"
+  },
+  {
+    "id": "D081",
+    "code": "new URL('https://[::1]:8443/a').toExternalForm()",
+    "compile": false,
+    "expected": "https://[::1]:8443/a",
+    "floorExpected": "https://[::1]:8443/a"
+  },
+  {
+    "id": "D082",
+    "code": "new URL('ftp://example.test/pub/file').getProtocol()",
+    "compile": false,
+    "expected": "ftp",
+    "floorExpected": "ftp"
+  },
+  {
+    "id": "D083",
+    "code": "new URL('ftp://example.test/pub/file').getHost()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D084",
+    "code": "new URL('ftp://example.test/pub/file').getPort()",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "D085",
+    "code": "new URL('ftp://example.test/pub/file').getAuthority()",
+    "compile": false,
+    "expected": "example.test",
+    "floorExpected": "example.test"
+  },
+  {
+    "id": "D086",
+    "code": "new URL('ftp://example.test/pub/file').getPath()",
+    "compile": false,
+    "expected": "/pub/file",
+    "floorExpected": "/pub/file"
+  },
+  {
+    "id": "D087",
+    "code": "new URL('ftp://example.test/pub/file').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D088",
+    "code": "new URL('ftp://example.test/pub/file').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D089",
+    "code": "new URL('ftp://example.test/pub/file').getFile()",
+    "compile": false,
+    "expected": "/pub/file",
+    "floorExpected": "/pub/file"
+  },
+  {
+    "id": "D090",
+    "code": "new URL('ftp://example.test/pub/file').toExternalForm()",
+    "compile": false,
+    "expected": "ftp://example.test/pub/file",
+    "floorExpected": "ftp://example.test/pub/file"
+  },
+  {
+    "id": "D091",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'next').getPath()",
+    "compile": false,
+    "expected": "/a/next",
+    "floorExpected": "/a/next"
+  },
+  {
+    "id": "D092",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'next').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D093",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'next').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D094",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'next').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test/a/next",
+    "floorExpected": "https://example.test/a/next"
+  },
+  {
+    "id": "D095",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'/root').getPath()",
+    "compile": false,
+    "expected": "/root",
+    "floorExpected": "/root"
+  },
+  {
+    "id": "D096",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'/root').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D097",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'/root').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D098",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'/root').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test/root",
+    "floorExpected": "https://example.test/root"
+  },
+  {
+    "id": "D099",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'../up').getPath()",
+    "compile": false,
+    "expected": "/up",
+    "floorExpected": "/up"
+  },
+  {
+    "id": "D100",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'../up').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D101",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'../up').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D102",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'../up').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test/up",
+    "floorExpected": "https://example.test/up"
+  },
+  {
+    "id": "D103",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'?query').getPath()",
+    "compile": false,
+    "expected": "/a/",
+    "floorExpected": "/a/"
+  },
+  {
+    "id": "D104",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'?query').getQuery()",
+    "compile": false,
+    "expected": "query",
+    "floorExpected": "query"
+  },
+  {
+    "id": "D105",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'?query').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D106",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'?query').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test/a/?query",
+    "floorExpected": "https://example.test/a/?query"
+  },
+  {
+    "id": "D107",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'#fragment').getPath()",
+    "compile": false,
+    "expected": "/a/b",
+    "floorExpected": "/a/b"
+  },
+  {
+    "id": "D108",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'#fragment').getQuery()",
+    "compile": false,
+    "expected": "old",
+    "floorExpected": "old"
+  },
+  {
+    "id": "D109",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'#fragment').getRef()",
+    "compile": false,
+    "expected": "fragment",
+    "floorExpected": "fragment"
+  },
+  {
+    "id": "D110",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'#fragment').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test/a/b?old#fragment",
+    "floorExpected": "https://example.test/a/b?old#fragment"
+  },
+  {
+    "id": "D111",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'//other.test/path').getPath()",
+    "compile": false,
+    "expected": "/path",
+    "floorExpected": "/path"
+  },
+  {
+    "id": "D112",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'//other.test/path').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D113",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'//other.test/path').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D114",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'//other.test/path').toExternalForm()",
+    "compile": false,
+    "expected": "https://other.test/path",
+    "floorExpected": "https://other.test/path"
+  },
+  {
+    "id": "D115",
+    "code": "DomainParser.parse('acme.my.salesforce.com').getDomainType()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D116",
+    "code": "DomainParser.parse('acme.my.salesforce.com').getMyDomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D117",
+    "code": "DomainParser.parse('acme.my.salesforce.com').getPackageName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D118",
+    "code": "DomainParser.parse('acme.my.salesforce.com').getSandboxName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D119",
+    "code": "DomainParser.parse('acme.my.salesforce.com').getSitesSubdomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D120",
+    "code": "DomainParser.parse('acme.lightning.force.com').getDomainType()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D121",
+    "code": "DomainParser.parse('acme.lightning.force.com').getMyDomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D122",
+    "code": "DomainParser.parse('acme.lightning.force.com').getPackageName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D123",
+    "code": "DomainParser.parse('acme.lightning.force.com').getSandboxName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D124",
+    "code": "DomainParser.parse('acme.lightning.force.com').getSitesSubdomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D125",
+    "code": "DomainParser.parse('acme--dev.sandbox.my.salesforce.com').getDomainType()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D126",
+    "code": "DomainParser.parse('acme--dev.sandbox.my.salesforce.com').getMyDomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D127",
+    "code": "DomainParser.parse('acme--dev.sandbox.my.salesforce.com').getPackageName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D128",
+    "code": "DomainParser.parse('acme--dev.sandbox.my.salesforce.com').getSandboxName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D129",
+    "code": "DomainParser.parse('acme--dev.sandbox.my.salesforce.com').getSitesSubdomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D130",
+    "code": "DomainParser.parse('acme--dev.sandbox.lightning.force.com').getDomainType()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D131",
+    "code": "DomainParser.parse('acme--dev.sandbox.lightning.force.com').getMyDomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D132",
+    "code": "DomainParser.parse('acme--dev.sandbox.lightning.force.com').getPackageName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D133",
+    "code": "DomainParser.parse('acme--dev.sandbox.lightning.force.com').getSandboxName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D134",
+    "code": "DomainParser.parse('acme--dev.sandbox.lightning.force.com').getSitesSubdomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D135",
+    "code": "DomainParser.parse('acme--c.vf.force.com').getDomainType()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D136",
+    "code": "DomainParser.parse('acme--c.vf.force.com').getMyDomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D137",
+    "code": "DomainParser.parse('acme--c.vf.force.com').getPackageName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D138",
+    "code": "DomainParser.parse('acme--c.vf.force.com').getSandboxName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D139",
+    "code": "DomainParser.parse('acme--c.vf.force.com').getSitesSubdomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D140",
+    "code": "DomainParser.parse('acme.my.site.com').getDomainType()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D141",
+    "code": "DomainParser.parse('acme.my.site.com').getMyDomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D142",
+    "code": "DomainParser.parse('acme.my.site.com').getPackageName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D143",
+    "code": "DomainParser.parse('acme.my.site.com').getSandboxName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D144",
+    "code": "DomainParser.parse('acme.my.site.com').getSitesSubdomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "D145",
+    "code": "DomainParser.parse('example.test').getDomainType()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "D146",
+    "code": "DomainParser.parse('example.test').getMyDomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "D147",
+    "code": "DomainParser.parse('example.test').getPackageName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "D148",
+    "code": "DomainParser.parse('example.test').getSandboxName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "D149",
+    "code": "DomainParser.parse('example.test').getSitesSubdomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "D150",
+    "code": "DomainParser.parse('').getDomainType()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "D151",
+    "code": "DomainParser.parse('').getMyDomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "D152",
+    "code": "DomainParser.parse('').getPackageName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "D153",
+    "code": "DomainParser.parse('').getSandboxName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "D154",
+    "code": "DomainParser.parse('').getSitesSubdomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "D155",
+    "code": "String host = DomainCreator.getContentHostname(); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D156",
+    "code": "String host = DomainCreator.getExperienceCloudSitesBuilderHostname(); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D157",
+    "code": "String host = DomainCreator.getExperienceCloudSitesHostname(); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D158",
+    "code": "String host = DomainCreator.getExperienceCloudSitesLivePreviewHostname(); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D159",
+    "code": "String host = DomainCreator.getExperienceCloudSitesPreviewHostname(); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D160",
+    "code": "String host = DomainCreator.getLightningHostname(); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D161",
+    "code": "String host = DomainCreator.getOrgMyDomainHostname(); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D162",
+    "code": "String host = DomainCreator.getSalesforceSitesHostname(); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D163",
+    "code": "String host = DomainCreator.getSetupHostname(); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D164",
+    "code": "String host = DomainCreator.getVisualforceHostname(''); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D165",
+    "code": "String host = DomainCreator.getLightningContainerComponentHostname(''); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D166",
+    "code": "String host = DomainCreator.getVisualforceHostname('demo'); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D167",
+    "code": "String host = DomainCreator.getLightningContainerComponentHostname('demo'); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D168",
+    "code": "String host = DomainCreator.getVisualforceHostname('a_b'); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D169",
+    "code": "String host = DomainCreator.getLightningContainerComponentHostname('a_b'); r = host != null && host.length() > 0 && !host.contains('/');",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "D170",
+    "code": "URL.getOrgDomainUrl().getProtocol()",
+    "compile": false,
+    "expected": "https",
+    "floorExpected": "https"
+  },
+  {
+    "id": "D171",
+    "code": "URL.getOrgDomainUrl().getPort()",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "D172",
+    "code": "URL.getOrgDomainUrl().getPath()",
+    "compile": false,
+    "expected": "",
+    "floorExpected": ""
+  },
+  {
+    "id": "D173",
+    "code": "URL.getOrgDomainUrl().getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D174",
+    "code": "URL.getOrgDomainUrl().getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "D175",
+    "code": "URL.getSalesforceBaseUrl().getProtocol()",
+    "compile": false,
+    "expected": "COMPILE_ERROR\tline 30: Method was removed after version 58.0: getSalesforceBaseUrl",
+    "floorExpected": "COMPILE_ERROR\tline 30: Method was removed after version 58.0: getSalesforceBaseUrl",
+    "carry": "Source syntax and version rules: semantic call validation omits chained receivers, bypassing the existing removed-method gate."
+  },
+  {
+    "id": "D176",
+    "code": "URL.getCurrentRequestUrl().getProtocol()",
+    "compile": false,
+    "expected": "https",
+    "floorExpected": "https"
+  },
+  {
+    "id": "D177",
+    "code": "DomainParser.parse((String)null)",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Specify a hostname",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Specify a hostname"
+  },
+  {
+    "id": "D178",
+    "code": "DomainCreator.getVisualforceHostname((String)null)",
+    "compile": false,
+    "expected": "${ORG_LABEL}--c.scratch.vf.force.com",
+    "floorExpected": "${ORG_LABEL}--c.scratch.vf.force.com"
+  },
+  {
+    "id": "D179",
+    "code": "new URL((String)null)",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "D180",
+    "code": "new URL('bad')",
+    "compile": false,
+    "expected": "EXC|System.StringException|no protocol: bad",
+    "floorExpected": "EXC|System.StringException|no protocol: bad"
+  },
+  {
+    "id": "D181",
+    "code": "new URL('')",
+    "compile": false,
+    "expected": "EXC|System.StringException|no protocol: ",
+    "floorExpected": "EXC|System.StringException|no protocol: "
+  },
+  {
+    "id": "D182",
+    "code": "new URL('http://')",
+    "compile": false,
+    "expected": "EXC|System.StringException|Expected authority at index 7: http://",
+    "floorExpected": "EXC|System.StringException|Expected authority at index 7: http://"
+  },
+  {
+    "id": "D183",
+    "code": "new URL('https://example.test:bad/')",
+    "compile": false,
+    "expected": "https://example.test:bad/",
+    "floorExpected": "https://example.test:bad/"
+  },
+  {
+    "id": "Z001",
+    "code": "URL u = new URL(7); pq.out('Z001', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.Url].<Constructor>(Integer)",
+    "floorExpected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.Url].<Constructor>(Integer)"
+  },
+  {
+    "id": "Z002",
+    "code": "URL.getOrgDomainUrl(1); pq.out('Z002', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getOrgDomainUrl(Integer) from the type System.Url",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getOrgDomainUrl(Integer) from the type System.Url"
+  },
+  {
+    "id": "Z003",
+    "code": "Domain d = new Domain(); pq.out('Z003', 'compiled');",
+    "compile": true,
+    "expected": "compiled",
+    "floorExpected": "compiled"
+  },
+  {
+    "id": "Z004",
+    "code": "DomainParser.parse(7); pq.out('Z004', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void parse(Integer) from the type System.DomainParser",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void parse(Integer) from the type System.DomainParser"
+  },
+  {
+    "id": "Z005",
+    "code": "DomainCreator.getVisualforceHostname(); pq.out('Z005', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getVisualforceHostname() from the type System.DomainCreator",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getVisualforceHostname() from the type System.DomainCreator"
+  },
+  {
+    "id": "Z006",
+    "code": "new URL('https://example.test').getQuery(1); pq.out('Z006', 'compiled');",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getQuery(Integer) from the type System.Url",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getQuery(Integer) from the type System.Url"
+  },
+  {
+    "id": "C001",
+    "code": "URL.getOrgDomainUrl().getHost()",
+    "compile": false,
+    "expected": "${ORG_LABEL}.scratch.my.salesforce.com",
+    "floorExpected": "${ORG_LABEL}.scratch.my.salesforce.com"
+  },
+  {
+    "id": "C002",
+    "code": "DomainCreator.getOrgMyDomainHostname()",
+    "compile": false,
+    "expected": "${ORG_LABEL}.scratch.my.salesforce.com",
+    "floorExpected": "${ORG_LABEL}.scratch.my.salesforce.com"
+  },
+  {
+    "id": "C003",
+    "code": "DomainCreator.getVisualforceHostname('')",
+    "compile": false,
+    "expected": "${ORG_LABEL}--c.scratch.vf.force.com",
+    "floorExpected": "${ORG_LABEL}--c.scratch.vf.force.com"
+  },
+  {
+    "id": "C004",
+    "code": "DomainCreator.getVisualforceHostname((String)null)",
+    "compile": false,
+    "expected": "${ORG_LABEL}--c.scratch.vf.force.com",
+    "floorExpected": "${ORG_LABEL}--c.scratch.vf.force.com"
+  },
+  {
+    "id": "C005",
+    "code": "DomainParser.parse(DomainCreator.getOrgMyDomainHostname()).getDomainType()",
+    "compile": false,
+    "expected": "ORG_MY_DOMAIN",
+    "floorExpected": "ORG_MY_DOMAIN"
+  },
+  {
+    "id": "C006",
+    "code": "DomainParser.parse(DomainCreator.getOrgMyDomainHostname()).getMyDomainName()",
+    "compile": false,
+    "expected": "${ORG_LABEL}",
+    "floorExpected": "${ORG_LABEL}"
+  },
+  {
+    "id": "C007",
+    "code": "DomainParser.parse(DomainCreator.getOrgMyDomainHostname()).getPackageName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "C008",
+    "code": "DomainParser.parse(DomainCreator.getOrgMyDomainHostname()).getSandboxName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "C009",
+    "code": "DomainParser.parse(DomainCreator.getOrgMyDomainHostname()).getSitesSubdomainName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "C011",
+    "code": "DomainParser.parse(DomainCreator.getVisualforceHostname('pkg')).getDomainType()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "C012",
+    "code": "DomainParser.parse(DomainCreator.getVisualforceHostname('pkg')).getMyDomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "C013",
+    "code": "DomainParser.parse(DomainCreator.getVisualforceHostname('pkg')).getPackageName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "C014",
+    "code": "DomainParser.parse(DomainCreator.getVisualforceHostname('pkg')).getSandboxName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "C015",
+    "code": "DomainParser.parse(DomainCreator.getVisualforceHostname('pkg')).getSitesSubdomainName()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "C016",
+    "code": "DomainParser.parse(DomainCreator.getVisualforceHostname('pkg')).toString()",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "C017",
+    "code": "DomainParser.parse(URL.getOrgDomainUrl()).getDomainType()",
+    "compile": false,
+    "expected": "ORG_MY_DOMAIN",
+    "floorExpected": "ORG_MY_DOMAIN"
+  },
+  {
+    "id": "C018",
+    "code": "DomainParser.parse(URL.getOrgDomainUrl()).getMyDomainName()",
+    "compile": false,
+    "expected": "${ORG_LABEL}",
+    "floorExpected": "${ORG_LABEL}"
+  },
+  {
+    "id": "C019",
+    "code": "DomainParser.parse(URL.getOrgDomainUrl()).getPackageName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "C020",
+    "code": "DomainParser.parse(URL.getOrgDomainUrl()).getSandboxName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "C021",
+    "code": "DomainParser.parse(URL.getOrgDomainUrl()).getSitesSubdomainName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "C023",
+    "code": "DomainParser.parse('https://' + DomainCreator.getVisualforceHostname('pkg') + '/apex/Home')",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must belong to this org"
+  },
+  {
+    "id": "C024",
+    "code": "DomainParser.parse(new URL('https://Example.TEST/apex/Home'))",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "C025",
+    "code": "DomainParser.parse('LOCAL.GLADE.EXAMPLE')",
+    "compile": false,
+    "expected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain",
+    "floorExpected": "EXC|System.InvalidParameterValueException|Hostname must be a valid Salesforce hosted domain"
+  },
+  {
+    "id": "C026",
+    "code": "DomainParser.parse((URL)null)",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Script-thrown exception",
+    "floorExpected": "EXC|System.NullPointerException|Script-thrown exception"
+  },
+  {
+    "id": "C027",
+    "code": "DomainCreator.getVisualforceHostname((String)null) == DomainCreator.getVisualforceHostname('')",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "C028",
+    "code": "DomainCreator.getOrgMyDomainHostname() == URL.getOrgDomainUrl().getHost()",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "C029",
+    "code": "DomainParser.parse(DomainCreator.getOrgMyDomainHostname()).getMyDomainName() == DomainParser.parse(URL.getOrgDomainUrl()).getMyDomainName()",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "C030",
+    "code": "new URL('https://example.test:bad/').getProtocol()",
+    "compile": false,
+    "expected": "https",
+    "floorExpected": "https"
+  },
+  {
+    "id": "C031",
+    "code": "new URL('https://example.test:bad/').getHost()",
+    "compile": false,
+    "expected": "",
+    "floorExpected": ""
+  },
+  {
+    "id": "C032",
+    "code": "new URL('https://example.test:bad/').getPort()",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "C033",
+    "code": "new URL('https://example.test:bad/').getAuthority()",
+    "compile": false,
+    "expected": "example.test:bad",
+    "floorExpected": "example.test:bad"
+  },
+  {
+    "id": "C034",
+    "code": "new URL('https://example.test:bad/').getPath()",
+    "compile": false,
+    "expected": "/",
+    "floorExpected": "/"
+  },
+  {
+    "id": "C035",
+    "code": "new URL('https://example.test:bad/').getQuery()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "C036",
+    "code": "new URL('https://example.test:bad/').getRef()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "C037",
+    "code": "new URL('https://example.test:bad/').getFile()",
+    "compile": false,
+    "expected": "/",
+    "floorExpected": "/"
+  },
+  {
+    "id": "C038",
+    "code": "new URL('http://').toExternalForm()",
+    "compile": false,
+    "expected": "EXC|System.StringException|Expected authority at index 7: http://",
+    "floorExpected": "EXC|System.StringException|Expected authority at index 7: http://"
+  },
+  {
+    "id": "C039",
+    "code": "new URL(new URL('https://example.test/a/b?old#ref'),'?').toExternalForm()",
+    "compile": false,
+    "expected": "https://example.test/a/?",
+    "floorExpected": "https://example.test/a/?"
+  },
+  {
+    "id": "C041",
+    "code": "URL u = URL.getSalesforceBaseUrl(); r = u.getProtocol();",
+    "compile": false,
+    "expected": "COMPILE_ERROR\tline 45: Method was removed after version 58.0: getSalesforceBaseUrl",
+    "floorExpected": "COMPILE_ERROR\tline 45: Method was removed after version 58.0: getSalesforceBaseUrl"
+  },
+  {
+    "id": "H001",
+    "code": "DomainCreator.getContentHostname()",
+    "compile": false,
+    "expected": "${ORG_LABEL}.scratch.file.force.com",
+    "floorExpected": "${ORG_LABEL}.scratch.file.force.com"
+  },
+  {
+    "id": "H002",
+    "code": "DomainCreator.getExperienceCloudSitesBuilderHostname()",
+    "compile": false,
+    "expected": "${ORG_LABEL}.scratch.builder.salesforce-experience.com",
+    "floorExpected": "${ORG_LABEL}.scratch.builder.salesforce-experience.com"
+  },
+  {
+    "id": "H003",
+    "code": "DomainCreator.getExperienceCloudSitesHostname()",
+    "compile": false,
+    "expected": "${ORG_LABEL}.scratch.my.site.com",
+    "floorExpected": "${ORG_LABEL}.scratch.my.site.com"
+  },
+  {
+    "id": "H004",
+    "code": "DomainCreator.getExperienceCloudSitesLivePreviewHostname()",
+    "compile": false,
+    "expected": "${ORG_LABEL}.scratch.live-preview.salesforce-experience.com",
+    "floorExpected": "${ORG_LABEL}.scratch.live-preview.salesforce-experience.com"
+  },
+  {
+    "id": "H005",
+    "code": "DomainCreator.getExperienceCloudSitesPreviewHostname()",
+    "compile": false,
+    "expected": "${ORG_LABEL}.scratch.preview.salesforce-experience.com",
+    "floorExpected": "${ORG_LABEL}.scratch.preview.salesforce-experience.com"
+  },
+  {
+    "id": "H006",
+    "code": "DomainCreator.getLightningHostname()",
+    "compile": false,
+    "expected": "${ORG_LABEL}.scratch.lightning.force.com",
+    "floorExpected": "${ORG_LABEL}.scratch.lightning.force.com"
+  },
+  {
+    "id": "H007",
+    "code": "DomainCreator.getOrgMyDomainHostname()",
+    "compile": false,
+    "expected": "${ORG_LABEL}.scratch.my.salesforce.com",
+    "floorExpected": "${ORG_LABEL}.scratch.my.salesforce.com"
+  },
+  {
+    "id": "H008",
+    "code": "DomainCreator.getSalesforceSitesHostname()",
+    "compile": false,
+    "expected": "${ORG_LABEL}.scratch.my.salesforce-sites.com",
+    "floorExpected": "${ORG_LABEL}.scratch.my.salesforce-sites.com"
+  },
+  {
+    "id": "H009",
+    "code": "DomainCreator.getSetupHostname()",
+    "compile": false,
+    "expected": "${ORG_LABEL}.scratch.my.salesforce-setup.com",
+    "floorExpected": "${ORG_LABEL}.scratch.my.salesforce-setup.com"
+  },
+  {
+    "id": "H010",
+    "code": "DomainCreator.getVisualforceHostname('')",
+    "compile": false,
+    "expected": "${ORG_LABEL}--c.scratch.vf.force.com",
+    "floorExpected": "${ORG_LABEL}--c.scratch.vf.force.com"
+  },
+  {
+    "id": "H011",
+    "code": "DomainCreator.getLightningContainerComponentHostname('')",
+    "compile": false,
+    "expected": "${ORG_LABEL}--c.scratch.container.force.com",
+    "floorExpected": "${ORG_LABEL}--c.scratch.container.force.com"
+  },
+  {
+    "id": "H012",
+    "code": "DomainCreator.getVisualforceHostname('pkg')",
+    "compile": false,
+    "expected": "${ORG_LABEL}--pkg.scratch.vf.force.com",
+    "floorExpected": "${ORG_LABEL}--pkg.scratch.vf.force.com"
+  },
+  {
+    "id": "H013",
+    "code": "DomainCreator.getLightningContainerComponentHostname('pkg')",
+    "compile": false,
+    "expected": "${ORG_LABEL}--pkg.scratch.container.force.com",
+    "floorExpected": "${ORG_LABEL}--pkg.scratch.container.force.com"
+  },
+  {
+    "id": "H014",
+    "code": "DomainParser.parse(DomainCreator.getVisualforceHostname('')).getDomainType()",
+    "compile": false,
+    "expected": "VISUALFORCE_DOMAIN",
+    "floorExpected": "VISUALFORCE_DOMAIN"
+  },
+  {
+    "id": "H015",
+    "code": "DomainParser.parse(DomainCreator.getVisualforceHostname('')).getMyDomainName()",
+    "compile": false,
+    "expected": "${ORG_LABEL}",
+    "floorExpected": "${ORG_LABEL}"
+  },
+  {
+    "id": "H016",
+    "code": "DomainParser.parse(DomainCreator.getVisualforceHostname('')).getPackageName()",
+    "compile": false,
+    "expected": "c",
+    "floorExpected": "c"
+  },
+  {
+    "id": "H017",
+    "code": "DomainParser.parse(DomainCreator.getVisualforceHostname('')).getSandboxName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "H018",
+    "code": "DomainParser.parse(DomainCreator.getVisualforceHostname('')).getSitesSubdomainName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "H019",
+    "code": "DomainParser.parse(DomainCreator.getLightningHostname()).getDomainType()",
+    "compile": false,
+    "expected": "LIGHTNING_DOMAIN",
+    "floorExpected": "LIGHTNING_DOMAIN"
+  },
+  {
+    "id": "H020",
+    "code": "DomainParser.parse(DomainCreator.getLightningHostname()).getMyDomainName()",
+    "compile": false,
+    "expected": "${ORG_LABEL}",
+    "floorExpected": "${ORG_LABEL}"
+  },
+  {
+    "id": "H021",
+    "code": "DomainParser.parse(DomainCreator.getLightningHostname()).getPackageName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "H022",
+    "code": "DomainParser.parse(DomainCreator.getLightningHostname()).getSandboxName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "H023",
+    "code": "DomainParser.parse(DomainCreator.getLightningHostname()).getSitesSubdomainName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "H024",
+    "code": "new Domain().getDomainType()",
+    "compile": false,
+    "expected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getDomainType() from the type Domain",
+    "floorExpected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getDomainType() from the type Domain",
+    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only."
+  },
+  {
+    "id": "H025",
+    "code": "new Domain().getMyDomainName()",
+    "compile": false,
+    "expected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getMyDomainName() from the type Domain",
+    "floorExpected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getMyDomainName() from the type Domain",
+    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only."
+  },
+  {
+    "id": "H026",
+    "code": "new Domain().getPackageName()",
+    "compile": false,
+    "expected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getPackageName() from the type Domain",
+    "floorExpected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getPackageName() from the type Domain",
+    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only."
+  },
+  {
+    "id": "H027",
+    "code": "new Domain().getSandboxName()",
+    "compile": false,
+    "expected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getSandboxName() from the type Domain",
+    "floorExpected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getSandboxName() from the type Domain",
+    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only."
+  },
+  {
+    "id": "H028",
+    "code": "new Domain().getSitesSubdomainName()",
+    "compile": false,
+    "expected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getSitesSubdomainName() from the type Domain",
+    "floorExpected": "COMPILE_ERROR\tline 29: Method does not exist or incorrect signature: void getSitesSubdomainName() from the type Domain",
+    "carry": "source syntax: constructor/member type checking accepts this getter on new Domain(), which native rejects; Z003 observes constructor compilation only."
+  },
+  {
+    "id": "H029",
+    "code": "new URL('trail')",
+    "compile": false,
+    "expected": "EXC|System.StringException|no protocol: trail",
+    "floorExpected": "EXC|System.StringException|no protocol: trail"
+  },
+  {
+    "id": "H030",
+    "code": "new URL('https:///trail')",
+    "compile": false,
+    "expected": "https:///trail",
+    "floorExpected": "https:///trail"
+  },
+  {
+    "id": "H031",
+    "code": "new URL('https', 'example.test', 70000, '/trail')",
+    "compile": false,
+    "expected": "https://example.test:70000/trail",
+    "floorExpected": "https://example.test:70000/trail"
+  },
+  {
+    "id": "H032",
+    "code": "new URL('https', '', '/trail')",
+    "compile": false,
+    "expected": "https:/trail",
+    "floorExpected": "https:/trail"
+  },
+  {
+    "id": "T001",
+    "code": "DomainParser.parse(DomainCreator.getContentHostname()).getDomainType()",
+    "compile": false,
+    "expected": "CONTENT_DOMAIN",
+    "floorExpected": "CONTENT_DOMAIN"
+  },
+  {
+    "id": "T002",
+    "code": "DomainParser.parse(DomainCreator.getExperienceCloudSitesBuilderHostname()).getDomainType()",
+    "compile": false,
+    "expected": "EXPERIENCE_CLOUD_SITES_BUILDER_DOMAIN",
+    "floorExpected": "EXPERIENCE_CLOUD_SITES_BUILDER_DOMAIN"
+  },
+  {
+    "id": "T003",
+    "code": "DomainParser.parse(DomainCreator.getExperienceCloudSitesHostname()).getDomainType()",
+    "compile": false,
+    "expected": "EXPERIENCE_CLOUD_SITES_DOMAIN",
+    "floorExpected": "EXPERIENCE_CLOUD_SITES_DOMAIN"
+  },
+  {
+    "id": "T004",
+    "code": "DomainParser.parse(DomainCreator.getExperienceCloudSitesLivePreviewHostname()).getDomainType()",
+    "compile": false,
+    "expected": "EXPERIENCE_CLOUD_SITES_LIVE_PREVIEW_DOMAIN",
+    "floorExpected": "EXPERIENCE_CLOUD_SITES_LIVE_PREVIEW_DOMAIN"
+  },
+  {
+    "id": "T005",
+    "code": "DomainParser.parse(DomainCreator.getExperienceCloudSitesPreviewHostname()).getDomainType()",
+    "compile": false,
+    "expected": "EXPERIENCE_CLOUD_SITES_PREVIEW_DOMAIN",
+    "floorExpected": "EXPERIENCE_CLOUD_SITES_PREVIEW_DOMAIN"
+  },
+  {
+    "id": "T006",
+    "code": "DomainParser.parse(DomainCreator.getLightningHostname()).getDomainType()",
+    "compile": false,
+    "expected": "LIGHTNING_DOMAIN",
+    "floorExpected": "LIGHTNING_DOMAIN"
+  },
+  {
+    "id": "T007",
+    "code": "DomainParser.parse(DomainCreator.getOrgMyDomainHostname()).getDomainType()",
+    "compile": false,
+    "expected": "ORG_MY_DOMAIN",
+    "floorExpected": "ORG_MY_DOMAIN"
+  },
+  {
+    "id": "T008",
+    "code": "DomainParser.parse(DomainCreator.getSalesforceSitesHostname()).getDomainType()",
+    "compile": false,
+    "expected": "SALESFORCE_SITES_DOMAIN",
+    "floorExpected": "SALESFORCE_SITES_DOMAIN"
+  },
+  {
+    "id": "T009",
+    "code": "DomainParser.parse(DomainCreator.getSetupHostname()).getDomainType()",
+    "compile": false,
+    "expected": "SETUP_DOMAIN",
+    "floorExpected": "SETUP_DOMAIN"
+  },
+  {
+    "id": "T010",
+    "code": "DomainParser.parse(DomainCreator.getLightningContainerComponentHostname('')).getDomainType()",
+    "compile": false,
+    "expected": "LIGHTNING_CONTAINER_COMPONENT_DOMAIN",
+    "floorExpected": "LIGHTNING_CONTAINER_COMPONENT_DOMAIN"
+  },
+  {
+    "id": "T011",
+    "code": "DomainParser.parse(DomainCreator.getExperienceCloudSitesHostname()).getSitesSubdomainName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "T012",
+    "code": "DomainParser.parse(DomainCreator.getSalesforceSitesHostname()).getSitesSubdomainName()",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  }
+]

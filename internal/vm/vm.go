@@ -19,7 +19,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf16"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/dml"
@@ -133,6 +132,23 @@ func (vm *VM) currentUserInfoField(field, fallback string) string {
 			return vm.userTypeFromCurrentUserProfile(vm.executionUser, fallback)
 		}
 		return fallback
+	}
+	// Anonymous execution shares the org's default user with Apex tests.
+	// Fixture-backed context fields must not silently fall back to VM defaults.
+	// DML reads the default user's Id for every defaulted field; read it from
+	// the stored record when the record cannot shadow it.
+	if field == "Id" {
+		if id, ok := vm.defaultOrgUserID(); ok {
+			return id
+		}
+	}
+	if user := vm.defaultOrgUser(); user.Kind != "" {
+		if value, ok := userInfoFieldValue(user, field); ok {
+			return value
+		}
+		if value, ok := vm.currentUserStoredField(user, field); ok {
+			return value
+		}
 	}
 	return fallback
 }
@@ -271,6 +287,9 @@ func (vm *VM) shouldEnqueueFuture(method Method) bool {
 }
 
 func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value, error) {
+	if vm.rejectAsyncActions {
+		return Null, vm.rejectSynchronousAsyncAction(fmt.Sprintf("%s cannot cross the synchronous LWC action boundary", method.Name))
+	}
 	if vm.testContext == nil {
 		return Null, nil
 	}
@@ -478,64 +497,59 @@ func (vm *VM) webServiceCalloutInvoke(args []Value, result *Result) (Value, erro
 	if len(args) != 4 {
 		return Null, fmt.Errorf("WebServiceCallout.invoke expects stub, request, response map, and options")
 	}
+	if args[2].Kind == ValueNull {
+		return Null, newExceptionError("NullPointerException", "Argument 3 cannot be null")
+	}
+	if args[2].Kind != ValueMap {
+		return Null, fmt.Errorf("WebServiceCallout.invoke expects response map")
+	}
+	if args[3].Kind == ValueNull {
+		return Null, newExceptionError("NullPointerException", "Argument 4 cannot be null")
+	}
+	if args[3].Kind != ValueList {
+		return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
+	}
+	if len(args[3].List) != 7 {
+		return Null, newExceptionError("TypeException", fmt.Sprintf("Invalid info with length %d", len(args[3].List)))
+	}
+	for _, option := range args[3].List {
+		if option.Kind != ValueString && option.Kind != ValueNull {
+			return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
+		}
+	}
+	// A missing callout stub fails before hosted transport. Registered
+	// mocks keep their existing response-map dispatch, including null stubs.
+	if args[0].Kind == ValueNull && vm.testContext == nil {
+		return Null, newExceptionError("CalloutException", "Web service callout failed: Callout stub not found: null")
+	}
+	if vm.testContext == nil {
+		return Null, unsupportedCallError("WebServiceCallout.invoke real network transport")
+	}
+	if vm.testContext.WebServiceMock.Kind != ValueObject {
+		return Null, newExceptionError("TypeException", "Methods defined as TestMethod do not support Web service callouts")
+	}
 	if err := vm.incrementLimit("callouts", 1); err != nil {
 		return Null, err
 	}
 	appendTrace(result, "apex.callout.webservice", "apex.callout", map[string]any{"operation": "WebServiceCallout.invoke"})
-	if args[2].Kind != ValueMap {
-		return Null, fmt.Errorf("WebServiceCallout.invoke expects response map")
-	}
-	if args[3].Kind != ValueList || len(args[3].List) != 7 {
-		return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
-	}
-	for _, option := range args[3].List {
-		if option.Kind != ValueString {
-			return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
-		}
-	}
+	// The mock receives the caller's response map unchanged. Generated WSDL
+	// methods seed response_x with null and require the mock to supply a result.
 	if args[2].Map == nil {
 		args[2].Map = make(map[string]Value)
 	}
 	if args[2].MapKeys == nil {
 		args[2].MapKeys = make(map[string]Value)
 	}
-	responseType := scalarText(args[3].List[6])
-	responseKey := mapKey(String("response_x"))
-	response, ok := args[2].Map[responseKey]
-	if !ok || response.Kind != ValueObject {
-		response = Object(responseType)
-		if responseType != "" {
-			vm.initializeFields(&response, responseType)
-		}
-		args[2].Map[responseKey] = response
-		args[2].MapKeys[responseKey] = String("response_x")
-	}
-	if response.Fields == nil {
-		response.Fields = make(map[string]Value)
-	}
-	if vm.testContext == nil || vm.testContext.WebServiceMock.Kind != ValueObject {
-		operation := scalarText(args[3].List[3])
-		if strings.EqualFold(operation, "renameMetadata") {
-			saveResult := Object("MetadataService.SaveResult")
-			saveResult.Fields["success"] = Bool(true)
-			response.Fields["result"] = saveResult
-		} else {
-			response.Fields["result"] = List()
-		}
-		args[2].Map[responseKey] = response
-		args[2].MapKeys[responseKey] = String("response_x")
-		return Null, nil
-	}
 	mockArgs := []Value{
 		args[0],
 		args[1],
 		args[2],
-		String(scalarText(args[3].List[0])),
-		String(scalarText(args[3].List[1])),
-		String(scalarText(args[3].List[3])),
-		String(scalarText(args[3].List[4])),
-		String(scalarText(args[3].List[5])),
-		String(scalarText(args[3].List[6])),
+		args[3].List[0],
+		args[3].List[1],
+		args[3].List[3],
+		args[3].List[4],
+		args[3].List[5],
+		args[3].List[6],
 	}
 	mock := vm.testContext.WebServiceMock
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(mock.Type, "doInvoke", mockArgs)
@@ -995,6 +1009,8 @@ func parseDatetimeText(text string) (time.Time, error) {
 	text = normalizeDatetimeShortTimezoneOffset(strings.TrimSpace(text))
 	for _, layout := range []string{
 		time.RFC3339Nano,
+		"2006-01-02T15:04:05.999999999Z0700",
+		"2006-01-02T15:04:05Z0700",
 		"2006-01-02 15:04:05.999999999Z07:00",
 		"2006-01-02 15:04:05.999999999Z0700",
 		"2006-01-02 15:04:05Z07:00",
@@ -1013,6 +1029,31 @@ func parseDatetimeText(text string) (time.Time, error) {
 		}
 	}
 	return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
+}
+
+var datetimeValueOfLocalPartsPattern = regexp.MustCompile(`^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d+)`)
+
+// The string overload reads calendar/clock fields, carries overflow and ignores
+// the suffix after the seconds. It does not accept the ISO separator. Keep the
+// shared ISO parser for stored values and implicit assignment separate.
+// Native controls: P023/P024 and preservation O001-O016, controls K010-K020/K049-K050.
+func parseDatetimeValueOfText(text string) (time.Time, error) {
+	trimmed := strings.TrimSpace(text)
+	matches := datetimeValueOfLocalPartsPattern.FindStringSubmatch(trimmed)
+	if matches == nil {
+		return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
+	}
+	year, _ := strconv.Atoi(matches[1])
+	month, _ := strconv.Atoi(matches[2])
+	day, _ := strconv.Atoi(matches[3])
+	hour, _ := strconv.Atoi(matches[4])
+	minute, _ := strconv.Atoi(matches[5])
+	second, _ := strconv.Atoi(matches[6])
+	value := time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC)
+	if value.Year() < 1 || value.Year() > 9999 {
+		return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
+	}
+	return value, nil
 }
 
 var datetimeShortTimezoneOffsetPattern = regexp.MustCompile(`^(.+[T ][0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?)([+-])([0-9]{1,2})$`)
@@ -1045,11 +1086,34 @@ func parseDatetimeTextAllowDateOnly(text string) (time.Time, error) {
 	return parseDateText(text)
 }
 
+// parse is locale-dependent; it does not share valueOf or ISO assignment grammar.
+func parseDatetimeParseTextForLocale(text, zoneID, locale string) (time.Time, error) {
+	layout := ""
+	switch locale {
+	case "de_DE":
+		layout = "02.01.2006, 15:04"
+	case "en_GB":
+		layout = "02/01/2006, 15:04"
+	}
+	if layout != "" {
+		location := time.UTC
+		if strings.TrimSpace(zoneID) != "" {
+			if loaded, err := time.LoadLocation(zoneID); err == nil {
+				location = loaded
+			}
+		}
+		if value, err := time.ParseInLocation(layout, strings.TrimSpace(text), location); err == nil {
+			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
+				return time.Time{}, err
+			}
+			return value, nil
+		}
+	}
+	return parseDatetimeParseText(text, zoneID)
+}
+
 func parseDatetimeParseText(text, zoneID string) (time.Time, error) {
 	text = strings.TrimSpace(text)
-	if value, err := parseDatetimeText(text); err == nil {
-		return value, nil
-	}
 	location := time.UTC
 	if strings.TrimSpace(zoneID) != "" {
 		if loaded, err := time.LoadLocation(zoneID); err == nil {
@@ -1057,18 +1121,10 @@ func parseDatetimeParseText(text, zoneID string) (time.Time, error) {
 		}
 	}
 	for _, layout := range []string{
-		"1/2/2006, 3:04:05 PM",
 		"1/2/2006, 3:04 PM",
-		"01/02/2006, 03:04:05 PM",
 		"01/02/2006, 03:04 PM",
-		"1/2/06, 3:04:05 PM",
 		"1/2/06, 3:04 PM",
-		"01/02/06, 03:04:05 PM",
 		"01/02/06, 03:04 PM",
-		"1/2/2006 3:04:05 PM",
-		"1/2/2006 3:04 PM",
-		"01/02/2006 03:04:05 PM",
-		"01/02/2006 03:04 PM",
 	} {
 		if value, err := time.ParseInLocation(layout, text, location); err == nil {
 			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
@@ -1077,11 +1133,7 @@ func parseDatetimeParseText(text, zoneID string) (time.Time, error) {
 			return value, nil
 		}
 	}
-	date, err := parseDateParseText(text)
-	if err != nil {
-		return time.Time{}, err
-	}
-	return time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, location), nil
+	return time.Time{}, fmt.Errorf("unsupported Datetime parse value %q", text)
 }
 
 func parseDateText(text string) (time.Time, error) {
@@ -1129,6 +1181,8 @@ func parsePlatformDatetimeText(text string) (time.Time, error) {
 	normalized := normalizeDatetimeShortTimezoneOffset(strings.TrimSpace(text))
 	for _, layout := range []string{
 		time.RFC3339Nano,
+		"2006-01-02T15:04:05.999999999Z0700",
+		"2006-01-02T15:04:05Z0700",
 		"2006-01-02 15:04:05.999999999Z07:00",
 		"2006-01-02 15:04:05.999999999Z0700",
 		"2006-01-02 15:04:05Z07:00",
@@ -1151,6 +1205,26 @@ func parsePlatformDatetimeText(text string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
 }
 
+// Date.parse uses the locale grammar; Date.valueOf retains its separate parser.
+func parseDateParseTextForLocale(text, locale string) (time.Time, error) {
+	layout := ""
+	switch locale {
+	case "de_DE":
+		layout = "02.01.2006"
+	case "en_GB":
+		layout = "02/01/2006"
+	}
+	if layout != "" {
+		if value, err := time.Parse(layout, strings.TrimSpace(text)); err == nil {
+			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
+				return time.Time{}, err
+			}
+			return value, nil
+		}
+	}
+	return parseDateParseText(text)
+}
+
 func parseDateParseText(text string) (time.Time, error) {
 	text = strings.TrimSpace(text)
 	for _, layout := range []string{"1/2/2006", "01/02/2006", "1/2/06", "01/02/06"} {
@@ -1161,7 +1235,7 @@ func parseDateParseText(text string) (time.Time, error) {
 			return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC), nil
 		}
 	}
-	return parseDateText(text)
+	return time.Time{}, fmt.Errorf("unsupported Date parse value %q", text)
 }
 
 func parseDateObjectText(text string) (time.Time, error) {
@@ -1191,14 +1265,14 @@ func formatPlatformDate(value time.Time) string {
 	return value.UTC().Format("2006-01-02")
 }
 
-func formatApexDatetimePattern(value time.Time, pattern, zoneID, zoneLabel string, offset time.Duration) (string, error) {
+func formatApexDatetimePattern(value time.Time, pattern, zoneID, zoneLabel string, offset time.Duration, locale string) (string, error) {
 	var b strings.Builder
 	for i := 0; i < len(pattern); {
 		ch := pattern[i]
 		if ch == '\'' {
 			next, literal, err := readApexDatePatternLiteral(pattern, i)
 			if err != nil {
-				return "", err
+				return "", fmt.Errorf("Unrecognized format: %s", pattern)
 			}
 			b.WriteString(literal)
 			i = next
@@ -1214,9 +1288,9 @@ func formatApexDatetimePattern(value time.Time, pattern, zoneID, zoneLabel strin
 			j++
 		}
 		token := pattern[i:j]
-		text, err := formatApexDatetimeToken(value, token, zoneID, zoneLabel, offset)
+		text, err := formatApexDatetimeToken(value, token, zoneID, zoneLabel, offset, locale)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("Unrecognized format: %s", pattern)
 		}
 		b.WriteString(text)
 		i = j
@@ -1225,6 +1299,9 @@ func formatApexDatetimePattern(value time.Time, pattern, zoneID, zoneLabel strin
 }
 
 func readApexDatePatternLiteral(pattern string, start int) (int, string, error) {
+	if start+1 < len(pattern) && pattern[start+1] == '\'' {
+		return start + 2, "'", nil
+	}
 	var b strings.Builder
 	for i := start + 1; i < len(pattern); i++ {
 		if pattern[i] != '\'' {
@@ -1241,16 +1318,19 @@ func readApexDatePatternLiteral(pattern string, start int) (int, string, error) 
 	return 0, "", fmt.Errorf("Datetime.format unsupported unterminated quoted literal")
 }
 
-func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, offset time.Duration) (string, error) {
+func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, offset time.Duration, locale string) (string, error) {
 	count := len(token)
 	switch token[0] {
 	case 'y', 'Y':
 		year := value.Year()
+		if token[0] == 'Y' {
+			year, _ = apexDatetimeWeekYear(value, locale)
+		}
 		if count == 2 {
 			return fmt.Sprintf("%02d", year%100), nil
 		}
 		return fmt.Sprintf("%0*d", maxInt(count, 4), year), nil
-	case 'M':
+	case 'M', 'L':
 		month := value.Month()
 		switch {
 		case count >= 4:
@@ -1264,8 +1344,18 @@ func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, o
 		}
 	case 'd':
 		return formatPaddedDateNumber(value.Day(), count), nil
+	case 'D':
+		return formatPaddedDateNumber(value.YearDay(), count), nil
 	case 'H':
 		return formatPaddedDateNumber(value.Hour(), count), nil
+	case 'k':
+		hour := value.Hour()
+		if hour == 0 {
+			hour = 24
+		}
+		return formatPaddedDateNumber(hour, count), nil
+	case 'K':
+		return formatPaddedDateNumber(value.Hour()%12, count), nil
 	case 'h':
 		hour := value.Hour() % 12
 		if hour == 0 {
@@ -1277,14 +1367,8 @@ func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, o
 	case 's':
 		return formatPaddedDateNumber(value.Second(), count), nil
 	case 'S':
-		if count > 3 {
-			return "", fmt.Errorf("Datetime.format unsupported pattern token %q", token)
-		}
 		millisecond := value.Nanosecond() / int(time.Millisecond)
-		if count <= 1 {
-			return strconv.Itoa(millisecond), nil
-		}
-		return fmt.Sprintf("%0*d", minInt(count, 3), millisecond), nil
+		return formatPaddedDateNumber(millisecond, count), nil
 	case 'a':
 		if value.Hour() < 12 {
 			return "AM", nil
@@ -1303,27 +1387,87 @@ func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, o
 		}
 		return formatPaddedDateNumber(weekday, count), nil
 	case 'w':
-		_, week := value.ISOWeek()
+		_, week := apexDatetimeWeekYear(value, locale)
 		return formatPaddedDateNumber(week, count), nil
-	case 'G', 'L', 'c', 'e':
+	case 'W':
+		first := time.Date(value.Year(), value.Month(), 1, 0, 0, 0, 0, time.UTC)
+		firstWeekday := salesforceLocaleFirstWeekday(locale)
+		leadingDays := (int(first.Weekday()) - int(firstWeekday) + 7) % 7
+		return formatPaddedDateNumber((value.Day()-1+leadingDays)/7+1, count), nil
+	case 'F':
+		// Java/Apex's F token is the ordinal occurrence of the weekday in
+		// the month (1 through 5), rather than a week-of-year number.
+		return strconv.Itoa((value.Day()-1)/7 + 1), nil
+	case 'G':
+		if value.Year() < 1 {
+			return "BC", nil
+		}
+		return "AD", nil
+	case 'c', 'e':
 		return "", unsupportedCallError(fmt.Sprintf("Datetime.format locale-dependent pattern token %q", token))
 	case 'Z':
 		return formatRFC822Offset(offset), nil
 	case 'z':
+		if count < 4 {
+			return zoneLabel, nil
+		}
+		if zoneID == "GMT" {
+			return "Greenwich Mean Time", nil
+		}
 		if zoneID == "UTC" {
-			return "UTC", nil
+			return "Coordinated Universal Time", nil
+		}
+		if zone, ok := supportedNamedTimeZone(zoneID); ok {
+			_, name := zone.displayNameAt(value)
+			return name, nil
 		}
 		return zoneLabel, nil
+	case 'X':
+		if count > 3 {
+			return "", fmt.Errorf("Datetime.format unsupported pattern token %q", token)
+		}
+		if offset == 0 {
+			return "Z", nil
+		}
+		text := formatRFC822Offset(offset)
+		switch count {
+		case 1:
+			return text[:3], nil
+		case 2:
+			return text, nil
+		default:
+			return text[:3] + ":" + text[3:], nil
+		}
 	default:
 		return "", fmt.Errorf("Datetime.format unsupported pattern token %q", token)
 	}
 }
 
 func formatPaddedDateNumber(value, count int) string {
-	if count >= 2 {
-		return fmt.Sprintf("%02d", value)
+	return fmt.Sprintf("%0*d", count, value)
+}
+
+// The captured en_US calendar starts on Sunday and week 1 includes January 1
+// (P078/P084). Preserve the previous ISO calculation for other locale profiles.
+func apexDatetimeWeekYear(value time.Time, locale string) (int, int) {
+	if locale != "en_US" {
+		return value.ISOWeek()
 	}
-	return strconv.Itoa(value)
+	date := time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC)
+	weekStart := func(year int) time.Time {
+		first := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC)
+		return first.AddDate(0, 0, -int(first.Weekday()))
+	}
+	year := date.Year()
+	start := weekStart(year)
+	if next := weekStart(year + 1); !date.Before(next) {
+		year++
+		start = next
+	} else if date.Before(start) {
+		year--
+		start = weekStart(year)
+	}
+	return year, int(date.Sub(start)/(24*time.Hour))/7 + 1
 }
 
 func formatRFC822Offset(offset time.Duration) string {
@@ -1341,19 +1485,6 @@ func maxInt(left, right int) int {
 		return left
 	}
 	return right
-}
-
-func normalizeDateNewInstanceParts(year, month, day int) (int, int, int) {
-	if validateDateParts(year, month, day) == nil {
-		return year, month, day
-	}
-	if year < 1 || year > 12 || month < 1 || month > 31 || day < 1000 {
-		return year, month, day
-	}
-	if validateDateParts(day, year, month) == nil {
-		return day, year, month
-	}
-	return year, month, day
 }
 
 func dateFromNewInstanceParts(year, month, day int) (time.Time, error) {
@@ -1465,17 +1596,28 @@ func platformTimeFromDuration(value time.Duration) Value {
 }
 
 func fixedTimeZone(id string) (Value, error) {
-	canonical, offset, ok := parseFixedTimeZoneID(id)
+	canonical, offset, ok := "", time.Duration(0), false
+	// Native factory controls Z010/Z016/Z019/Z022/Z025: IDs are case-sensitive,
+	// Etc/UTC keeps its identity, and offset IDs use GMT rather than UTC.
+	switch id {
+	case "UTC", "GMT", "Etc/UTC":
+		canonical, ok = id, true
+	default:
+		if strings.HasPrefix(id, "GMT+") || strings.HasPrefix(id, "GMT-") {
+			canonical, offset, ok = parseFixedTimeZoneID(id)
+		}
+	}
 	locationName := ""
 	if !ok {
 		location, locationOK := supportedNamedTimeZone(id)
 		if !locationOK {
-			return Null, unsupportedCallError("TimeZone.getTimeZone " + id)
+			canonical, offset, locationName = "GMT", 0, "UTC" // T105-T112: unknown ID fallback.
+		} else {
+			canonical = id
+			offset = location.standardOffset
+			locationName = location.id
 		}
-		canonical = id
-		offset = location.standardOffset
-		locationName = location.id
-	} else if canonical == "UTC" {
+	} else if canonical == "UTC" || canonical == "GMT" || canonical == "Etc/UTC" {
 		locationName = "UTC"
 	}
 	out := Object("TimeZone")
@@ -1501,10 +1643,13 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	"America/New_York":    {id: "America/New_York", standardOffset: -5 * time.Hour, daylightOffset: -4 * time.Hour, standardLabel: "EST", daylightLabel: "EDT", standardDisplayName: "Eastern Standard Time", daylightDisplayName: "Eastern Daylight Time", daylightRule: "us"},
 	"America/Chicago":     {id: "America/Chicago", standardOffset: -6 * time.Hour, daylightOffset: -5 * time.Hour, standardLabel: "CST", daylightLabel: "CDT", standardDisplayName: "Central Standard Time", daylightDisplayName: "Central Daylight Time", daylightRule: "us"},
 	"America/Denver":      {id: "America/Denver", standardOffset: -7 * time.Hour, daylightOffset: -6 * time.Hour, standardLabel: "MST", daylightLabel: "MDT", standardDisplayName: "Mountain Standard Time", daylightDisplayName: "Mountain Daylight Time", daylightRule: "us"},
+	"America/Phoenix":     {id: "America/Phoenix", standardOffset: -7 * time.Hour, standardLabel: "MST", standardDisplayName: "Mountain Standard Time"},
 	"America/Panama":      {id: "America/Panama", standardOffset: -5 * time.Hour, standardLabel: "EST", standardDisplayName: "Eastern Standard Time"},
 	"Europe/London":       {id: "Europe/London", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "BST", standardDisplayName: "Greenwich Mean Time", daylightDisplayName: "British Summer Time", daylightRule: "europe"},
+	"Europe/Dublin":       {id: "Europe/Dublin", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "IST", standardDisplayName: "Greenwich Mean Time", daylightDisplayName: "Irish Standard Time", daylightRule: "europe"},
 	"Europe/Berlin":       {id: "Europe/Berlin", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT", standardDisplayName: "Indochina Time"},
+	"Asia/Kolkata":        {id: "Asia/Kolkata", standardOffset: 5*time.Hour + 30*time.Minute, standardLabel: "IST", standardDisplayName: "India Standard Time"},
 	"Asia/Tokyo":          {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST", standardDisplayName: "Japan Standard Time"},
 	"Pacific/Honolulu":    {id: "Pacific/Honolulu", standardOffset: -10 * time.Hour, standardLabel: "HST", standardDisplayName: "Hawaii-Aleutian Standard Time"},
 	"Pacific/Pago_Pago":   {id: "Pacific/Pago_Pago", standardOffset: -11 * time.Hour, standardLabel: "SST", standardDisplayName: "Samoa Standard Time"},
@@ -1512,6 +1657,9 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 }
 
 func supportedNamedTimeZone(id string) (modeledTimeZone, bool) {
+	if id == "US/Pacific" {
+		id = "America/Los_Angeles" // T097-T104: retain the alias ID in the returned TimeZone.
+	}
 	location, ok := supportedNamedTimeZones[id]
 	return location, ok
 }
@@ -1519,6 +1667,9 @@ func supportedNamedTimeZone(id string) (modeledTimeZone, bool) {
 func resolveTimeZoneForInstant(id string, instant time.Time) (string, time.Duration, time.Time, string, bool) {
 	canonical, offset, ok := parseFixedTimeZoneID(id)
 	if ok {
+		if strings.EqualFold(id, "GMT") {
+			canonical = "GMT"
+		}
 		local := instant.UTC().In(time.FixedZone(canonical, int(offset/time.Second)))
 		return canonical, offset, local, canonical, true
 	}
@@ -1559,6 +1710,9 @@ func (vm *VM) timeZoneDisplayName(receiver Value) Value {
 	if locationValue.Kind == ValueString && locationValue.Text != "" {
 		if locationValue.Text == "UTC" {
 			longName = "Coordinated Universal Time"
+			if idValue.Text == "GMT" {
+				longName = "Greenwich Mean Time" // T010/T106.
+			}
 		} else if location, ok := supportedNamedTimeZone(locationValue.Text); ok {
 			offset, longName = location.displayNameAt(vm.fakeNow)
 		}
@@ -1666,8 +1820,8 @@ func parseFixedTimeZoneID(id string) (string, time.Duration, bool) {
 	prefix := upper[:3]
 	signText := upper[3:4]
 	rest := upper[4:]
-	if prefix == "UTC" {
-		rest = upper[4:]
+	if prefix == "GMT" && len(rest) == 4 && allASCIIDigits(rest) {
+		rest = rest[:2] + ":" + rest[2:] // T089-T096: compact HHMM offsets.
 	}
 	parts := strings.Split(rest, ":")
 	if len(parts) > 2 || parts[0] == "" {
@@ -1690,7 +1844,7 @@ func parseFixedTimeZoneID(id string) (string, time.Duration, bool) {
 			return "", 0, false
 		}
 	}
-	if hours > 14 || minutes > 59 || (hours == 14 && minutes != 0) {
+	if hours > 23 || minutes > 59 {
 		return "", 0, false
 	}
 	offset := time.Duration(hours)*time.Hour + time.Duration(minutes)*time.Minute
@@ -1717,7 +1871,7 @@ const (
 func validateHttpRequest(request Value) error {
 	endpoint, ok := request.Fields["endpoint"]
 	if !ok || endpoint.Kind != ValueString {
-		return fmt.Errorf("HttpRequest endpoint is required before Http.send")
+		return newExceptionError("CalloutException", "Endpoint can not be null")
 	}
 	if strings.TrimSpace(endpoint.Text) == "" {
 		return fmt.Errorf("HttpRequest endpoint is required before Http.send")
@@ -1757,6 +1911,9 @@ func validateHttpEndpoint(endpoint string) error {
 		return nil
 	}
 	parsed, err := url.Parse(trimmed)
+	if err == nil && parsed.Scheme == "" {
+		return newExceptionError("CalloutException", "no protocol: "+endpoint)
+	}
 	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
 		return fmt.Errorf("HttpRequest endpoint must be an absolute http, https, or callout URL")
 	}
@@ -1782,7 +1939,7 @@ func normalizeHttpMethod(method string) (string, error) {
 
 func validateHttpTimeout(timeout int64) error {
 	if timeout < 1 || timeout > maxHttpTimeoutMillis {
-		return fmt.Errorf("HttpRequest timeout must be between 1 and %d milliseconds", maxHttpTimeoutMillis)
+		return newExceptionError("CalloutException", fmt.Sprintf("Timeout must be between 1 and %d", maxHttpTimeoutMillis))
 	}
 	return nil
 }
@@ -1792,7 +1949,12 @@ func httpSetHeader(receiver Value, name string, value Value) {
 	if !ok || headers.Kind != ValueMap {
 		headers = Map()
 	}
-	key := mapKey(String(strings.ToLower(name)))
+	keyName := strings.ToLower(name)
+	if receiver.Type == "HttpRequest" || receiver.Type == "HttpResponse" {
+		// Distinct case spellings remain distinct keys.
+		keyName = name
+	}
+	key := mapKey(String(keyName))
 	headers.Map[key] = value
 	if headers.MapKeys == nil {
 		headers.MapKeys = make(map[string]Value)
@@ -1858,266 +2020,37 @@ func blobStringArg(name string, args []Value) (string, error) {
 	return args[0].Fields["value"].String(), nil
 }
 
-func urlEncodeWithCharset(name, text, charset string) (string, error) {
-	switch normalizeURLCharset(charset) {
-	case "utf-8":
-		return url.QueryEscape(text), nil
-	case "us-ascii":
-		return urlEncodeASCII(name, text)
-	case "iso-8859-1":
-		return urlEncodeLatin1(name, text)
-	case "utf-16":
-		return urlEncodeUTF16(text), nil
-	default:
-		return "", unsupportedCallError(fmt.Sprintf("%s charset %q", name, charset))
-	}
-}
-
-func urlDecodeWithCharset(name, text, charset string) (string, error) {
-	switch normalizeURLCharset(charset) {
-	case "utf-8":
-		return url.QueryUnescape(text)
-	case "us-ascii":
-		return urlDecodeASCII(name, text)
-	case "iso-8859-1":
-		return urlDecodeLatin1(text)
-	case "utf-16":
-		return urlDecodeUTF16(text)
-	default:
-		return "", unsupportedCallError(fmt.Sprintf("%s charset %q", name, charset))
-	}
-}
-
-func normalizeURLCharset(charset string) string {
-	normalized := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(charset), "_", "-"))
-	switch normalized {
-	case "utf-8", "utf8":
-		return "utf-8"
-	case "us-ascii", "usascii", "ascii":
-		return "us-ascii"
-	case "iso-8859-1", "iso8859-1", "iso-88591", "iso88591", "latin1", "latin-1":
-		return "iso-8859-1"
-	case "utf-16", "utf16":
-		return "utf-16"
-	default:
-		return normalized
-	}
-}
-
-func urlEncodeASCII(_ string, text string) (string, error) {
-	var out strings.Builder
-	for _, r := range text {
-		if r > 0x7f {
-			r = '?'
-		}
-		writeURLEncodedByte(&out, byte(r))
-	}
-	return out.String(), nil
-}
-
-func urlEncodeLatin1(_ string, text string) (string, error) {
-	var out strings.Builder
-	for _, r := range text {
-		if r > 0xff {
-			r = '?'
-		}
-		writeURLEncodedByte(&out, byte(r))
-	}
-	return out.String(), nil
-}
-
-func urlEncodeUTF16(text string) string {
-	var out strings.Builder
-	unsafeRunes := make([]rune, 0, len(text))
-	flushUnsafeRunes := func() {
-		if len(unsafeRunes) == 0 {
-			return
-		}
-		for _, b := range utf16BytesForRunes(unsafeRunes) {
-			writeURLEncodedByte(&out, b)
-		}
-		unsafeRunes = unsafeRunes[:0]
-	}
-	for _, r := range text {
-		if isURLEncodedSafeASCII(r) {
-			flushUnsafeRunes()
-			writeURLEncodedByte(&out, byte(r))
-			continue
-		}
-		if r == ' ' {
-			flushUnsafeRunes()
-			out.WriteByte('+')
-			continue
-		}
-		unsafeRunes = append(unsafeRunes, r)
-	}
-	flushUnsafeRunes()
-	return out.String()
-}
-
-func isURLEncodedSafeASCII(r rune) bool {
-	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.' || r == '*'
-}
-
-func utf16BytesForRunes(runes []rune) []byte {
-	units := utf16.Encode(runes)
-	out := make([]byte, 0, 2+len(units)*2)
-	out = append(out, 0xfe, 0xff)
-	for _, unit := range units {
-		out = append(out, byte(unit>>8), byte(unit))
-	}
-	return out
-}
-
-func writeURLEncodedByte(out *strings.Builder, b byte) {
-	switch {
-	case b == ' ':
-		out.WriteByte('+')
-	case (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9') || b == '-' || b == '_' || b == '.' || b == '*':
-		out.WriteByte(b)
-	default:
-		const hexDigits = "0123456789ABCDEF"
-		out.WriteByte('%')
-		out.WriteByte(hexDigits[b>>4])
-		out.WriteByte(hexDigits[b&0x0f])
-	}
-}
-
-func urlDecodeASCII(_ string, text string) (string, error) {
-	decoded, err := urlDecodeBytes(text)
-	if err != nil {
-		return "", err
-	}
-	var out strings.Builder
-	for _, b := range decoded {
-		if b > 0x7f {
-			out.WriteRune('\ufffd')
-			continue
-		}
-		out.WriteByte(b)
-	}
-	return out.String(), nil
-}
-
-func urlDecodeLatin1(text string) (string, error) {
-	decoded, err := urlDecodeBytes(text)
-	if err != nil {
-		return "", err
-	}
-	var out strings.Builder
-	for _, b := range decoded {
-		out.WriteRune(rune(b))
-	}
-	return out.String(), nil
-}
-
-func urlDecodeUTF16(text string) (string, error) {
-	var out strings.Builder
-	for i := 0; i < len(text); i++ {
-		switch ch := text[i]; ch {
-		case '+':
-			out.WriteByte(' ')
-		case '%':
-			bytes := make([]byte, 0)
-			for i < len(text) && text[i] == '%' {
-				if i+2 >= len(text) {
-					return "", fmt.Errorf("invalid URL escape %q", text[i:])
-				}
-				hi, ok := fromHex(text[i+1])
-				if !ok {
-					return "", fmt.Errorf("invalid URL escape %q", text[i:i+3])
-				}
-				lo, ok := fromHex(text[i+2])
-				if !ok {
-					return "", fmt.Errorf("invalid URL escape %q", text[i:i+3])
-				}
-				bytes = append(bytes, hi<<4|lo)
-				i += 3
-			}
-			i--
-			out.WriteString(decodeUTF16Bytes(bytes))
-		default:
-			out.WriteByte(ch)
-		}
-	}
-	return out.String(), nil
-}
-
-func decodeUTF16Bytes(decoded []byte) string {
-	if len(decoded) == 0 {
-		return ""
-	}
-	bigEndian := true
-	start := 0
-	if len(decoded) >= 2 {
-		switch {
-		case decoded[0] == 0xfe && decoded[1] == 0xff:
-			start = 2
-		case decoded[0] == 0xff && decoded[1] == 0xfe:
-			bigEndian = false
-			start = 2
-		}
-	}
-	if (len(decoded)-start)%2 != 0 {
-		decoded = append(decoded, 0)
-	}
-	units := make([]uint16, 0, (len(decoded)-start)/2)
-	for i := start; i+1 < len(decoded); i += 2 {
-		if bigEndian {
-			units = append(units, uint16(decoded[i])<<8|uint16(decoded[i+1]))
-		} else {
-			units = append(units, uint16(decoded[i+1])<<8|uint16(decoded[i]))
-		}
-	}
-	return string(utf16.Decode(units))
-}
-
-func urlDecodeBytes(text string) ([]byte, error) {
-	out := make([]byte, 0, len(text))
-	for i := 0; i < len(text); i++ {
-		ch := text[i]
-		switch ch {
-		case '+':
-			out = append(out, ' ')
-		case '%':
-			if i+2 >= len(text) {
-				return nil, fmt.Errorf("invalid URL escape %q", text[i:])
-			}
-			hi, ok := fromHex(text[i+1])
-			if !ok {
-				return nil, fmt.Errorf("invalid URL escape %q", text[i:i+3])
-			}
-			lo, ok := fromHex(text[i+2])
-			if !ok {
-				return nil, fmt.Errorf("invalid URL escape %q", text[i:i+3])
-			}
-			out = append(out, hi<<4|lo)
-			i += 2
-		default:
-			out = append(out, ch)
-		}
-	}
-	return out, nil
-}
-
-func fromHex(ch byte) (byte, bool) {
-	switch {
-	case ch >= '0' && ch <= '9':
-		return ch - '0', true
-	case ch >= 'a' && ch <= 'f':
-		return ch - 'a' + 10, true
-	case ch >= 'A' && ch <= 'F':
-		return ch - 'A' + 10, true
-	default:
-		return 0, false
-	}
-}
-
 func normalizeCryptoAlgorithm(algorithm string) string {
 	normalized := strings.ToUpper(strings.TrimSpace(algorithm))
 	normalized = strings.ReplaceAll(normalized, "-", "")
 	normalized = strings.ReplaceAll(normalized, "_", "")
 	return normalized
+}
+
+func cryptoRequiredArguments(args []Value) error {
+	for _, arg := range args {
+		if arg.Kind == ValueNull {
+			return newExceptionError("System.NullPointerException", "Argument cannot be null.")
+		}
+	}
+	return nil
+}
+
+func cryptoDataSize(size, limit int) error {
+	if size > limit {
+		return newExceptionError("System.InvalidParameterValueException", fmt.Sprintf("Invalid data. Input data is %d bytes, which exceeds the limit of %d bytes.", size, limit))
+	}
+	return nil
+}
+
+func cryptoMACKeySize(size int) error {
+	if size >= 4096 {
+		return newExceptionError("System.SecurityException", "Private Key should be of size less than 4k")
+	}
+	if size == 0 {
+		return newExceptionError("System.SecurityException", "Empty key")
+	}
+	return nil
 }
 
 func generateDigest(algorithm string, data []byte) ([]byte, error) {
@@ -2128,6 +2061,9 @@ func generateDigest(algorithm string, data []byte) ([]byte, error) {
 		return sum[:], nil
 	case "SHA1", "SHA-1":
 		sum := sha1.Sum(data)
+		return sum[:], nil
+	case "SHA224":
+		sum := sha256.Sum224(data)
 		return sum[:], nil
 	case "SHA256", "SHA-256":
 		sum := sha256.Sum256(data)
@@ -2162,10 +2098,12 @@ func generateMac(algorithm string, input, privateKey []byte) ([]byte, error) {
 		mac = hmac.New(sha1.New, privateKey)
 	case "HMACSHA256":
 		mac = hmac.New(sha256.New, privateKey)
+	case "HMACSHA384":
+		mac = hmac.New(sha512.New384, privateKey)
 	case "HMACSHA512":
 		mac = hmac.New(sha512.New, privateKey)
 	default:
-		return nil, fmt.Errorf("unsupported MAC algorithm %q", algorithm)
+		return nil, fmt.Errorf("Algorithm %s not available", algorithm)
 	}
 	if _, err := mac.Write(input); err != nil {
 		return nil, err
@@ -2179,10 +2117,10 @@ func encryptAESCBC(algorithm string, privateKey, initializationVector, clearText
 		return nil, err
 	}
 	if len(privateKey) != keySize {
-		return nil, fmt.Errorf("Crypto.encrypt %s privateKey expects %d bytes, got %d", normalizeCryptoAlgorithm(algorithm), keySize, len(privateKey))
+		return nil, newExceptionError("System.InvalidParameterValueException", fmt.Sprintf("Invalid private key. Must be %d bytes.", keySize))
 	}
 	if len(initializationVector) != aes.BlockSize {
-		return nil, fmt.Errorf("Crypto.encrypt initializationVector expects %d bytes, got %d", aes.BlockSize, len(initializationVector))
+		return nil, newExceptionError("System.InvalidParameterValueException", "Invalid initialization vector. Must be 16 bytes.")
 	}
 	block, err := aes.NewCipher(privateKey)
 	if err != nil {
@@ -2200,13 +2138,19 @@ func decryptAESCBC(algorithm string, privateKey, initializationVector, cipherTex
 		return nil, err
 	}
 	if len(privateKey) != keySize {
-		return nil, fmt.Errorf("Crypto.decrypt %s privateKey expects %d bytes, got %d", normalizeCryptoAlgorithm(algorithm), keySize, len(privateKey))
+		return nil, newExceptionError("System.InvalidParameterValueException", fmt.Sprintf("Invalid private key. Must be %d bytes.", keySize))
 	}
 	if len(initializationVector) != aes.BlockSize {
-		return nil, fmt.Errorf("Crypto.decrypt initializationVector expects %d bytes, got %d", aes.BlockSize, len(initializationVector))
+		return nil, newExceptionError("System.InvalidParameterValueException", "Invalid initialization vector. Must be 16 bytes.")
 	}
-	if len(cipherText) == 0 || len(cipherText)%aes.BlockSize != 0 {
-		return nil, fmt.Errorf("Crypto.decrypt cipherText must be a positive multiple of %d bytes", aes.BlockSize)
+	if err := cryptoDataSize(len(cipherText), 1048608); err != nil {
+		return nil, err
+	}
+	if len(cipherText)%aes.BlockSize != 0 {
+		return nil, newExceptionError("System.SecurityException", "Input length must be multiple of 16 when decrypting with padded cipher")
+	}
+	if len(cipherText) == 0 {
+		return []byte{}, nil
 	}
 	block, err := aes.NewCipher(privateKey)
 	if err != nil {
@@ -2214,7 +2158,11 @@ func decryptAESCBC(algorithm string, privateKey, initializationVector, cipherTex
 	}
 	padded := make([]byte, len(cipherText))
 	cipher.NewCBCDecrypter(block, initializationVector).CryptBlocks(padded, cipherText)
-	return pkcs7Unpad(padded, aes.BlockSize)
+	clearText, err := pkcs7Unpad(padded, aes.BlockSize)
+	if err != nil {
+		return nil, newExceptionError("System.SecurityException", "Given final block not properly padded. Such issues can arise if a bad key is used during decryption.")
+	}
+	return clearText, nil
 }
 
 func managedIV(privateKey, clearText []byte) []byte {
@@ -2291,10 +2239,8 @@ func signatureDigestAlgorithm(algorithm string) (string, error) {
 }
 
 func aesKeySizeForAlgorithm(algorithm string) (int, error) {
-	normalized := normalizeCryptoAlgorithm(algorithm)
-	if strings.HasSuffix(normalized, "CBC") {
-		normalized = strings.TrimSuffix(normalized, "CBC")
-	}
+	// CBC suffixes are accepted, while the AES name itself is case-sensitive.
+	normalized := strings.TrimSuffix(algorithm, "-CBC")
 	switch normalized {
 	case "AES128":
 		return 16, nil
@@ -2303,7 +2249,7 @@ func aesKeySizeForAlgorithm(algorithm string) (int, error) {
 	case "AES256":
 		return 32, nil
 	default:
-		return 0, fmt.Errorf("unsupported encryption algorithm %q", algorithm)
+		return 0, newExceptionError("System.InvalidParameterValueException", fmt.Sprintf("Invalid algorithm '%s'. Must be AES128, AES192, AES256, AES384, or AES512.", algorithm))
 	}
 }
 
@@ -2334,6 +2280,9 @@ func pkcs7Unpad(data []byte, blockSize int) ([]byte, error) {
 }
 
 func mathUnary(callee string, args []Value) (Value, error) {
+	if len(args) == 1 && args[0].Kind == ValueNull {
+		return Null, newExceptionError("NullPointerException", "Argument cannot be null.")
+	}
 	if len(args) != 1 || (args[0].Kind != ValueInt && args[0].Kind != ValueDecimal) {
 		return Null, fmt.Errorf("%s expects numeric argument", callee)
 	}
@@ -2344,25 +2293,19 @@ func mathUnary(callee string, args []Value) (Value, error) {
 	switch callee {
 	case "Math.abs":
 		if args[0].Kind == ValueInt {
-			if args[0].Int == math.MinInt64 {
-				return Null, fmt.Errorf("Math.abs integer overflow")
-			}
-			if !isLongIntValue(args[0]) && args[0].Int == math.MinInt32 {
-				return Null, fmt.Errorf("Math.abs integer overflow")
-			}
 			if args[0].Int < 0 {
-				return mathIntegerResult(Int(-args[0].Int), isLongIntValue(args[0])), nil
+				return integerOperationResult(-args[0].Int, isLongIntValue(args[0])), nil
 			}
 			return args[0], nil
 		}
 		return decimalAbsValue(args[0])
 	case "Math.floor", "Math.ceil", "Math.rint":
-		if !isFloatBackedDecimal(args[0]) {
+		// Only Decimal floor/ceil retain exact decimal arithmetic. rint
+		// evaluates in floating point, including its Decimal overload.
+		if callee != "Math.rint" && args[0].Kind == ValueDecimal && !isFloatBackedDecimal(args[0]) {
 			mode := "FLOOR"
 			if callee == "Math.ceil" {
 				mode = "CEILING"
-			} else if callee == "Math.rint" {
-				mode = "HALF_EVEN"
 			}
 			if result, ok := exactMathRound(callee, args[0], mode); ok {
 				return result, nil
@@ -2370,14 +2313,14 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		}
 		switch callee {
 		case "Math.floor":
-			return decimalAsDouble(Decimal(math.Floor(n))), nil
+			return finiteMathResult(callee, math.Floor(n), args[0])
 		case "Math.ceil":
-			return decimalAsDouble(Decimal(math.Ceil(n))), nil
+			return finiteMathResult(callee, math.Ceil(n), args[0])
 		default:
-			return decimalAsDouble(Decimal(roundHalfEven(n))), nil
+			return finiteMathResult(callee, roundHalfEven(n), args[0])
 		}
 	case "Math.round":
-		if !isFloatBackedDecimal(args[0]) {
+		if args[0].Kind == ValueDecimal && !isFloatBackedDecimal(args[0]) {
 			if result, ok := exactMathRound(callee, args[0], "HALF_EVEN"); ok {
 				rounded, err := int32FromDecimalValue(callee, result)
 				if err != nil {
@@ -2386,13 +2329,15 @@ func mathUnary(callee string, args []Value) (Value, error) {
 				return Int(int64(rounded)), nil
 			}
 		}
-		rounded, err := int32FromFloat("Math.round", roundHalfEven(n))
-		if err != nil {
-			return Null, err
+		// Double half ties round toward positive infinity. Unlike Decimal
+		// narrowing, Math.round(Double) reports Integer overflow.
+		rounded := mathRoundDouble(n)
+		if rounded < math.MinInt32 || rounded > math.MaxInt32 {
+			return Null, newExceptionError("System.MathException", "Integer overflow: "+strconv.FormatFloat(rounded, 'f', 0, 64))
 		}
 		return Int(int64(rounded)), nil
 	case "Math.roundToLong":
-		if !isFloatBackedDecimal(args[0]) {
+		if args[0].Kind == ValueDecimal && !isFloatBackedDecimal(args[0]) {
 			if result, ok := exactMathRound(callee, args[0], "HALF_EVEN"); ok {
 				rounded, err := int64FromDecimalValue(callee, result)
 				if err != nil {
@@ -2401,11 +2346,7 @@ func mathUnary(callee string, args []Value) (Value, error) {
 				return longIntValue(rounded), nil
 			}
 		}
-		rounded, err := int64FromFloat("Math.roundToLong", roundHalfEven(n))
-		if err != nil {
-			return Null, err
-		}
-		return longIntValue(rounded), nil
+		return longIntValue(doubleToLong(mathRoundDouble(n))), nil
 	case "Math.signum":
 		sign := 0
 		if !isFloatBackedDecimal(args[0]) {
@@ -2417,26 +2358,22 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		} else {
 			sign = signumFloat(n)
 		}
-		result := Decimal(float64(sign))
-		if isFloatBackedDecimal(args[0]) {
-			return decimalAsDouble(result), nil
-		}
-		return result, nil
+		return finiteMathResult(callee, float64(sign), args[0])
 	case "Math.sqrt":
 		if n < 0 {
-			return Null, fmt.Errorf("Math.sqrt argument out of domain")
+			return Null, newExceptionError("System.MathException", "Negative argument: "+doubleDisplayText(n))
 		}
 		return finiteMathResult(callee, math.Sqrt(n), args[0])
 	case "Math.cbrt":
 		return finiteMathResult(callee, math.Cbrt(n), args[0])
 	case "Math.acos":
 		if n < -1 || n > 1 {
-			return Null, newExceptionError("System.MathException", "Math.acos argument out of domain")
+			return Null, newExceptionError("System.MathException", "Invalid argument")
 		}
-		return finiteMathResult(callee, math.Acos(n), args[0])
+		return finiteMathResult(callee, mathAcos(n), args[0])
 	case "Math.asin":
 		if n < -1 || n > 1 {
-			return Null, newExceptionError("System.MathException", "Math.asin argument out of domain")
+			return Null, newExceptionError("System.MathException", "Invalid argument")
 		}
 		return finiteMathResult(callee, math.Asin(n), args[0])
 	case "Math.atan":
@@ -2446,9 +2383,9 @@ func mathUnary(callee string, args []Value) (Value, error) {
 	case "Math.sin":
 		return finiteMathResult(callee, math.Sin(n), args[0])
 	case "Math.tan":
-		return finiteMathResult(callee, math.Tan(n), args[0])
+		return finiteMathResult(callee, mathTan(n), args[0])
 	case "Math.cosh":
-		return finiteMathResult(callee, math.Cosh(n), args[0])
+		return finiteMathResult(callee, mathCosh(n), args[0])
 	case "Math.sinh":
 		return finiteMathResult(callee, math.Sinh(n), args[0])
 	case "Math.tanh":
@@ -2456,14 +2393,8 @@ func mathUnary(callee string, args []Value) (Value, error) {
 	case "Math.exp":
 		return finiteMathResult(callee, math.Exp(n), args[0])
 	case "Math.log":
-		if n <= 0 {
-			return Null, fmt.Errorf("Math.log argument out of domain")
-		}
 		return finiteMathResult(callee, math.Log(n), args[0])
 	case "Math.log10":
-		if n <= 0 {
-			return Null, fmt.Errorf("Math.log10 argument out of domain")
-		}
 		return finiteMathResult(callee, math.Log10(n), args[0])
 	default:
 		return Null, unsupportedCallError(callee)
@@ -2482,6 +2413,13 @@ func signumFloat(value float64) int {
 }
 
 func mathBinary(callee string, args []Value) (Value, error) {
+	if len(args) == 2 && (args[0].Kind == ValueNull || args[1].Kind == ValueNull) {
+		message := "Argument cannot be null."
+		if callee == "Math.mod" && !strings.EqualFold(args[0].Type, "Long") && !strings.EqualFold(args[1].Type, "Long") {
+			message = "Script-thrown exception"
+		}
+		return Null, newExceptionError("NullPointerException", message)
+	}
 	if len(args) != 2 || !isMathNumeric(args[0]) || !isMathNumeric(args[1]) {
 		return Null, fmt.Errorf("%s expects two numeric arguments", callee)
 	}
@@ -2526,7 +2464,7 @@ func mathBinary(callee string, args []Value) (Value, error) {
 		return decimalAsDouble(Decimal(math.Min(left, right))), nil
 	case "Math.mod":
 		if right == 0 {
-			return Null, fmt.Errorf("Math.mod divisor cannot be zero")
+			return Null, newExceptionError("MathException", "Divide by 0")
 		}
 		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
 			result := Int(args[0].Int % args[1].Int)
@@ -2554,6 +2492,17 @@ func mathIntegerResult(value Value, longResult bool) Value {
 		value.Type = "Long"
 	}
 	return value
+}
+
+func mathRoundDouble(n float64) float64 {
+	// Adding 0.5 to n can lose precision before rounding: a large integral n
+	// can increase, and the Double just below 0.5 can become 1.0. Compare the
+	// fractional distance instead, retaining half ties toward positive infinity.
+	floored := math.Floor(n)
+	if n-floored >= 0.5 {
+		return floored + 1
+	}
+	return floored
 }
 
 func exactMathRound(callee string, value Value, mode string) (Value, bool) {
@@ -2597,35 +2546,37 @@ func finiteMathResult(callee string, value float64, args ...Value) (Value, error
 			return finiteDoubleResult(callee, value)
 		}
 	}
-	return finiteDecimalResult(callee, value)
+	for _, arg := range args {
+		if arg.Kind == ValueDecimal {
+			return finiteDecimalResult(callee, value)
+		}
+	}
+	// Integral arguments promote to the Double overload.
+	return finiteDoubleResult(callee, value)
 }
 
 func finiteDecimalResult(callee string, value float64) (Value, error) {
 	if math.IsInf(value, 0) || math.IsNaN(value) {
-		return Null, fmt.Errorf("%s result must be finite", callee)
+		text := "Infinity"
+		if math.IsNaN(value) {
+			text = "NaN"
+		}
+		return Null, newExceptionError("System.MathException", "Cannot represent Double '"+text+"' as a Decimal")
 	}
 	result := Decimal(value)
 	result.Text = doubleDisplayText(value)
+	// Decimal Math results retain the positive exponent sign (R246), while
+	// the Double overload keeps its own display contract.
+	if mantissa, exponent, scientific := strings.Cut(result.Text, "E"); scientific && !strings.HasPrefix(exponent, "-") {
+		result.Text = mantissa + "E+" + exponent
+	}
 	return result, nil
 }
 
 func finiteDoubleResult(callee string, value float64) (Value, error) {
-	if math.IsInf(value, 0) || math.IsNaN(value) {
-		return Null, fmt.Errorf("%s result must be finite", callee)
-	}
 	result := decimalAsDouble(Decimal(value))
 	result.Text = doubleDisplayText(value)
 	return result, nil
-}
-
-func doubleDisplayText(value float64) string {
-	if value == 0 {
-		return "0.0"
-	}
-	if math.Trunc(value) == value {
-		return strconv.FormatFloat(value, 'f', 1, 64)
-	}
-	return strconv.FormatFloat(value, 'f', -1, 64)
 }
 
 func isMathNumeric(value Value) bool {
@@ -2637,6 +2588,262 @@ func numericFloat(value Value) float64 {
 		return float64(value.Int)
 	}
 	return value.Decimal
+}
+
+// The Math kernels below adapt the public fdlibm acos, tan, cosh and exp
+// algorithms (https://netlib.org/fdlibm/). Their evaluation order matters:
+// Go's math kernels differ in the last bit from the owned Salesforce rows
+// R007/R008, R029/R030 and R077/R078.
+//
+// Copyright (C) 1993, 2004 by Sun Microsystems, Inc. All rights reserved.
+// Developed at SunSoft, a Sun Microsystems, Inc. business.
+// Permission to use, copy, modify, and distribute this software is freely
+// granted, provided that this notice is preserved.
+
+func mathPolynomial(x float64, coefficients ...float64) float64 {
+	result := coefficients[len(coefficients)-1]
+	for i := len(coefficients) - 2; i >= 0; i-- {
+		// Explicit rounding prevents contraction into a fused multiply-add.
+		result = coefficients[i] + float64(x*result)
+	}
+	return result
+}
+
+func mathAcos(x float64) float64 {
+	const (
+		pio2High = 1.57079632679489655800e+00
+		pio2Low  = 6.12323399573676603587e-17
+	)
+	abs := math.Abs(x)
+	if abs == 1 {
+		if x > 0 {
+			return 0
+		}
+		return math.Pi
+	}
+	if abs > 1 || math.IsNaN(x) {
+		return math.NaN()
+	}
+	if abs < 0x1p-57 {
+		return pio2High
+	}
+	z := x * x
+	if abs >= 0.5 {
+		z = (1 - abs) * 0.5
+	}
+	p := z * mathPolynomial(z,
+		1.66666666666666657415e-01, -3.25565818622400915405e-01,
+		2.01212532134862925881e-01, -4.00555345006794114027e-02,
+		7.91534994289814532176e-04, 3.47933107596021167570e-05)
+	q := mathPolynomial(z, 1,
+		-2.40339491173441421878e+00, 2.02094576023350569471e+00,
+		-6.88283971605453293030e-01, 7.70381505559019352791e-02)
+	r := p / q
+	if abs < 0.5 {
+		return pio2High - (x - (pio2Low - float64(x*r)))
+	}
+	s := math.Sqrt(z)
+	if x < 0 {
+		w := float64(r*s) - pio2Low
+		return math.Pi - float64(2*(s+w))
+	}
+	// Split sqrt into a high part and its residual before recombining.
+	f := math.Float64frombits(math.Float64bits(s) & 0xffffffff00000000)
+	c := (z - float64(f*f)) / (s + f)
+	w := float64(r*s) + c
+	return 2 * (f + w)
+}
+
+func mathCosh(x float64) float64 {
+	x = math.Abs(x)
+	if math.IsInf(x, 0) || math.IsNaN(x) {
+		return x
+	}
+	if x < 0.5*math.Ln2 {
+		t := math.Expm1(x)
+		w := 1 + t
+		if x < 0x1p-55 {
+			return w
+		}
+		return 1 + (t*t)/(w+w)
+	}
+	if x < 22 {
+		t := mathExp(x)
+		return float64(0.5*t) + 0.5/t
+	}
+	if x < 7.09782712893383973096e+02 {
+		return 0.5 * mathExp(x)
+	}
+	if x <= 7.10475860073943977113e+02 {
+		w := mathExp(0.5 * x)
+		return float64(0.5*w) * w
+	}
+	return math.Inf(1)
+}
+
+// mathExp is used inside cosh; Math.exp retains its existing Go kernel.
+func mathExp(x float64) float64 {
+	if math.IsNaN(x) || math.IsInf(x, 1) {
+		return x
+	}
+	if x > 7.09782712893383973096e+02 {
+		return math.Inf(1)
+	}
+	if x < -7.45133219101941108420e+02 {
+		return 0
+	}
+	const (
+		ln2High = 6.93147180369123816490e-01
+		ln2Low  = 1.90821492927058770002e-10
+		invLn2  = 1.44269504088896338700e+00
+	)
+	var hi, lo float64
+	k := 0
+	absHigh := uint32(math.Float64bits(x)>>32) & 0x7fffffff
+	if absHigh > 0x3fd62e42 {
+		if absHigh < 0x3ff0a2b2 {
+			k = 1
+			if x < 0 {
+				k = -1
+			}
+		} else {
+			k = int(float64(invLn2*x) + math.Copysign(0.5, x))
+		}
+		hi = x - float64(float64(k)*ln2High)
+		lo = float64(k) * ln2Low
+		x = hi - lo
+	} else if absHigh < 0x3e300000 {
+		return 1 + x
+	}
+	t := x * x
+	c := x - float64(t*mathPolynomial(t,
+		1.66666666666666019037e-01, -2.77777777770155933842e-03,
+		6.61375632143793436117e-05, -1.65339022054652515390e-06,
+		4.13813679705723846039e-08))
+	if k == 0 {
+		return 1 - ((x*c)/(c-2) - x)
+	}
+	y := 1 - ((lo - (x*c)/(2-c)) - hi)
+	return math.Ldexp(y, k)
+}
+
+func mathTan(x float64) float64 {
+	abs := math.Abs(x)
+	if abs < 0x1p-28 {
+		return x
+	}
+	// Keep Go's existing large-argument reduction. The fdlibm kernel and
+	// split-pi reduction below cover the small and medium arguments.
+	if abs > 0x1p19*(math.Pi/2) || math.IsNaN(x) {
+		return math.Tan(x)
+	}
+	y, tail, n := mathTanReduce(x)
+	mode := 1
+	if n&1 != 0 {
+		mode = -1
+	}
+	return mathTanKernel(y, tail, mode)
+}
+
+func mathTanReduce(x float64) (float64, float64, int) {
+	const (
+		invPiOver2 = 6.36619772367581382433e-01
+		piOver2A   = 1.57079632673412561417e+00
+		piOver2AT  = 6.07710050650619224932e-11
+		piOver2B   = 6.07710050630396597660e-11
+		piOver2BT  = 2.02226624879595063154e-21
+		piOver2C   = 2.02226624871116645580e-21
+		piOver2CT  = 8.47842766036889956997e-32
+	)
+	ix := uint32(math.Float64bits(x)>>32) & 0x7fffffff
+	if ix <= 0x3fe921fb {
+		return x, 0, 0
+	}
+	abs := math.Abs(x)
+	n := int(float64(abs*invPiOver2) + 0.5)
+	fn := float64(n)
+	r := abs - float64(fn*piOver2A)
+	w := fn * piOver2AT
+	y := r - w
+	if ix < 0x4002d97c {
+		if ix == 0x3ff921fb {
+			r -= piOver2B
+			w = piOver2BT
+			y = r - w
+		}
+	} else {
+		exponent := int(ix >> 20)
+		difference := exponent - int((math.Float64bits(y)>>52)&0x7ff)
+		if difference > 16 {
+			t := r
+			w = fn * piOver2B
+			r = t - w
+			w = float64(fn*piOver2BT) - ((t - r) - w)
+			y = r - w
+			difference = exponent - int((math.Float64bits(y)>>52)&0x7ff)
+			if difference > 49 {
+				t = r
+				w = fn * piOver2C
+				r = t - w
+				w = float64(fn*piOver2CT) - ((t - r) - w)
+				y = r - w
+			}
+		}
+	}
+	tail := (r - y) - w
+	if x < 0 {
+		return -y, -tail, -n
+	}
+	return y, tail, n
+}
+
+func mathTanKernel(x, y float64, mode int) float64 {
+	const (
+		piOver4     = 7.85398163397448278999e-01
+		piOver4Tail = 3.06161699786838301793e-17
+	)
+	negative := x < 0
+	ix := uint32(math.Float64bits(x)>>32) & 0x7fffffff
+	transform := ix >= 0x3fe59428
+	if transform {
+		if negative {
+			x, y = -x, -y
+		}
+		x = (piOver4 - x) + (piOver4Tail - y)
+		y = 0
+	}
+	z := x * x
+	w := z * z
+	r := mathPolynomial(w,
+		1.33333333333201242699e-01, 2.18694882948595424599e-02,
+		3.59207910759131235356e-03, 5.88041240820264096874e-04,
+		7.81794442939557092300e-05, -1.85586374855275456654e-05)
+	v := z * mathPolynomial(w,
+		5.39682539762260521377e-02, 8.86323982359930005737e-03,
+		1.45620945432529025516e-03, 2.46463134818469906812e-04,
+		7.14072491382608190305e-05, 2.59073051863633712884e-05)
+	s := z * x
+	r = y + float64(z*(float64(s*(r+v))+y))
+	r += float64(3.33333333333334091986e-01 * s)
+	w = x + r
+	if transform {
+		v = float64(mode)
+		result := v - float64(2*(x-((w*w)/(w+v)-r)))
+		if negative {
+			return -result
+		}
+		return result
+	}
+	if mode == 1 {
+		return w
+	}
+	// Compensate the reciprocal instead of losing the low part in -1/w.
+	z = math.Float64frombits(math.Float64bits(w) & 0xffffffff00000000)
+	v = r - (z - x)
+	a := -1 / w
+	t := math.Float64frombits(math.Float64bits(a) & 0xffffffff00000000)
+	s = 1 + float64(t*z)
+	return t + float64(a*(s+float64(t*v)))
 }
 
 func builtinEnumStaticValue(typeName, memberName string) (Value, bool) {
@@ -2726,16 +2933,43 @@ func jsonSuppressNulls(callee string, args []Value) (bool, error) {
 	return args[0].Bool, nil
 }
 
-func typedJSONMapKey(typeName, key string) (Value, error) {
+func typedJSONMapKey(typeName, key string, input jsonTypedInput) (Value, error) {
 	if strings.EqualFold(typeName, "String") || strings.EqualFold(typeName, "Object") {
 		return String(key), nil
 	}
+	if input.source != "" {
+		switch canonicalJSONScalarType(typeName) {
+		case "Boolean":
+			// K103/K107-K110: only the untrimmed, case-insensitive "true" key
+			// becomes true; the remaining String keys become false.
+			return Bool(strings.EqualFold(key, "true")), nil
+		case "Blob":
+			// K117-K119: JSON map keys share Apex's base64 decoder.
+			decoded, err := decodeApexBase64(key)
+			if err != nil {
+				return Null, err
+			}
+			return platformScalar("Blob", string(decoded)), nil
+		case "Double", "Decimal":
+			// K120/K121/K132-K135: blank numeric keys are rejected before
+			// their values, even though scalar fields accept blank as null.
+			if strings.TrimSpace(key) == "" {
+				return Null, jsonMapKeyInputError(typeName, key, input, jsonTypeMappingError(typeName, key))
+			}
+		}
+	}
 	value, ok, err := typedScalarFromJSON(typeName, key)
 	if err != nil {
+		if input.source != "" {
+			return Null, jsonMapKeyInputError(typeName, key, input, err)
+		}
 		return Null, err
 	}
 	if ok {
 		return value, nil
+	}
+	if input.source != "" {
+		return Null, jsonDeserializeException("No mapping for apex type: %s", typeName)
 	}
 	return Null, jsonDeserializeException("JSON.deserialize supports Map keys only for scalar/String/Object targets, got %s", typeName)
 }
@@ -2805,6 +3039,10 @@ func newPageReference(rawURL string) Value {
 	page.Fields["parameters"] = pageReferenceParameters(rawURL)
 	page.Fields["headers"] = typedMap("Map<String,String>")
 	page.Fields["cookies"] = typedMap("Map<String,Cookie>")
+	// The pageref_empty/default and external_boundary/default cases are redirects;
+	// paths within the current origin retain server-side navigation by default.
+	parsed, err := url.Parse(rawURL)
+	page.Fields["redirect"] = Bool(rawURL == "" || (err == nil && parsed.IsAbs()))
 	return page
 }
 
@@ -2841,13 +3079,54 @@ func newCookie(args []Value) (Value, error) {
 
 func newLocation(latitude, longitude Value) Value {
 	location := Object("Location")
-	latitudeValue := decimalAsDouble(Decimal(numericFloat(latitude)))
-	latitudeValue.Text = doubleDisplayText(latitudeValue.Decimal)
-	longitudeValue := decimalAsDouble(Decimal(numericFloat(longitude)))
-	longitudeValue.Text = doubleDisplayText(longitudeValue.Decimal)
-	location.Fields["latitude"] = latitudeValue
-	location.Fields["longitude"] = longitudeValue
+	location.Runtime = "System.Location"
+	if latitude.Kind != ValueNull {
+		latitude = decimalAsDouble(Decimal(numericFloat(latitude)))
+		latitude.Text = doubleDisplayText(latitude.Decimal)
+	}
+	if longitude.Kind != ValueNull {
+		longitude = decimalAsDouble(Decimal(numericFloat(longitude)))
+		longitude.Text = doubleDisplayText(longitude.Decimal)
+	}
+	location.Fields["latitude"] = latitude
+	location.Fields["longitude"] = longitude
 	return location
+}
+
+func locationNewInstance(args []Value) (Value, error) {
+	if len(args) != 2 || (args[0].Kind != ValueNull && !isMathNumeric(args[0])) || (args[1].Kind != ValueNull && !isMathNumeric(args[1])) {
+		return Null, fmt.Errorf("Location.newInstance expects latitude and longitude")
+	}
+	// API62/API67 L137-L144: missing and out-of-range coordinates fail
+	// outside Apex catch handling; two missing coordinates form an empty point.
+	if args[0].Kind == ValueNull && args[1].Kind == ValueNull {
+		return newLocation(Null, Null), nil
+	}
+	if args[0].Kind == ValueNull {
+		return Null, &RuntimeError{Type: "System.UnexpectedException", Message: "Latitude value is missing "}
+	}
+	if args[1].Kind == ValueNull {
+		return Null, &RuntimeError{Type: "System.UnexpectedException", Message: "Longitude value is missing "}
+	}
+	if latitude := numericFloat(args[0]); latitude < -90 || latitude > 90 {
+		return Null, &RuntimeError{Type: "System.UnexpectedException", Message: "Latitude outside valid range.  Should be between -90 and 90."}
+	}
+	if longitude := numericFloat(args[1]); longitude < -180 || longitude > 180 {
+		return Null, &RuntimeError{Type: "System.UnexpectedException", Message: "Longitude outside valid range. Should be between -180 and 180."}
+	}
+	return newLocation(args[0], args[1]), nil
+}
+
+func locationString(location Value) string {
+	_, latitude, hasLatitude := objectFieldValue(location, "latitude")
+	_, longitude, hasLongitude := objectFieldValue(location, "longitude")
+	if !hasLatitude {
+		latitude = Null
+	}
+	if !hasLongitude {
+		longitude = Null
+	}
+	return "System.Location[getLatitude=" + latitude.String() + ";getLongitude=" + longitude.String() + ";]"
 }
 
 func newDomainFromHostname(hostname string) Value {
@@ -2857,14 +3136,22 @@ func newDomainFromHostname(hostname string) Value {
 	domain.Fields["hostname"] = String(host)
 	domain.Fields["domainType"] = domainTypeForHostname(host)
 	domain.Fields["myDomainName"] = String(domainLabel(host))
-	domain.Fields["packageName"] = String(domainPackageName(host))
+	domain.Fields["packageName"] = Null
+	if packageName := domainPackageName(host); packageName != "" {
+		domain.Fields["packageName"] = String(packageName)
+	}
 	domain.Fields["sandboxName"] = Null
-	domain.Fields["sitesSubdomainName"] = String(domainLabel(host))
+	domain.Fields["sitesSubdomainName"] = Null
 	return domain
 }
 
 func domainParserHost(value Value) (string, error) {
 	switch value.Kind {
+	case ValueNull:
+		if strings.EqualFold(strings.TrimPrefix(value.Type, "System."), "URL") {
+			return "", newExceptionError("System.NullPointerException", "Script-thrown exception")
+		}
+		return "", newExceptionError("System.InvalidParameterValueException", "Specify a hostname")
 	case ValueString:
 		return hostFromURLText(value.Text), nil
 	case ValueObject:
@@ -2907,18 +3194,18 @@ func domainLabel(host string) string {
 
 func domainPackageName(host string) string {
 	first := strings.Split(strings.TrimSpace(host), ".")[0]
-	before, _, ok := strings.Cut(first, "--")
+	_, packageName, ok := strings.Cut(first, "--")
 	if !ok {
 		return ""
 	}
-	return before
+	return packageName
 }
 
 func domainTypeForHostname(host string) Value {
 	normalized := strings.ToLower(host)
 	name := "ORG_MY_DOMAIN"
 	switch {
-	case strings.Contains(normalized, "content"):
+	case strings.Contains(normalized, "content") || strings.HasSuffix(normalized, ".file.force.com"):
 		name = "CONTENT_DOMAIN"
 	case strings.Contains(normalized, "builder"):
 		name = "EXPERIENCE_CLOUD_SITES_BUILDER_DOMAIN"
@@ -2926,11 +3213,13 @@ func domainTypeForHostname(host string) Value {
 		name = "EXPERIENCE_CLOUD_SITES_LIVE_PREVIEW_DOMAIN"
 	case strings.Contains(normalized, "preview"):
 		name = "EXPERIENCE_CLOUD_SITES_PREVIEW_DOMAIN"
+	case strings.Contains(normalized, "salesforce-sites"):
+		name = "SALESFORCE_SITES_DOMAIN"
 	case strings.Contains(normalized, "site"):
 		name = "EXPERIENCE_CLOUD_SITES_DOMAIN"
-	case strings.Contains(normalized, "visualforce") || strings.Contains(normalized, "--"):
+	case strings.Contains(normalized, "visualforce") || strings.HasSuffix(normalized, ".vf.force.com"):
 		name = "VISUALFORCE_DOMAIN"
-	case strings.Contains(normalized, "lightning-container"):
+	case strings.Contains(normalized, "lightning-container") || strings.HasSuffix(normalized, ".container.force.com"):
 		name = "LIGHTNING_CONTAINER_COMPONENT_DOMAIN"
 	case strings.Contains(normalized, "lightning"):
 		name = "LIGHTNING_DOMAIN"
@@ -2940,37 +3229,64 @@ func domainTypeForHostname(host string) Value {
 	return Value{Kind: ValueObject, Type: "DomainType", Text: name}
 }
 
-func localDomainHostname(kind, packageName string) string {
+func localDomainHostname(orgHost, kind, packageName string) string {
 	normalizedPackage := strings.ToLower(strings.TrimSpace(packageName))
-	packagePrefix := ""
-	if normalizedPackage != "" {
-		packagePrefix = normalizedPackage + "--"
+	if normalizedPackage == "" {
+		normalizedPackage = "c"
 	}
+	if strings.EqualFold(kind, "OrgMyDomainHostname") || strings.EqualFold(kind, "ORG_MY_DOMAIN") {
+		return orgHost
+	}
+	if stem, ok := strings.CutSuffix(orgHost, ".my.salesforce.com"); ok {
+		suffixes := map[string]string{
+			"contenthostname":                         ".file.force.com",
+			"experiencecloudsitesbuilderhostname":     ".builder.salesforce-experience.com",
+			"experiencecloudsiteshostname":            ".my.site.com",
+			"experiencecloudsiteslivepreviewhostname": ".live-preview.salesforce-experience.com",
+			"experiencecloudsitespreviewhostname":     ".preview.salesforce-experience.com",
+			"lightninghostname":                       ".lightning.force.com",
+			"salesforcesiteshostname":                 ".my.salesforce-sites.com",
+			"setuphostname":                           ".my.salesforce-setup.com",
+		}
+		if suffix, ok := suffixes[strings.ToLower(kind)]; ok {
+			return stem + suffix
+		}
+		if strings.EqualFold(kind, "VisualforceHostname") || strings.EqualFold(kind, "LightningContainerComponentHostname") {
+			label, environment, _ := strings.Cut(stem, ".")
+			if environment != "" {
+				environment += "."
+			}
+			suffix := "vf.force.com"
+			if strings.EqualFold(kind, "LightningContainerComponentHostname") {
+				suffix = "container.force.com"
+			}
+			return label + "--" + normalizedPackage + "." + environment + suffix
+		}
+	}
+	label := domainLabel(orgHost)
 	switch strings.ToLower(kind) {
 	case "contenthostname":
-		return "glade.content.local"
+		return label + ".content.local"
 	case "experiencecloudsitesbuilderhostname":
-		return "glade.builder.sites.local"
+		return label + ".builder.sites.local"
 	case "experiencecloudsiteshostname":
-		return "glade.sites.local"
+		return label + ".sites.local"
 	case "experiencecloudsiteslivepreviewhostname":
-		return "glade.live-preview.sites.local"
+		return label + ".live-preview.sites.local"
 	case "experiencecloudsitespreviewhostname":
-		return "glade.preview.sites.local"
+		return label + ".preview.sites.local"
 	case "lightningcontainercomponenthostname":
-		return packagePrefix + "glade.lightning-container.local"
+		return label + "--" + normalizedPackage + ".lightning-container.local"
 	case "lightninghostname":
-		return "glade.lightning.local"
-	case "orgmydomainhostname", "org_my_domain":
-		return "glade.my.salesforce.local"
+		return label + ".lightning.local"
 	case "salesforcesiteshostname":
-		return "glade.salesforce-sites.local"
+		return label + ".salesforce-sites.local"
 	case "setuphostname":
-		return "glade.setup.local"
+		return label + ".setup.local"
 	case "visualforcehostname":
-		return packagePrefix + "glade.visualforce.local"
+		return label + "--" + normalizedPackage + ".visualforce.local"
 	default:
-		return "glade.my.salesforce.local"
+		return orgHost
 	}
 }
 
@@ -2986,6 +3302,17 @@ func locationCoordinate(location Value, field string) (float64, bool) {
 }
 
 func locationDistance(left, right Value, unit string) (Value, error) {
+	// API62/API67 L101-L136 and C011-C014 retain independent unit radii.
+	// L145-L152 reject aliases and surrounding whitespace, accepting case only.
+	var radius float64
+	switch strings.ToLower(unit) {
+	case "km":
+		radius = 6371.009
+	case "mi":
+		radius = 3958.761
+	default:
+		return Null, &RuntimeError{Type: "System.UnexpectedException", Message: "Invalid distance unit specified"}
+	}
 	leftLat, ok := locationCoordinate(left, "latitude")
 	if !ok {
 		return Null, fmt.Errorf("Location.getDistance expects Location latitude")
@@ -3002,22 +3329,14 @@ func locationDistance(left, right Value, unit string) (Value, error) {
 	if !ok {
 		return Null, fmt.Errorf("Location.getDistance expects other Location longitude")
 	}
-	const earthKm = 6371.0088
 	lat1 := leftLat * math.Pi / 180
 	lat2 := rightLat * math.Pi / 180
 	dLat := (rightLat - leftLat) * math.Pi / 180
 	dLon := (rightLon - leftLon) * math.Pi / 180
 	a := math.Sin(dLat/2)*math.Sin(dLat/2) + math.Cos(lat1)*math.Cos(lat2)*math.Sin(dLon/2)*math.Sin(dLon/2)
-	distance := earthKm * 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
-	switch strings.ToLower(strings.TrimSpace(unit)) {
-	case "mi", "mile", "miles":
-		distance *= 0.621371192237334
-	case "m", "meter", "meters":
-		distance *= 1000
-	case "km", "kilometer", "kilometers", "":
-	default:
-		return Null, fmt.Errorf("Location.getDistance unit must be mi, km, or m")
-	}
+	a = math.Max(0, math.Min(1, a))
+	angle := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	distance := radius * angle
 	return decimalAsDouble(Decimal(distance)), nil
 }
 
@@ -3199,17 +3518,11 @@ func pageReferenceURL(page Value) Value {
 	if err != nil {
 		return raw
 	}
-	if !ok || params.Kind != ValueMap || params.Equal(pageReferenceParameters(raw.Text)) {
-		if strings.Contains(parsed.RawQuery, "?") {
-			query := url.Values{}
-			for key, values := range parsed.Query() {
-				if len(values) > 0 {
-					query.Set(key, values[len(values)-1])
-				}
-			}
-			parsed.RawQuery = query.Encode()
-			return String(parsed.String())
-		}
+	if !ok || params.Kind != ValueMap {
+		return String(parsed.String())
+	}
+	if params.Equal(pageReferenceParameters(raw.Text)) {
+		parsed.RawQuery = canonicalPageReferenceQuery(parsed.RawQuery)
 		return String(parsed.String())
 	}
 	query := url.Values{}
@@ -3318,10 +3631,11 @@ func newSelectOption(value, label Value, disabled, escapeItem Value) Value {
 
 func newHttpRequest() Value {
 	request := Object("HttpRequest")
-	request.Fields["endpoint"] = String("")
-	request.Fields["method"] = String("")
+	request.platformHTTPDTO = true
+	request.Fields["endpoint"] = Null
+	request.Fields["method"] = Null
 	request.Fields["headers"] = typedMap("Map<String,String>")
-	request.Fields["body"] = String("")
+	request.Fields["body"] = Null
 	request.Fields["compressed"] = Bool(false)
 	request.Fields["timeout"] = Int(defaultHttpTimeoutMillis)
 	return request
@@ -3329,14 +3643,18 @@ func newHttpRequest() Value {
 
 func newHttpResponse() Value {
 	response := Object("HttpResponse")
-	response.Fields["statusCode"] = Int(200)
-	response.Fields["status"] = String("OK")
+	response.platformHTTPDTO = true
+	response.Fields["statusCode"] = Int(0)
+	response.Fields["status"] = Null
 	response.Fields["headers"] = typedMap("Map<String,String>")
-	response.Fields["body"] = String("")
+	response.Fields["body"] = Null
 	return response
 }
 
 func newContinuation(args []Value, namedArgs map[string]Value) (Value, error) {
+	if len(args) == 1 && len(namedArgs) == 0 && args[0].Kind == ValueNull {
+		return Null, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+	}
 	if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueInt {
 		return Null, fmt.Errorf("Continuation constructor expects timeout Integer")
 	}
@@ -3566,8 +3884,8 @@ func typedSet(typeName string) Value {
 }
 
 var canonicalRuntimeTypeNames = []string{
-	"HttpRequest", "HttpResponse", "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock",
-	"RestRequest", "RestResponse", "Continuation", "PageReference", "VisualEditor.DataRow",
+	"Http", "HttpRequest", "HttpResponse", "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock",
+	"RestRequest", "RestResponse", "Continuation", "PageReference", "Cookie", "XmlStreamWriter", "VisualEditor.DataRow",
 	"VisualEditor.DynamicPickListRows", "Dom.Document", "Dom.XmlNode", "Auth.UserData", "Auth.VerificationResult",
 	"Auth.AuthConfiguration", "Auth.JWT", "Metadata.DeployContainer", "Metadata.CustomMetadata",
 	"Metadata.CustomMetadataValue", "Metadata.CustomObject", "Metadata.CustomField", "Metadata.Metadata",
@@ -3613,7 +3931,7 @@ func (vm *VM) lookupRestContextField(name string) (Value, bool, error) {
 		}
 		return vm.restRequest, true, nil
 	case "RestContext.response":
-		if vm.restResponse.Kind == "" || vm.restResponse.Kind == ValueNull {
+		if vm.restResponse.Kind == "" {
 			vm.restResponse = newRestContextResponse()
 		}
 		return vm.restResponse, true, nil
@@ -3917,6 +4235,11 @@ func (vm *VM) queryLocatorIterable(typeName string, value Value) (Value, error) 
 }
 
 func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
+	// Enum resolution only reads registered classes. An empty runtime cannot
+	// resolve an enum, so avoid class/catalog lookup and negative-cache setup.
+	if len(vm.Classes) == 0 {
+		return Class{}, false
+	}
 	cacheKey := vm.currentClass + "|" + typeName
 	if vm.enumLookup != nil {
 		if cached, ok := vm.enumLookup[cacheKey]; ok {
@@ -4021,12 +4344,40 @@ func (vm *VM) describeFromSObjectFieldToken(value Value) (Value, error) {
 }
 
 func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
+	if value.Kind == ValueObject && value.classInstance && strings.EqualFold(canonicalRuntimePlatformType(typeName), "SObject") {
+		return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to SObject", runtimeValueTypeName(value)))
+	}
+	// User-enum casts require an enum value, not its name.
+	// Keep string coercion available to the separate JSON/assignment routes.
+	if value.Kind == ValueString {
+		if enum, ok := vm.resolveEnumClass(vm.resolveAssignableTargetType(typeName)); ok {
+			return Null, newExceptionError("TypeException", fmt.Sprintf("Invalid conversion from runtime type String to %s", enum.Name))
+		}
+	}
+	// R042: an empty map still has runtime generic arguments. Checking only
+	// its entries would accept an unrelated generic cast vacuously.
+	if value.Kind == ValueMap && isMapType(typeName) {
+		sourceType := value.Runtime
+		if !isMapType(sourceType) {
+			sourceType = value.Type
+		}
+		if isMapType(sourceType) && !vm.typeAssignableTo(sourceType, typeName) && !vm.typeAssignableTo(typeName, sourceType) {
+			return Null, newExceptionError("TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", typeExceptionTargetName(sourceType), typeExceptionTargetName(typeName)))
+		}
+	}
+	if strings.EqualFold(value.Static, "Object") && strings.EqualFold(typeName, "Integer") && ((value.Kind == ValueInt && isLongIntValue(value)) || value.Kind == ValueDecimal) {
+		return Null, newExceptionError("TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to Integer", runtimeValueTypeName(value)))
+	}
 	coerced, err := vm.coerceAssignable(typeName, value)
 	if err == nil {
 		coerced.Static = typeName
 		return coerced, nil
 	}
 	targetType := typeExceptionTargetName(typeName)
+	// Cast diagnostics name the lexical nested target, not its short spelling.
+	if resolved := vm.resolveNestedTypeNameInCurrentExecutionContext(typeName); resolved != "" {
+		targetType = resolved
+	}
 	if value.Kind == ValueDecimal && strings.EqualFold(typeName, "Integer") {
 		converted, conversionErr := int32FromDecimalValue("Integer cast", value)
 		if conversionErr != nil {
@@ -4156,20 +4507,24 @@ func (vm *VM) runtimeError(thrown Value) error {
 func runtimeError(thrown Value, stack []callFrame) error {
 	message := "unhandled exception"
 	errorType := "Exception"
+	var exceptionMessage *string
 	thrown = annotateException(thrown, stack)
 	if thrown.Kind != ValueNull {
 		message = thrown.String()
 		if thrown.Kind == ValueObject && thrown.Type != "" {
 			errorType = thrown.Type
 			if context, ok := thrown.Fields["__diagnosticContext"]; ok && context.Kind == ValueString && strings.TrimSpace(context.Text) != "" {
+				rawMessage := message
+				exceptionMessage = &rawMessage
 				message += " (context: " + context.Text + ")"
 			}
 		}
 	}
-	if len(stack) == 0 {
-		return &RuntimeError{Type: errorType, Message: message}
+	err := &RuntimeError{Type: errorType, Message: message, exceptionMessage: exceptionMessage}
+	if len(stack) != 0 {
+		err.Stack = stackFrames(stack)
 	}
-	return &RuntimeError{Type: errorType, Message: message, Stack: stackFrames(stack)}
+	return err
 }
 
 func classNameFromMethod(name string) string {
@@ -4471,6 +4826,12 @@ func describeFieldBooleanFlagName(method string) string {
 func standardControllerPage(record Value) Value {
 	if _, id, ok := objectFieldValue(record, "Id"); ok {
 		if idText, ok := idValueText(id); ok && idText != "" {
+			// DML-created records retain the storage ID in a plain field while
+			// Apex displays those IDs in their canonical 18-character form. Keep
+			// caller-provided short IDs unchanged.
+			if dmlAccessibleSObject(record) {
+				idText = displayIDText(idText)
+			}
 			return newPageReference("/" + idText)
 		}
 	}
@@ -4540,11 +4901,17 @@ func (vm *VM) callCustomNotificationMember(receiver Value, method string, args [
 		receiver.Fields[customNotificationFieldName(method)] = value
 		return Null, receiver, true, true, nil
 	case "send":
+		// Native validation precedes recipient/target checks.
+		if receiver.Fields["notificationTypeId"].Kind == ValueNull {
+			return Null, receiver, false, true, newExceptionError("HandledException", "Missing required input parameter: customNotifTypeId")
+		}
 		if len(args) != 1 || args[0].Kind != ValueSet {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.CustomNotification.send expects Set<String>")
 		}
-		appendTrace(result, "apex.notification.custom.send", "apex.notification", map[string]any{"recipients": len(args[0].Set)})
-		return Null, receiver, false, true, nil
+		if receiver.Fields["targetId"].Kind == ValueNull && receiver.Fields["targetPageRef"].Kind == ValueNull {
+			return Null, receiver, false, true, fmt.Errorf("notification target is required")
+		}
+		return Null, receiver, false, true, newExceptionError("UnsupportedOperationException", "Messaging.CustomNotification.send requires hosted notification delivery")
 	default:
 		return Null, receiver, false, false, nil
 	}

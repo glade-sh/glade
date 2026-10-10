@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 type ID string
@@ -123,6 +124,7 @@ func AssignDeterministicPrefixes(objectNames []string, explicit map[string]strin
 	names := append([]string(nil), objectNames...)
 	sort.Strings(names)
 	customIndex := 0
+	metadataIndex := 0
 	for _, name := range names {
 		if out[name] != "" {
 			continue
@@ -132,6 +134,14 @@ func AssignDeterministicPrefixes(objectNames []string, explicit map[string]strin
 		for prefixInUse(out, prefix) {
 			prefix = customPrefix(customIndex)
 			customIndex++
+		}
+		if strings.HasSuffix(strings.ToLower(name), "__mdt") {
+			prefix = customMetadataPrefix(metadataIndex)
+			metadataIndex++
+			for prefixInUse(out, prefix) {
+				prefix = customMetadataPrefix(metadataIndex)
+				metadataIndex++
+			}
 		}
 		out[name] = prefix
 	}
@@ -156,6 +166,12 @@ func EnsureUniqueKeyPrefixes(org *OrgState) {
 	sort.Strings(names)
 	used := make(map[string]string, len(names))
 	nextCustom := 0
+	nextMetadata := 0
+	nextCustomSetting := 0
+	reserved := make(map[string]bool, len(names))
+	for _, name := range names {
+		reserved[strings.TrimSpace(org.Objects[name].Definition.KeyPrefix)] = true
+	}
 	for _, name := range names {
 		state := org.Objects[name]
 		prefix := strings.TrimSpace(state.Definition.KeyPrefix)
@@ -164,9 +180,19 @@ func EnsureUniqueKeyPrefixes(org *OrgState) {
 		}
 		if !keyPrefixAvailableForObject(prefix, name, used) {
 			for {
-				candidate := customPrefix(nextCustom)
-				nextCustom++
-				if keyPrefixAvailableForObject(candidate, name, used) {
+				candidate := ""
+				switch {
+				case IsCustomSettingDefinition(state.Definition):
+					candidate = CustomSettingPrefix(nextCustomSetting)
+					nextCustomSetting++
+				case strings.HasSuffix(strings.ToLower(name), "__mdt"):
+					candidate = customMetadataPrefix(nextMetadata)
+					nextMetadata++
+				default:
+					candidate = customPrefix(nextCustom)
+					nextCustom++
+				}
+				if !reserved[candidate] && keyPrefixAvailableForObject(candidate, name, used) {
 					prefix = candidate
 					break
 				}
@@ -210,28 +236,54 @@ func uniqueKeyPrefixesAlreadyValid(org *OrgState) bool {
 	return true
 }
 
+// keyPrefixSnapshotEntry records one object's key prefix at validation time.
+type keyPrefixSnapshotEntry struct {
+	name   string
+	prefix string
+}
+
+// markKeyPrefixesValidated records every object's prefix. The snapshot is a
+// fresh slice on every mark because org clones share it by value copy.
 func markKeyPrefixesValidated(org *OrgState) {
 	org.keyPrefixesValidated = true
 	org.keyPrefixesValidatedObjectCount = len(org.Objects)
-	if org.keyPrefixesValidatedPrefixes == nil || len(org.keyPrefixesValidatedPrefixes) != len(org.Objects) {
-		org.keyPrefixesValidatedPrefixes = make(map[string]string, len(org.Objects))
-	}
-	for name := range org.keyPrefixesValidatedPrefixes {
-		if _, ok := org.Objects[name]; !ok {
-			delete(org.keyPrefixesValidatedPrefixes, name)
-		}
-	}
+	snapshot := make([]keyPrefixSnapshotEntry, 0, len(org.Objects))
 	for name, state := range org.Objects {
-		org.keyPrefixesValidatedPrefixes[name] = state.Definition.KeyPrefix
+		snapshot = append(snapshot, keyPrefixSnapshotEntry{name: name, prefix: state.Definition.KeyPrefix})
 	}
+	org.keyPrefixesValidatedPrefixes = snapshot
 }
 
+// keyPrefixValidationSnapshotMatches reports whether every object's prefix
+// equals its snapshot prefix, reading a name absent from the snapshot as "".
+// The fast path walks the snapshot slice and reads only KeyPrefix, instead of
+// iterating Objects and copying every ObjectState. Any difference it sees is
+// re-decided by the full Objects walk, so the answer is unchanged when a
+// same-count swap adds an object without a prefix.
 func keyPrefixValidationSnapshotMatches(org *OrgState) bool {
 	if org.keyPrefixesValidatedPrefixes == nil || len(org.keyPrefixesValidatedPrefixes) != len(org.Objects) {
 		return false
 	}
+	for _, entry := range org.keyPrefixesValidatedPrefixes {
+		if org.Objects[entry.name].Definition.KeyPrefix != entry.prefix {
+			return keyPrefixValidationSnapshotMatchesByObject(org)
+		}
+	}
+	return true
+}
+
+// keyPrefixSnapshotObjectWalks counts full Objects walks; tests use it to keep
+// the unchanged-org check on the snapshot fast path.
+var keyPrefixSnapshotObjectWalks atomic.Uint64
+
+func keyPrefixValidationSnapshotMatchesByObject(org *OrgState) bool {
+	keyPrefixSnapshotObjectWalks.Add(1)
+	prefixes := make(map[string]string, len(org.keyPrefixesValidatedPrefixes))
+	for _, entry := range org.keyPrefixesValidatedPrefixes {
+		prefixes[entry.name] = entry.prefix
+	}
 	for name, state := range org.Objects {
-		if org.keyPrefixesValidatedPrefixes[name] != state.Definition.KeyPrefix {
+		if prefixes[name] != state.Definition.KeyPrefix {
 			return false
 		}
 	}
@@ -317,6 +369,9 @@ func buildStandardKeyPrefixOwnerData() map[string]string {
 var standardKeyPrefixBaseData = map[string]string{
 	"Account":                 "001",
 	"Contact":                 "003",
+	"CollaborationGroup":      "0F9",
+	"FeedComment":             "0D7",
+	"FeedItem":                "0D5",
 	"User":                    "005",
 	"Opportunity":             "006",
 	"OpportunityLineItem":     "00k",
@@ -325,6 +380,7 @@ var standardKeyPrefixBaseData = map[string]string{
 	"Document":                "015",
 	"Organization":            "00D",
 	"Group":                   "00G",
+	"ListView":                "00B",
 	"UserRole":                "00E",
 	"Profile":                 "00e",
 	"UserLicense":             "100",
@@ -386,6 +442,31 @@ func leftPadBase36(v uint64, width int) string {
 		return text
 	}
 	return strings.Repeat("0", width-len(text)) + text
+}
+
+// Local custom metadata uses its own prefix pool. Sorting callers provide a
+// deterministic local allocation order, not an org-independent Salesforce ID.
+func customMetadataPrefix(index int) string {
+	const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	if index < len(alphabet)*len(alphabet) {
+		return "m" + string(alphabet[index/len(alphabet)]) + string(alphabet[index%len(alphabet)])
+	}
+	// Preserve the allocator's general overflow capacity after the m pool.
+	return customPrefix(index)
+}
+
+// Local custom settings use their own prefix pool. This keeps synthesized IDs
+// stable when an unrelated object is added to the same fixture composition.
+func CustomSettingPrefix(index int) string {
+	const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	if index < 0 {
+		index = 0
+	}
+	base := len(alphabet)
+	if index < base*base {
+		return "s" + string(alphabet[index/base]) + string(alphabet[index%base])
+	}
+	return customPrefix(index)
 }
 
 func customPrefix(index int) string {

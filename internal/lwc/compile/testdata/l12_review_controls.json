@@ -1,0 +1,452 @@
+[
+  {
+    "id": "r_control_selection_empty_unknown_field",
+    "group": "envelope and errors",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { Key__c: { eq: \"L12_ABSENT\" } }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { node { Id OwnedMissing__c { value } } } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_empty_unknown_field\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":13,\"line\":12}],\"message\":\"Validation error (FieldUndefined@[uiapi/query/FamilyL12Record__c/edges/node/OwnedMissing__c]) : Field 'OwnedMissing__c' in type 'FamilyL12Record__c' is undefined\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_empty_unknown_field\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":13,\"line\":12}],\"message\":\"Validation error (FieldUndefined@[uiapi/query/FamilyL12Record__c/edges/node/OwnedMissing__c]) : Field 'OwnedMissing__c' in type 'FamilyL12Record__c' is undefined\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_selection_empty_leaf_subselection",
+    "group": "envelope and errors",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { Key__c: { eq: \"L12_ABSENT\" } }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { node { Id { value } } } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_empty_leaf_subselection\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":13,\"line\":11}],\"message\":\"Validation error (SubselectionNotAllowed@[uiapi/query/FamilyL12Record__c/edges/node/Id]) : Subselection not allowed on leaf type 'ID!' of field 'Id'\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_empty_leaf_subselection\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":13,\"line\":11}],\"message\":\"Validation error (SubselectionNotAllowed@[uiapi/query/FamilyL12Record__c/edges/node/Id]) : Subselection not allowed on leaf type 'ID!' of field 'Id'\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_selection_parent_null_unknown_field",
+    "group": "envelope and errors",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { Key__c: { eq: \"L12_B\" } }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { node { Id Parent__r { Id OwnedMissing__c { value } } } } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_parent_null_unknown_field\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":15,\"line\":14}],\"message\":\"Validation error (FieldUndefined@[uiapi/query/FamilyL12Record__c/edges/node/Parent__r/OwnedMissing__c]) : Field 'OwnedMissing__c' in type 'FamilyL12Record__c' is undefined\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_parent_null_unknown_field\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":15,\"line\":14}],\"message\":\"Validation error (FieldUndefined@[uiapi/query/FamilyL12Record__c/edges/node/Parent__r/OwnedMissing__c]) : Field 'OwnedMissing__c' in type 'FamilyL12Record__c' is undefined\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_selection_parent_null_leaf_subselection",
+    "group": "envelope and errors",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { Key__c: { eq: \"L12_B\" } }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { node { Id Parent__r { Id { value } } } } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_parent_null_leaf_subselection\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":15,\"line\":13}],\"message\":\"Validation error (SubselectionNotAllowed@[uiapi/query/FamilyL12Record__c/edges/node/Parent__r/Id]) : Subselection not allowed on leaf type 'ID!' of field 'Id'\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_parent_null_leaf_subselection\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":15,\"line\":13}],\"message\":\"Validation error (SubselectionNotAllowed@[uiapi/query/FamilyL12Record__c/edges/node/Parent__r/Id]) : Subselection not allowed on leaf type 'ID!' of field 'Id'\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_selection_parent_present_unknown_field",
+    "group": "envelope and errors",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { Key__c: { eq: \"L12_A\" } }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { node { Id Parent__r { Id OwnedMissing__c { value } } } } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_parent_present_unknown_field\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":15,\"line\":14}],\"message\":\"Validation error (FieldUndefined@[uiapi/query/FamilyL12Record__c/edges/node/Parent__r/OwnedMissing__c]) : Field 'OwnedMissing__c' in type 'FamilyL12Record__c' is undefined\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_parent_present_unknown_field\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":15,\"line\":14}],\"message\":\"Validation error (FieldUndefined@[uiapi/query/FamilyL12Record__c/edges/node/Parent__r/OwnedMissing__c]) : Field 'OwnedMissing__c' in type 'FamilyL12Record__c' is undefined\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_selection_parent_present_leaf_subselection",
+    "group": "envelope and errors",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { Key__c: { eq: \"L12_A\" } }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { node { Id Parent__r { Id { value } } } } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_parent_present_leaf_subselection\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":15,\"line\":13}],\"message\":\"Validation error (SubselectionNotAllowed@[uiapi/query/FamilyL12Record__c/edges/node/Parent__r/Id]) : Subselection not allowed on leaf type 'ID!' of field 'Id'\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_selection_parent_present_leaf_subselection\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"ValidationError\"},\"locations\":[{\"column\":15,\"line\":13}],\"message\":\"Validation error (SubselectionNotAllowed@[uiapi/query/FamilyL12Record__c/edges/node/Parent__r/Id]) : Subselection not allowed on leaf type 'ID!' of field 'Id'\",\"paths\":[]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_or_keys",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { or: [ { Key__c: { eq: \"L12_A\" } }, { Key__c: { eq: \"L12_B\" } } ] } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_or_keys\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-2\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_or_keys\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-2\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_or_null",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { or: [ { Label__c: { eq: null } }, { Key__c: { eq: \"L12_A\" } } ] } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_or_null\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_or_null\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_or_empty",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { or: [] } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_or_empty\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-4\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-5\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-5\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_or_empty\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-4\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-5\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-5\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_not_key",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { not: { Key__c: { eq: \"L12_A\" } } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_not_key\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-4\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-4\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_not_key\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-4\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-4\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_not_null",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { not: { Label__c: { eq: null } } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_not_null\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_not_null\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_not_empty",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { not: {} } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_not_empty\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-4\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-5\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-5\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_not_empty\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-4\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-5\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-5\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_nin_keys",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Key__c: { nin: [\"L12_A\", \"L12_C\"] } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_keys\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_keys\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_nin_nullable",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { nin: [\"alpha\"] } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_nullable\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-4\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-4\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_nullable\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-4\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-4\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_nin_null_element",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { nin: [null] } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_null_element\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_null_element\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_nin_number",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Amount__c: { nin: [0, 12.5] } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_number\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_number\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_nin_empty",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { nin: [] } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_empty\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-4\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-5\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-5\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_empty\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}},{\"cursor\":\"opaque-cursor-4\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}},{\"cursor\":\"opaque-cursor-5\",\"node\":{\"Id\":\"owned-record:L12_PARENT\",\"Key__c\":{\"value\":\"L12_PARENT\"},\"Name\":{\"value\":\"Owned parent\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-5\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_in_null_neighbor",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { in: [null, \"alpha\"] } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_in_null_neighbor\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_in_null_neighbor\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}},{\"cursor\":\"opaque-cursor-2\",\"node\":{\"Id\":\"owned-record:L12_B\",\"Key__c\":{\"value\":\"L12_B\"},\"Name\":{\"value\":\"Owned beta\"}}},{\"cursor\":\"opaque-cursor-3\",\"node\":{\"Id\":\"owned-record:L12_D\",\"Key__c\":{\"value\":\"L12_D\"},\"Name\":{\"value\":\"Owned delta\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-3\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_like_prefix",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"a%\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_prefix\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_prefix\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_like_case",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"AL%\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_case\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_case\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_like_underscore",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"_lpha\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_underscore\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_underscore\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_like_escaped_underscore",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Key__c: { like: \"L12\\\\_A\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_escaped_underscore\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_escaped_underscore\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_A\",\"Key__c\":{\"value\":\"L12_A\"},\"Name\":{\"value\":\"Owned alpha\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_like_no_match",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"absent%\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_no_match\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[],\"pageInfo\":{\"endCursor\":null,\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":null}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_no_match\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[],\"pageInfo\":{\"endCursor\":null,\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":null}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_like_null",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: null } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_null\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"DataFetchingException\"},\"locations\":[{\"column\":7,\"line\":4}],\"message\":\"Exception while fetching data (/uiapi/query/FamilyL12Record__c) : The value can't be null or an empty string for LIKE predicate\",\"paths\":[\"uiapi\",\"query\",\"FamilyL12Record__c\"]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_null\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"DataFetchingException\"},\"locations\":[{\"column\":7,\"line\":4}],\"message\":\"Exception while fetching data (/uiapi/query/FamilyL12Record__c) : The value can't be null or an empty string for LIKE predicate\",\"paths\":[\"uiapi\",\"query\",\"FamilyL12Record__c\"]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_like_empty",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_empty\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"DataFetchingException\"},\"locations\":[{\"column\":7,\"line\":4}],\"message\":\"Exception while fetching data (/uiapi/query/FamilyL12Record__c) : The value can't be null or an empty string for LIKE predicate\",\"paths\":[\"uiapi\",\"query\",\"FamilyL12Record__c\"]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_empty\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"DataFetchingException\"},\"locations\":[{\"column\":7,\"line\":4}],\"message\":\"Exception while fetching data (/uiapi/query/FamilyL12Record__c) : The value can't be null or an empty string for LIKE predicate\",\"paths\":[\"uiapi\",\"query\",\"FamilyL12Record__c\"]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_like_unicode_prefix",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"\u00e9\u6c34%\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_unicode_prefix\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_unicode_prefix\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_like_unicode_single",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "boundary",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { like: \"\u00e9\u6c34_\" } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_unicode_single\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_like_unicode_single\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"uiapi\":{\"query\":{\"FamilyL12Record__c\":{\"edges\":[{\"cursor\":\"opaque-cursor-1\",\"node\":{\"Id\":\"owned-record:L12_C\",\"Key__c\":{\"value\":\"L12_C\"},\"Name\":{\"value\":\"Owned \\u00e9\\u6c34\\ud83d\\ude00\"}}}],\"pageInfo\":{\"endCursor\":\"opaque-cursor-1\",\"hasNextPage\":false,\"hasPreviousPage\":false,\"startCursor\":\"opaque-cursor-1\"}}}}},\"error\":{\"type\":\"undefined\"},\"errors\":{\"type\":\"undefined\"},\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_or_null_rhs",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "null",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { or: null } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_or_null_rhs\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"DataFetchingException\"},\"locations\":[{\"column\":7,\"line\":4}],\"message\":\"Exception while fetching data (/uiapi/query/FamilyL12Record__c) : Cannot invoke \\\"java.util.List.iterator()\\\" because \\\"conditionList\\\" is null\",\"paths\":[\"uiapi\",\"query\",\"FamilyL12Record__c\"]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_or_null_rhs\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"DataFetchingException\"},\"locations\":[{\"column\":7,\"line\":4}],\"message\":\"Exception while fetching data (/uiapi/query/FamilyL12Record__c) : Cannot invoke \\\"java.util.List.iterator()\\\" because \\\"conditionList\\\" is null\",\"paths\":[\"uiapi\",\"query\",\"FamilyL12Record__c\"]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_not_null_rhs",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "null",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { not: null } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_not_null_rhs\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"DataFetchingException\"},\"locations\":[{\"column\":7,\"line\":4}],\"message\":\"Exception while fetching data (/uiapi/query/FamilyL12Record__c) : Cannot invoke \\\"java.util.Map.entrySet()\\\" because \\\"conditions\\\" is null\",\"paths\":[\"uiapi\",\"query\",\"FamilyL12Record__c\"]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_not_null_rhs\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"DataFetchingException\"},\"locations\":[{\"column\":7,\"line\":4}],\"message\":\"Exception while fetching data (/uiapi/query/FamilyL12Record__c) : Cannot invoke \\\"java.util.Map.entrySet()\\\" because \\\"conditions\\\" is null\",\"paths\":[\"uiapi\",\"query\",\"FamilyL12Record__c\"]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  },
+  {
+    "id": "r_control_filter_nin_null_rhs",
+    "group": "nullability",
+    "kind": "runtime",
+    "scenario": "null",
+    "basis": "org",
+    "query": "query L12Owned { uiapi { query { FamilyL12Record__c(where: { and: [ { Key__c: { in: [\"L12_PARENT\", \"L12_A\", \"L12_B\", \"L12_C\", \"L12_D\"] } }, { Label__c: { nin: null } } ] }, orderBy: { Key__c: { order: ASC } }, first: 5) { edges { cursor node { Id Key__c { value } Name { value } } } pageInfo { hasNextPage hasPreviousPage startCursor endCursor } } } } }",
+    "variables": {},
+    "operation": "snapshot",
+    "observation": "Native wire envelope, data/errors, query construction exceptions and bounded no-data; no inferred answer",
+    "expected": {
+      "59.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_null_rhs\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"DataFetchingException\"},\"locations\":[{\"column\":7,\"line\":4}],\"message\":\"Exception while fetching data (/uiapi/query/FamilyL12Record__c) : The value can't be empty for nin predicate\",\"paths\":[\"uiapi\",\"query\",\"FamilyL12Record__c\"]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}",
+      "67.0": "BROWSER|{\"fixtureKeys\":[\"L12_PARENT\",\"L12_A\",\"L12_B\",\"L12_C\",\"L12_D\"],\"id\":\"r_control_filter_nin_null_rhs\",\"stage\":\"done\",\"trace\":[{\"action\":\"query\",\"construction\":[],\"envelopes\":[{\"data\":{\"type\":\"undefined\"},\"error\":{\"type\":\"undefined\"},\"errors\":[{\"error\":[{\"extensions\":{\"ErrorType\":\"DataFetchingException\"},\"locations\":[{\"column\":7,\"line\":4}],\"message\":\"Exception while fetching data (/uiapi/query/FamilyL12Record__c) : The value can't be empty for nin predicate\",\"paths\":[\"uiapi\",\"query\",\"FamilyL12Record__c\"]}],\"errorType\":\"adapterError\"}],\"keys\":[\"data\",\"errors\"],\"meaningful\":true,\"refreshType\":\"undefined\"}],\"meaningfulEnvelopeObserved\":true,\"noDataWithinMs\":null,\"observationWindowMaxMs\":4000,\"settleMs\":200,\"step\":1,\"variables\":{}}]}"
+    }
+  }
+]

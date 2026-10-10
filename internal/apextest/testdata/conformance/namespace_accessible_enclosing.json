@@ -1,0 +1,426 @@
+{
+  "provenance": {
+    "oracle": "Owned named namespace-access observations at API 58.0, 62.0, 64.0 and 67.0."
+  },
+  "rows": [
+    {
+      "id": "C001",
+      "apiVersion": "62.0",
+      "name": "A05NamespaceWidgetC001_62_28ba0e2a",
+      "source": "@NamespaceAccessible public class A05NamespaceWidgetC001_62_28ba0e2a {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "compiled",
+      "route": "named"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "62.0",
+      "name": "A05NamespaceWidgetC002_62_28ba0e2a",
+      "source": "public class A05NamespaceWidgetC002_62_28ba0e2a {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global",
+      "route": "named"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "62.0",
+      "name": "A05NamespaceWidgetC003_62_28ba0e2a",
+      "source": "global class A05NamespaceWidgetC003_62_28ba0e2a {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "compiled",
+      "route": "named"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "62.0",
+      "name": "A05NamespaceWidgetC004_62_28ba0e2a",
+      "source": "public class A05NamespaceWidgetC004_62_28ba0e2a {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global",
+      "route": "named"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "67.0",
+      "name": "A05NamespaceWidgetC001_67_b5a465a5",
+      "source": "@NamespaceAccessible public class A05NamespaceWidgetC001_67_b5a465a5 {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "compiled",
+      "route": "named"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "67.0",
+      "name": "A05NamespaceWidgetC002_67_b5a465a5",
+      "source": "public class A05NamespaceWidgetC002_67_b5a465a5 {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global",
+      "route": "named"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "67.0",
+      "name": "A05NamespaceWidgetC003_67_b5a465a5",
+      "source": "global class A05NamespaceWidgetC003_67_b5a465a5 {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "compiled",
+      "route": "named"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "67.0",
+      "name": "A05NamespaceWidgetC004_67_b5a465a5",
+      "source": "public class A05NamespaceWidgetC004_67_b5a465a5 {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global",
+      "route": "named"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "64.0",
+      "name": "A05NamespaceWidgetC001_64_6786070b",
+      "source": "@NamespaceAccessible public class A05NamespaceWidgetC001_64_6786070b {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "compiled",
+      "route": "named"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "64.0",
+      "name": "A05NamespaceWidgetC002_64_6786070b",
+      "source": "public class A05NamespaceWidgetC002_64_6786070b {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global",
+      "route": "named"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "64.0",
+      "name": "A05NamespaceWidgetC003_64_6786070b",
+      "source": "global class A05NamespaceWidgetC003_64_6786070b {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "compiled",
+      "route": "named"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "64.0",
+      "name": "A05NamespaceWidgetC004_64_6786070b",
+      "source": "public class A05NamespaceWidgetC004_64_6786070b {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global",
+      "route": "named"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "58.0",
+      "name": "A05NamespaceWidgetC001_58_d2b77330",
+      "source": "@NamespaceAccessible public class A05NamespaceWidgetC001_58_d2b77330 {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "compiled",
+      "route": "named"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "58.0",
+      "name": "A05NamespaceWidgetC002_58_d2b77330",
+      "source": "public class A05NamespaceWidgetC002_58_d2b77330 {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global",
+      "route": "named"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "58.0",
+      "name": "A05NamespaceWidgetC003_58_d2b77330",
+      "source": "global class A05NamespaceWidgetC003_58_d2b77330 {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "compiled",
+      "route": "named"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "58.0",
+      "name": "A05NamespaceWidgetC004_58_d2b77330",
+      "source": "public class A05NamespaceWidgetC004_58_d2b77330 {\n    @NamespaceAccessible public class Item {}\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global",
+      "route": "named"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\n@NamespaceAccessible public class A05NamespaceWidgetC001 {\n    @NamespaceAccessible public class Item {}\n}\nA05NamespaceWidgetC001 widget = new A05NamespaceWidgetC001();\npq.out('C001',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic class A05NamespaceWidgetC002 {\n    @NamespaceAccessible public class Item {}\n}\nA05NamespaceWidgetC002 widget = new A05NamespaceWidgetC002();\npq.out('C002',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nglobal class A05NamespaceWidgetC003 {\n    @NamespaceAccessible public class Item {}\n}\nA05NamespaceWidgetC003 widget = new A05NamespaceWidgetC003();\npq.out('C003',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic class A05NamespaceWidgetC004 {\n    @NamespaceAccessible public class Item {}\n}\nA05NamespaceWidgetC004 widget = new A05NamespaceWidgetC004();\npq.out('C004',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+    },
+    {
+      "id": "C005",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic class A05NamespaceWidgetC005 {}\nA05NamespaceWidgetC005 widget = new A05NamespaceWidgetC005();\npq.out('C005',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "compiled"
+    },
+    {
+      "id": "C006",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\n@NamespaceAccessible public class A05NamespaceWidgetC006 {}\nA05NamespaceWidgetC006 widget = new A05NamespaceWidgetC006();\npq.out('C006',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "COMPILE_ERROR\tline 1: Enclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC001_62_f27c48b5",
+      "source": "@IsTest private class A05NamespaceTestC001_62_f27c48b5 {\n@NamespaceAccessible public class A05NamespaceWidgetC001 {\n    @NamespaceAccessible public class Item {}\n}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC001 widget = new A05NamespaceWidgetC001();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C001|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC002_62_f27c48b5",
+      "source": "@IsTest private class A05NamespaceTestC002_62_f27c48b5 {\npublic class A05NamespaceWidgetC002 {\n    @NamespaceAccessible public class Item {}\n}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC002 widget = new A05NamespaceWidgetC002();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C002|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC003_62_f27c48b5",
+      "source": "@IsTest private class A05NamespaceTestC003_62_f27c48b5 {\nglobal class A05NamespaceWidgetC003 {\n    @NamespaceAccessible public class Item {}\n}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC003 widget = new A05NamespaceWidgetC003();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C003|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC004_62_f27c48b5",
+      "source": "@IsTest private class A05NamespaceTestC004_62_f27c48b5 {\npublic class A05NamespaceWidgetC004 {\n    @NamespaceAccessible public class Item {}\n}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC004 widget = new A05NamespaceWidgetC004();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C004|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+    },
+    {
+      "id": "C005",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC005_62_f27c48b5",
+      "source": "@IsTest private class A05NamespaceTestC005_62_f27c48b5 {\npublic class A05NamespaceWidgetC005 {}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC005 widget = new A05NamespaceWidgetC005();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C005|'+observedText);\n    }\n}\n",
+      "expected": "compiled"
+    },
+    {
+      "id": "C006",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC006_62_f27c48b5",
+      "source": "@IsTest private class A05NamespaceTestC006_62_f27c48b5 {\n@NamespaceAccessible public class A05NamespaceWidgetC006 {}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC006 widget = new A05NamespaceWidgetC006();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C006|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "62.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC001Test_62_f27c48b5",
+      "source": "@IsTest @NamespaceAccessible public class A05NamespaceWidgetC001Test_62_f27c48b5 {\n    @NamespaceAccessible public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C001|'+observedText);\n    }\n}\n",
+      "expected": "compiled"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "62.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC002Test_62_f27c48b5",
+      "source": "@IsTest public class A05NamespaceWidgetC002Test_62_f27c48b5 {\n    @NamespaceAccessible public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C002|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "62.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC003Test_62_f27c48b5",
+      "source": "@IsTest global class A05NamespaceWidgetC003Test_62_f27c48b5 {\n    @NamespaceAccessible public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C003|'+observedText);\n    }\n}\n",
+      "expected": "compiled"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "62.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC004Test_62_f27c48b5",
+      "source": "@IsTest public class A05NamespaceWidgetC004Test_62_f27c48b5 {\n    @NamespaceAccessible public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C004|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global"
+    },
+    {
+      "id": "C005",
+      "apiVersion": "62.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC005Test_62_f27c48b5",
+      "source": "@IsTest public class A05NamespaceWidgetC005Test_62_f27c48b5 {\n    public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C005|'+observedText);\n    }\n}\n",
+      "expected": "compiled"
+    },
+    {
+      "id": "C006",
+      "apiVersion": "62.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC006Test_62_f27c48b5",
+      "source": "@IsTest public class A05NamespaceWidgetC006Test_62_f27c48b5 {\n    @NamespaceAccessible public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C006|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\n@NamespaceAccessible public class A05NamespaceWidgetC001 {\n    @NamespaceAccessible public class Item {}\n}\nA05NamespaceWidgetC001 widget = new A05NamespaceWidgetC001();\npq.out('C001',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic class A05NamespaceWidgetC002 {\n    @NamespaceAccessible public class Item {}\n}\nA05NamespaceWidgetC002 widget = new A05NamespaceWidgetC002();\npq.out('C002',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nglobal class A05NamespaceWidgetC003 {\n    @NamespaceAccessible public class Item {}\n}\nA05NamespaceWidgetC003 widget = new A05NamespaceWidgetC003();\npq.out('C003',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic class A05NamespaceWidgetC004 {\n    @NamespaceAccessible public class Item {}\n}\nA05NamespaceWidgetC004 widget = new A05NamespaceWidgetC004();\npq.out('C004',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "COMPILE_ERROR\tline 7: Inner types are not allowed to have inner types"
+    },
+    {
+      "id": "C005",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\npublic class A05NamespaceWidgetC005 {}\nA05NamespaceWidgetC005 widget = new A05NamespaceWidgetC005();\npq.out('C005',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "compiled"
+    },
+    {
+      "id": "C006",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "name": "",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\n@NamespaceAccessible public class A05NamespaceWidgetC006 {}\nA05NamespaceWidgetC006 widget = new A05NamespaceWidgetC006();\npq.out('C006',widget == null ? 'null' : 'compiled');\n\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "expected": "COMPILE_ERROR\tline 1: Enclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC001_67_707b2c6e",
+      "source": "@IsTest private class A05NamespaceTestC001_67_707b2c6e {\n@NamespaceAccessible public class A05NamespaceWidgetC001 {\n    @NamespaceAccessible public class Item {}\n}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC001 widget = new A05NamespaceWidgetC001();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C001|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC002_67_707b2c6e",
+      "source": "@IsTest private class A05NamespaceTestC002_67_707b2c6e {\npublic class A05NamespaceWidgetC002 {\n    @NamespaceAccessible public class Item {}\n}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC002 widget = new A05NamespaceWidgetC002();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C002|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC003_67_707b2c6e",
+      "source": "@IsTest private class A05NamespaceTestC003_67_707b2c6e {\nglobal class A05NamespaceWidgetC003 {\n    @NamespaceAccessible public class Item {}\n}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC003 widget = new A05NamespaceWidgetC003();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C003|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC004_67_707b2c6e",
+      "source": "@IsTest private class A05NamespaceTestC004_67_707b2c6e {\npublic class A05NamespaceWidgetC004 {\n    @NamespaceAccessible public class Item {}\n}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC004 widget = new A05NamespaceWidgetC004();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C004|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tInner types are not allowed to have inner types"
+    },
+    {
+      "id": "C005",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC005_67_707b2c6e",
+      "source": "@IsTest private class A05NamespaceTestC005_67_707b2c6e {\npublic class A05NamespaceWidgetC005 {}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC005 widget = new A05NamespaceWidgetC005();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C005|'+observedText);\n    }\n}\n",
+      "expected": "compiled"
+    },
+    {
+      "id": "C006",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "name": "A05NamespaceTestC006_67_707b2c6e",
+      "source": "@IsTest private class A05NamespaceTestC006_67_707b2c6e {\n@NamespaceAccessible public class A05NamespaceWidgetC006 {}\n    @IsTest static void observed() {\n        A05NamespaceWidgetC006 widget = new A05NamespaceWidgetC006();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C006|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "67.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC001Test_67_707b2c6e",
+      "source": "@IsTest @NamespaceAccessible public class A05NamespaceWidgetC001Test_67_707b2c6e {\n    @NamespaceAccessible public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C001|'+observedText);\n    }\n}\n",
+      "expected": "compiled"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "67.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC002Test_67_707b2c6e",
+      "source": "@IsTest public class A05NamespaceWidgetC002Test_67_707b2c6e {\n    @NamespaceAccessible public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C002|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "67.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC003Test_67_707b2c6e",
+      "source": "@IsTest global class A05NamespaceWidgetC003Test_67_707b2c6e {\n    @NamespaceAccessible public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C003|'+observedText);\n    }\n}\n",
+      "expected": "compiled"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "67.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC004Test_67_707b2c6e",
+      "source": "@IsTest public class A05NamespaceWidgetC004Test_67_707b2c6e {\n    @NamespaceAccessible public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C004|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global"
+    },
+    {
+      "id": "C005",
+      "apiVersion": "67.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC005Test_67_707b2c6e",
+      "source": "@IsTest public class A05NamespaceWidgetC005Test_67_707b2c6e {\n    public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C005|'+observedText);\n    }\n}\n",
+      "expected": "compiled"
+    },
+    {
+      "id": "C006",
+      "apiVersion": "67.0",
+      "route": "isTestType",
+      "name": "A05NamespaceWidgetC006Test_67_707b2c6e",
+      "source": "@IsTest public class A05NamespaceWidgetC006Test_67_707b2c6e {\n    @NamespaceAccessible public class Item {}\n    @IsTest static void observed() {\n        Item widget = new Item();\n        String observedText = widget == null ? 'null' : 'compiled';\n        System.assert(false,'P|C006|'+observedText);\n    }\n}\n",
+      "expected": "COMPILE_ERROR\tEnclosing type for NamespaceAccessible classes in apex classes require at least one of the following NamespaceAccessible, global"
+    }
+  ],
+  "routeProvenance": {
+    "oracle": "Owned anonymous, isTest and isTestType namespace-access observations at API 62.0 and 67.0."
+  }
+}

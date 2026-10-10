@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -27,7 +28,7 @@ func TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc", nil))
@@ -84,7 +85,7 @@ func TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord(t *te
 		"001LOCALACCT001": {ID: "001LOCALACCT001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Seeded Account")}},
 	}
 	org.Objects["Account"] = account
-	handler := NewWithSource(&org, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &org, SourceMetadata{Project: p})
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/builder", nil))
@@ -188,7 +189,7 @@ func TestLWCShellTabRouteIncludesPreviewRouteCatalog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/tab/Lwc_Probe", nil))
@@ -232,7 +233,7 @@ func TestServerRootRendersLWCHomeWhenProjectHasLWCs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
@@ -309,7 +310,7 @@ func TestLWCShellRendersApplicationNavAndConsoleMode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/app/Support_Page?app=Support_Console", nil))
@@ -360,7 +361,7 @@ func TestLWCShellResolvesUtilityBarRouteAndRendersChrome(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/utility/Support_Utility", nil), []string{"utility", "Support_Utility"})
 	if err != nil {
@@ -399,6 +400,7 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 		{path: "/lightning/runtime/shims/community.js", want: "readCommunityValue"},
 		{path: "/lightning/runtime/shims/site.js", want: "readSiteId"},
 		{path: "/lightning/runtime/shims/user-permission.js", want: "readUserPermission"},
+		{path: "/lightning/runtime/shims/user-permission.js", want: "readCustomPermission"},
 		{path: "/lightning/runtime/shell/glade-shell.css", want: ".glade-shell"},
 		{path: "/lightning/runtime/slds/slds-loader.js", want: "loadSLDS"},
 		{path: "/lightning/runtime/slds/glade-slds.css", want: "slds2.cosmos.css"},
@@ -418,7 +420,7 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 		{path: "/lightning/shims/lightning/empApi.js", want: "subscribe"},
 		{path: "/lightning/shims/lightning/flowSupport.js", want: "FlowAttributeChangeEvent"},
 		{path: "/lightning/shims/lightning/refresh.js", want: "registerRefreshHandler"},
-		{path: "/lightning/shims/lightning/uiListApi.js", want: "GLADELWC050"},
+		{path: "/lightning/shims/lightning/uiListApi.js", want: "createFetchWireAdapter"},
 		{path: "/lightning/shims/lightning/platformWorkspaceApi.js", want: "getFocusedTabInfo"},
 		{path: "/lightning/shims/lightning/treeGrid.js", want: "lightning-tree-grid"},
 		{path: "/lightning/shims/community/basePath.js", want: `readCommunityValue("basePath", "/s")`},
@@ -659,6 +661,58 @@ func TestLightningRuntimePrefersRepoAssetsForSourceCheckout(t *testing.T) {
 	}
 }
 
+func TestL11ShellNavigationUsesOrgMetadata(t *testing.T) {
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := project.Load(filepath.Join(root, "testdata", "local-tests", "lwc-shell"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Native r_nav_* uses an LWC component tab. The shared Lwc_Probe tab
+	// points at a FlexiPage, so retain it and add a separate owned input.
+	tabPath := writeLWCShellServerTestFile(t, t.TempDir(), "tabs/L11_Component_Tab.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata"><label>L11 Component Tab</label><lwcComponent>contextProbe</lwcComponent><motif>Custom1: Heart</motif></CustomTab>`)
+	p.TabFiles = append(p.TabFiles, tabPath)
+	const identity = "0Rb000000000042"
+	org := &storage.OrgState{Metadata: storage.MetadataRegistry{Tabs: []storage.TabMetadata{
+		{Name: "L11_Component_Tab", NavigationIdentity: identity},
+	}}}
+	handler := newLightningTestServer(t, org, SourceMetadata{Project: p})
+	for _, endpoint := range []string{"/lwc", "/lwc/preview/tab/L11_Component_Tab", "/lightning/local/context.json?url=/lwc"} {
+		t.Run(endpoint, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, endpoint, nil))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+			}
+			body := rec.Body.String()
+			if strings.HasPrefix(endpoint, "/lwc") {
+				_, rest, found := strings.Cut(body, `<script type="application/json" id="glade-lwc-workbench">`)
+				if !found {
+					t.Fatal("missing host workbench JSON")
+				}
+				body, _, _ = strings.Cut(rest, "</script>")
+			}
+			var got struct {
+				Routes []lwcshell.ShellRoute `json:"routes"`
+			}
+			if err := json.Unmarshal([]byte(body), &got); err != nil {
+				t.Fatal(err)
+			}
+			for _, route := range got.Routes {
+				if route.TabName == "L11_Component_Tab" {
+					if route.ObjectName != identity || route.ItemType != "TabAura" {
+						t.Fatalf("host navigation lost org metadata: %#v", route)
+					}
+					return
+				}
+			}
+			t.Fatal("missing LWC tab")
+		})
+	}
+}
+
 func TestLightningLocalContextJSONReportsActiveShellState(t *testing.T) {
 	root, err := lightningTestRepoRoot()
 	if err != nil {
@@ -669,7 +723,7 @@ func TestLightningLocalContextJSONReportsActiveShellState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	activeRoute := "/lwc/preview/record/Account/001000000000001AAA?app=Sales&formFactor=Large&page=Account_Record_Page&state.c__mode=demo"
 	rec := httptest.NewRecorder()
@@ -794,7 +848,7 @@ func TestLWCShellAppRouteFallsBackToApplicationDefaultTab(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/app/Support_Console", nil))
@@ -825,7 +879,7 @@ func TestLWCShellAppRouteFallsBackToFlexiPageDefaultTab(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/app/Lwc_Shell", nil), []string{"app", "Lwc_Shell"})
 	if err != nil {
@@ -883,7 +937,7 @@ export default class ThemeLayout extends LightningElement {}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/community/Partner_Portal/Account", nil), []string{"community", "Partner_Portal", "Account"})
 	if err != nil {
@@ -952,7 +1006,7 @@ func TestResolveLWCShellRequestServesFlowScreenContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, diagnostics, err := handler.resolveLWCShellRoute("/lwc/preview/flow/Membership_Flow")
 	if err != nil {
@@ -992,7 +1046,7 @@ func TestLightningLocalContextJSONReportsCommunityContextAndDiagnostics(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	activeRoute := "/lwc/preview/community/Partner_Portal/Account"
 	rec := httptest.NewRecorder()
@@ -1045,7 +1099,7 @@ func TestResolveLWCShellRequestServesDirectCommunityComponentRoute(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/community/Partner_Portal/cmp/c/communityProbe", nil), []string{"community", "Partner_Portal", "cmp", "c", "communityProbe"})
 	if err != nil {
@@ -1068,7 +1122,7 @@ func TestResolveLWCShellRequestReportsUnsupportedExperienceBuilderFeature(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	_, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/community/Partner_Portal/managed-content/welcome", nil), []string{"community", "Partner_Portal", "managed-content", "welcome"})
 	if err == nil {
@@ -1089,7 +1143,7 @@ func TestLightningLocalContextJSONReportsDirectComponentContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	activeRoute := "/lwc/preview/component/c/recordProbe?app=Sales&formFactor=Large&objectApiName=Account&recordId=001000000000001AAA"
 	rec := httptest.NewRecorder()
@@ -1146,7 +1200,7 @@ func TestLightningLocalSearchesObjectsAndRecordsFromOrgState(t *testing.T) {
 		},
 	}
 	org.Objects["Contact"] = contact
-	handler := NewWithSource(&org, SourceMetadata{})
+	handler := newLightningTestServer(t, &org, SourceMetadata{})
 
 	objectsRec := httptest.NewRecorder()
 	handler.ServeHTTP(objectsRec, httptest.NewRequest(http.MethodGet, "/lightning/local/objects.json?q=acc", nil))
@@ -1330,6 +1384,12 @@ func TestRenderLWCShellHTMLMountsDirectComponentWithContext(t *testing.T) {
 			RecordID:      "001000000000001AAA",
 			ObjectAPIName: "Account",
 			FormFactor:    "Large",
+			UserPermissions: map[string]bool{
+				"ViewSetup": true,
+			},
+			CustomPermissions: map[string]bool{
+				"Glade_Lwc_Oracle": true,
+			},
 		},
 	})
 
@@ -1339,6 +1399,8 @@ func TestRenderLWCShellHTMLMountsDirectComponentWithContext(t *testing.T) {
 		"c:contextProbe",
 		`"recordId":"001000000000001AAA"`,
 		`"objectApiName":"Account"`,
+		`"userPermissions":{"ViewSetup":true}`,
+		`"customPermissions":{"Glade_Lwc_Oracle":true}`,
 		`"standard__component"`,
 		`data-glade-region="main"`,
 	} {
@@ -1415,7 +1477,7 @@ func TestResolveLWCShellRequestAppliesMetadataDefaultsAndDiagnostics(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page", nil), []string{"record", "Account", "001000000000001AAA"})
 	if err != nil {
@@ -1454,7 +1516,7 @@ func TestResolveLWCShellRequestRejectsWrongSupportedObject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	_, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page", nil), []string{"record", "Account", "001000000000001AAA"})
 	if err == nil {
@@ -1471,7 +1533,7 @@ func TestResolveLWCShellRequestValidatesDirectComponentRoute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	_, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/component/c/missingProbe", nil), []string{"component", "c", "missingProbe"})
 	if err == nil {
@@ -1498,7 +1560,7 @@ func TestResolveLWCShellRequestAppliesDirectComponentMetadataDefaults(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/component/c/contextProbe", nil), []string{"component", "c", "contextProbe"})
 	if err != nil {
@@ -1529,7 +1591,7 @@ export default class UrlProbe extends LightningElement {}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/cmp/c/urlProbe?app=Sales&c__name=value", nil), []string{"cmp", "c", "urlProbe"})
 	if err != nil {
@@ -1560,7 +1622,7 @@ func TestResolveLWCShellRequestRejectsInvalidUrlAddressableState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	_, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/cmp/c/urlProbe?name=value", nil), []string{"cmp", "c", "urlProbe"})
 	if err == nil {
@@ -1595,7 +1657,7 @@ export default class ActionProbe extends LightningElement {}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/action/Account/001000000000001AAA/Update_Status", nil), []string{"action", "Account", "001000000000001AAA", "Update_Status"})
 	if err != nil {
@@ -1642,7 +1704,7 @@ export default class FlowActionProbe extends LightningElement {}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/action/Account/001000000000001AAA/Start_Flow", nil), []string{"action", "Account", "001000000000001AAA", "Start_Flow"})
 	if err != nil {
@@ -1680,7 +1742,7 @@ func TestResolveLWCShellRequestServesGlobalQuickAction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/action/global/Global_Status", nil), []string{"action", "global", "Global_Status"})
 	if err != nil {
@@ -1710,7 +1772,7 @@ func TestResolveLWCShellRequestAddsConsoleApproximationDiagnostic(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/app/Support_Page?app=Support_Console", nil), []string{"app", "Support_Page"})
 	if err != nil {
@@ -1748,7 +1810,7 @@ func TestResolveLWCShellRequestKeepsLWCTabPageReference(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/tab/Lwc_Probe", nil), []string{"tab", "Lwc_Probe"})
 	if err != nil {
@@ -1791,7 +1853,7 @@ export default class ContextProbe extends LightningElement {}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	_, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/tab/Lwc_Probe", nil), []string{"tab", "Lwc_Probe"})
 	if err == nil {
@@ -1812,7 +1874,7 @@ func TestResolveLWCShellRequestRendersFlexiPageTabUsingTargetPageType(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/tab/Lwc_Probe", nil), []string{"tab", "Lwc_Probe"})
 	if err != nil {
@@ -1855,7 +1917,7 @@ func TestResolveLWCShellRequestUsesHomePageReference(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/home/Custom_Home", nil), []string{"home", "Custom_Home"})
 	if err != nil {
@@ -1884,7 +1946,7 @@ func TestLWCShellUnsupportedCustomTabReturnsDiagnostic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/tab/External", nil))
@@ -1916,7 +1978,7 @@ func TestLWCShellUnsupportedComponentReturnsDiagnostics(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page", nil))
@@ -1961,7 +2023,7 @@ export default class ContextProbe extends LightningElement {}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, source)
+	handler := newLightningTestServer(t, &storage.OrgState{}, source)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page", nil))
@@ -2006,7 +2068,7 @@ export default class ContextProbe extends LightningElement {}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewWithSource(&storage.OrgState{}, source)
+	handler := newLightningTestServer(t, &storage.OrgState{}, source)
 
 	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/app/BusinessEvents", nil), []string{"app", "BusinessEvents"})
 	if err != nil {
@@ -2080,7 +2142,7 @@ func TestLWCShellComponentRouteServesHTML(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	handler := NewWithSource(&org, source)
+	handler := newLightningTestServer(t, &org, source)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/lwc/preview/component/c/contextProbe?recordId=001000000000001AAA&objectApiName=Account", nil)
@@ -2102,6 +2164,224 @@ func TestLWCShellComponentRouteServesHTML(t *testing.T) {
 	}
 }
 
+func TestLightningLocalContextJSONAppliesDefaultComponentPermissionPreset(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js", `import { LightningElement } from 'lwc';
+export default class ContextProbe extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.html", `<template><p>context</p></template>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>61.0</apiVersion>
+  <isExposed>true</isExposed>
+  <targets><target>lightning__AppPage</target></targets>
+</LightningComponentBundle>`)
+	writeLWCShellServerTestFile(t, root, "glade.lwc.json", `{
+  "defaultContext": "permissionOracle",
+  "contexts": {
+    "permissionOracle": {
+      "target": "component",
+      "component": "c:contextProbe",
+      "app": "PresetApp",
+      "formFactor": "Large",
+      "recordId": "001000000000002AAA",
+      "objectApiName": "Contact",
+      "state": {"c__mode": "preset"},
+      "userPermissions": {"ViewSetup": true, "ModifyAllData": false},
+      "customPermissions": {"Glade_Lwc_Oracle": true, "Glade_Lwc_Denied": false}
+    }
+  }
+}`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
+
+	activeRoute := "/lwc/preview/component/c/contextProbe?app=RouteApp&formFactor=Small&recordId=001000000000001AAA&objectApiName=Account&state.c__mode=route"
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/lightning/local/context.json?url="+url.QueryEscape(activeRoute), nil)
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var got struct {
+		Context lwcshell.PageContext `json:"context"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("invalid JSON: %v\n%s", err, rec.Body.String())
+	}
+	if got.Context.Kind != lwcshell.RenderTargetComponent || got.Context.ComponentName != "c:contextProbe" {
+		t.Fatalf("context target = %#v", got.Context)
+	}
+	if got.Context.AppName != "RouteApp" || got.Context.FormFactor != "Small" ||
+		got.Context.RecordID != "001000000000001AAA" || got.Context.ObjectAPIName != "Account" ||
+		got.Context.State["c__mode"] != "route" {
+		t.Fatalf("route query context was overridden: %#v", got.Context)
+	}
+	if enabled, ok := got.Context.UserPermissions["ViewSetup"]; !ok || !enabled {
+		t.Fatalf("user permission grant missing: %#v", got.Context.UserPermissions)
+	}
+	if enabled, ok := got.Context.UserPermissions["ModifyAllData"]; !ok || enabled {
+		t.Fatalf("explicit user permission denial was not preserved: %#v", got.Context.UserPermissions)
+	}
+	if _, ok := got.Context.UserPermissions["UnspecifiedPermission"]; ok {
+		t.Fatalf("unspecified user permission was synthesized: %#v", got.Context.UserPermissions)
+	}
+	if enabled, ok := got.Context.CustomPermissions["Glade_Lwc_Oracle"]; !ok || !enabled {
+		t.Fatalf("custom permission grant missing: %#v", got.Context.CustomPermissions)
+	}
+	if enabled, ok := got.Context.CustomPermissions["Glade_Lwc_Denied"]; !ok || enabled {
+		t.Fatalf("explicit custom permission denial was not preserved: %#v", got.Context.CustomPermissions)
+	}
+	if _, ok := got.Context.CustomPermissions["UnspecifiedPermission"]; ok {
+		t.Fatalf("unspecified custom permission was synthesized: %#v", got.Context.CustomPermissions)
+	}
+
+	selectedRoute := "/lwc/preview/component/c/contextProbe?app=PresetApp&formFactor=Large&objectApiName=Contact&recordId=001000000000002AAA&state.c__mode=preset"
+	shell, diagnostics, err := handler.resolveLWCShellRoute(selectedRoute)
+	if err != nil {
+		t.Fatalf("resolve selected route: %v diagnostics=%#v", err, diagnostics)
+	}
+	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
+	for _, want := range []string{
+		`id="glade-lwc-context"`,
+		`"userPermissions":{"ModifyAllData":false,"ViewSetup":true}`,
+		`"customPermissions":{"Glade_Lwc_Denied":false,"Glade_Lwc_Oracle":true}`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("selected route context missing %q in:\n%s", want, body)
+		}
+	}
+}
+
+func TestDirectComponentContextPresetSelectsUnqualifiedSelectedContext(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "glade.lwc.json", `{
+  "defaultContext": "default",
+  "contexts": {
+    "default": {
+      "target": "component",
+      "component": "c:contextProbe",
+      "app": "DefaultApp",
+      "formFactor": "Large",
+      "recordId": "001000000000001AAA",
+      "objectApiName": "Account",
+      "state": {"c__mode": "default"},
+      "userPermissions": {"FromDefault": true}
+    },
+    "selected": {
+      "target": "component",
+      "component": "contextProbe",
+      "app": "SelectedApp",
+      "formFactor": "Small",
+      "recordId": "001000000000002AAA",
+      "objectApiName": "Contact",
+      "state": {"c__mode": "selected"},
+      "userPermissions": {"FromSelected": true}
+    }
+  }
+}`)
+	handler := &Server{Source: SourceMetadata{Project: project.Project{Root: root}}}
+	activeRoute := "/lwc/preview/component/c/contextProbe?app=SelectedApp&formFactor=Small&objectApiName=Contact&recordId=001000000000002AAA&state.c__mode=selected"
+
+	got, ok := handler.directComponentContextPreset(activeRoute, "c:contextProbe")
+	if !ok || !got.UserPermissions["FromSelected"] || got.UserPermissions["FromDefault"] {
+		t.Fatalf("selected context permissions = %#v, matched = %v", got.UserPermissions, ok)
+	}
+}
+
+func TestDirectComponentContextPresetMatchesReorderedSelectedQuery(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "glade.lwc.json", `{
+  "defaultContext": "default",
+  "contexts": {
+    "default": {
+      "target": "component",
+      "component": "c:contextProbe",
+      "app": "DefaultApp",
+      "formFactor": "Large",
+      "recordId": "001000000000001AAA",
+      "objectApiName": "Account",
+      "state": {"c__mode": "default"},
+      "userPermissions": {"FromDefault": true}
+    },
+    "selected": {
+      "target": "component",
+      "component": "c:contextProbe",
+      "app": "SelectedApp",
+      "formFactor": "Large",
+      "recordId": "001000000000002AAA",
+      "objectApiName": "Contact",
+      "state": {"c__mode": "selected"},
+      "userPermissions": {"FromSelected": true}
+    }
+  }
+}`)
+	handler := &Server{Source: SourceMetadata{Project: project.Project{Root: root}}}
+	activeRoute := "/lwc/preview/component/c/contextProbe?state.c__mode=selected&recordId=001000000000002AAA&objectApiName=Contact&formFactor=Large&app=SelectedApp"
+
+	got, ok := handler.directComponentContextPreset(activeRoute, "c:contextProbe")
+	if !ok || !got.UserPermissions["FromSelected"] || got.UserPermissions["FromDefault"] {
+		t.Fatalf("selected context permissions = %#v, matched = %v", got.UserPermissions, ok)
+	}
+}
+
+func TestDirectComponentContextPresetNormalizesDefaultAndIsolatesComponent(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "glade.lwc.json", `{
+  "defaultContext": "default",
+  "contexts": {
+    "default": {
+      "target": "component",
+      "component": "contextProbe",
+      "app": "DefaultApp",
+      "formFactor": "Large",
+      "recordId": "001000000000001AAA",
+      "objectApiName": "Account",
+      "userPermissions": {"FromDefault": true}
+    }
+  }
+}`)
+	handler := &Server{Source: SourceMetadata{Project: project.Project{Root: root}}}
+
+	got, ok := handler.directComponentContextPreset("/lwc/preview/component/c/contextProbe?app=RouteApp", "c:contextProbe")
+	if !ok || !got.UserPermissions["FromDefault"] {
+		t.Fatalf("unqualified default context permissions = %#v, matched = %v", got.UserPermissions, ok)
+	}
+	if other, ok := handler.directComponentContextPreset("/lwc/preview/component/c/otherProbe?app=RouteApp", "c:otherProbe"); ok {
+		t.Fatalf("default context leaked to other component: %#v", other.UserPermissions)
+	}
+}
+
+func TestDirectComponentContextPresetMatchesSelectedURLComponentNames(t *testing.T) {
+	for _, name := range []string{"contextProbe", "c:contextProbe", ":contextProbe", "c: contextProbe", " c : contextProbe "} {
+		for _, fallback := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/fallback=%v", name, fallback), func(t *testing.T) {
+				root := t.TempDir()
+				defaultName := ""
+				if fallback {
+					defaultName = "preset"
+				}
+				writeLWCShellServerTestFile(t, root, "glade.lwc.json", fmt.Sprintf(`{
+  "defaultContext": %q,
+  "contexts": {"preset": {"target": "component", "component": %q,
+    "app": "PresetApp", "customPermissions": {"Granted": true}}}
+}`, defaultName, name))
+				handler := &Server{Source: SourceMetadata{Project: project.Project{Root: root}}}
+				route := localLWCSelectedRoute(lwcshell.PageContext{
+					Kind: lwcshell.RenderTargetComponent, ComponentName: name, AppName: "PresetApp",
+				})
+				if fallback {
+					route = "/lwc/preview/component/c/contextProbe?app=DifferentApp"
+				}
+				got, ok := handler.directComponentContextPreset(route, "c:contextProbe")
+				if !ok || !got.CustomPermissions["Granted"] {
+					t.Fatalf("permissions = %#v, matched = %v, route = %q", got.CustomPermissions, ok, route)
+				}
+			})
+		}
+	}
+}
+
 func TestLWCShellVisualforceTabRedirectsToApexPage(t *testing.T) {
 	root := t.TempDir()
 	tabPath := writeLWCShellServerTestFile(t, root, "force-app/main/default/tabs/Legacy_VF.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -2109,7 +2389,7 @@ func TestLWCShellVisualforceTabRedirectsToApexPage(t *testing.T) {
   <page>LegacyPage</page>
 </CustomTab>`)
 	p := project.Project{Root: root, TabFiles: []string{tabPath}}
-	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+	handler := newLightningTestServer(t, &storage.OrgState{}, SourceMetadata{Project: p})
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/tab/Legacy_VF", nil))

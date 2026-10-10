@@ -1,6 +1,5 @@
+import { openFeedback } from "../shell/overlay.mjs";
+
 export default class LightningConfirm {
-  static open(options = {}) {
-    window.dispatchEvent(new CustomEvent("gladeconfirm", { detail: options, bubbles: true, composed: true }));
-    return Promise.resolve(true);
-  }
+  static open(options = {}) { return openFeedback("confirm", options); }
 }

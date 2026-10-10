@@ -29,6 +29,7 @@
       "github.com/glade-sh/glade/internal/codeintel",
       "github.com/glade-sh/glade/internal/config",
       "github.com/glade-sh/glade/internal/dap",
+      "github.com/glade-sh/glade/internal/dataweave",
       "github.com/glade-sh/glade/internal/dbmanager",
       "github.com/glade-sh/glade/internal/debuglog",
       "github.com/glade-sh/glade/internal/diagnostic",

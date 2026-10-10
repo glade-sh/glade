@@ -451,6 +451,7 @@ func semaReferenceTargetsMatch(actual []string, expected ...string) bool {
 }
 
 func semaCloneSchemaField(field schema.Field) schema.Field {
+	field.FilteredLookupInfo.FilterItems = append([]schema.LookupFilterItem(nil), field.FilteredLookupInfo.FilterItems...)
 	field.ReferenceTo = append([]string(nil), field.ReferenceTo...)
 	field.SummaryFilterItems = append([]schema.SummaryFilter(nil), field.SummaryFilterItems...)
 	field.FilteredLookupInfo.ControllingFields = append([]string(nil), field.FilteredLookupInfo.ControllingFields...)

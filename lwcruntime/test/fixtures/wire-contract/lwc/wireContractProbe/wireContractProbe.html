@@ -1,0 +1,19 @@
+<template>
+  <section>
+    <p data-testid="wire-status">{status}</p>
+    <p data-testid="wire-name">{recordName}</p>
+    <p data-testid="active-record">record-id: {activeRecordId}</p>
+    <ol data-testid="delivery-history" aria-label="Wire delivery history">
+      <template for:each={deliveryHistoryRows} for:item="row">
+        <li key={row.key}>{row.text}</li>
+      </template>
+    </ol>
+    <button type="button" onclick={handleMutationAttempt}>Attempt nested mutation</button>
+    <button type="button" onclick={handleDeniedRequest}>Request denied record</button>
+    <section aria-label="Mutation result">
+      <p data-testid="mutation-before">mutation-before: {mutationBefore}</p>
+      <p data-testid="mutation-after">mutation-after: {mutationAfter}</p>
+      <p data-testid="mutation-threw">mutation-threw: {mutationThrew}</p>
+    </section>
+  </section>
+</template>

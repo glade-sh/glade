@@ -40,6 +40,7 @@ type ScopeAliasPerfCounters struct {
 	Calls                     uint64 `json:"calls,omitempty"`
 	Roots                     uint64 `json:"roots,omitempty"`
 	RecursiveVisits           uint64 `json:"recursiveVisits,omitempty"`
+	ShortcutVisits            uint64 `json:"shortcutVisits,omitempty"`
 	ContainmentCacheHits      uint64 `json:"containmentCacheHits,omitempty"`
 	ContainmentCacheMisses    uint64 `json:"containmentCacheMisses,omitempty"`
 	ContainmentCacheClears    uint64 `json:"containmentCacheClears,omitempty"`
@@ -106,6 +107,7 @@ type PerfRecorder struct {
 		calls                     atomic.Uint64
 		roots                     atomic.Uint64
 		recursiveVisits           atomic.Uint64
+		shortcutVisits            atomic.Uint64
 		containmentCacheHits      atomic.Uint64
 		containmentCacheMisses    atomic.Uint64
 		containmentCacheClears    atomic.Uint64
@@ -212,6 +214,7 @@ func (recorder *PerfRecorder) snapshotScopeAlias() ScopeAliasPerfCounters {
 		Calls:                     recorder.scopeAlias.calls.Load(),
 		Roots:                     recorder.scopeAlias.roots.Load(),
 		RecursiveVisits:           recorder.scopeAlias.recursiveVisits.Load(),
+		ShortcutVisits:            recorder.scopeAlias.shortcutVisits.Load(),
 		ContainmentCacheHits:      recorder.scopeAlias.containmentCacheHits.Load(),
 		ContainmentCacheMisses:    recorder.scopeAlias.containmentCacheMisses.Load(),
 		ContainmentCacheClears:    recorder.scopeAlias.containmentCacheClears.Load(),
@@ -228,6 +231,7 @@ func (recorder *PerfRecorder) snapshotScopeAlias() ScopeAliasPerfCounters {
 type scopeAliasProbe struct {
 	roots                  uint64
 	recursiveVisits        uint64
+	shortcutVisits         uint64
 	containmentCacheHits   uint64
 	containmentCacheMisses uint64
 	replacedRoots          uint64
@@ -239,6 +243,7 @@ func (recorder *PerfRecorder) recordScopeAliasProbe(probe scopeAliasProbe, durat
 	recorder.scopeAlias.calls.Add(1)
 	recorder.scopeAlias.roots.Add(probe.roots)
 	recorder.scopeAlias.recursiveVisits.Add(probe.recursiveVisits)
+	recorder.scopeAlias.shortcutVisits.Add(probe.shortcutVisits)
 	recorder.scopeAlias.containmentCacheHits.Add(probe.containmentCacheHits)
 	recorder.scopeAlias.containmentCacheMisses.Add(probe.containmentCacheMisses)
 	recorder.scopeAlias.replacedRoots.Add(probe.replacedRoots)

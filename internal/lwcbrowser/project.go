@@ -10,7 +10,7 @@ import (
 
 func PreparePageConfig(p project.Project, cacheRoot string) (PageConfig, compile.Manifest, error) {
 	outDir := filepath.Join(cacheRoot, "lwc")
-	compiled, err := compile.Compile(p, compile.Options{OutDir: outDir})
+	compiled, err := compile.Compile(p, compile.Options{OutDir: outDir, LightningModules: SalesforceImportMap()})
 	if err != nil {
 		return PageConfig{}, compile.Manifest{}, err
 	}

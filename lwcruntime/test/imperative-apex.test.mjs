@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
@@ -10,6 +8,7 @@ import {
   requireLWCToolchain,
   repoRoot,
   startLightningServer,
+  testTempDir,
 } from "./helpers.mjs";
 
 const fixture = "testdata/local-tests/lwc-shell";
@@ -19,7 +18,7 @@ test("apex import supports wire and imperative invocation", async (t) => {
   if (!requireLWCToolchain(t)) {
     return;
   }
-  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), "glade-lwc-imperative-"));
+  const outDir = testTempDir(t, "glade-lwc-imperative-");
   compileFixture(fixture, outDir);
 
   const config = {

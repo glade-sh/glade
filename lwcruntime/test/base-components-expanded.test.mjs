@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
 import { repoRoot, requireLWCToolchain } from "./helpers.mjs";
+import { l19RuntimeImports, serveL19RuntimeModule } from "./l19-runtime-modules.mjs";
 
 const expandedImports = {
   "lwc": "/lightning/vendor/lwc.js",
@@ -26,7 +27,7 @@ const expandedImports = {
   "lightning/progressRing": "/lightning/shims/lightning/progressRing.js",
   "lightning/quickActionPanel": "/lightning/shims/lightning/quickActionPanel.js",
   "lightning/recordPicker": "/lightning/shims/lightning/recordPicker.js",
-  "lightning/uiRecordApi": "/lightning/shims/lightning/uiRecordApi.js",
+  ...l19RuntimeImports,
   "lightning/select": "/lightning/shims/lightning/select.js",
   "lightning/slider": "/lightning/shims/lightning/slider.js",
   "lightning/tile": "/lightning/shims/lightning/tile.js",
@@ -34,11 +35,7 @@ const expandedImports = {
 };
 
 function serveRuntimeFile(urlPath, res) {
-  if (urlPath === "/lightning/shims/lightning/uiRecordApi.js") {
-    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
-    res.end("export async function __gladeRecordPickerSearch() { return { records: [] }; }\n");
-    return;
-  }
+  if (serveL19RuntimeModule(urlPath, res)) return;
   const routes = {
     "/lightning/vendor/lwc.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/engine-dom/dist/index.js"),
     "/lightning/vendor/synthetic-shadow.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/synthetic-shadow/dist/index.js"),
@@ -54,6 +51,9 @@ function serveRuntimeFile(urlPath, res) {
   }
   if (!filePath && urlPath.startsWith("/lightning/shims/shell/")) {
     filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/shell", urlPath.slice("/lightning/shims/shell/".length)));
+  }
+  if (!filePath && urlPath.startsWith("/lightning/shims/lightning/source/")) {
+    filePath = path.join(repoRoot, "lwcruntime/src/lightning/source", urlPath.slice("/lightning/shims/lightning/source/".length));
   }
   if (!filePath && urlPath.startsWith("/lightning/shims/lightning/")) {
     const name = urlPath.slice("/lightning/shims/lightning/".length).replace(/\.(js|mjs)$/, "");
@@ -72,6 +72,15 @@ function serveRuntimeFile(urlPath, res) {
 function startExpandedBaseComponentServer() {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://localhost");
+    if (url.pathname === "/lightning/wire/getRecord" && req.method === "POST") {
+      req.resume();
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ data: {
+        id: "001000000000001AAA", apiName: "Account",
+        fields: { Name: { value: "Expanded Account", displayValue: "Expanded Account" } },
+      } }));
+      return;
+    }
     if (url.pathname === "/expanded.html") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(`<!DOCTYPE html><html><head>
@@ -146,7 +155,19 @@ const breadcrumbs = append("lightning-breadcrumbs", Breadcrumbs);
 const breadcrumb = createElement("lightning-breadcrumb", { is: Breadcrumb });
 breadcrumb.label = "Account";
 breadcrumb.href = "/lightning/o/Account/home";
-breadcrumb.addEventListener("active", (event) => { window.__breadcrumb = event.detail; });
+window.__breadcrumbActive = [];
+breadcrumb.addEventListener("active", (event) => { window.__breadcrumbActive.push(event.detail); });
+// control_legacy_breadcrumb: prevent the fixture's ordinary navigation only.
+breadcrumb.addEventListener("click", (event) => {
+  event.preventDefault();
+  window.__breadcrumb = {
+    component: event.currentTarget.localName,
+    type: event.type,
+    detail: event.detail,
+    flags: { bubbles: event.bubbles, composed: event.composed, cancelable: event.cancelable },
+    defaultPrevented: event.defaultPrevented,
+  };
+});
 breadcrumbs.appendChild(breadcrumb);
 append("lightning-tree-grid", TreeGrid, {
   keyField: "id",
@@ -169,7 +190,7 @@ footer.textContent = "Done";
 panel.appendChild(footer);
 const upload = append("lightning-file-upload", FileUpload, { label: "Upload File", accept: ".txt" });
 upload.addEventListener("uploadfinished", (event) => { window.__upload = event.detail; });
-const picker = append("lightning-record-picker", RecordPicker, { label: "Account", value: "001000000000001AAA" });
+const picker = append("lightning-record-picker", RecordPicker, { label: "Account", objectApiName: "Account", value: "001000000000001AAA" });
 picker.addEventListener("change", (event) => { window.__recordPicker = event.detail; });
 window.__menuDividerTag = menuDivider.tagName;
 `);
@@ -227,11 +248,19 @@ test("expanded phase 3 base components render and dispatch local events", async 
     assert.deepEqual(await page.evaluate(() => window.__richText), { value: "<p>Changed</p>" });
     assert.equal(await page.locator('lightning-menu-divider [role="separator"]').count(), 1);
     assert.equal(await page.locator("lightning-progress-bar [role='progressbar']").getAttribute("aria-valuenow"), "65");
-    assert.match(await page.locator("lightning-progress-ring").innerText(), /80/);
+    // r_progress_ring_normal: the value is exposed through ARIA, with no text.
+    assert.equal(await page.locator("lightning-progress-ring").innerText(), "");
+    assert.equal(await page.locator('lightning-progress-ring [role="progressbar"]').getAttribute("aria-valuenow"), "80");
     assert.match(await page.locator("lightning-tile").innerText(), /Provider Tile/);
     assert.match(await page.locator("lightning-breadcrumbs").innerText(), /Account/);
-    await page.locator("lightning-breadcrumb a").click();
-    assert.deepEqual(await page.evaluate(() => window.__breadcrumb), { value: "Account", label: "Account" });
+    // control_legacy_breadcrumb uses the anchor's programmatic click.
+    assert.equal(await page.locator("lightning-breadcrumb a").getAttribute("href"), "/lightning/o/Account/home");
+    await page.locator("lightning-breadcrumb a").evaluate((anchor) => anchor.click());
+    assert.deepEqual(await page.evaluate(() => window.__breadcrumb), {
+      component: "lightning-breadcrumb", type: "click", detail: 0,
+      flags: { bubbles: true, composed: true, cancelable: true }, defaultPrevented: true,
+    });
+    assert.deepEqual(await page.evaluate(() => window.__breadcrumbActive), []);
     assert.match(await page.locator("lightning-tree-grid").innerText(), /Child Provider/);
     assert.match(await page.locator("lightning-map").innerText(), /Twin Lakes/);
     assert.match(await page.locator("lightning-carousel").innerText(), /Trail Image/);
@@ -244,14 +273,11 @@ test("expanded phase 3 base components render and dispatch local events", async 
     assert.deepEqual(await page.evaluate(() => window.__upload), {
       files: [{ name: "phase3.txt", documentId: "069000000000001AAA" }],
     });
-    await page.locator("lightning-record-picker input").evaluate((input) => {
-      input.value = "001000000000003AAA";
-      input.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
-    });
-    assert.deepEqual(await page.evaluate(() => window.__recordPicker), {
-      recordId: "001000000000003AAA",
-      value: "001000000000003AAA",
-    });
+    // Native r_picker_preselected (59/67), using this server's owned record.
+    assert.equal(await page.locator("lightning-record-picker input").inputValue(), "Expanded Account");
+    assert.equal(await page.locator("lightning-record-picker input").evaluate((input) => input.readOnly), true);
+    assert.equal(await page.locator("lightning-record-picker").evaluate((picker) => picker.value), "001000000000001AAA");
+    assert.equal(await page.evaluate(() => window.__recordPicker), undefined);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(consoleErrors, []);
   } finally {

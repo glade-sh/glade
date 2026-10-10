@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/gladehome"
 	"github.com/glade-sh/glade/internal/project"
 )
 
@@ -16,13 +17,31 @@ func TestBuildCompileConfigAPIVersionMatrix(t *testing.T) {
 		want           int
 		wantError      string
 	}{
+		{projectVersion: "65.0", bundleVersion: "59.0", want: 59},
+		{projectVersion: "65.0", bundleVersion: "60.0", want: 60},
+		{projectVersion: "65.0", bundleVersion: "61.0", want: 61},
+		{projectVersion: "65.0", bundleVersion: "62.0", want: 62},
+		{projectVersion: "65.0", bundleVersion: "63.0", want: 63},
+		{projectVersion: "65.0", bundleVersion: "64.0", want: 64},
 		{projectVersion: "65.0", bundleVersion: "65.0", want: 65},
 		{projectVersion: "65.0", bundleVersion: "66.0", want: 66},
+		{projectVersion: "67.0", bundleVersion: "59.0", want: 59},
+		{projectVersion: "67.0", bundleVersion: "60.0", want: 60},
+		{projectVersion: "67.0", bundleVersion: "61.0", want: 61},
+		{projectVersion: "67.0", bundleVersion: "62.0", want: 62},
+		{projectVersion: "67.0", bundleVersion: "63.0", want: 63},
+		{projectVersion: "67.0", bundleVersion: "64.0", want: 64},
+		{projectVersion: "67.0", bundleVersion: "65.0", want: 65},
+		{projectVersion: "67.0", bundleVersion: "66.0", want: 66},
+		{projectVersion: "67.0", bundleVersion: "67.0", want: 67},
 		{projectVersion: "66.0", bundleVersion: "67.0", want: 67},
-		{projectVersion: "67.0", bundleVersion: "43.0", wantError: "unsupported source API version"},
-		{projectVersion: "67.0", bundleVersion: "61.0", wantError: "unsupported source API version"},
-		{projectVersion: "67.0", bundleVersion: "64.0", wantError: "unsupported source API version"},
-		{projectVersion: "67.0", bundleVersion: "", wantError: "missing component API version"},
+		{projectVersion: "67.0", bundleVersion: "58.0", wantError: "unsupported LWC source API version"},
+		{projectVersion: "67.0", bundleVersion: "68.0", wantError: "unsupported LWC source API version"},
+		// Native rows meta_no_version, meta_no_version_complex and
+		// meta_no_version_details_name accept unversioned bundles at both APIs.
+		{projectVersion: "59.0", bundleVersion: "", want: 67},
+		{projectVersion: "65.0", bundleVersion: "", want: 67},
+		{projectVersion: "67.0", bundleVersion: "", want: 67},
 	} {
 		t.Run(test.projectVersion+"_bundle_"+test.bundleVersion, func(t *testing.T) {
 			root := t.TempDir()
@@ -32,7 +51,11 @@ func TestBuildCompileConfigAPIVersionMatrix(t *testing.T) {
 			meta := filepath.Join(bundle, "probe.js-meta.xml")
 			writeCompileFixtureFile(t, js, "export default class Probe {}")
 			writeCompileFixtureFile(t, html, "<template></template>")
-			writeCompileFixtureFile(t, meta, `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+test.bundleVersion+`</apiVersion></LightningComponentBundle>`)
+			version := ""
+			if test.bundleVersion != "" {
+				version = "<apiVersion>" + test.bundleVersion + "</apiVersion>"
+			}
+			writeCompileFixtureFile(t, meta, `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">`+version+`</LightningComponentBundle>`)
 			p := project.Project{Root: root, SourceAPIVersion: test.projectVersion, LWCFiles: []string{js}, LWCHTMLFiles: []string{html}, LWCMetaFiles: []string{meta}}
 			cfg, err := buildCompileConfig(p, root, filepath.Join(root, "dist"), "c")
 			if test.wantError != "" {
@@ -48,16 +71,44 @@ func TestBuildCompileConfigAPIVersionMatrix(t *testing.T) {
 	}
 }
 
+func TestCompileConfiguredPublicProperties(t *testing.T) {
+	// Native rows meta_public_property_{field,accessor,namedClass,missing,private}
+	// cover the public-property checks at API 59 and 67.
+	requireLWCCompilerToolchain(t)
+	for _, test := range []struct {
+		name      string
+		js        string
+		wantError bool
+	}{
+		{"field", `import { LightningElement, api } from 'lwc'; export default class Probe extends LightningElement { @api value; }`, false},
+		{"accessor", `import { LightningElement, api } from 'lwc'; export default class Probe extends LightningElement { @api get value() { return 'VALUE'; } }`, false},
+		{"namedClass", `import { LightningElement, api } from 'lwc'; class Probe extends LightningElement { @api value; } export default Probe;`, false},
+		{"missing", `import { LightningElement } from 'lwc'; export default class Probe extends LightningElement {}`, true},
+		{"private", `import { LightningElement } from 'lwc'; export default class Probe extends LightningElement { value; }`, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			root := t.TempDir()
+			bundle := filepath.Join(root, "force-app", "main", "default", "lwc", "probe")
+			writeCompileFixtureFile(t, filepath.Join(bundle, "probe.js"), test.js)
+			writeCompileFixtureFile(t, filepath.Join(bundle, "probe.html"), "<template></template>")
+			writeCompileFixtureFile(t, filepath.Join(bundle, "probe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><isExposed>true</isExposed><targets><target>lightning__AppPage</target></targets><targetConfigs><targetConfig targets="lightning__AppPage"><property name="value" type="String"/></targetConfig></targetConfigs></LightningComponentBundle>`)
+			p, err := project.Load(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Compile(p, Options{OutDir: filepath.Join(root, "dist")})
+			if (err != nil) != test.wantError {
+				t.Fatalf("Compile error = %v, wantError %t", err, test.wantError)
+			}
+			if test.wantError && !strings.Contains(err.Error(), "property doesn't exist") {
+				t.Fatalf("unexpected property diagnostic: %v", err)
+			}
+		})
+	}
+}
+
 func TestLWCModuleAvailabilityFollowsBundleAPIVersion(t *testing.T) {
-	if os.Getenv("GLADE_LWC_COMPILE") == "" {
-		if _, err := os.Stat(filepath.Join("..", "..", "..", "third_party", "lwc", "node_modules")); err != nil {
-			t.Skip("run npm install in third_party/lwc or set GLADE_LWC_COMPILE=1")
-		}
-	}
-	repoRoot, err := FindRepoRoot()
-	if err != nil {
-		t.Fatal(err)
-	}
+	requireLWCCompilerToolchain(t)
 	for _, test := range []struct {
 		version   string
 		wantError bool
@@ -73,9 +124,10 @@ export default class Probe { async load() { return import('experience/blockBuild
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = Compile(p, Options{OutDir: filepath.Join(root, "dist"), Namespace: "c", RepoRoot: repoRoot})
+			_, err = Compile(p, Options{OutDir: filepath.Join(root, "dist"), Namespace: "c"})
 			if test.wantError {
-				if err == nil || !strings.Contains(err.Error(), `LWC module "experience/blockBuilderApi" requires API version 66.0 or later; bundle uses 65.0`) {
+				want := `LWC module "experience/blockBuilderApi" requires API version 66.0 or later; bundle uses 65.0`
+				if err == nil || !strings.Contains(err.Error(), want) {
 					t.Fatalf("Compile error = %v", err)
 				}
 				return
@@ -88,6 +140,7 @@ export default class Probe { async load() { return import('experience/blockBuild
 }
 
 func TestComplexTemplateExpressionsFollowBundleAPIVersion(t *testing.T) {
+	requireLWCCompilerToolchain(t)
 	for _, test := range []struct {
 		version   string
 		wantError bool
@@ -102,6 +155,7 @@ func TestComplexTemplateExpressionsFollowBundleAPIVersion(t *testing.T) {
 }
 
 func TestHTMLDetailsNameFollowsBundleAPIVersion(t *testing.T) {
+	requireLWCCompilerToolchain(t)
 	for _, test := range []struct {
 		version   string
 		wantError bool
@@ -115,13 +169,99 @@ func TestHTMLDetailsNameFollowsBundleAPIVersion(t *testing.T) {
 	}
 }
 
-func compileTemplateAtAPIVersion(t *testing.T, version, template string) error {
-	t.Helper()
-	if os.Getenv("GLADE_LWC_COMPILE") == "" {
-		if _, err := os.Stat(filepath.Join("..", "..", "..", "third_party", "lwc", "node_modules")); err != nil {
-			t.Skip("run npm install in third_party/lwc or set GLADE_LWC_COMPILE=1")
+func TestCompilePreservesDeclaredAPI67(t *testing.T) {
+	requireLWCCompilerToolchain(t)
+	root := t.TempDir()
+	bundle := filepath.Join(root, "force-app", "main", "default", "lwc", "gladeApi67Oracle")
+	writeCompileFixtureFile(t, filepath.Join(bundle, "gladeApi67Oracle.js"), `import { LightningElement } from 'lwc';
+
+export default class GladeApi67Oracle extends LightningElement {
+    count = 0;
+
+    increment() {
+        this.count += 1;
+    }
+}
+`)
+	writeCompileFixtureFile(t, filepath.Join(bundle, "gladeApi67Oracle.html"), `<template>
+    <section aria-label="Glade API 67 oracle">
+        <output data-count>{count}</output>
+        <output data-complex>{count + 1}</output>
+        <button type="button" onclick={increment}>Increment oracle</button>
+        <span class="style-probe" data-style>Styled oracle</span>
+        <details name="glade-oracle-group" data-first open>
+            <summary>First oracle details</summary>
+            <p>First panel</p>
+        </details>
+        <details name="glade-oracle-group" data-second>
+            <summary>Second oracle details</summary>
+            <p>Second panel</p>
+        </details>
+    </section>
+</template>
+`)
+	writeCompileFixtureFile(t, filepath.Join(bundle, "gladeApi67Oracle.css"), `.style-probe {
+    color: rgb(17, 34, 51);
+    font-weight: 700;
+}
+`)
+	writeCompileFixtureFile(t, filepath.Join(bundle, "gladeApi67Oracle.js-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>67.0</apiVersion>
+  <isExposed>true</isExposed>
+  <targets><target>lightning__UrlAddressable</target></targets>
+</LightningComponentBundle>
+`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := Compile(p, Options{OutDir: filepath.Join(t.TempDir(), "compiled"), Namespace: "c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	entry, ok := manifest.Modules["c:gladeApi67Oracle"]
+	if !ok {
+		t.Fatalf("compiled modules missing c:gladeApi67Oracle: %#v", manifest.Modules)
+	}
+	js, err := os.ReadFile(entry.File)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(js), "apiVersion: 67") {
+		t.Fatalf("component registration did not preserve exact API 67 metadata:\n%s", js)
+	}
+	if strings.Contains(string(js), "apiVersion: 66") {
+		t.Fatalf("component registration silently lowered API 67 to 66:\n%s", js)
+	}
+
+	componentDir := filepath.Dir(entry.File)
+	templateJS, err := os.ReadFile(filepath.Join(componentDir, "gladeApi67Oracle.html.js"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	templateOutput := string(templateJS)
+	for _, want := range []string{"count + 1", "Increment oracle", "style-probe", "First oracle details", "Second oracle details"} {
+		if !strings.Contains(templateOutput, want) {
+			t.Errorf("compiled template output missing %q from the API 67 oracle fixture:\n%s", want, templateOutput)
 		}
 	}
+	styleJS, err := os.ReadFile(filepath.Join(componentDir, "gladeApi67Oracle.css.js"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	styleOutput := string(styleJS)
+	for _, want := range []string{".style-probe", "color", "17", "34", "51", "font-weight", "700"} {
+		if !strings.Contains(styleOutput, want) {
+			t.Errorf("compiled style output missing %q from the API 67 oracle fixture:\n%s", want, styleOutput)
+		}
+	}
+}
+
+func compileTemplateAtAPIVersion(t *testing.T, version, template string) error {
+	t.Helper()
+	requireLWCCompilerToolchain(t)
 	root := t.TempDir()
 	bundle := filepath.Join(root, "force-app", "main", "default", "lwc", "probe")
 	writeCompileFixtureFile(t, filepath.Join(bundle, "probe.js"), `export default class Probe { items = []; }`)
@@ -133,6 +273,20 @@ func compileTemplateAtAPIVersion(t *testing.T, version, template string) error {
 	}
 	_, err = Compile(p, Options{OutDir: filepath.Join(root, "dist"), Namespace: "c"})
 	return err
+}
+
+func requireLWCCompilerToolchain(t *testing.T) {
+	t.Helper()
+	if os.Getenv("GLADE_LWC_COMPILE") != "" {
+		return
+	}
+	root, err := gladehome.Root()
+	if err != nil {
+		t.Skipf("LWC Go-selected toolchain unavailable: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "third_party", "lwc", "node_modules", "@lwc", "compiler")); err != nil {
+		t.Skipf("LWC compiler missing from Go-selected toolchain %s: %v", root, err)
+	}
 }
 
 func TestCompileProjectLWCBundles(t *testing.T) {

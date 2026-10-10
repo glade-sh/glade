@@ -1,0 +1,16 @@
+<template><section data-l20-host>
+<template lwc:if={ready}>
+<button data-mount onclick={mount}>Mount case</button><button data-method onclick={method}>Invoke method</button>
+<button data-edit onclick={edit}>Open inline edit</button><button data-finish onclick={finish}>Finish capture</button><pre data-result>{result}</pre>
+<template lwc:if={dt}><lightning-datatable data-control key-field={keyField} data={data} columns={columns}
+ selected-rows={selectedRows} disabled-rows={disabledRows} max-row-selection={maxRowSelection}
+ hide-checkbox-column={hideCheckboxColumn} show-row-number-column={showRowNumberColumn}
+ sorted-by={sortedBy} sorted-direction={sortDirection} draft-values={draftValues}
+ onsort={sort} onrowselection={record} onrowaction={record} oncellchange={record} onsave={save} oncancel={record}></lightning-datatable></template>
+<template lwc:if={tree}><lightning-tree data-control header="Fixture tree" items={items} onselect={record}></lightning-tree></template>
+<template lwc:if={grid}><lightning-tree-grid data-control key-field={keyField} data={data} columns={columns}
+ expanded-rows={expandedRows} hide-checkbox-column={hideCheckboxColumn} onrowselection={record} onrowaction={record} ontoggle={record}></lightning-tree-grid></template>
+<template lwc:if={dual}><lightning-dual-listbox data-control name="fixture" label="Fixture choices" source-label="Available" selected-label="Selected"
+ options={options} value={value} required-options={requiredOptions} required={required} disabled={disabled} min={min} max={max} onchange={record}></lightning-dual-listbox></template>
+<template lwc:if={lookup}><lightning-combobox data-control label="Fixture list" options={options} value={value} disabled={disabled} required={required} onchange={record}></lightning-combobox></template>
+</template></section></template>

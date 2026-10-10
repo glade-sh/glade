@@ -46,6 +46,9 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 		t.Fatalf("Cache.Visibility kind = %q, want enum", visibility.Kind)
 	}
 	requireStandardProperty(t, visibility, "ALL", "Cache.Visibility")
+	for _, name := range []string{"Cache.Org", "Cache.Session"} {
+		requireStandardConstructor(t, requireStandardSymbol(t, symbols, name), []string{})
+	}
 
 	for _, name := range []string{"Cache.CacheBuilder", "Finalizer"} {
 		symbol := requireStandardSymbol(t, symbols, name)
@@ -799,6 +802,10 @@ func TestStandardPlatformSymbolsIncludeLabelLimitsDecimalAndTargetExceptionShape
 	if got := standardConstructorSignatures(touchHandled); len(got) != 1 || got[0] != "String" {
 		t.Fatalf("TouchHandledException constructors = %#v, want only String constructor", got)
 	}
+	handled := requireStandardSymbol(t, symbols, "HandledException")
+	if got := handled.SuperClass; got != "Exception" {
+		t.Fatalf("HandledException superclass = %q, want Exception", got)
+	}
 }
 
 func standardConstructorSignatures(symbol TypeSymbol) []string {
@@ -1111,9 +1118,15 @@ func TestStandardPlatformSymbolsIncludeTestAndMathRows(t *testing.T) {
 	requireStandardMethodReturn(t, testClass, "isRunningTest", nil, "Boolean", true)
 
 	math := requireStandardSymbol(t, symbols, "Math")
-	requireStandardProperty(t, math, "PI", "Decimal")
-	requireStandardProperty(t, math, "E", "Decimal")
+	// Math oracle C007/C012/C015/C016: the constants have Double applicability.
+	requireStandardProperty(t, math, "PI", "Double")
+	requireStandardProperty(t, math, "E", "Double")
 	requireStandardMethodReturn(t, math, "random", nil, "Double", true)
+	// Math K003/K004 and R061/R062: integral signum promotes to Double;
+	// K002 preserves the explicitly Decimal overload and its member contract.
+	requireStandardMethodReturn(t, math, "signum", []string{"Integer"}, "Double", true)
+	requireStandardMethodReturn(t, math, "signum", []string{"Long"}, "Double", true)
+	requireStandardMethodReturn(t, math, "signum", []string{"Decimal"}, "Decimal", true)
 }
 
 func TestStandardPlatformSymbolsIncludeConnectApiFeedInputShapes(t *testing.T) {
@@ -1131,7 +1144,7 @@ func TestStandardPlatformSymbolsIncludeConnectApiFeedInputShapes(t *testing.T) {
 	}
 	requireStandardProperty(t, feedInput, "body", "ConnectApi.MessageBodyInput")
 	requireStandardProperty(t, feedInput, "feedElementType", "ConnectApi.FeedElementType")
-	requireStandardProperty(t, feedInput, "subjectId", "Id")
+	requireStandardProperty(t, feedInput, "subjectId", "String")
 
 	messageBody := requireStandardSymbol(t, symbols, "ConnectApi.MessageBody")
 	requireStandardProperty(t, messageBody, "messageSegments", "List<ConnectApi.MessageSegment>")

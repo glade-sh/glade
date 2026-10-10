@@ -5,12 +5,27 @@ import (
 	"strings"
 )
 
+// AnonymousClassModifier is request-local provenance for types declared inside
+// execute-anonymous's implicit enclosing type. It is never a source modifier.
+const AnonymousClassModifier = "__glade_anonymous"
+
 func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets ...[]string) error {
 	if err := vm.checkClassAccess(ownerClass, member, modifierSets...); err != nil {
 		return err
 	}
 	if err := vm.checkNamespaceAccess(ownerClass, access, member, modifierSets...); err != nil {
 		return err
+	}
+	// C044-C047: transient declarations share the anonymous lexical enclosing
+	// type, including private constructors and protected members. Loaded project
+	// classes keep their ordinary access rules.
+	if owner, ok := vm.classForAccess(ownerClass); ok && methodHasModifier(owner.Modifiers, AnonymousClassModifier) {
+		if vm.currentClass == "" {
+			return nil
+		}
+		if caller, ok := vm.classForAccess(vm.currentClass); ok && methodHasModifier(caller.Modifiers, AnonymousClassModifier) {
+			return nil
+		}
 	}
 	switch strings.ToLower(access) {
 	case "", "public", "global", "webservice":
@@ -69,10 +84,10 @@ func (vm *VM) hasTestVisibleAncestorMember(ownerClass, member string) bool {
 	memberName := apexMethodMemberName(member)
 	for superClass := vm.superClassName(ownerClass); superClass != ""; superClass = vm.superClassName(superClass) {
 		methodKey := superClass + "." + memberName
-		if method, ok := vm.Methods[methodKey]; ok && hasAnyMethodModifier([][]string{method.Modifiers}, "testvisible") {
+		if method, ok := vm.registeredMethod(methodKey); ok && hasAnyMethodModifier([][]string{method.Modifiers}, "testvisible") {
 			return true
 		}
-		for _, method := range vm.MethodOverloads[methodKey] {
+		for _, method := range vm.registeredOverloads(methodKey) {
 			if hasAnyMethodModifier([][]string{method.Modifiers}, "testvisible") {
 				return true
 			}
@@ -294,12 +309,12 @@ func (vm *VM) classHasAccessibleMember(className, memberName string) bool {
 	return false
 }
 func (vm *VM) methodSurfaceAccessible(methodKey, ownerClass string) bool {
-	for _, method := range vm.MethodOverloads[methodKey] {
+	for _, method := range vm.registeredOverloads(methodKey) {
 		if vm.memberSurfaceMethodAccessible(method, ownerClass) {
 			return true
 		}
 	}
-	if method, ok := vm.Methods[methodKey]; ok && vm.memberSurfaceMethodAccessible(method, ownerClass) {
+	if method, ok := vm.registeredMethod(methodKey); ok && vm.memberSurfaceMethodAccessible(method, ownerClass) {
 		return true
 	}
 	return false

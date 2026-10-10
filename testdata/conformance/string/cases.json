@@ -1,0 +1,2103 @@
+[
+  {
+    "id": "R001",
+    "code": "r = JSON.serialize('abc'.abbreviate(8));",
+    "compile": false,
+    "expected": "\"abc\"",
+    "floorExpected": "\"abc\""
+  },
+  {
+    "id": "R002",
+    "code": "r = JSON.serialize(' AbC abc\\t '.abbreviate(3));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Minimum abbreviation width is 4",
+    "floorExpected": "EXC|System.StringException|Minimum abbreviation width is 4"
+  },
+  {
+    "id": "R003",
+    "code": "r = JSON.serialize('abc'.capitalize());",
+    "compile": false,
+    "expected": "\"Abc\"",
+    "floorExpected": "\"Abc\""
+  },
+  {
+    "id": "R004",
+    "code": "r = JSON.serialize(' AbC abc\\t '.capitalize());",
+    "compile": false,
+    "expected": "\" AbC abc\\t \"",
+    "floorExpected": "\" AbC abc\\t \""
+  },
+  {
+    "id": "R005",
+    "code": "r = JSON.serialize('abc'.center(6));",
+    "compile": false,
+    "expected": "\" abc  \"",
+    "floorExpected": "\" abc  \""
+  },
+  {
+    "id": "R006",
+    "code": "r = JSON.serialize(' AbC abc\\t '.center(7,'xy'));",
+    "compile": false,
+    "expected": "\" AbC abc\\t \"",
+    "floorExpected": "\" AbC abc\\t \""
+  },
+  {
+    "id": "R007",
+    "code": "r = JSON.serialize('abc'.charAt(1));",
+    "compile": false,
+    "expected": "98",
+    "floorExpected": "98"
+  },
+  {
+    "id": "R008",
+    "code": "r = JSON.serialize(' AbC abc\\t '.charAt(-1));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Specified index is invalid.",
+    "floorExpected": "EXC|System.StringException|Specified index is invalid."
+  },
+  {
+    "id": "R009",
+    "code": "r = JSON.serialize('abc'.codePointAt(0));",
+    "compile": false,
+    "expected": "97",
+    "floorExpected": "97"
+  },
+  {
+    "id": "R010",
+    "code": "r = JSON.serialize(' AbC abc\\t '.codePointAt(2));",
+    "compile": false,
+    "expected": "98",
+    "floorExpected": "98"
+  },
+  {
+    "id": "R011",
+    "code": "r = JSON.serialize('abc'.codePointBefore(2));",
+    "compile": false,
+    "expected": "98",
+    "floorExpected": "98"
+  },
+  {
+    "id": "R012",
+    "code": "r = JSON.serialize(' AbC abc\\t '.codePointBefore(0));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Starting position out of bounds: 0",
+    "floorExpected": "EXC|System.StringException|Starting position out of bounds: 0"
+  },
+  {
+    "id": "R013",
+    "code": "r = JSON.serialize('abc'.codePointCount(0,3));",
+    "compile": false,
+    "expected": "3",
+    "floorExpected": "3"
+  },
+  {
+    "id": "R014",
+    "code": "r = JSON.serialize(' AbC abc\\t '.codePointCount(2,1));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Starting position out of bounds: 2",
+    "floorExpected": "EXC|System.StringException|Starting position out of bounds: 2"
+  },
+  {
+    "id": "R015",
+    "code": "r = JSON.serialize('abc'.compareTo('ABC'));",
+    "compile": false,
+    "expected": "32",
+    "floorExpected": "32"
+  },
+  {
+    "id": "R016",
+    "code": "r = JSON.serialize(' AbC abc\\t '.compareTo(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R017",
+    "code": "r = JSON.serialize('abc'.contains('bc'));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R018",
+    "code": "r = JSON.serialize(' AbC abc\\t '.contains(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R019",
+    "code": "r = JSON.serialize('abc'.containsAny('zx'));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R020",
+    "code": "r = JSON.serialize(' AbC abc\\t '.containsAny(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R021",
+    "code": "r = JSON.serialize('abc'.containsIgnoreCase('BC'));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R022",
+    "code": "r = JSON.serialize(' AbC abc\\t '.containsIgnoreCase(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R023",
+    "code": "r = JSON.serialize('abc'.containsNone('zx'));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R024",
+    "code": "r = JSON.serialize(' AbC abc\\t '.containsNone(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R025",
+    "code": "r = JSON.serialize('abc'.containsOnly('abc'));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R026",
+    "code": "r = JSON.serialize(' AbC abc\\t '.containsOnly(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R027",
+    "code": "r = JSON.serialize('abc'.containsWhitespace());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R028",
+    "code": "r = JSON.serialize(' AbC abc\\t '.containsWhitespace());",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R029",
+    "code": "r = JSON.serialize('abc'.countMatches('b'));",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "R030",
+    "code": "r = JSON.serialize(' AbC abc\\t '.countMatches(''));",
+    "compile": false,
+    "expected": "0",
+    "floorExpected": "0"
+  },
+  {
+    "id": "R031",
+    "code": "r = JSON.serialize('abc'.deleteWhitespace());",
+    "compile": false,
+    "expected": "\"abc\"",
+    "floorExpected": "\"abc\""
+  },
+  {
+    "id": "R032",
+    "code": "r = JSON.serialize(' AbC abc\\t '.deleteWhitespace());",
+    "compile": false,
+    "expected": "\"AbCabc\"",
+    "floorExpected": "\"AbCabc\""
+  },
+  {
+    "id": "R033",
+    "code": "r = JSON.serialize('abc'.difference('abx'));",
+    "compile": false,
+    "expected": "\"x\"",
+    "floorExpected": "\"x\""
+  },
+  {
+    "id": "R034",
+    "code": "r = JSON.serialize(' AbC abc\\t '.difference(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R035",
+    "code": "r = JSON.serialize('abc'.endsWith('c'));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R036",
+    "code": "r = JSON.serialize(' AbC abc\\t '.endsWith(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R037",
+    "code": "r = JSON.serialize('abc'.endsWithIgnoreCase('C'));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R038",
+    "code": "r = JSON.serialize(' AbC abc\\t '.endsWithIgnoreCase(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R039",
+    "code": "r = JSON.serialize('abc'.equals('ABC'));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R040",
+    "code": "r = JSON.serialize(' AbC abc\\t '.equals(null));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R041",
+    "code": "r = JSON.serialize('abc'.equalsIgnoreCase('ABC'));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R042",
+    "code": "r = JSON.serialize(' AbC abc\\t '.equalsIgnoreCase(null));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R043",
+    "code": "r = JSON.serialize('abc'.getLevenshteinDistance('adc'));",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "R044",
+    "code": "r = JSON.serialize(' AbC abc\\t '.getLevenshteinDistance('xyz',1));",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "R045",
+    "code": "r = JSON.serialize('abc'.hashCode());",
+    "compile": false,
+    "expected": "96354",
+    "floorExpected": "96354"
+  },
+  {
+    "id": "R046",
+    "code": "r = JSON.serialize(' AbC abc\\t '.hashCode());",
+    "compile": false,
+    "expected": "119734139",
+    "floorExpected": "119734139"
+  },
+  {
+    "id": "R047",
+    "code": "r = JSON.serialize('abc'.indexOf('b'));",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "R048",
+    "code": "r = JSON.serialize(' AbC abc\\t '.indexOf('b',2));",
+    "compile": false,
+    "expected": "2",
+    "floorExpected": "2"
+  },
+  {
+    "id": "R049",
+    "code": "r = JSON.serialize('abc'.indexOfAny('cx'));",
+    "compile": false,
+    "expected": "2",
+    "floorExpected": "2"
+  },
+  {
+    "id": "R050",
+    "code": "r = JSON.serialize(' AbC abc\\t '.indexOfAny(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R051",
+    "code": "r = JSON.serialize('abc'.indexOfAnyBut('ab'));",
+    "compile": false,
+    "expected": "2",
+    "floorExpected": "2"
+  },
+  {
+    "id": "R052",
+    "code": "r = JSON.serialize(' AbC abc\\t '.indexOfAnyBut(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R053",
+    "code": "r = JSON.serialize('abc'.indexOfChar(98));",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "R054",
+    "code": "r = JSON.serialize(' AbC abc\\t '.indexOfChar(98,2));",
+    "compile": false,
+    "expected": "2",
+    "floorExpected": "2"
+  },
+  {
+    "id": "R055",
+    "code": "r = JSON.serialize('abc'.indexOfDifference('abd'));",
+    "compile": false,
+    "expected": "2",
+    "floorExpected": "2"
+  },
+  {
+    "id": "R056",
+    "code": "r = JSON.serialize(' AbC abc\\t '.indexOfDifference(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R057",
+    "code": "r = JSON.serialize('abc'.indexOfIgnoreCase('B'));",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "R058",
+    "code": "r = JSON.serialize(' AbC abc\\t '.indexOfIgnoreCase('B',2));",
+    "compile": false,
+    "expected": "2",
+    "floorExpected": "2"
+  },
+  {
+    "id": "R059",
+    "code": "r = JSON.serialize('abc'.lastIndexOf('b'));",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "R060",
+    "code": "r = JSON.serialize(' AbC abc\\t '.lastIndexOf('b',0));",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "R061",
+    "code": "r = JSON.serialize('abc'.lastIndexOfChar(98));",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "R062",
+    "code": "r = JSON.serialize(' AbC abc\\t '.lastIndexOfChar(98,0));",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "R063",
+    "code": "r = JSON.serialize('abc'.lastIndexOfIgnoreCase('B'));",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "R064",
+    "code": "r = JSON.serialize(' AbC abc\\t '.lastIndexOfIgnoreCase('B',0));",
+    "compile": false,
+    "expected": "-1",
+    "floorExpected": "-1"
+  },
+  {
+    "id": "R065",
+    "code": "r = JSON.serialize('abc'.left(2));",
+    "compile": false,
+    "expected": "\"ab\"",
+    "floorExpected": "\"ab\""
+  },
+  {
+    "id": "R066",
+    "code": "r = JSON.serialize(' AbC abc\\t '.left(-1));",
+    "compile": false,
+    "expected": "\"\"",
+    "floorExpected": "\"\""
+  },
+  {
+    "id": "R067",
+    "code": "r = JSON.serialize('abc'.leftPad(6));",
+    "compile": false,
+    "expected": "\"   abc\"",
+    "floorExpected": "\"   abc\""
+  },
+  {
+    "id": "R068",
+    "code": "r = JSON.serialize(' AbC abc\\t '.leftPad(7,'xy'));",
+    "compile": false,
+    "expected": "\" AbC abc\\t \"",
+    "floorExpected": "\" AbC abc\\t \""
+  },
+  {
+    "id": "R069",
+    "code": "r = JSON.serialize('abc'.length());",
+    "compile": false,
+    "expected": "3",
+    "floorExpected": "3"
+  },
+  {
+    "id": "R070",
+    "code": "r = JSON.serialize(' AbC abc\\t '.length());",
+    "compile": false,
+    "expected": "10",
+    "floorExpected": "10"
+  },
+  {
+    "id": "R071",
+    "code": "r = JSON.serialize('abc'.mid(1,2));",
+    "compile": false,
+    "expected": "\"bc\"",
+    "floorExpected": "\"bc\""
+  },
+  {
+    "id": "R072",
+    "code": "r = JSON.serialize(' AbC abc\\t '.mid(-1,2));",
+    "compile": false,
+    "expected": "\" A\"",
+    "floorExpected": "\" A\""
+  },
+  {
+    "id": "R073",
+    "code": "r = JSON.serialize('abc'.normalizeSpace());",
+    "compile": false,
+    "expected": "\"abc\"",
+    "floorExpected": "\"abc\""
+  },
+  {
+    "id": "R074",
+    "code": "r = JSON.serialize(' AbC abc\\t '.normalizeSpace());",
+    "compile": false,
+    "expected": "\"AbC abc\"",
+    "floorExpected": "\"AbC abc\""
+  },
+  {
+    "id": "R075",
+    "code": "r = JSON.serialize('abc'.offsetByCodePoints(0,2));",
+    "compile": false,
+    "expected": "2",
+    "floorExpected": "2"
+  },
+  {
+    "id": "R076",
+    "code": "r = JSON.serialize(' AbC abc\\t '.offsetByCodePoints(1,-2));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Code point offset out of bounds: -2",
+    "floorExpected": "EXC|System.StringException|Code point offset out of bounds: -2"
+  },
+  {
+    "id": "R077",
+    "code": "r = JSON.serialize('abc'.remove('b'));",
+    "compile": false,
+    "expected": "\"ac\"",
+    "floorExpected": "\"ac\""
+  },
+  {
+    "id": "R078",
+    "code": "r = JSON.serialize(' AbC abc\\t '.remove(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R079",
+    "code": "r = JSON.serialize('abc'.removeEnd('c'));",
+    "compile": false,
+    "expected": "\"ab\"",
+    "floorExpected": "\"ab\""
+  },
+  {
+    "id": "R080",
+    "code": "r = JSON.serialize(' AbC abc\\t '.removeEnd(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R081",
+    "code": "r = JSON.serialize('abc'.removeEndIgnoreCase('C'));",
+    "compile": false,
+    "expected": "\"ab\"",
+    "floorExpected": "\"ab\""
+  },
+  {
+    "id": "R082",
+    "code": "r = JSON.serialize(' AbC abc\\t '.removeEndIgnoreCase(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R083",
+    "code": "r = JSON.serialize('abc'.removeStart('a'));",
+    "compile": false,
+    "expected": "\"bc\"",
+    "floorExpected": "\"bc\""
+  },
+  {
+    "id": "R084",
+    "code": "r = JSON.serialize(' AbC abc\\t '.removeStart(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R085",
+    "code": "r = JSON.serialize('abc'.removeStartIgnoreCase('A'));",
+    "compile": false,
+    "expected": "\"bc\"",
+    "floorExpected": "\"bc\""
+  },
+  {
+    "id": "R086",
+    "code": "r = JSON.serialize(' AbC abc\\t '.removeStartIgnoreCase(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R087",
+    "code": "r = JSON.serialize('abc'.repeat(2));",
+    "compile": false,
+    "expected": "\"abcabc\"",
+    "floorExpected": "\"abcabc\""
+  },
+  {
+    "id": "R088",
+    "code": "r = JSON.serialize(' AbC abc\\t '.repeat('-',3));",
+    "compile": false,
+    "expected": "\" AbC abc\\t - AbC abc\\t - AbC abc\\t \"",
+    "floorExpected": "\" AbC abc\\t - AbC abc\\t - AbC abc\\t \""
+  },
+  {
+    "id": "R089",
+    "code": "r = JSON.serialize('abc'.replace('b','X'));",
+    "compile": false,
+    "expected": "\"aXc\"",
+    "floorExpected": "\"aXc\""
+  },
+  {
+    "id": "R090",
+    "code": "r = JSON.serialize(' AbC abc\\t '.replace('b',null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R091",
+    "code": "r = JSON.serialize('abc'.replaceAll('[ab]','X'));",
+    "compile": false,
+    "expected": "\"XXc\"",
+    "floorExpected": "\"XXc\""
+  },
+  {
+    "id": "R092",
+    "code": "r = JSON.serialize(' AbC abc\\t '.replaceAll('b','$0$0'));",
+    "compile": false,
+    "expected": "\" AbbC abbc\\t \"",
+    "floorExpected": "\" AbbC abbc\\t \""
+  },
+  {
+    "id": "R093",
+    "code": "r = JSON.serialize('abc'.replaceFirst('b','X'));",
+    "compile": false,
+    "expected": "\"aXc\"",
+    "floorExpected": "\"aXc\""
+  },
+  {
+    "id": "R094",
+    "code": "r = JSON.serialize(' AbC abc\\t '.replaceFirst('b','$0$0'));",
+    "compile": false,
+    "expected": "\" AbbC abc\\t \"",
+    "floorExpected": "\" AbbC abc\\t \""
+  },
+  {
+    "id": "R095",
+    "code": "r = JSON.serialize('abc'.reverse());",
+    "compile": false,
+    "expected": "\"cba\"",
+    "floorExpected": "\"cba\""
+  },
+  {
+    "id": "R096",
+    "code": "r = JSON.serialize(' AbC abc\\t '.reverse());",
+    "compile": false,
+    "expected": "\" \\tcba CbA \"",
+    "floorExpected": "\" \\tcba CbA \""
+  },
+  {
+    "id": "R097",
+    "code": "r = JSON.serialize('abc'.right(2));",
+    "compile": false,
+    "expected": "\"bc\"",
+    "floorExpected": "\"bc\""
+  },
+  {
+    "id": "R098",
+    "code": "r = JSON.serialize(' AbC abc\\t '.right(-1));",
+    "compile": false,
+    "expected": "\"\"",
+    "floorExpected": "\"\""
+  },
+  {
+    "id": "R099",
+    "code": "r = JSON.serialize('abc'.rightPad(6));",
+    "compile": false,
+    "expected": "\"abc   \"",
+    "floorExpected": "\"abc   \""
+  },
+  {
+    "id": "R100",
+    "code": "r = JSON.serialize(' AbC abc\\t '.rightPad(7,'xy'));",
+    "compile": false,
+    "expected": "\" AbC abc\\t \"",
+    "floorExpected": "\" AbC abc\\t \""
+  },
+  {
+    "id": "R101",
+    "code": "r = JSON.serialize('abc'.split('b'));",
+    "compile": false,
+    "expected": "[\"a\",\"c\"]",
+    "floorExpected": "[\"a\",\"c\"]"
+  },
+  {
+    "id": "R102",
+    "code": "r = JSON.serialize(' AbC abc\\t '.split('b',2));",
+    "compile": false,
+    "expected": "[\" A\",\"C abc\\t \"]",
+    "floorExpected": "[\" A\",\"C abc\\t \"]"
+  },
+  {
+    "id": "R103",
+    "code": "r = JSON.serialize('abc'.splitByCharacterType());",
+    "compile": false,
+    "expected": "[\"abc\"]",
+    "floorExpected": "[\"abc\"]"
+  },
+  {
+    "id": "R104",
+    "code": "r = JSON.serialize(' AbC abc\\t '.splitByCharacterType());",
+    "compile": false,
+    "expected": "[\" \",\"A\",\"b\",\"C\",\" \",\"abc\",\"\\t\",\" \"]",
+    "floorExpected": "[\" \",\"A\",\"b\",\"C\",\" \",\"abc\",\"\\t\",\" \"]"
+  },
+  {
+    "id": "R105",
+    "code": "r = JSON.serialize('abc'.splitByCharacterTypeCamelCase());",
+    "compile": false,
+    "expected": "[\"abc\"]",
+    "floorExpected": "[\"abc\"]"
+  },
+  {
+    "id": "R106",
+    "code": "r = JSON.serialize(' AbC abc\\t '.splitByCharacterTypeCamelCase());",
+    "compile": false,
+    "expected": "[\" \",\"Ab\",\"C\",\" \",\"abc\",\"\\t\",\" \"]",
+    "floorExpected": "[\" \",\"Ab\",\"C\",\" \",\"abc\",\"\\t\",\" \"]"
+  },
+  {
+    "id": "R107",
+    "code": "r = JSON.serialize('abc'.startsWith('a'));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R108",
+    "code": "r = JSON.serialize(' AbC abc\\t '.startsWith(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R109",
+    "code": "r = JSON.serialize('abc'.startsWithIgnoreCase('A'));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R110",
+    "code": "r = JSON.serialize(' AbC abc\\t '.startsWithIgnoreCase(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R111",
+    "code": "r = JSON.serialize('<b>A</b>&amp;'.stripHtmlTags());",
+    "compile": false,
+    "expected": "\"A&\"",
+    "floorExpected": "\"A&\""
+  },
+  {
+    "id": "R112",
+    "code": "r = JSON.serialize('<script>x</script>B'.stripHtmlTags());",
+    "compile": false,
+    "expected": "\"B\"",
+    "floorExpected": "\"B\""
+  },
+  {
+    "id": "R113",
+    "code": "r = JSON.serialize('abc'.substring(1));",
+    "compile": false,
+    "expected": "\"bc\"",
+    "floorExpected": "\"bc\""
+  },
+  {
+    "id": "R114",
+    "code": "r = JSON.serialize(' AbC abc\\t '.substring(1,2));",
+    "compile": false,
+    "expected": "\"A\"",
+    "floorExpected": "\"A\""
+  },
+  {
+    "id": "R115",
+    "code": "r = JSON.serialize('abc'.substringAfter('b'));",
+    "compile": false,
+    "expected": "\"c\"",
+    "floorExpected": "\"c\""
+  },
+  {
+    "id": "R116",
+    "code": "r = JSON.serialize(' AbC abc\\t '.substringAfter(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R117",
+    "code": "r = JSON.serialize('abc'.substringAfterLast('b'));",
+    "compile": false,
+    "expected": "\"c\"",
+    "floorExpected": "\"c\""
+  },
+  {
+    "id": "R118",
+    "code": "r = JSON.serialize(' AbC abc\\t '.substringAfterLast(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R119",
+    "code": "r = JSON.serialize('abc'.substringBefore('b'));",
+    "compile": false,
+    "expected": "\"a\"",
+    "floorExpected": "\"a\""
+  },
+  {
+    "id": "R120",
+    "code": "r = JSON.serialize(' AbC abc\\t '.substringBefore(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R121",
+    "code": "r = JSON.serialize('abc'.substringBeforeLast('b'));",
+    "compile": false,
+    "expected": "\"a\"",
+    "floorExpected": "\"a\""
+  },
+  {
+    "id": "R122",
+    "code": "r = JSON.serialize(' AbC abc\\t '.substringBeforeLast(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R123",
+    "code": "r = JSON.serialize('abcabc'.substringBetween('b'));",
+    "compile": false,
+    "expected": "\"ca\"",
+    "floorExpected": "\"ca\""
+  },
+  {
+    "id": "R124",
+    "code": "r = JSON.serialize('abcabc'.substringBetween('a','c'));",
+    "compile": false,
+    "expected": "\"b\"",
+    "floorExpected": "\"b\""
+  },
+  {
+    "id": "R125",
+    "code": "r = JSON.serialize('abc'.swapCase());",
+    "compile": false,
+    "expected": "\"ABC\"",
+    "floorExpected": "\"ABC\""
+  },
+  {
+    "id": "R126",
+    "code": "r = JSON.serialize(' AbC abc\\t '.swapCase());",
+    "compile": false,
+    "expected": "\" aBc ABC\\t \"",
+    "floorExpected": "\" aBc ABC\\t \""
+  },
+  {
+    "id": "R127",
+    "code": "r = JSON.serialize('abc'.toLowerCase());",
+    "compile": false,
+    "expected": "\"abc\"",
+    "floorExpected": "\"abc\""
+  },
+  {
+    "id": "R128",
+    "code": "r = JSON.serialize(' AbC abc\\t '.toLowerCase());",
+    "compile": false,
+    "expected": "\" abc abc\\t \"",
+    "floorExpected": "\" abc abc\\t \""
+  },
+  {
+    "id": "R129",
+    "code": "r = JSON.serialize('abc'.toUpperCase());",
+    "compile": false,
+    "expected": "\"ABC\"",
+    "floorExpected": "\"ABC\""
+  },
+  {
+    "id": "R130",
+    "code": "r = JSON.serialize(' AbC abc\\t '.toUpperCase());",
+    "compile": false,
+    "expected": "\" ABC ABC\\t \"",
+    "floorExpected": "\" ABC ABC\\t \""
+  },
+  {
+    "id": "R131",
+    "code": "r = JSON.serialize('abc'.trim());",
+    "compile": false,
+    "expected": "\"abc\"",
+    "floorExpected": "\"abc\""
+  },
+  {
+    "id": "R132",
+    "code": "r = JSON.serialize(' AbC abc\\t '.trim());",
+    "compile": false,
+    "expected": "\"AbC abc\"",
+    "floorExpected": "\"AbC abc\""
+  },
+  {
+    "id": "R133",
+    "code": "r = JSON.serialize('abc'.uncapitalize());",
+    "compile": false,
+    "expected": "\"abc\"",
+    "floorExpected": "\"abc\""
+  },
+  {
+    "id": "R134",
+    "code": "r = JSON.serialize(' AbC abc\\t '.uncapitalize());",
+    "compile": false,
+    "expected": "\" AbC abc\\t \"",
+    "floorExpected": "\" AbC abc\\t \""
+  },
+  {
+    "id": "R135",
+    "code": "r = JSON.serialize(''.isAllLowerCase());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R136",
+    "code": "r = JSON.serialize('Ab1 '.isAllLowerCase());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R137",
+    "code": "r = JSON.serialize('\u00e9\u0662\u00a0'.isAllLowerCase());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R138",
+    "code": "r = JSON.serialize(''.isAllUpperCase());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R139",
+    "code": "r = JSON.serialize('Ab1 '.isAllUpperCase());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R140",
+    "code": "r = JSON.serialize('\u00e9\u0662\u00a0'.isAllUpperCase());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R141",
+    "code": "r = JSON.serialize(''.isAlpha());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R142",
+    "code": "r = JSON.serialize('Ab1 '.isAlpha());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R143",
+    "code": "r = JSON.serialize('\u00e9\u0662\u00a0'.isAlpha());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R144",
+    "code": "r = JSON.serialize(''.isAlphaSpace());",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R145",
+    "code": "r = JSON.serialize('Ab1 '.isAlphaSpace());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R146",
+    "code": "r = JSON.serialize('\u00e9\u0662\u00a0'.isAlphaSpace());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R147",
+    "code": "r = JSON.serialize(''.isAlphanumeric());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R148",
+    "code": "r = JSON.serialize('Ab1 '.isAlphanumeric());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R149",
+    "code": "r = JSON.serialize('\u00e9\u0662\u00a0'.isAlphanumeric());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R150",
+    "code": "r = JSON.serialize(''.isAlphanumericSpace());",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R151",
+    "code": "r = JSON.serialize('Ab1 '.isAlphanumericSpace());",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R152",
+    "code": "r = JSON.serialize('\u00e9\u0662\u00a0'.isAlphanumericSpace());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R153",
+    "code": "r = JSON.serialize(''.isAsciiPrintable());",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R154",
+    "code": "r = JSON.serialize('Ab1 '.isAsciiPrintable());",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R155",
+    "code": "r = JSON.serialize('\u00e9\u0662\u00a0'.isAsciiPrintable());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R156",
+    "code": "r = JSON.serialize(''.isNumeric());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R157",
+    "code": "r = JSON.serialize('Ab1 '.isNumeric());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R158",
+    "code": "r = JSON.serialize('\u00e9\u0662\u00a0'.isNumeric());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R159",
+    "code": "r = JSON.serialize(''.isNumericSpace());",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R160",
+    "code": "r = JSON.serialize('Ab1 '.isNumericSpace());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R161",
+    "code": "r = JSON.serialize('\u00e9\u0662\u00a0'.isNumericSpace());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R162",
+    "code": "r = JSON.serialize(''.isWhitespace());",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R163",
+    "code": "r = JSON.serialize('Ab1 '.isWhitespace());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R164",
+    "code": "r = JSON.serialize('\u00e9\u0662\u00a0'.isWhitespace());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R165",
+    "code": "String observed = 'a,\"b\"\\n'.escapeCsv(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[34,97,44,34,34,98,34,34,10,34]",
+    "floorExpected": "[34,97,44,34,34,98,34,34,10,34]"
+  },
+  {
+    "id": "R166",
+    "code": "String observed = '\u00e9\u0152\u03b1\u00a0'.escapeCsv(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[233,338,945,160]",
+    "floorExpected": "[233,338,945,160]"
+  },
+  {
+    "id": "R167",
+    "code": "String observed = 'a,\"b\"\\n'.unescapeCsv(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,34,98,34,10]",
+    "floorExpected": "[97,44,34,98,34,10]"
+  },
+  {
+    "id": "R168",
+    "code": "String observed = '&OElig;&alpha;&#65;&apos;'.unescapeCsv(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]",
+    "floorExpected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]"
+  },
+  {
+    "id": "R169",
+    "code": "String observed = 'a,\"b\"\\n'.escapeEcmaScript(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,92,34,98,92,34,92,110]",
+    "floorExpected": "[97,44,92,34,98,92,34,92,110]"
+  },
+  {
+    "id": "R170",
+    "code": "String observed = '\u00e9\u0152\u03b1\u00a0'.escapeEcmaScript(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[92,117,48,48,69,57,92,117,48,49,53,50,92,117,48,51,66,49,92,117,48,48,65,48]",
+    "floorExpected": "[92,117,48,48,69,57,92,117,48,49,53,50,92,117,48,51,66,49,92,117,48,48,65,48]"
+  },
+  {
+    "id": "R171",
+    "code": "String observed = 'a,\"b\"\\n'.unescapeEcmaScript(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,34,98,34,10]",
+    "floorExpected": "[97,44,34,98,34,10]"
+  },
+  {
+    "id": "R172",
+    "code": "String observed = '&OElig;&alpha;&#65;&apos;'.unescapeEcmaScript(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]",
+    "floorExpected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]"
+  },
+  {
+    "id": "R173",
+    "code": "String observed = 'a,\"b\"\\n'.escapeHtml3(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,38,113,117,111,116,59,98,38,113,117,111,116,59,10]",
+    "floorExpected": "[97,44,38,113,117,111,116,59,98,38,113,117,111,116,59,10]"
+  },
+  {
+    "id": "R174",
+    "code": "String observed = '\u00e9\u0152\u03b1\u00a0'.escapeHtml3(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[38,101,97,99,117,116,101,59,338,945,38,110,98,115,112,59]",
+    "floorExpected": "[38,101,97,99,117,116,101,59,338,945,38,110,98,115,112,59]"
+  },
+  {
+    "id": "R175",
+    "code": "String observed = 'a,\"b\"\\n'.unescapeHtml3(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,34,98,34,10]",
+    "floorExpected": "[97,44,34,98,34,10]"
+  },
+  {
+    "id": "R176",
+    "code": "String observed = '&OElig;&alpha;&#65;&apos;'.unescapeHtml3(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,65,38,97,112,111,115,59]",
+    "floorExpected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,65,38,97,112,111,115,59]"
+  },
+  {
+    "id": "R177",
+    "code": "String observed = 'a,\"b\"\\n'.escapeHtml4(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,38,113,117,111,116,59,98,38,113,117,111,116,59,10]",
+    "floorExpected": "[97,44,38,113,117,111,116,59,98,38,113,117,111,116,59,10]"
+  },
+  {
+    "id": "R178",
+    "code": "String observed = '\u00e9\u0152\u03b1\u00a0'.escapeHtml4(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[38,101,97,99,117,116,101,59,38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,110,98,115,112,59]",
+    "floorExpected": "[38,101,97,99,117,116,101,59,38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,110,98,115,112,59]"
+  },
+  {
+    "id": "R179",
+    "code": "String observed = 'a,\"b\"\\n'.unescapeHtml4(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,34,98,34,10]",
+    "floorExpected": "[97,44,34,98,34,10]"
+  },
+  {
+    "id": "R180",
+    "code": "String observed = '&OElig;&alpha;&#65;&apos;'.unescapeHtml4(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[338,945,65,38,97,112,111,115,59]",
+    "floorExpected": "[338,945,65,38,97,112,111,115,59]"
+  },
+  {
+    "id": "R181",
+    "code": "String observed = 'a,\"b\"\\n'.escapeJava(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,92,34,98,92,34,92,110]",
+    "floorExpected": "[97,44,92,34,98,92,34,92,110]"
+  },
+  {
+    "id": "R182",
+    "code": "String observed = '\u00e9\u0152\u03b1\u00a0'.escapeJava(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[92,117,48,48,69,57,92,117,48,49,53,50,92,117,48,51,66,49,92,117,48,48,65,48]",
+    "floorExpected": "[92,117,48,48,69,57,92,117,48,49,53,50,92,117,48,51,66,49,92,117,48,48,65,48]"
+  },
+  {
+    "id": "R183",
+    "code": "String observed = 'a,\"b\"\\n'.unescapeJava(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,34,98,34,10]",
+    "floorExpected": "[97,44,34,98,34,10]"
+  },
+  {
+    "id": "R184",
+    "code": "String observed = '&OElig;&alpha;&#65;&apos;'.unescapeJava(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]",
+    "floorExpected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]"
+  },
+  {
+    "id": "R185",
+    "code": "String observed = 'a,\"b\"\\n'.escapeUnicode(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,92,34,98,92,34,92,110]",
+    "floorExpected": "[97,44,92,34,98,92,34,92,110]"
+  },
+  {
+    "id": "R186",
+    "code": "String observed = '\u00e9\u0152\u03b1\u00a0'.escapeUnicode(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[92,117,48,48,69,57,92,117,48,49,53,50,92,117,48,51,66,49,92,117,48,48,65,48]",
+    "floorExpected": "[92,117,48,48,69,57,92,117,48,49,53,50,92,117,48,51,66,49,92,117,48,48,65,48]"
+  },
+  {
+    "id": "R187",
+    "code": "String observed = 'a,\"b\"\\n'.unescapeUnicode(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,34,98,34,10]",
+    "floorExpected": "[97,44,34,98,34,10]"
+  },
+  {
+    "id": "R188",
+    "code": "String observed = '&OElig;&alpha;&#65;&apos;'.unescapeUnicode(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]",
+    "floorExpected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,38,35,54,53,59,38,97,112,111,115,59]"
+  },
+  {
+    "id": "R189",
+    "code": "String observed = 'a,\"b\"\\n'.escapeXml(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,38,113,117,111,116,59,98,38,113,117,111,116,59,10]",
+    "floorExpected": "[97,44,38,113,117,111,116,59,98,38,113,117,111,116,59,10]"
+  },
+  {
+    "id": "R190",
+    "code": "String observed = '\u00e9\u0152\u03b1\u00a0'.escapeXml(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[233,338,945,160]",
+    "floorExpected": "[233,338,945,160]"
+  },
+  {
+    "id": "R191",
+    "code": "String observed = 'a,\"b\"\\n'.unescapeXml(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[97,44,34,98,34,10]",
+    "floorExpected": "[97,44,34,98,34,10]"
+  },
+  {
+    "id": "R192",
+    "code": "String observed = '&OElig;&alpha;&#65;&apos;'.unescapeXml(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,65,39]",
+    "floorExpected": "[38,79,69,108,105,103,59,38,97,108,112,104,97,59,65,39]"
+  },
+  {
+    "id": "R193",
+    "code": "r = JSON.serialize(String.isBlank(null));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R194",
+    "code": "r = JSON.serialize(String.isBlank(''));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R195",
+    "code": "r = JSON.serialize(String.isBlank('\\t '));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R196",
+    "code": "r = JSON.serialize(String.isBlank('\u00a0'));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R197",
+    "code": "r = JSON.serialize(String.isNotBlank(null));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R198",
+    "code": "r = JSON.serialize(String.isNotBlank(''));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R199",
+    "code": "r = JSON.serialize(String.isNotBlank('\\t '));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R200",
+    "code": "r = JSON.serialize(String.isNotBlank('\u00a0'));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R201",
+    "code": "r = JSON.serialize(String.isEmpty(null));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R202",
+    "code": "r = JSON.serialize(String.isEmpty(''));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R203",
+    "code": "r = JSON.serialize(String.isEmpty('\\t '));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R204",
+    "code": "r = JSON.serialize(String.isEmpty('\u00a0'));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R205",
+    "code": "r = JSON.serialize(String.isNotEmpty(null));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R206",
+    "code": "r = JSON.serialize(String.isNotEmpty(''));",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R207",
+    "code": "r = JSON.serialize(String.isNotEmpty('\\t '));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R208",
+    "code": "r = JSON.serialize(String.isNotEmpty('\u00a0'));",
+    "compile": false,
+    "expected": "true",
+    "floorExpected": "true"
+  },
+  {
+    "id": "R209",
+    "code": "r = JSON.serialize(String.escapeSingleQuotes('a\\'b\\\\c'));",
+    "compile": false,
+    "expected": "\"a\\\\'b\\\\\\\\c\"",
+    "floorExpected": "\"a\\\\'b\\\\\\\\c\""
+  },
+  {
+    "id": "R210",
+    "code": "r = JSON.serialize(String.escapeSingleQuotes(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R211",
+    "code": "r = JSON.serialize(String.format('Hello {0}',new List<String>{'world'}));",
+    "compile": false,
+    "expected": "\"Hello world\"",
+    "floorExpected": "\"Hello world\""
+  },
+  {
+    "id": "R212",
+    "code": "r = JSON.serialize(String.format('a\\'{0}\\'b {1}',new List<String>{'X','Y'}));",
+    "compile": false,
+    "expected": "\"a{0}b Y\"",
+    "floorExpected": "\"a{0}b Y\""
+  },
+  {
+    "id": "R213",
+    "code": "r = JSON.serialize(String.fromCharArray(new List<Integer>{65,233,55349,56586}).getChars());",
+    "compile": false,
+    "expected": "[65,233,55349,56586]",
+    "floorExpected": "[65,233,55349,56586]"
+  },
+  {
+    "id": "R214",
+    "code": "String observed = String.fromCharArray(new List<Integer>{-1,65536}); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[65535,0]",
+    "floorExpected": "[65535,0]"
+  },
+  {
+    "id": "R215",
+    "code": "r = JSON.serialize(String.getCommonPrefix(new List<String>{'abc','abd'}));",
+    "compile": false,
+    "expected": "\"ab\"",
+    "floorExpected": "\"ab\""
+  },
+  {
+    "id": "R216",
+    "code": "r = JSON.serialize(String.getCommonPrefix(new List<String>{'abc',null}));",
+    "compile": false,
+    "expected": "\"\"",
+    "floorExpected": "\"\""
+  },
+  {
+    "id": "R217",
+    "code": "r = JSON.serialize(String.join(new List<String>{'a',null,'b'},','));",
+    "compile": false,
+    "expected": "\"a,,b\"",
+    "floorExpected": "\"a,,b\""
+  },
+  {
+    "id": "R218",
+    "code": "r = JSON.serialize(String.join(new Set<String>{'a'},','));",
+    "compile": false,
+    "expected": "\"a\"",
+    "floorExpected": "\"a\""
+  },
+  {
+    "id": "R219",
+    "code": "r = JSON.serialize(String.valueOf(Date.newInstance(2024,2,29)));",
+    "compile": false,
+    "expected": "\"2024-02-29\"",
+    "floorExpected": "\"2024-02-29\""
+  },
+  {
+    "id": "R220",
+    "code": "r = JSON.serialize(String.valueOfGmt(Datetime.newInstanceGmt(2024,2,29,12,30,0)));",
+    "compile": false,
+    "expected": "\"2024-02-29 12:30:00\"",
+    "floorExpected": "\"2024-02-29 12:30:00\""
+  },
+  {
+    "id": "R221",
+    "code": "r = JSON.serialize(String.valueOf(1.20));",
+    "compile": false,
+    "expected": "\"1.20\"",
+    "floorExpected": "\"1.20\""
+  },
+  {
+    "id": "R222",
+    "code": "r = JSON.serialize(String.valueOf(12));",
+    "compile": false,
+    "expected": "\"12\"",
+    "floorExpected": "\"12\""
+  },
+  {
+    "id": "R223",
+    "code": "r = JSON.serialize(String.valueOf(12L));",
+    "compile": false,
+    "expected": "\"12\"",
+    "floorExpected": "\"12\""
+  },
+  {
+    "id": "R224",
+    "code": "r = JSON.serialize(String.valueOf(true));",
+    "compile": false,
+    "expected": "\"true\"",
+    "floorExpected": "\"true\""
+  },
+  {
+    "id": "R225",
+    "code": "r = JSON.serialize(String.valueOf((Object)null));",
+    "compile": false,
+    "expected": "null",
+    "floorExpected": "null"
+  },
+  {
+    "id": "R226",
+    "code": "r = JSON.serialize(String.valueOf(new List<Integer>{1,2}));",
+    "compile": false,
+    "expected": "\"(1, 2)\"",
+    "floorExpected": "\"(1, 2)\""
+  },
+  {
+    "id": "R227",
+    "code": "r = JSON.serialize('abc'.getChars());",
+    "compile": false,
+    "expected": "[97,98,99]",
+    "floorExpected": "[97,98,99]"
+  },
+  {
+    "id": "R228",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.length());",
+    "compile": false,
+    "expected": "4",
+    "floorExpected": "4"
+  },
+  {
+    "id": "R229",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.charAt(1));",
+    "compile": false,
+    "expected": "55349",
+    "floorExpected": "55349"
+  },
+  {
+    "id": "R230",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.codePointAt(1));",
+    "compile": false,
+    "expected": "120074",
+    "floorExpected": "120074"
+  },
+  {
+    "id": "R231",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.codePointAt(2));",
+    "compile": false,
+    "expected": "56586",
+    "floorExpected": "56586"
+  },
+  {
+    "id": "R232",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.codePointBefore(3));",
+    "compile": false,
+    "expected": "120074",
+    "floorExpected": "120074"
+  },
+  {
+    "id": "R233",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.codePointCount(0,4));",
+    "compile": false,
+    "expected": "3",
+    "floorExpected": "3"
+  },
+  {
+    "id": "R234",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.offsetByCodePoints(0,2));",
+    "compile": false,
+    "expected": "3",
+    "floorExpected": "3"
+  },
+  {
+    "id": "R235",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.offsetByCodePoints(3,-1));",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "R236",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.indexOf('B'));",
+    "compile": false,
+    "expected": "3",
+    "floorExpected": "3"
+  },
+  {
+    "id": "R237",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.lastIndexOf('B'));",
+    "compile": false,
+    "expected": "3",
+    "floorExpected": "3"
+  },
+  {
+    "id": "R238",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.reverse().getChars());",
+    "compile": false,
+    "expected": "[66,55349,56586,65]",
+    "floorExpected": "[66,55349,56586,65]"
+  },
+  {
+    "id": "R239",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.substring(1,3).getChars());",
+    "compile": false,
+    "expected": "[55349,56586]",
+    "floorExpected": "[55349,56586]"
+  },
+  {
+    "id": "R240",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.indexOfChar(120074));",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "R241",
+    "code": "String s = 'A' + String.fromCharArray(new List<Integer>{55349,56586}) + 'B'; r = JSON.serialize(s.indexOfAny('B'));",
+    "compile": false,
+    "expected": "3",
+    "floorExpected": "3"
+  },
+  {
+    "id": "R242",
+    "code": "r = JSON.serialize('abcdef'.abbreviate(5,2));",
+    "compile": false,
+    "expected": "\"ab...\"",
+    "floorExpected": "\"ab...\""
+  },
+  {
+    "id": "R243",
+    "code": "r = JSON.serialize('abcdef'.abbreviate(3,2));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Minimum abbreviation width is 4",
+    "floorExpected": "EXC|System.StringException|Minimum abbreviation width is 4"
+  },
+  {
+    "id": "R244",
+    "code": "r = JSON.serialize('abc'.center(6,''));",
+    "compile": false,
+    "expected": "\" abc  \"",
+    "floorExpected": "\" abc  \""
+  },
+  {
+    "id": "R245",
+    "code": "r = JSON.serialize('abc'.leftPad(6,null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R246",
+    "code": "r = JSON.serialize('abc'.repeat(-1));",
+    "compile": false,
+    "expected": "\"\"",
+    "floorExpected": "\"\""
+  },
+  {
+    "id": "R247",
+    "code": "r = JSON.serialize('abc'.substring(-1));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Starting position out of bounds: -1",
+    "floorExpected": "EXC|System.StringException|Starting position out of bounds: -1"
+  },
+  {
+    "id": "R248",
+    "code": "r = JSON.serialize('abc'.substring(2,1));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Ending position out of bounds: 1",
+    "floorExpected": "EXC|System.StringException|Ending position out of bounds: 1"
+  },
+  {
+    "id": "R249",
+    "code": "r = JSON.serialize('abc'.mid(2,10));",
+    "compile": false,
+    "expected": "\"c\"",
+    "floorExpected": "\"c\""
+  },
+  {
+    "id": "R250",
+    "code": "r = JSON.serialize('abc'.getLevenshteinDistance('adc',-1));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Threshold must not be negative",
+    "floorExpected": "EXC|System.StringException|Threshold must not be negative"
+  },
+  {
+    "id": "R251",
+    "code": "r = JSON.serialize('a,b,'.split(','));",
+    "compile": false,
+    "expected": "[\"a\",\"b\"]",
+    "floorExpected": "[\"a\",\"b\"]"
+  },
+  {
+    "id": "R252",
+    "code": "r = JSON.serialize('a,b,'.split(',',-1));",
+    "compile": false,
+    "expected": "[\"a\",\"b\",\"\"]",
+    "floorExpected": "[\"a\",\"b\",\"\"]"
+  },
+  {
+    "id": "R253",
+    "code": "r = JSON.serialize('a,b,'.split(',',0));",
+    "compile": false,
+    "expected": "[\"a\",\"b\"]",
+    "floorExpected": "[\"a\",\"b\"]"
+  },
+  {
+    "id": "R254",
+    "code": "r = JSON.serialize('a,b,'.split(',',1));",
+    "compile": false,
+    "expected": "[\"a,b,\"]",
+    "floorExpected": "[\"a,b,\"]"
+  },
+  {
+    "id": "R255",
+    "code": "try { r = JSON.serialize('a'.replaceAll('(', 'x')); } catch(Exception e) { r = 'EXC|' + e.getTypeName() + '|' + e.getMessage().split('\\n')[0]; }",
+    "compile": false,
+    "expected": "EXC|System.StringException|Invalid regex: Unclosed group near index 1",
+    "floorExpected": "EXC|System.StringException|Invalid regex: Unclosed group near index 1"
+  },
+  {
+    "id": "R256",
+    "code": "r = JSON.serialize('abc'.replaceAll('(b)','$1$1'));",
+    "compile": false,
+    "expected": "\"abbc\"",
+    "floorExpected": "\"abbc\""
+  },
+  {
+    "id": "R257",
+    "code": "r = JSON.serialize('abc'.replaceAll('(b)','$2'));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Index out of Bounds: No group 2",
+    "floorExpected": "EXC|System.StringException|Index out of Bounds: No group 2"
+  },
+  {
+    "id": "R258",
+    "code": "r = JSON.serialize('aa'.countMatches('a'));",
+    "compile": false,
+    "expected": "2",
+    "floorExpected": "2"
+  },
+  {
+    "id": "R259",
+    "code": "r = JSON.serialize('aaa'.countMatches('aa'));",
+    "compile": false,
+    "expected": "1",
+    "floorExpected": "1"
+  },
+  {
+    "id": "R260",
+    "code": "r = JSON.serialize('a\u00a0b'.deleteWhitespace());",
+    "compile": false,
+    "expected": "\"a\u00a0b\"",
+    "floorExpected": "\"a\u00a0b\""
+  },
+  {
+    "id": "R261",
+    "code": "r = JSON.serialize('\\u00A0'.normalizeSpace());",
+    "compile": false,
+    "expected": "\"\"",
+    "floorExpected": "\"\""
+  },
+  {
+    "id": "R262",
+    "code": "String observed = '\\\\x41\\\\v'.unescapeEcmaScript(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[120,52,49,118]",
+    "floorExpected": "[120,52,49,118]"
+  },
+  {
+    "id": "R263",
+    "code": "String observed = '\\\\x41\\\\v'.unescapeJava(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[120,52,49,118]",
+    "floorExpected": "[120,52,49,118]"
+  },
+  {
+    "id": "R264",
+    "code": "String observed = '&amp;OElig;'.unescapeHtml4(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[38,79,69,108,105,103,59]",
+    "floorExpected": "[38,79,69,108,105,103,59]"
+  },
+  {
+    "id": "R265",
+    "code": "String observed = '&#x1D50A;'.unescapeHtml4(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[55349,56586]",
+    "floorExpected": "[55349,56586]"
+  },
+  {
+    "id": "R266",
+    "code": "String observed = '&copy;&euro;&Alpha;&trade;'.unescapeHtml4(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[169,8364,913,8482]",
+    "floorExpected": "[169,8364,913,8482]"
+  },
+  {
+    "id": "R267",
+    "code": "String observed = '&copy;&euro;'.unescapeHtml3(); List<Integer> units = new List<Integer>(); for (Integer i = 0; i < observed.length(); i++) { units.add(observed.charAt(i)); } r = JSON.serialize(units);",
+    "compile": false,
+    "expected": "[169,38,101,117,114,111,59]",
+    "floorExpected": "[169,38,101,117,114,111,59]"
+  },
+  {
+    "id": "R268",
+    "code": "String s = null; r = JSON.serialize(s.length());",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+    "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+  },
+  {
+    "id": "R269",
+    "code": "String s = null; r = JSON.serialize(s.equals(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+    "floorExpected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+  },
+  {
+    "id": "R270",
+    "code": "r = JSON.serialize('\\\\n'.getChars());",
+    "compile": false,
+    "expected": "[10]",
+    "floorExpected": "[10]"
+  },
+  {
+    "id": "R271",
+    "code": "r = JSON.serialize('\\\\u0041'.getChars());",
+    "compile": false,
+    "expected": "[65]",
+    "floorExpected": "[65]"
+  },
+  {
+    "id": "R272",
+    "code": "r = JSON.serialize('\\\\\\\\'.getChars());",
+    "compile": false,
+    "expected": "[92]",
+    "floorExpected": "[92]"
+  },
+  {
+    "id": "R273",
+    "code": "r = JSON.serialize('\\\\x41'.getChars());",
+    "compile": false,
+    "expected": "[120,52,49]",
+    "floorExpected": "[120,52,49]"
+  },
+  {
+    "id": "R274",
+    "code": "r = JSON.serialize('\\u00A0'.isWhitespace());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R275",
+    "code": "r = JSON.serialize('a\\u00A0b'.containsWhitespace());",
+    "compile": false,
+    "expected": "false",
+    "floorExpected": "false"
+  },
+  {
+    "id": "R276",
+    "code": "r = JSON.serialize('\\u00A0a\\u00A0'.trim());",
+    "compile": false,
+    "expected": "\"\u00a0a\u00a0\"",
+    "floorExpected": "\"\u00a0a\u00a0\""
+  },
+  {
+    "id": "R277",
+    "code": "r = JSON.serialize('I\u0130i\u0131'.toLowerCase('tr'));",
+    "compile": false,
+    "expected": "\"\u0131ii\u0131\"",
+    "floorExpected": "\"\u0131ii\u0131\""
+  },
+  {
+    "id": "R278",
+    "code": "r = JSON.serialize('I\u0130i\u0131'.toUpperCase('tr'));",
+    "compile": false,
+    "expected": "\"I\u0130\u0130I\"",
+    "floorExpected": "\"I\u0130\u0130I\""
+  },
+  {
+    "id": "R279",
+    "code": "r = JSON.serialize('Hello {!who}'.template(new Map<String,Object>{'who'=>'world'}));",
+    "compile": false,
+    "expected": "\"Hello {!who}\"",
+    "floorExpected": "\"Hello {!who}\""
+  },
+  {
+    "id": "R280",
+    "code": "r = JSON.serialize('x{!missing}'.template(new Map<String,Object>()));",
+    "compile": false,
+    "expected": "\"x{!missing}\"",
+    "floorExpected": "\"x{!missing}\""
+  },
+  {
+    "id": "R281",
+    "code": "r = JSON.serialize('abc'.getLevenshteinDistance(null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R282",
+    "code": "r = JSON.serialize('abc'.substring(0,99));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Ending position out of bounds: 99",
+    "floorExpected": "EXC|System.StringException|Ending position out of bounds: 99"
+  },
+  {
+    "id": "R283",
+    "code": "r = JSON.serialize('abc'.codePointAt(3));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Starting position out of bounds: 3",
+    "floorExpected": "EXC|System.StringException|Starting position out of bounds: 3"
+  },
+  {
+    "id": "R284",
+    "code": "r = JSON.serialize('abc'.codePointCount(0,99));",
+    "compile": false,
+    "expected": "EXC|System.StringException|End position out of bounds: 99",
+    "floorExpected": "EXC|System.StringException|End position out of bounds: 99"
+  },
+  {
+    "id": "R285",
+    "code": "r = JSON.serialize('abc'.offsetByCodePoints(99,0));",
+    "compile": false,
+    "expected": "EXC|System.StringException|Starting position out of bounds: 99",
+    "floorExpected": "EXC|System.StringException|Starting position out of bounds: 99"
+  },
+  {
+    "id": "R286",
+    "code": "r = JSON.serialize('abc'.rightPad(6,null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R287",
+    "code": "r = JSON.serialize('abc'.center(6,null));",
+    "compile": false,
+    "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+    "floorExpected": "EXC|System.NullPointerException|Argument cannot be null."
+  },
+  {
+    "id": "R288",
+    "code": "String observed = String.fromCharArray(new List<Integer>{60,38,39,34}).escapeHtml3(); List<Integer> units=new List<Integer>(); for(Integer i=0;i<observed.length();i++){units.add(observed.charAt(i));} r=JSON.serialize(units);",
+    "compile": false,
+    "expected": "[38,108,116,59,38,97,109,112,59,38,35,51,57,59,38,113,117,111,116,59]",
+    "floorExpected": "[38,108,116,59,38,97,109,112,59,38,35,51,57,59,38,113,117,111,116,59]"
+  },
+  {
+    "id": "R289",
+    "code": "String observed = String.fromCharArray(new List<Integer>{60,38,39,34}).escapeHtml4(); List<Integer> units=new List<Integer>(); for(Integer i=0;i<observed.length();i++){units.add(observed.charAt(i));} r=JSON.serialize(units);",
+    "compile": false,
+    "expected": "[38,108,116,59,38,97,109,112,59,38,35,51,57,59,38,113,117,111,116,59]",
+    "floorExpected": "[38,108,116,59,38,97,109,112,59,38,35,51,57,59,38,113,117,111,116,59]"
+  },
+  {
+    "id": "R290",
+    "code": "try { r = 'a'.replaceAll('(', 'x'); } catch(Exception e){r=JSON.serialize(e.getMessage());}",
+    "compile": false,
+    "expected": "\"Invalid regex: Unclosed group near index 1\\n(\"",
+    "floorExpected": "\"Invalid regex: Unclosed group near index 1\\n(\""
+  },
+  {
+    "id": "R291",
+    "code": "r=JSON.serialize('\\\\u00ZZ'.getChars());",
+    "compile": false,
+    "expected": "NATIVE_ERROR|System.UnexpectedException|Salesforce System Error",
+    "nativeBlocker": "Malformed getChars Unicode aborts the scratch org with System.UnexpectedException: Salesforce System Error; no stable behavioral oracle.",
+    "floorExpected": "UNCAUGHT|System.UnexpectedException: Salesforce System Error: 1868520726-2265372 (-2020499460) (-2020499460)"
+  },
+  {
+    "id": "R292",
+    "code": "r=JSON.serialize('Hello {who}'.template(new Map<String,Object>{'who'=>'world'}));",
+    "compile": false,
+    "expected": "\"Hello {who}\"",
+    "floorExpected": "\"Hello {who}\""
+  },
+  {
+    "id": "R293",
+    "code": "r=JSON.serialize(String.valueOf(Datetime.newInstance(2024,2,29,12,30,0)));",
+    "compile": false,
+    "expected": "\"2024-02-29 12:30:00\"",
+    "floorExpected": "\"2024-02-29 12:30:00\""
+  },
+  {
+    "id": "R294",
+    "code": "r=JSON.serialize('stra\u00dfe'.toUpperCase());",
+    "compile": false,
+    "expected": "\"STRASSE\"",
+    "floorExpected": "\"STRASSE\""
+  },
+  {
+    "id": "K01",
+    "code": "Object r = 'abc'.charAt('1'); pq.out('K01',r);",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void charAt(String) from the type String",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void charAt(String) from the type String"
+  },
+  {
+    "id": "K02",
+    "code": "Object r = 'abc'.substring(); pq.out('K02',r);",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void substring() from the type String",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void substring() from the type String"
+  },
+  {
+    "id": "K03",
+    "code": "Object r = String.isBlank(1); pq.out('K03',r);",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void isBlank(Integer) from the type String",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void isBlank(Integer) from the type String"
+  },
+  {
+    "id": "K04",
+    "code": "Object r = 'abc'.containsValue('a'); pq.out('K04',r);",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void containsValue(String) from the type String",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void containsValue(String) from the type String"
+  },
+  {
+    "id": "K05",
+    "code": "Object r = String.fromCharArray(new List<String>{'a'}); pq.out('K05',r);",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fromCharArray(List<String>) from the type String",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void fromCharArray(List<String>) from the type String"
+  },
+  {
+    "id": "K06",
+    "code": "Object r = 'abc'.getChars(0); pq.out('K06',r);",
+    "compile": true,
+    "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getChars(Integer) from the type String",
+    "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getChars(Integer) from the type String"
+  }
+]

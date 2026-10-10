@@ -1,0 +1,3106 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "source": "Owned HTTP observations at API 62.0 and 67.0.",
+  "declarations": {
+    "A40HttpMock": "public class A40HttpMock implements HttpCalloutMock {\n public HttpResponse respond(HttpRequest req) {\n  HttpResponse res=new HttpResponse(); res.setStatusCode(207);\n  res.setStatus('Multi-Status'); res.setHeader('X-A40',req.getMethod());\n  res.setBody(String.valueOf(req.getEndpoint())+'|'+String.valueOf(req.getBody()));\n  return res;\n }\n}",
+    "A40ThrowMock": "public class A40ThrowMock implements HttpCalloutMock {\n public HttpResponse respond(HttpRequest req) { throw new CalloutException('A40 mock failure'); }\n}",
+    "A40NullMock": "public class A40NullMock implements HttpCalloutMock {\n public HttpResponse respond(HttpRequest req) { return null; }\n}",
+    "A40SoapMock": "public class A40SoapMock implements WebServiceMock {\n public void doInvoke(Object stub,Object req,Map<String,Object> res,String endpoint,\n  String action,String requestName,String responseNS,String responseName,String responseType) {\n  res.put('response_x',String.valueOf(req)+'|'+String.valueOf(action)+'|'+String.valueOf(responseType));\n }\n}",
+    "A40RestOracle": "@RestResource(urlMapping='/a40-oracle/*')\nglobal class A40RestOracle {\n    @HttpGet\n    global static String get() {\n        return RestContext.request.params.get('key');\n    }\n\n    @HttpPost\n    global static String post() {\n        Map<String, Object> body = (Map<String, Object>) JSON.deserializeUntyped(\n            RestContext.request.requestBody.toString());\n        RestContext.response.statusCode = 201;\n        return (String) body.get('value');\n    }\n\n    @HttpDelete\n    global static void remove() {\n        RestContext.response.statusCode = 204;\n        RestContext.response.responseBody = null;\n    }\n}\n"
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "code": "HttpRequest x=new HttpRequest(); r=x.getEndpoint();",
+      "expected": "null",
+      "compile": false,
+      "group": "request/default/getEndpoint()"
+    },
+    {
+      "id": "R002",
+      "code": "HttpRequest x=new HttpRequest(); r=x.getMethod();",
+      "expected": "null",
+      "compile": false,
+      "group": "request/default/getMethod()"
+    },
+    {
+      "id": "R003",
+      "code": "HttpRequest x=new HttpRequest(); r=x.getBody();",
+      "expected": "",
+      "compile": false,
+      "group": "request/default/getBody()"
+    },
+    {
+      "id": "R004",
+      "code": "HttpRequest x=new HttpRequest(); r=x.getBodyAsBlob();",
+      "expected": "null",
+      "compile": false,
+      "group": "request/default/getBodyAsBlob()"
+    },
+    {
+      "id": "R005",
+      "code": "HttpRequest x=new HttpRequest(); r=x.getCompressed();",
+      "expected": "false",
+      "compile": false,
+      "group": "request/default/getCompressed()"
+    },
+    {
+      "id": "R006",
+      "code": "HttpRequest x=new HttpRequest(); r=x.getHeaderKeys().size();",
+      "expected": "COMPILE_ERROR\tline 32: Method does not exist or incorrect signature: void getHeaderKeys() from the type System.HttpRequest",
+      "compile": false,
+      "group": "request/default/getHeaderKeys().size()",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void getHeaderKeys() from the type System.HttpRequest"
+    },
+    {
+      "id": "R007",
+      "code": "HttpRequest x=new HttpRequest(); r=x.getHeader('missing');",
+      "expected": "null",
+      "compile": false,
+      "group": "request/default/getHeader('missing')"
+    },
+    {
+      "id": "R008",
+      "code": "HttpRequest x=new HttpRequest(); r=x.toString();",
+      "expected": "System.HttpRequest[Endpoint=null, Method=null]",
+      "compile": false,
+      "group": "request/default/toString()"
+    },
+    {
+      "id": "R009",
+      "code": "HttpRequest x=new HttpRequest(); x.setEndpoint('https://example.invalid/a40'); r=x.getEndpoint();",
+      "expected": "https://example.invalid/a40",
+      "compile": false,
+      "group": "request/endpoint/roundtrip"
+    },
+    {
+      "id": "R010",
+      "code": "HttpRequest x=new HttpRequest(); x.setEndpoint('callout:A40MissingCredential/path'); r=x.getEndpoint();",
+      "expected": "callout:A40MissingCredential/path",
+      "compile": false,
+      "group": "request/endpoint/roundtrip"
+    },
+    {
+      "id": "R011",
+      "code": "HttpRequest x=new HttpRequest(); x.setEndpoint(''); r=x.getEndpoint();",
+      "expected": "",
+      "compile": false,
+      "group": "request/endpoint/roundtrip"
+    },
+    {
+      "id": "R012",
+      "code": "HttpRequest x=new HttpRequest(); x.setEndpoint('relative'); r=x.getEndpoint();",
+      "expected": "relative",
+      "compile": false,
+      "group": "request/endpoint/roundtrip"
+    },
+    {
+      "id": "R013",
+      "code": "HttpRequest x=new HttpRequest(); x.setEndpoint('ftp://example.invalid'); r=x.getEndpoint();",
+      "expected": "ftp://example.invalid",
+      "compile": false,
+      "group": "request/endpoint/roundtrip"
+    },
+    {
+      "id": "R014",
+      "code": "HttpRequest x=new HttpRequest(); x.setEndpoint(null); r=x.getEndpoint();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "request/endpoint/roundtrip"
+    },
+    {
+      "id": "R015",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod('GET'); r=x.getMethod();",
+      "expected": "GET",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R016",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod('post'); r=x.getMethod();",
+      "expected": "post",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R017",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod('pAtCh'); r=x.getMethod();",
+      "expected": "pAtCh",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R018",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod('DELETE'); r=x.getMethod();",
+      "expected": "DELETE",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R019",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod('HEAD'); r=x.getMethod();",
+      "expected": "HEAD",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R020",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod('OPTIONS'); r=x.getMethod();",
+      "expected": "OPTIONS",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R021",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod('PUT'); r=x.getMethod();",
+      "expected": "PUT",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R022",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod('TRACE'); r=x.getMethod();",
+      "expected": "TRACE",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R023",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod('CONNECT'); r=x.getMethod();",
+      "expected": "CONNECT",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R024",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod(''); r=x.getMethod();",
+      "expected": "",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R025",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod('invalid'); r=x.getMethod();",
+      "expected": "invalid",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R026",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod(' GET '); r=x.getMethod();",
+      "expected": " GET ",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R027",
+      "code": "HttpRequest x=new HttpRequest(); x.setMethod(null); r=x.getMethod();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "request/method/normal-boundary-null"
+    },
+    {
+      "id": "R028",
+      "code": "HttpRequest x=new HttpRequest(); x.setTimeout(-1); r='accepted';",
+      "expected": "EXC|System.CalloutException|Timeout must be between 1 and 120000",
+      "compile": false,
+      "group": "request/timeout/boundary"
+    },
+    {
+      "id": "R029",
+      "code": "HttpRequest x=new HttpRequest(); x.setTimeout(0); r='accepted';",
+      "expected": "EXC|System.CalloutException|Timeout must be between 1 and 120000",
+      "compile": false,
+      "group": "request/timeout/boundary"
+    },
+    {
+      "id": "R030",
+      "code": "HttpRequest x=new HttpRequest(); x.setTimeout(1); r='accepted';",
+      "expected": "accepted",
+      "compile": false,
+      "group": "request/timeout/boundary"
+    },
+    {
+      "id": "R031",
+      "code": "HttpRequest x=new HttpRequest(); x.setTimeout(9999); r='accepted';",
+      "expected": "accepted",
+      "compile": false,
+      "group": "request/timeout/boundary"
+    },
+    {
+      "id": "R032",
+      "code": "HttpRequest x=new HttpRequest(); x.setTimeout(10000); r='accepted';",
+      "expected": "accepted",
+      "compile": false,
+      "group": "request/timeout/boundary"
+    },
+    {
+      "id": "R033",
+      "code": "HttpRequest x=new HttpRequest(); x.setTimeout(120000); r='accepted';",
+      "expected": "accepted",
+      "compile": false,
+      "group": "request/timeout/boundary"
+    },
+    {
+      "id": "R034",
+      "code": "HttpRequest x=new HttpRequest(); x.setTimeout(120001); r='accepted';",
+      "expected": "EXC|System.CalloutException|Timeout must be between 1 and 120000",
+      "compile": false,
+      "group": "request/timeout/boundary"
+    },
+    {
+      "id": "R035",
+      "code": "HttpRequest x=new HttpRequest(); x.setTimeout(2147483647); r='accepted';",
+      "expected": "EXC|System.CalloutException|Timeout must be between 1 and 120000",
+      "compile": false,
+      "group": "request/timeout/boundary"
+    },
+    {
+      "id": "R036",
+      "code": "HttpRequest x=new HttpRequest(); x.setTimeout(null); r='accepted';",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "request/timeout/boundary"
+    },
+    {
+      "id": "R037",
+      "code": "HttpRequest x=new HttpRequest(); x.setCompressed(true); r=x.getCompressed();",
+      "expected": "true",
+      "compile": false,
+      "group": "request/compression"
+    },
+    {
+      "id": "R038",
+      "code": "HttpRequest x=new HttpRequest(); x.setCompressed(false); r=x.getCompressed();",
+      "expected": "false",
+      "compile": false,
+      "group": "request/compression"
+    },
+    {
+      "id": "R039",
+      "code": "HttpRequest x=new HttpRequest(); x.setCompressed(null); r=x.getCompressed();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "request/compression"
+    },
+    {
+      "id": "R040",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody(''); r=x.getBody();",
+      "expected": "",
+      "compile": false,
+      "group": "request/body/string"
+    },
+    {
+      "id": "R041",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody(''); Blob b=x.getBodyAsBlob(); r=b==null?null:EncodingUtil.convertToHex(b);",
+      "expected": "",
+      "compile": false,
+      "group": "request/body/blob-conversion"
+    },
+    {
+      "id": "R042",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody('ascii'); r=x.getBody();",
+      "expected": "ascii",
+      "compile": false,
+      "group": "request/body/string"
+    },
+    {
+      "id": "R043",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody('ascii'); Blob b=x.getBodyAsBlob(); r=b==null?null:EncodingUtil.convertToHex(b);",
+      "expected": "6173636969",
+      "compile": false,
+      "group": "request/body/blob-conversion"
+    },
+    {
+      "id": "R044",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody('café雪'); r=x.getBody();",
+      "expected": "café雪",
+      "compile": false,
+      "group": "request/body/string"
+    },
+    {
+      "id": "R045",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody('café雪'); Blob b=x.getBodyAsBlob(); r=b==null?null:EncodingUtil.convertToHex(b);",
+      "expected": "636166c3a9e99baa",
+      "compile": false,
+      "group": "request/body/blob-conversion"
+    },
+    {
+      "id": "R046",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody('a\\nb\\rc\\td'); r=x.getBody();",
+      "expected": "a\\nb\\rc\td",
+      "compile": false,
+      "group": "request/body/string"
+    },
+    {
+      "id": "R047",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody('a\\nb\\rc\\td'); Blob b=x.getBodyAsBlob(); r=b==null?null:EncodingUtil.convertToHex(b);",
+      "expected": "610a620d630964",
+      "compile": false,
+      "group": "request/body/blob-conversion"
+    },
+    {
+      "id": "R048",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody('{\"key\":true}'); r=x.getBody();",
+      "expected": "{\"key\":true}",
+      "compile": false,
+      "group": "request/body/string"
+    },
+    {
+      "id": "R049",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody('{\"key\":true}'); Blob b=x.getBodyAsBlob(); r=b==null?null:EncodingUtil.convertToHex(b);",
+      "expected": "7b226b6579223a747275657d",
+      "compile": false,
+      "group": "request/body/blob-conversion"
+    },
+    {
+      "id": "R050",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody(null); r=x.getBody();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "request/body/string"
+    },
+    {
+      "id": "R051",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody(null); Blob b=x.getBodyAsBlob(); r=b==null?null:EncodingUtil.convertToHex(b);",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "request/body/blob-conversion"
+    },
+    {
+      "id": "R052",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(Blob.valueOf('café雪')); r=x.getBody();",
+      "expected": "café雪",
+      "compile": false,
+      "group": "request/body/overwrite-invalid-utf8"
+    },
+    {
+      "id": "R053",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(EncodingUtil.convertFromHex('00ff')); r=EncodingUtil.convertToHex(x.getBodyAsBlob());",
+      "expected": "00ff",
+      "compile": false,
+      "group": "request/body/overwrite-invalid-utf8"
+    },
+    {
+      "id": "R054",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(EncodingUtil.convertFromHex('ff')); r=x.getBody();",
+      "expected": "�",
+      "compile": false,
+      "group": "request/body/overwrite-invalid-utf8"
+    },
+    {
+      "id": "R055",
+      "code": "HttpRequest x=new HttpRequest(); x.setBody('first'); x.setBodyAsBlob(Blob.valueOf('second')); r=x.getBody();",
+      "expected": "second",
+      "compile": false,
+      "group": "request/body/overwrite-invalid-utf8"
+    },
+    {
+      "id": "R056",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(Blob.valueOf('first')); x.setBody('second'); r=x.getBodyAsBlob().toString();",
+      "expected": "second",
+      "compile": false,
+      "group": "request/body/overwrite-invalid-utf8"
+    },
+    {
+      "id": "R057",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(null); r=x.getBodyAsBlob();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "request/body/overwrite-invalid-utf8"
+    },
+    {
+      "id": "R058",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X-A40','value'); r=x.getHeader('X-A40');",
+      "expected": "value",
+      "compile": false,
+      "group": "request/header/normal-null"
+    },
+    {
+      "id": "R059",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('x-a40',''); r=x.getHeader('x-a40');",
+      "expected": "",
+      "compile": false,
+      "group": "request/header/normal-null"
+    },
+    {
+      "id": "R060",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X-A40',null); r=x.getHeader('X-A40');",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "group": "request/header/normal-null"
+    },
+    {
+      "id": "R061",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('','value'); r=x.getHeader('');",
+      "expected": "EXC|System.CalloutException|Attempt to use invalid header in request",
+      "compile": false,
+      "group": "request/header/normal-null"
+    },
+    {
+      "id": "R062",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader(null,'value'); r=x.getHeader(null);",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "request/header/normal-null"
+    },
+    {
+      "id": "R063",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X A40','v'); r=x.getHeader('X A40');",
+      "expected": "EXC|System.CalloutException|Attempt to use invalid header in request",
+      "compile": false,
+      "group": "request/header/normal-null"
+    },
+    {
+      "id": "R064",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X-A40','first'); x.setHeader('x-a40','second'); r=x.getHeader('X-A40');",
+      "expected": "first",
+      "compile": false,
+      "group": "request/header-certificate-shape"
+    },
+    {
+      "id": "R065",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X-A40','first'); r=x.getHeader('x-a40');",
+      "expected": "null",
+      "compile": false,
+      "group": "request/header-certificate-shape"
+    },
+    {
+      "id": "R066",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X-A40','first'); x.setHeader('x-a40','second'); r=x.getHeaderKeys().size();",
+      "expected": "COMPILE_ERROR\tline 42: Method does not exist or incorrect signature: void getHeaderKeys() from the type System.HttpRequest",
+      "compile": false,
+      "group": "request/header-certificate-shape",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void getHeaderKeys() from the type System.HttpRequest"
+    },
+    {
+      "id": "R067",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('B','2'); x.setHeader('A','1'); List<String> k=x.getHeaderKeys(); k.sort(); r=String.join(k,',');",
+      "expected": "COMPILE_ERROR\tline 42: Method does not exist or incorrect signature: void getHeaderKeys() from the type System.HttpRequest",
+      "compile": false,
+      "group": "request/header-certificate-shape",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void getHeaderKeys() from the type System.HttpRequest"
+    },
+    {
+      "id": "R068",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('A','1'); List<String> k=x.getHeaderKeys(); k.clear(); r=x.getHeaderKeys().size();",
+      "expected": "COMPILE_ERROR\tline 42: Method does not exist or incorrect signature: void getHeaderKeys() from the type System.HttpRequest",
+      "compile": false,
+      "group": "request/header-certificate-shape",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void getHeaderKeys() from the type System.HttpRequest"
+    },
+    {
+      "id": "R069",
+      "code": "HttpRequest x=new HttpRequest(); r=x.getHeader(null);",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "request/header-certificate-shape"
+    },
+    {
+      "id": "R070",
+      "code": "HttpRequest x=new HttpRequest(); x.setClientCertificateName('A40MissingCertificate'); r='accepted';",
+      "expected": "EXC|System.CalloutException|Could not find client cert with dev name: 'A40MissingCertificate'",
+      "compile": false,
+      "group": "request/header-certificate-shape"
+    },
+    {
+      "id": "R071",
+      "code": "HttpRequest x=new HttpRequest(); x.setClientCertificateName(null); r='accepted';",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "request/header-certificate-shape"
+    },
+    {
+      "id": "R072",
+      "code": "HttpRequest x=new HttpRequest(); x.setEndpoint('https://example.invalid'); x.setMethod('GET'); r=x.toString();",
+      "expected": "System.HttpRequest[Endpoint=https://example.invalid, Method=GET]",
+      "compile": false,
+      "group": "request/header-certificate-shape"
+    },
+    {
+      "id": "R073",
+      "code": "HttpRequest x=null; r=x.getBody();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "request/null-receiver"
+    },
+    {
+      "id": "R074",
+      "code": "HttpRequest x=null; x.setBody('v'); r='accepted';",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "request/null-receiver"
+    },
+    {
+      "id": "R075",
+      "code": "HttpRequest x=null; r=x.getEndpoint();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "request/null-receiver"
+    },
+    {
+      "id": "R076",
+      "code": "HttpRequest x=null; r=x?.getBody();",
+      "expected": "null",
+      "compile": false,
+      "group": "request/null-receiver"
+    },
+    {
+      "id": "R077",
+      "code": "HttpResponse x=new HttpResponse(); r=x.getStatus();",
+      "expected": "null",
+      "compile": false,
+      "group": "response/default/getStatus()"
+    },
+    {
+      "id": "R078",
+      "code": "HttpResponse x=new HttpResponse(); r=x.getStatusCode();",
+      "expected": "0",
+      "compile": false,
+      "group": "response/default/getStatusCode()"
+    },
+    {
+      "id": "R079",
+      "code": "HttpResponse x=new HttpResponse(); r=x.getBody();",
+      "expected": "",
+      "compile": false,
+      "group": "response/default/getBody()"
+    },
+    {
+      "id": "R080",
+      "code": "HttpResponse x=new HttpResponse(); r=x.getBodyAsBlob();",
+      "expected": "null",
+      "compile": false,
+      "group": "response/default/getBodyAsBlob()"
+    },
+    {
+      "id": "R081",
+      "code": "HttpResponse x=new HttpResponse(); r=x.getHeaderKeys().size();",
+      "expected": "0",
+      "compile": false,
+      "group": "response/default/getHeaderKeys().size()"
+    },
+    {
+      "id": "R082",
+      "code": "HttpResponse x=new HttpResponse(); r=x.getHeader('missing');",
+      "expected": "null",
+      "compile": false,
+      "group": "response/default/getHeader('missing')"
+    },
+    {
+      "id": "R083",
+      "code": "HttpResponse x=new HttpResponse(); r=x.toString();",
+      "expected": "System.HttpResponse[Status=null, StatusCode=0]",
+      "compile": false,
+      "group": "response/default/toString()"
+    },
+    {
+      "id": "R084",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(-1); r=x.getStatusCode();",
+      "expected": "-1",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R085",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(0); r=x.getStatusCode();",
+      "expected": "0",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R086",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(99); r=x.getStatusCode();",
+      "expected": "99",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R087",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(100); r=x.getStatusCode();",
+      "expected": "100",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R088",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(200); r=x.getStatusCode();",
+      "expected": "200",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R089",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(204); r=x.getStatusCode();",
+      "expected": "204",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R090",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(299); r=x.getStatusCode();",
+      "expected": "299",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R091",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(400); r=x.getStatusCode();",
+      "expected": "400",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R092",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(500); r=x.getStatusCode();",
+      "expected": "500",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R093",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(599); r=x.getStatusCode();",
+      "expected": "599",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R094",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(600); r=x.getStatusCode();",
+      "expected": "600",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R095",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(999); r=x.getStatusCode();",
+      "expected": "999",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R096",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(null); r=x.getStatusCode();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "response/status-code/boundary"
+    },
+    {
+      "id": "R097",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatus('OK'); r=x.getStatus();",
+      "expected": "OK",
+      "compile": false,
+      "group": "response/status/string-null"
+    },
+    {
+      "id": "R098",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatus(''); r=x.getStatus();",
+      "expected": "",
+      "compile": false,
+      "group": "response/status/string-null"
+    },
+    {
+      "id": "R099",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatus('Custom Status'); r=x.getStatus();",
+      "expected": "Custom Status",
+      "compile": false,
+      "group": "response/status/string-null"
+    },
+    {
+      "id": "R100",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatus(null); r=x.getStatus();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "response/status/string-null"
+    },
+    {
+      "id": "R101",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatus('custom'); x.setStatusCode(204); r=x.getStatus();",
+      "expected": "custom",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R102",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatusCode(201); x.setStatus('custom'); r=x.getStatusCode();",
+      "expected": "201",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R103",
+      "code": "HttpResponse x=new HttpResponse(); x.setBody(''); r=x.getBodyAsBlob().size();",
+      "expected": "0",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R104",
+      "code": "HttpResponse x=new HttpResponse(); x.setBody('café雪'); r=EncodingUtil.convertToHex(x.getBodyAsBlob());",
+      "expected": "636166c3a9e99baa",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R105",
+      "code": "HttpResponse x=new HttpResponse(); x.setBody(null); r=x.getBody();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R106",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(null); r=x.getBodyAsBlob();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R107",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(Blob.valueOf('blob')); r=x.getBody();",
+      "expected": "blob",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R108",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(EncodingUtil.convertFromHex('ff')); r=x.getBody();",
+      "expected": "�",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R109",
+      "code": "HttpResponse x=new HttpResponse(); x.setBody('first'); x.setBodyAsBlob(Blob.valueOf('second')); r=x.getBody();",
+      "expected": "second",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R110",
+      "code": "HttpResponse x=new HttpResponse(); x.setBody('<root><v>one</v></root>'); r=x.getBodyDocument().getRootElement().getName();",
+      "expected": "root",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R111",
+      "code": "HttpResponse x=new HttpResponse(); x.setBody('invalid XML'); r=x.getBodyDocument().getRootElement().getName();",
+      "expected": "EXC|System.XmlException|only whitespace content allowed before start tag and not i (position: START_DOCUMENT seen i... @1:1) ",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R112",
+      "code": "HttpResponse x=new HttpResponse(); r=x.getBodyDocument();",
+      "expected": "EXC|System.XmlException|No body found in HTTP response",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R113",
+      "code": "HttpResponse x=new HttpResponse(); x.setHeader('X-A40','first'); r=x.getHeader('x-a40');",
+      "expected": "null",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R114",
+      "code": "HttpResponse x=new HttpResponse(); x.setHeader('X-A40','first'); x.setHeader('x-a40','second'); r=x.getHeader('X-A40');",
+      "expected": "first",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R115",
+      "code": "HttpResponse x=new HttpResponse(); x.setHeader('X-A40','first'); x.setHeader('x-a40','second'); r=x.getHeaderKeys().size();",
+      "expected": "2",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R116",
+      "code": "HttpResponse x=new HttpResponse(); x.setHeader('X-A40',null); r=x.getHeader('X-A40');",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R117",
+      "code": "HttpResponse x=new HttpResponse(); x.setHeader(null,'v'); r=x.getHeaderKeys().size();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R118",
+      "code": "HttpResponse x=new HttpResponse(); x.setHeader('A','1'); List<String> k=x.getHeaderKeys(); k.clear(); r=x.getHeaderKeys().size();",
+      "expected": "1",
+      "compile": false,
+      "group": "response/body-header-conversion"
+    },
+    {
+      "id": "R119",
+      "code": "HttpResponse x=null; r=x.getStatusCode();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "response/null-receiver"
+    },
+    {
+      "id": "R120",
+      "code": "HttpResponse x=null; r=x?.getBody();",
+      "expected": "null",
+      "compile": false,
+      "group": "response/null-safe"
+    },
+    {
+      "id": "R121",
+      "code": "HttpRequest q=new HttpRequest(); q.setMethod('GET'); q.setEndpoint('https://example.invalid/a40'); HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getStatusCode();",
+      "expected": "207",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R122",
+      "code": "HttpRequest q=new HttpRequest(); q.setMethod('GET'); q.setEndpoint('https://example.invalid/a40'); HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getBody();",
+      "expected": "https://example.invalid/a40|",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R123",
+      "code": "HttpRequest q=new HttpRequest(); q.setMethod('GET'); q.setEndpoint('https://example.invalid/a40'); HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getHeader('X-A40');",
+      "expected": "GET",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R124",
+      "code": "HttpRequest q=new HttpRequest(); q.setMethod('post'); q.setEndpoint('callout:A40MissingCredential/path'); q.setBody('payload'); HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getStatusCode();",
+      "expected": "207",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R125",
+      "code": "HttpRequest q=new HttpRequest(); q.setMethod('post'); q.setEndpoint('callout:A40MissingCredential/path'); q.setBody('payload'); HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getBody();",
+      "expected": "callout:A40MissingCredential/path|payload",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R126",
+      "code": "HttpRequest q=new HttpRequest(); q.setMethod('post'); q.setEndpoint('callout:A40MissingCredential/path'); q.setBody('payload'); HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getHeader('X-A40');",
+      "expected": "post",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R127",
+      "code": "HttpRequest q=new HttpRequest(); q.setBody(''); HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getStatusCode();",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R128",
+      "code": "HttpRequest q=new HttpRequest(); q.setBody(''); HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getBody();",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R129",
+      "code": "HttpRequest q=new HttpRequest(); q.setBody(''); HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getHeader('X-A40');",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R130",
+      "code": "HttpRequest q=new HttpRequest();  HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getStatusCode();",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R131",
+      "code": "HttpRequest q=new HttpRequest();  HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getBody();",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R132",
+      "code": "HttpRequest q=new HttpRequest();  HttpCalloutMock m=new A40HttpMock(); HttpResponse x=m.respond(q); r=x.getHeader('X-A40');",
+      "expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "compile": false,
+      "group": "mock/direct-interface-dispatch"
+    },
+    {
+      "id": "R133",
+      "code": "HttpCalloutMock m=new A40NullMock(); r=m.respond(new HttpRequest())==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "mock/registration-errors-callout"
+    },
+    {
+      "id": "R134",
+      "code": "HttpCalloutMock m=new A40ThrowMock(); r=m.respond(new HttpRequest());",
+      "expected": "EXC|System.CalloutException|A40 mock failure",
+      "compile": false,
+      "group": "mock/registration-errors-callout"
+    },
+    {
+      "id": "R135",
+      "code": "HttpCalloutMock m=new A40HttpMock(); r=m.respond(null);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "mock/registration-errors-callout"
+    },
+    {
+      "id": "R136",
+      "code": "Test.setMock(HttpCalloutMock.class,new A40HttpMock()); r='registered';",
+      "expected": "EXC|System.TypeException|Test.setMock() can only be called from test methods",
+      "compile": false,
+      "group": "mock/registration-errors-callout",
+      "namedOwner": "test runner",
+      "namedReason": "Native anonymous test-context restriction has no captured registered @IsTest counterpart."
+    },
+    {
+      "id": "R137",
+      "code": "Test.setMock(HttpCalloutMock.class,null); r='registered';",
+      "expected": "EXC|System.TypeException|Test.setMock() can only be called from test methods",
+      "compile": false,
+      "group": "mock/registration-errors-callout",
+      "namedOwner": "test runner",
+      "namedReason": "Native anonymous test-context restriction has no captured registered @IsTest counterpart."
+    },
+    {
+      "id": "R138",
+      "code": "Test.setMock(HttpCalloutMock.class,new A40SoapMock()); r='registered';",
+      "expected": "EXC|System.TypeException|Test.setMock() can only be called from test methods",
+      "compile": false,
+      "group": "mock/registration-errors-callout",
+      "namedOwner": "test runner",
+      "namedReason": "Native anonymous test-context restriction has no captured registered @IsTest counterpart."
+    },
+    {
+      "id": "R139",
+      "code": "Test.setMock(HttpCalloutMock.class,new A40HttpMock()); HttpRequest q=new HttpRequest(); q.setEndpoint('https://example.invalid/a40'); q.setMethod('GET'); r=new Http().send(q).getStatusCode();",
+      "expected": "EXC|System.TypeException|Test.setMock() can only be called from test methods",
+      "compile": false,
+      "group": "mock/registration-errors-callout",
+      "namedOwner": "test runner",
+      "namedReason": "Native anonymous test-context restriction has no captured registered @IsTest counterpart."
+    },
+    {
+      "id": "R140",
+      "code": "r=new Http().send(null);",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "group": "mock/registration-errors-callout"
+    },
+    {
+      "id": "R141",
+      "code": "r=new Http().send(new HttpRequest());",
+      "expected": "EXC|System.CalloutException|Endpoint can not be null",
+      "compile": false,
+      "group": "mock/registration-errors-callout"
+    },
+    {
+      "id": "R142",
+      "code": "HttpRequest q=new HttpRequest(); q.setMethod('GET'); q.setEndpoint('relative'); r=new Http().send(q);",
+      "expected": "EXC|System.CalloutException|no protocol: relative",
+      "compile": false,
+      "group": "mock/registration-errors-callout"
+    },
+    {
+      "id": "R143",
+      "code": "HttpRequest q=new HttpRequest(); q.setMethod('GET'); q.setEndpoint('callout:A40MissingCredential'); r=new Http().send(q);",
+      "expected": "EXC|System.CalloutException|The callout couldn't access the endpoint. You might not have the required permissions, or the named credential \"A40MissingCredential\" might not exist.",
+      "compile": false,
+      "group": "mock/registration-errors-callout"
+    },
+    {
+      "id": "R144",
+      "code": "CalloutException e=new CalloutException('A40 synthetic'); r=e.getTypeName()+'|'+e.getMessage();",
+      "expected": "System.CalloutException|A40 synthetic",
+      "compile": false,
+      "group": "mock/registration-errors-callout"
+    },
+    {
+      "id": "R145",
+      "code": "try { throw new CalloutException('A40 synthetic'); } catch(CalloutException e) { r=e.getTypeName()+'|'+e.getMessage(); }",
+      "expected": "System.CalloutException|A40 synthetic",
+      "compile": false,
+      "group": "mock/registration-errors-callout"
+    },
+    {
+      "id": "R146",
+      "code": "RestRequest x=new RestRequest(); r=x.requestURI;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/request/default"
+    },
+    {
+      "id": "R147",
+      "code": "RestRequest x=new RestRequest(); r=x.resourcePath;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/request/default"
+    },
+    {
+      "id": "R148",
+      "code": "RestRequest x=new RestRequest(); r=x.httpMethod;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/request/default"
+    },
+    {
+      "id": "R149",
+      "code": "RestRequest x=new RestRequest(); r=x.remoteAddress;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/request/default"
+    },
+    {
+      "id": "R150",
+      "code": "RestRequest x=new RestRequest(); r=x.requestBody;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/request/default"
+    },
+    {
+      "id": "R151",
+      "code": "RestRequest x=new RestRequest(); r=x.headers.size();",
+      "expected": "0",
+      "compile": false,
+      "group": "rest/request/default"
+    },
+    {
+      "id": "R152",
+      "code": "RestRequest x=new RestRequest(); r=x.params.size();",
+      "expected": "0",
+      "compile": false,
+      "group": "rest/request/default"
+    },
+    {
+      "id": "R153",
+      "code": "RestRequest x=new RestRequest(); x.requestURI='/services/apexrest/a40-oracle/one?x=1'; r=x.requestURI;",
+      "expected": "/services/apexrest/a40-oracle/one?x=1",
+      "compile": false,
+      "group": "rest/request/property"
+    },
+    {
+      "id": "R154",
+      "code": "RestRequest x=new RestRequest(); x.requestURI=null; r=x.requestURI;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/request/property"
+    },
+    {
+      "id": "R155",
+      "code": "RestRequest x=new RestRequest(); x.resourcePath='/a40-oracle/one'; r=x.resourcePath;",
+      "expected": "/a40-oracle/one",
+      "compile": false,
+      "group": "rest/request/property"
+    },
+    {
+      "id": "R156",
+      "code": "RestRequest x=new RestRequest(); x.resourcePath=null; r=x.resourcePath;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/request/property"
+    },
+    {
+      "id": "R157",
+      "code": "RestRequest x=new RestRequest(); x.httpMethod='patch'; r=x.httpMethod;",
+      "expected": "patch",
+      "compile": false,
+      "group": "rest/request/property"
+    },
+    {
+      "id": "R158",
+      "code": "RestRequest x=new RestRequest(); x.httpMethod=null; r=x.httpMethod;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/request/property"
+    },
+    {
+      "id": "R159",
+      "code": "RestRequest x=new RestRequest(); x.remoteAddress='127.0.0.1'; r=x.remoteAddress;",
+      "expected": "127.0.0.1",
+      "compile": false,
+      "group": "rest/request/property"
+    },
+    {
+      "id": "R160",
+      "code": "RestRequest x=new RestRequest(); x.remoteAddress=null; r=x.remoteAddress;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/request/property"
+    },
+    {
+      "id": "R161",
+      "code": "RestRequest x=new RestRequest(); x.addHeader('X-A40','v'); r=x.headers.get('X-A40');",
+      "expected": "v",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R162",
+      "code": "RestRequest x=new RestRequest(); x.addHeader('X-A40','v'); r=x.headers.get('x-a40');",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R163",
+      "code": "RestRequest x=new RestRequest(); x.addHeader('X-A40','first'); x.addHeader('x-a40','second'); r=x.headers.size();",
+      "expected": "2",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R164",
+      "code": "RestRequest x=new RestRequest(); x.addHeader('X-A40',null); r=x.headers.containsKey('X-A40');",
+      "expected": "true",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R165",
+      "code": "RestRequest x=new RestRequest(); x.addHeader(null,'v'); r=x.headers.size();",
+      "expected": "EXC|System.InvalidHeaderException|Header name \"null\" is not allowed.",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R166",
+      "code": "RestRequest x=new RestRequest(); x.addParameter('a','first'); x.addParameter('a','second'); r=x.params.get('a');",
+      "expected": "second",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R167",
+      "code": "RestRequest x=new RestRequest(); x.addParameter('a','v'); r=x.params.get('A');",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R168",
+      "code": "RestRequest x=new RestRequest(); x.addParameter('a',null); r=x.params.containsKey('a');",
+      "expected": "true",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R169",
+      "code": "RestRequest x=new RestRequest(); x.addParameter(null,'v'); r=x.params.size();",
+      "expected": "1",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R170",
+      "code": "RestRequest x=new RestRequest(); x.requestURI='/services/apexrest/a40-oracle/?a=1'; r=x.params.size();",
+      "expected": "0",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R171",
+      "code": "RestRequest x=new RestRequest(); x.requestBody=Blob.valueOf('café雪'); r=x.requestBody.toString();",
+      "expected": "café雪",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R172",
+      "code": "RestRequest x=new RestRequest(); x.requestBody=EncodingUtil.convertFromHex('ff'); r=x.requestBody.toString();",
+      "expected": "EXC|System.StringException|BLOB is not a valid UTF-8 string",
+      "compile": false,
+      "group": "rest/request/header-parameter-body"
+    },
+    {
+      "id": "R173",
+      "code": "RestResponse x=new RestResponse(); r=x.statusCode;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/response/default"
+    },
+    {
+      "id": "R174",
+      "code": "RestResponse x=new RestResponse(); r=x.responseBody;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/response/default"
+    },
+    {
+      "id": "R175",
+      "code": "RestResponse x=new RestResponse(); r=x.headers.size();",
+      "expected": "0",
+      "compile": false,
+      "group": "rest/response/default"
+    },
+    {
+      "id": "R176",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=-1; r=x.statusCode;",
+      "expected": "-1",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R177",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=0; r=x.statusCode;",
+      "expected": "0",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R178",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=100; r=x.statusCode;",
+      "expected": "100",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R179",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=200; r=x.statusCode;",
+      "expected": "200",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R180",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=201; r=x.statusCode;",
+      "expected": "201",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R181",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=204; r=x.statusCode;",
+      "expected": "204",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R182",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=299; r=x.statusCode;",
+      "expected": "299",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R183",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=400; r=x.statusCode;",
+      "expected": "400",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R184",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=500; r=x.statusCode;",
+      "expected": "500",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R185",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=599; r=x.statusCode;",
+      "expected": "599",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R186",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=600; r=x.statusCode;",
+      "expected": "600",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R187",
+      "code": "RestResponse x=new RestResponse(); x.statusCode=null; r=x.statusCode;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/response/status"
+    },
+    {
+      "id": "R188",
+      "code": "RestResponse x=new RestResponse(); x.addHeader('Location','/a40'); r=x.headers.get('Location');",
+      "expected": "/a40",
+      "compile": false,
+      "group": "rest/response/header-body"
+    },
+    {
+      "id": "R189",
+      "code": "RestResponse x=new RestResponse(); x.addHeader('X-A40','first'); x.addHeader('x-a40','second'); r=x.headers.size();",
+      "expected": "2",
+      "compile": false,
+      "group": "rest/response/header-body"
+    },
+    {
+      "id": "R190",
+      "code": "RestResponse x=new RestResponse(); x.addHeader(null,'v'); r=x.headers.size();",
+      "expected": "EXC|System.InvalidHeaderException|Header name \"null\" is not allowed.",
+      "compile": false,
+      "group": "rest/response/header-body"
+    },
+    {
+      "id": "R191",
+      "code": "RestResponse x=new RestResponse(); x.responseBody=Blob.valueOf('created'); r=x.responseBody.toString();",
+      "expected": "created",
+      "compile": false,
+      "group": "rest/response/header-body"
+    },
+    {
+      "id": "R192",
+      "code": "RestResponse x=new RestResponse(); x.responseBody=null; r=x.responseBody;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/response/header-body"
+    },
+    {
+      "id": "R193",
+      "code": "RestContext.request=null; r=RestContext.request;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/context-and-annotated-dispatch"
+    },
+    {
+      "id": "R194",
+      "code": "RestContext.response=null; r=RestContext.response;",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/context-and-annotated-dispatch"
+    },
+    {
+      "id": "R195",
+      "code": "RestRequest x=new RestRequest(); x.requestURI='/a40'; RestContext.request=x; r=RestContext.request===x;",
+      "expected": "true",
+      "compile": false,
+      "group": "rest/context-and-annotated-dispatch"
+    },
+    {
+      "id": "R196",
+      "code": "RestResponse x=new RestResponse(); RestContext.response=x; r=RestContext.response===x;",
+      "expected": "true",
+      "compile": false,
+      "group": "rest/context-and-annotated-dispatch"
+    },
+    {
+      "id": "R197",
+      "code": "RestContext.request=new RestRequest(); RestContext.response=new RestResponse(); RestContext.request.addParameter('key','value'); r=A40RestOracle.get();",
+      "expected": "value",
+      "compile": false,
+      "group": "rest/context-and-annotated-dispatch"
+    },
+    {
+      "id": "R198",
+      "code": "RestContext.request=new RestRequest(); RestContext.response=new RestResponse(); RestContext.request.requestBody=Blob.valueOf('{\"value\":\"created\"}'); r=A40RestOracle.post();",
+      "expected": "created",
+      "compile": false,
+      "group": "rest/context-and-annotated-dispatch"
+    },
+    {
+      "id": "R199",
+      "code": "RestContext.request=new RestRequest(); RestContext.response=new RestResponse(); RestContext.request.requestBody=Blob.valueOf('bad json'); r=A40RestOracle.post();",
+      "expected": "EXC|System.JSONException|Unexpected character ('b' (code 98)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at input location [1,2]",
+      "compile": false,
+      "group": "rest/context-and-annotated-dispatch"
+    },
+    {
+      "id": "R200",
+      "code": "RestContext.request=new RestRequest(); RestContext.response=new RestResponse(); RestContext.request.requestBody=null; r=A40RestOracle.post();",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "group": "rest/context-and-annotated-dispatch"
+    },
+    {
+      "id": "R201",
+      "code": "RestContext.request=null; RestContext.response=new RestResponse(); r=A40RestOracle.get();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "rest/context-and-annotated-dispatch"
+    },
+    {
+      "id": "R202",
+      "code": "RestContext.request=new RestRequest(); RestContext.response=new RestResponse(); A40RestOracle.remove(); r=RestContext.response.statusCode;",
+      "expected": "204",
+      "compile": false,
+      "group": "rest/context-and-annotated-dispatch"
+    },
+    {
+      "id": "R203",
+      "code": "Map<String,Object> res=new Map<String,Object>(); WebServiceMock m=new A40SoapMock(); m.doInvoke(null,'request',res,null,'action',null,null,null,'Response'); r=res.get('response_x');",
+      "expected": "request|action|Response",
+      "compile": false,
+      "group": "soap/direct-mock-response"
+    },
+    {
+      "id": "R204",
+      "code": "Map<String,Object> res=new Map<String,Object>(); WebServiceMock m=new A40SoapMock(); m.doInvoke(null,null,res,null,null,null,null,null,null); r=res.get('response_x');",
+      "expected": "null|null|null",
+      "compile": false,
+      "group": "soap/direct-mock-response"
+    },
+    {
+      "id": "R205",
+      "code": "Map<String,Object> res=new Map<String,Object>(); WebServiceMock m=new A40SoapMock(); m.doInvoke(null,'',res,null,'',null,null,null, ''); r=res.get('response_x');",
+      "expected": "||",
+      "compile": false,
+      "group": "soap/direct-mock-response"
+    },
+    {
+      "id": "R206",
+      "code": "Map<String,Object> res=new Map<String,Object>{'response_x'=>'old','keep'=>'v'}; new A40SoapMock().doInvoke(null,'req',res,null,'act',null,null,null,'type'); r=res.size()+'|'+res.get('response_x');",
+      "expected": "2|req|act|type",
+      "compile": false,
+      "group": "soap/direct-mock-map-overwrite"
+    },
+    {
+      "id": "R207",
+      "code": "new A40SoapMock().doInvoke(null,null,null,null,null,null,null,null,null); r='accepted';",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "soap/direct-mock-null-map"
+    },
+    {
+      "id": "R208",
+      "code": "Test.setMock(WebServiceMock.class,new A40SoapMock()); r='registered';",
+      "expected": "EXC|System.TypeException|Test.setMock() can only be called from test methods",
+      "compile": false,
+      "group": "soap/registration-and-options-errors",
+      "namedOwner": "test runner",
+      "namedReason": "Native anonymous test-context restriction has no captured registered @IsTest counterpart."
+    },
+    {
+      "id": "R209",
+      "code": "Test.setMock(WebServiceMock.class,null); r='registered';",
+      "expected": "EXC|System.TypeException|Test.setMock() can only be called from test methods",
+      "compile": false,
+      "group": "soap/registration-and-options-errors",
+      "namedOwner": "test runner",
+      "namedReason": "Native anonymous test-context restriction has no captured registered @IsTest counterpart."
+    },
+    {
+      "id": "R210",
+      "code": "WebServiceCallout.invoke(null,null,null,null); r='accepted';",
+      "expected": "EXC|System.NullPointerException|Argument 3 cannot be null",
+      "compile": false,
+      "group": "soap/registration-and-options-errors"
+    },
+    {
+      "id": "R211",
+      "code": "WebServiceCallout.invoke(null,null,new Map<String,Object>(),new String[]{}); r='accepted';",
+      "expected": "EXC|System.TypeException|Invalid info with length 0",
+      "compile": false,
+      "group": "soap/registration-and-options-errors"
+    },
+    {
+      "id": "R212",
+      "code": "WebServiceCallout.invoke(null,null,new Map<String,Object>(),new String[]{'relative'}); r='accepted';",
+      "expected": "EXC|System.TypeException|Invalid info with length 1",
+      "compile": false,
+      "group": "soap/registration-and-options-errors"
+    },
+    {
+      "id": "R213",
+      "code": "WebServiceCallout.invoke(null,null,new Map<String,Object>(),new String[]{'relative','a','n','q','n','r','T'}); r='accepted';",
+      "expected": "EXC|System.CalloutException|Web service callout failed: Callout stub not found: null",
+      "compile": false,
+      "group": "soap/registration-and-options-errors",
+      "namedOwner": "test runner",
+      "namedReason": "The anonymous missing-stub guard has no captured unmocked @IsTest counterpart; preserve the existing test-context restriction."
+    },
+    {
+      "id": "R214",
+      "code": "Continuation x=new Continuation(-1); r=x!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "continuation/constructor-boundary"
+    },
+    {
+      "id": "R215",
+      "code": "Continuation x=new Continuation(0); r=x!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "continuation/constructor-boundary"
+    },
+    {
+      "id": "R216",
+      "code": "Continuation x=new Continuation(1); r=x!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "continuation/constructor-boundary"
+    },
+    {
+      "id": "R217",
+      "code": "Continuation x=new Continuation(60); r=x!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "continuation/constructor-boundary"
+    },
+    {
+      "id": "R218",
+      "code": "Continuation x=new Continuation(120); r=x!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "continuation/constructor-boundary"
+    },
+    {
+      "id": "R219",
+      "code": "Continuation x=new Continuation(121); r=x!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "continuation/constructor-boundary"
+    },
+    {
+      "id": "R220",
+      "code": "Continuation x=new Continuation(2147483647); r=x!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "continuation/constructor-boundary"
+    },
+    {
+      "id": "R221",
+      "code": "Continuation x=new Continuation(null); r=x!=null;",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "continuation/constructor-boundary"
+    },
+    {
+      "id": "R222",
+      "code": "Continuation x=new Continuation(60); r=x.state;",
+      "expected": "COMPILE_ERROR\tline 48: Variable is not visible: System.Continuation.state",
+      "compile": false,
+      "group": "continuation/state-labels-boundary",
+      "nativeDiagnostic": "Variable is not visible: System.Continuation.state"
+    },
+    {
+      "id": "R223",
+      "code": "Continuation x=new Continuation(60); x.state='payload'; r=x.state;",
+      "expected": "COMPILE_ERROR\tline 48: Variable is not visible: System.Continuation.state",
+      "compile": false,
+      "group": "continuation/state-labels-boundary",
+      "nativeDiagnostic": "Variable is not visible: System.Continuation.state"
+    },
+    {
+      "id": "R224",
+      "code": "Continuation x=new Continuation(60); x.state=new Map<String,Object>{'value'=>3}; r=((Map<String,Object>)x.state).get('value');",
+      "expected": "COMPILE_ERROR\tline 48: Variable is not visible: System.Continuation.state",
+      "compile": false,
+      "group": "continuation/state-labels-boundary",
+      "nativeDiagnostic": "Variable is not visible: System.Continuation.state"
+    },
+    {
+      "id": "R225",
+      "code": "Continuation x=new Continuation(60); x.continuationMethod='finish'; r=x.continuationMethod;",
+      "expected": "finish",
+      "compile": false,
+      "group": "continuation/state-labels-boundary"
+    },
+    {
+      "id": "R226",
+      "code": "Continuation x=new Continuation(60); x.continuationMethod=null; r=x.continuationMethod;",
+      "expected": "null",
+      "compile": false,
+      "group": "continuation/state-labels-boundary"
+    },
+    {
+      "id": "R227",
+      "code": "Continuation x=new Continuation(60); r=x.addHttpRequest(null)!=null;",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "group": "continuation/state-labels-boundary"
+    },
+    {
+      "id": "R228",
+      "code": "Continuation x=new Continuation(60); r=x.addHttpRequest(new HttpRequest())!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "continuation/state-labels-boundary"
+    },
+    {
+      "id": "R229",
+      "code": "Continuation x=new Continuation(60); HttpRequest q=new HttpRequest(); q.setMethod('GET'); q.setEndpoint('relative'); r=x.addHttpRequest(q)!=null;",
+      "expected": "true",
+      "compile": false,
+      "group": "continuation/state-labels-boundary"
+    },
+    {
+      "id": "R230",
+      "code": "Continuation x=new Continuation(60); HttpRequest q=new HttpRequest(); q.setMethod('GET'); q.setEndpoint('callout:A40MissingCredential'); String a=x.addHttpRequest(q); String b=x.addHttpRequest(q); r=a!=b;",
+      "expected": "true",
+      "compile": false,
+      "group": "continuation/state-labels-boundary"
+    },
+    {
+      "id": "R231",
+      "code": "Continuation x=new Continuation(60); for(Integer i=0;i<4;i++){HttpRequest q=new HttpRequest(); q.setMethod('GET'); q.setEndpoint('relative'); x.addHttpRequest(q);} r='accepted';",
+      "expected": "accepted",
+      "compile": false,
+      "group": "continuation/state-labels-boundary"
+    },
+    {
+      "id": "R232",
+      "code": "Continuation x=new Continuation(60); r=Continuation.getResponse('A40MissingLabel');",
+      "expected": "null",
+      "compile": false,
+      "group": "continuation/state-labels-boundary"
+    },
+    {
+      "id": "R233",
+      "code": "Continuation x=new Continuation(60); r=Continuation.getResponse(null);",
+      "expected": "null",
+      "compile": false,
+      "group": "continuation/state-labels-boundary"
+    },
+    {
+      "id": "R234",
+      "code": "CommerceExtension.ResolutionException x=null; r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "boundary/commerce/null-cast"
+    },
+    {
+      "id": "R235",
+      "code": "commercepayments.PaymentsHttp x=null; r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "boundary/payments/null-cast"
+    },
+    {
+      "id": "R236",
+      "code": "commercetax.TaxEngineContext x=null; r=x==null;",
+      "expected": "COMPILE_ERROR\tline 59: Type is not visible: commercetax.TaxEngineContext",
+      "compile": false,
+      "group": "boundary/tax/null-cast",
+      "nativeDiagnostic": "Type is not visible: commercetax.TaxEngineContext"
+    },
+    {
+      "id": "R237",
+      "code": "DataSource.Connection x=null; r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "boundary/datasource-connectors/null-cast"
+    },
+    {
+      "id": "R238",
+      "code": "functions.Function x=null; r=x==null;",
+      "expected": "COMPILE_ERROR\tline 60: Type is not visible: functions.Function",
+      "compile": false,
+      "group": "boundary/functions/null-cast",
+      "nativeDiagnostic": "Type is not visible: functions.Function"
+    },
+    {
+      "id": "R239",
+      "code": "System.ExternalServiceTest x=null; r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "boundary/external-services/null-cast"
+    },
+    {
+      "id": "R240",
+      "code": "Auth.JWTBearerTokenExchange x=null; r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "boundary/auth-token-exchange/null-cast"
+    },
+    {
+      "id": "R241",
+      "code": "Auth.OauthToken x=null; r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "boundary/auth-oauth/null-cast"
+    },
+    {
+      "id": "R242",
+      "code": "Auth.RegistrationHandler x=null; r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "boundary/auth-registration/null-cast"
+    },
+    {
+      "id": "R243",
+      "code": "r=new commercepayments.PaymentsHttp().send(new HttpRequest());",
+      "expected": "EXC|System.CalloutException|Callout without PaymentsContext is not Allowed",
+      "compile": false,
+      "group": "boundary/payments/runtime"
+    },
+    {
+      "id": "R244",
+      "code": "commercetax.TaxEngineContext x=null; r=x.getRequest();",
+      "expected": "COMPILE_ERROR\tline 65: Type is not visible: commercetax.TaxEngineContext",
+      "compile": false,
+      "group": "boundary/tax/runtime",
+      "nativeDiagnostic": "Type is not visible: commercetax.TaxEngineContext"
+    },
+    {
+      "id": "R245",
+      "code": "DataSource.Connection x=null; r=x.sync();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "boundary/datasource-connectors/runtime"
+    },
+    {
+      "id": "R246",
+      "code": "r=functions.Function.get('A40MissingProject.noSuchFunction')!=null;",
+      "expected": "COMPILE_ERROR\tline 66: Type is not visible: functions.Function",
+      "compile": false,
+      "group": "boundary/functions/runtime",
+      "nativeDiagnostic": "Type is not visible: functions.Function"
+    },
+    {
+      "id": "R247",
+      "code": "r=Test.getExternalService().sendCallback(new HttpRequest());",
+      "expected": "EXC|System.TypeException|Test.getExternalService() can only be called from test methods",
+      "compile": false,
+      "group": "boundary/external-services/runtime",
+      "namedOwner": "test runner",
+      "namedReason": "Native anonymous test-context restriction has no captured registered @IsTest counterpart."
+    },
+    {
+      "id": "R248",
+      "code": "Auth.JWTBearerTokenExchange x=null; r=x.getAccessToken();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "boundary/auth-token-exchange/runtime"
+    },
+    {
+      "id": "R249",
+      "code": "Auth.OauthToken.revokeToken(null,null); r='accepted';",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "boundary/auth-oauth/runtime"
+    },
+    {
+      "id": "R250",
+      "code": "Auth.RegistrationHandler x=null; r=x.createUser(null,null);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "boundary/auth-registration/runtime"
+    },
+    {
+      "id": "R252",
+      "code": "r=new commercepayments.PaymentGatewayContext(null,'A40')!=null;",
+      "expected": "COMPILE_ERROR\tline 28: Constructor not defined: [commercepayments.PaymentGatewayContext].<Constructor>(NULL, String)",
+      "compile": false,
+      "group": "boundary/payments/context-constructor/runtime",
+      "nativeDiagnostic": "Constructor not defined: [commercepayments.PaymentGatewayContext].<Constructor>(NULL, String)"
+    },
+    {
+      "id": "R253",
+      "code": "r=new commercetax.TaxEngineContext(null,null,'callout:A40MissingCredential')!=null;",
+      "expected": "COMPILE_ERROR\tline 28: Type is not visible: commercetax.TaxEngineContext",
+      "compile": false,
+      "group": "boundary/tax/context-constructor/runtime",
+      "nativeDiagnostic": "Type is not visible: commercetax.TaxEngineContext"
+    },
+    {
+      "id": "R254",
+      "code": "Auth.JWTBearerTokenExchange x=new Auth.JWTBearerTokenExchange(); x.setTokenEndpoint('relative'); r=x.getAccessToken();",
+      "expected": "EXC|System.NullPointerException|The token endpoint, JWS, and grant type cannot be null",
+      "compile": false,
+      "group": "boundary/auth-token-exchange/invalid-endpoint/runtime"
+    },
+    {
+      "id": "C001",
+      "code": "Object r; r=CommerceExtension.ResolutionException.class.getName(); pq.out('C001',r);",
+      "expected": "CommerceExtension.ResolutionException",
+      "compile": true,
+      "group": "boundary/commerce/type"
+    },
+    {
+      "id": "C002",
+      "code": "Object r; if(false){throw new CommerceExtension.ResolutionException('A40 boundary');} r='shape'; pq.out('C002',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "boundary/commerce/operation-shape"
+    },
+    {
+      "id": "C003",
+      "code": "Object r; r=commercepayments.PaymentsHttp.class.getName(); pq.out('C003',r);",
+      "expected": "commercepayments.PaymentsHttp",
+      "compile": true,
+      "group": "boundary/payments/type"
+    },
+    {
+      "id": "C004",
+      "code": "Object r; if(false){commercepayments.PaymentsHttp p=new commercepayments.PaymentsHttp(); p.send(new HttpRequest());} r='shape'; pq.out('C004',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "boundary/payments/operation-shape"
+    },
+    {
+      "id": "C005",
+      "code": "Object r; r=commercetax.TaxEngineContext.class.getName(); pq.out('C005',r);",
+      "expected": "COMPILE_ERROR\tline 6: Type is not visible: commercetax.TaxEngineContext",
+      "compile": true,
+      "group": "boundary/tax/type",
+      "nativeDiagnostic": "Type is not visible: commercetax.TaxEngineContext"
+    },
+    {
+      "id": "C006",
+      "code": "Object r; if(false){commercetax.TaxEngineContext x=null; x.getRequest();} r='shape'; pq.out('C006',r);",
+      "expected": "COMPILE_ERROR\tline 6: Type is not visible: commercetax.TaxEngineContext",
+      "compile": true,
+      "group": "boundary/tax/operation-shape",
+      "nativeDiagnostic": "Type is not visible: commercetax.TaxEngineContext"
+    },
+    {
+      "id": "C007",
+      "code": "Object r; r=DataSource.Connection.class.getName(); pq.out('C007',r);",
+      "expected": "DataSource.Connection",
+      "compile": true,
+      "group": "boundary/datasource-connectors/type"
+    },
+    {
+      "id": "C008",
+      "code": "Object r; if(false){DataSource.Connection x=null; x.sync();} r='shape'; pq.out('C008',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "boundary/datasource-connectors/operation-shape"
+    },
+    {
+      "id": "C009",
+      "code": "Object r; r=functions.Function.class.getName(); pq.out('C009',r);",
+      "expected": "COMPILE_ERROR\tline 6: Type is not visible: functions.Function",
+      "compile": true,
+      "group": "boundary/functions/type",
+      "nativeDiagnostic": "Type is not visible: functions.Function"
+    },
+    {
+      "id": "C010",
+      "code": "Object r; if(false){functions.Function x=functions.Function.get('A40MissingProject.noSuchFunction'); x.invoke('{}');} r='shape'; pq.out('C010',r);",
+      "expected": "COMPILE_ERROR\tline 6: Type is not visible: functions.Function",
+      "compile": true,
+      "group": "boundary/functions/operation-shape",
+      "nativeDiagnostic": "Type is not visible: functions.Function"
+    },
+    {
+      "id": "C011",
+      "code": "Object r; r=System.ExternalServiceTest.class.getName(); pq.out('C011',r);",
+      "expected": "System.ExternalServiceTest",
+      "compile": true,
+      "group": "boundary/external-services/type"
+    },
+    {
+      "id": "C012",
+      "code": "Object r; if(false){Test.getExternalService().sendCallback(new HttpRequest());} r='shape'; pq.out('C012',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "boundary/external-services/operation-shape"
+    },
+    {
+      "id": "C013",
+      "code": "Object r; r=Auth.JWTBearerTokenExchange.class.getName(); pq.out('C013',r);",
+      "expected": "Auth.JWTBearerTokenExchange",
+      "compile": true,
+      "group": "boundary/auth-token-exchange/type"
+    },
+    {
+      "id": "C014",
+      "code": "Object r; if(false){Auth.JWTBearerTokenExchange x=null; x.getAccessToken();} r='shape'; pq.out('C014',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "boundary/auth-token-exchange/operation-shape"
+    },
+    {
+      "id": "C015",
+      "code": "Object r; r=Auth.OauthToken.class.getName(); pq.out('C015',r);",
+      "expected": "Auth.OauthToken",
+      "compile": true,
+      "group": "boundary/auth-oauth/type"
+    },
+    {
+      "id": "C016",
+      "code": "Object r; if(false){Auth.OauthToken.revokeToken(null,null);} r='shape'; pq.out('C016',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "boundary/auth-oauth/operation-shape"
+    },
+    {
+      "id": "C017",
+      "code": "Object r; r=Auth.RegistrationHandler.class.getName(); pq.out('C017',r);",
+      "expected": "Auth.RegistrationHandler",
+      "compile": true,
+      "group": "boundary/auth-registration/type"
+    },
+    {
+      "id": "C018",
+      "code": "Object r; if(false){Auth.RegistrationHandler x=null; x.createUser(null,null);} r='shape'; pq.out('C018',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "boundary/auth-registration/operation-shape"
+    },
+    {
+      "id": "C019",
+      "code": "Object r; r=new HttpRequest().getTimeout(); pq.out('C019',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getTimeout() from the type System.HttpRequest",
+      "compile": true,
+      "group": "compile/request/timeout-getter",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void getTimeout() from the type System.HttpRequest"
+    },
+    {
+      "id": "C020",
+      "code": "Object r; new HttpRequest().setTimeout('1'); r='accepted'; pq.out('C020',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setTimeout(String) from the type System.HttpRequest",
+      "compile": true,
+      "group": "compile/request/timeout-wrong-type",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void setTimeout(String) from the type System.HttpRequest"
+    },
+    {
+      "id": "C021",
+      "code": "Object r; new HttpRequest().setBody(1); r='accepted'; pq.out('C021',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setBody(Integer) from the type System.HttpRequest",
+      "compile": true,
+      "group": "compile/request/body-wrong-type",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void setBody(Integer) from the type System.HttpRequest"
+    },
+    {
+      "id": "C022",
+      "code": "Object r; new HttpRequest().setBodyAsBlob('v'); r='accepted'; pq.out('C022',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setBodyAsBlob(String) from the type System.HttpRequest",
+      "compile": true,
+      "group": "compile/request/blob-wrong-type",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void setBodyAsBlob(String) from the type System.HttpRequest"
+    },
+    {
+      "id": "C023",
+      "code": "Object r; new HttpRequest().setHeader('A'); r='accepted'; pq.out('C023',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setHeader(String) from the type System.HttpRequest",
+      "compile": true,
+      "group": "compile/request/header-wrong-arity",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void setHeader(String) from the type System.HttpRequest"
+    },
+    {
+      "id": "C024",
+      "code": "Object r; new HttpResponse().setStatusCode('200'); r='accepted'; pq.out('C024',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setStatusCode(String) from the type System.HttpResponse",
+      "compile": true,
+      "group": "compile/response/status-wrong-type",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void setStatusCode(String) from the type System.HttpResponse"
+    },
+    {
+      "id": "C025",
+      "code": "Object r; HttpResponse x=new HttpResponse(); x.setBody('<root/>'); Dom.Document d=x.getBodyDocument(); r=d.getRootElement().getName(); pq.out('C025',r);",
+      "expected": "root",
+      "compile": true,
+      "group": "compile/response/body-document-type"
+    },
+    {
+      "id": "C026",
+      "code": "Object r; r=new Http().send('request'); pq.out('C026',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void send(String) from the type System.Http",
+      "compile": true,
+      "group": "compile/http/send-wrong-type",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void send(String) from the type System.Http"
+    },
+    {
+      "id": "C027",
+      "code": "Object r; r=new Http().send(); pq.out('C027',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void send() from the type System.Http",
+      "compile": true,
+      "group": "compile/http/send-wrong-arity",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void send() from the type System.Http"
+    },
+    {
+      "id": "C028",
+      "code": "Object r; class M implements HttpCalloutMock { public HttpResponse respond(HttpRequest q){return new HttpResponse();} } HttpCalloutMock m=new M(); r=m.respond(new HttpRequest()).getStatusCode(); pq.out('C028',r);",
+      "expected": "0",
+      "compile": true,
+      "group": "compile/mock/interface"
+    },
+    {
+      "id": "C029",
+      "code": "Object r; class M implements HttpCalloutMock { public String respond(HttpRequest q){return null;} } r='shape'; pq.out('C029',r);",
+      "expected": "COMPILE_ERROR\tline 6: Class M must implement the method: System.HttpResponse System.HttpCalloutMock.respond(System.HttpRequest)",
+      "compile": true,
+      "group": "compile/mock/wrong-return",
+      "nativeDiagnostic": "Class M must implement the method: System.HttpResponse System.HttpCalloutMock.respond(System.HttpRequest)"
+    },
+    {
+      "id": "C030",
+      "code": "Object r; class M implements HttpCalloutMock {} r='shape'; pq.out('C030',r);",
+      "expected": "COMPILE_ERROR\tline 6: Class M must implement the method: System.HttpResponse System.HttpCalloutMock.respond(System.HttpRequest)",
+      "compile": true,
+      "group": "compile/mock/missing-method",
+      "nativeDiagnostic": "Class M must implement the method: System.HttpResponse System.HttpCalloutMock.respond(System.HttpRequest)"
+    },
+    {
+      "id": "C031",
+      "code": "Object r; class M implements WebServiceMock { public void doInvoke(Object s,Object q,Map<String,Object> r,String e,String a,String n,String ns,String rn,String t){} } r=new M()!=null; pq.out('C031',r);",
+      "expected": "true",
+      "compile": true,
+      "group": "compile/soap/interface"
+    },
+    {
+      "id": "C032",
+      "code": "Object r; class M implements WebServiceMock {} r='shape'; pq.out('C032',r);",
+      "expected": "COMPILE_ERROR\tline 6: Class M must implement the method: void System.WebServiceMock.doInvoke(Object, Object, Map<String,Object>, String, String, String, String, String, String)",
+      "compile": true,
+      "group": "compile/soap/missing-method",
+      "nativeDiagnostic": "Class M must implement the method: void System.WebServiceMock.doInvoke(Object, Object, Map<String,Object>, String, String, String, String, String, String)"
+    },
+    {
+      "id": "C033",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,null,new List<Integer>());} r='shape'; pq.out('C033',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "compile/soap/options-wrong-type"
+    },
+    {
+      "id": "C034",
+      "code": "Object r; RestRequest x=new RestRequest(); x.headers=new Map<String,String>(); r=x.headers; pq.out('C034',r);",
+      "expected": "COMPILE_ERROR\tline 6: Variable is not visible: System.RestRequest.headers",
+      "compile": true,
+      "group": "compile/rest/readonly-headers",
+      "nativeDiagnostic": "Variable is not visible: System.RestRequest.headers"
+    },
+    {
+      "id": "C035",
+      "code": "Object r; RestRequest x=new RestRequest(); x.params=new Map<String,String>(); r=x.params; pq.out('C035',r);",
+      "expected": "COMPILE_ERROR\tline 6: Variable is not visible: System.RestRequest.params",
+      "compile": true,
+      "group": "compile/rest/readonly-params",
+      "nativeDiagnostic": "Variable is not visible: System.RestRequest.params"
+    },
+    {
+      "id": "C036",
+      "code": "Object r; r=new RestRequest().getHeader('a'); pq.out('C036',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getHeader(String) from the type System.RestRequest",
+      "compile": true,
+      "group": "compile/rest/header-getter",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void getHeader(String) from the type System.RestRequest"
+    },
+    {
+      "id": "C037",
+      "code": "Object r; r=new RestRequest().getParameter('a'); pq.out('C037',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getParameter(String) from the type System.RestRequest",
+      "compile": true,
+      "group": "compile/rest/parameter-getter",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void getParameter(String) from the type System.RestRequest"
+    },
+    {
+      "id": "C038",
+      "code": "Object r; RestResponse x=new RestResponse(); x.responseBody='body'; r=x.responseBody; pq.out('C038',r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Blob",
+      "compile": true,
+      "group": "compile/rest/wrong-body-type",
+      "nativeDiagnostic": "Illegal assignment from String to Blob"
+    },
+    {
+      "id": "C039",
+      "code": "Object r; r=A40RestOracle.class.getName(); pq.out('C039',r);",
+      "expected": "A40RestOracle",
+      "compile": true,
+      "group": "compile/rest/resource-type"
+    },
+    {
+      "id": "C040",
+      "code": "Object r; RestContext.request=new RestRequest(); RestContext.response=new RestResponse(); String v=A40RestOracle.get(); r=v; pq.out('C040',r);",
+      "expected": "null",
+      "compile": true,
+      "group": "compile/rest/handler-return"
+    },
+    {
+      "id": "C041",
+      "code": "Object r; Continuation x=new Continuation(60); r=x.timeout; pq.out('C041',r);",
+      "expected": "60",
+      "compile": true,
+      "group": "compile/continuation/timeout-property"
+    },
+    {
+      "id": "C042",
+      "code": "Object r; Continuation x=new Continuation(60); r=x.getRequests().size(); pq.out('C042',r);",
+      "expected": "0",
+      "compile": true,
+      "group": "compile/continuation/get-requests"
+    },
+    {
+      "id": "C043",
+      "code": "Object r; r=new Continuation('60'); pq.out('C043',r);",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.Continuation].<Constructor>(String)",
+      "compile": true,
+      "group": "compile/continuation/wrong-timeout",
+      "nativeDiagnostic": "Constructor not defined: [System.Continuation].<Constructor>(String)"
+    },
+    {
+      "id": "C044",
+      "code": "Object r; r=new Continuation(60).addHttpRequest('request'); pq.out('C044',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addHttpRequest(String) from the type System.Continuation",
+      "compile": true,
+      "group": "compile/continuation/wrong-request",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void addHttpRequest(String) from the type System.Continuation"
+    },
+    {
+      "id": "C045",
+      "code": "Object r; r=Continuation.addHttpRequest(null,null); pq.out('C045',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addHttpRequest(NULL, NULL) from the type System.Continuation",
+      "compile": true,
+      "group": "compile/continuation/static-add",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void addHttpRequest(NULL, NULL) from the type System.Continuation"
+    }
+  ],
+  "remaining": [
+    {
+      "id": "R251",
+      "code": "try{throw new CommerceExtension.ResolutionException('A40 boundary');}catch(CommerceExtension.ResolutionException e){r=e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "CommerceExtension.ResolutionException|A40 boundary",
+      "compile": false,
+      "group": "boundary/commerce/runtime",
+      "owner": "exceptions",
+      "reason": "Managed qualified exception construction stores positional args before applying the exception message constructor."
+    }
+  ],
+  "ticketRows": {},
+  "controls": [
+    {
+      "id": "H001",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X-A40','v'); r=x.getHeader('X-A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H002",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('x_a40','v'); r=x.getHeader('x_a40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H003",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X!A40','v'); r=x.getHeader('X!A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H004",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X#A40','v'); r=x.getHeader('X#A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H005",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X$A40','v'); r=x.getHeader('X$A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H006",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X%A40','v'); r=x.getHeader('X%A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H007",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X&A40','v'); r=x.getHeader('X&A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H008",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X\\'A40','v'); r=x.getHeader('X\\'A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H009",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X*A40','v'); r=x.getHeader('X*A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H010",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X+A40','v'); r=x.getHeader('X+A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H011",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X.A40','v'); r=x.getHeader('X.A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H012",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X^A40','v'); r=x.getHeader('X^A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H013",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X`A40','v'); r=x.getHeader('X`A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H014",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X|A40','v'); r=x.getHeader('X|A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H015",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X~A40','v'); r=x.getHeader('X~A40');",
+      "expected": "v",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H016",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X:A40','v'); r=x.getHeader('X:A40');",
+      "expected": "EXC|System.CalloutException|Attempt to use invalid header in request",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H017",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X/A40','v'); r=x.getHeader('X/A40');",
+      "expected": "EXC|System.CalloutException|Attempt to use invalid header in request",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H018",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X@A40','v'); r=x.getHeader('X@A40');",
+      "expected": "EXC|System.CalloutException|Attempt to use invalid header in request",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H019",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X(A40','v'); r=x.getHeader('X(A40');",
+      "expected": "EXC|System.CalloutException|Attempt to use invalid header in request",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H020",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X[A40','v'); r=x.getHeader('X[A40');",
+      "expected": "EXC|System.CalloutException|Attempt to use invalid header in request",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H021",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X\\tA40','v'); r=x.getHeader('X\\tA40');",
+      "expected": "EXC|System.CalloutException|Attempt to use invalid header in request",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H022",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X\\nA40','v'); r=x.getHeader('X\\nA40');",
+      "expected": "EXC|System.CalloutException|Attempt to use invalid header in request",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H023",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('X\\rA40','v'); r=x.getHeader('X\\rA40');",
+      "expected": "EXC|System.CalloutException|Attempt to use invalid header in request",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H024",
+      "code": "HttpRequest x=new HttpRequest(); x.setHeader('XéA40','v'); r=x.getHeader('XéA40');",
+      "expected": "EXC|System.CalloutException|Attempt to use invalid header in request",
+      "group": "request/header-token",
+      "compile": false
+    },
+    {
+      "id": "H025",
+      "code": "HttpResponse x=new HttpResponse(); x.setHeader('','v'); r=x.getHeader('');",
+      "expected": "v",
+      "group": "response/header-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H026",
+      "code": "HttpResponse x=new HttpResponse(); x.setHeader('X A40','v'); r=x.getHeader('X A40');",
+      "expected": "v",
+      "group": "response/header-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H027",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(EncodingUtil.convertFromHex('ff')); r=x.getBody();",
+      "expected": "�",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H028",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(EncodingUtil.convertFromHex('ffff')); r=x.getBody();",
+      "expected": "��",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H029",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(EncodingUtil.convertFromHex('c080')); r=x.getBody();",
+      "expected": "��",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H030",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(EncodingUtil.convertFromHex('e280')); r=x.getBody();",
+      "expected": "�",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H031",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(EncodingUtil.convertFromHex('eda080')); r=x.getBody();",
+      "expected": "�",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H032",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(EncodingUtil.convertFromHex('f0808080')); r=x.getBody();",
+      "expected": "����",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H033",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(EncodingUtil.convertFromHex('61ff62')); r=x.getBody();",
+      "expected": "a�b",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H034",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(EncodingUtil.convertFromHex('efbfbd')); r=x.getBody();",
+      "expected": "�",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H035",
+      "code": "HttpRequest x=new HttpRequest(); x.setBodyAsBlob(EncodingUtil.convertFromHex('c3a9')); r=x.getBody();",
+      "expected": "é",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H036",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(EncodingUtil.convertFromHex('ff')); r=x.getBody();",
+      "expected": "�",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H037",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(EncodingUtil.convertFromHex('ffff')); r=x.getBody();",
+      "expected": "��",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H038",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(EncodingUtil.convertFromHex('c080')); r=x.getBody();",
+      "expected": "��",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H039",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(EncodingUtil.convertFromHex('e280')); r=x.getBody();",
+      "expected": "�",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H040",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(EncodingUtil.convertFromHex('eda080')); r=x.getBody();",
+      "expected": "�",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H041",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(EncodingUtil.convertFromHex('f0808080')); r=x.getBody();",
+      "expected": "����",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H042",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(EncodingUtil.convertFromHex('61ff62')); r=x.getBody();",
+      "expected": "a�b",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H043",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(EncodingUtil.convertFromHex('efbfbd')); r=x.getBody();",
+      "expected": "�",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H044",
+      "code": "HttpResponse x=new HttpResponse(); x.setBodyAsBlob(EncodingUtil.convertFromHex('c3a9')); r=x.getBody();",
+      "expected": "é",
+      "group": "body/utf8-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H045",
+      "code": "HttpRequest x=new HttpRequest();  r=String.valueOf(x);",
+      "expected": "System.HttpRequest[Endpoint=null, Method=null]",
+      "group": "dto/display-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H046",
+      "code": "HttpRequest x=new HttpRequest(); x.setEndpoint('https://example.invalid'); x.setMethod('pAtCh'); r=String.valueOf(x);",
+      "expected": "System.HttpRequest[Endpoint=https://example.invalid, Method=pAtCh]",
+      "group": "dto/display-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H047",
+      "code": "HttpResponse x=new HttpResponse();  r=String.valueOf(x);",
+      "expected": "System.HttpResponse[Status=null, StatusCode=0]",
+      "group": "dto/display-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H048",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatus('Created'); x.setStatusCode(201); r=String.valueOf(x);",
+      "expected": "System.HttpResponse[Status=Created, StatusCode=201]",
+      "group": "dto/display-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H049",
+      "code": "HttpRequest x=new HttpRequest();  r=''+x;",
+      "expected": "System.HttpRequest[Endpoint=null, Method=null]",
+      "group": "dto/display-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H050",
+      "code": "HttpRequest x=new HttpRequest(); x.setEndpoint('https://example.invalid'); x.setMethod('pAtCh'); r=''+x;",
+      "expected": "System.HttpRequest[Endpoint=https://example.invalid, Method=pAtCh]",
+      "group": "dto/display-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H051",
+      "code": "HttpResponse x=new HttpResponse();  r=''+x;",
+      "expected": "System.HttpResponse[Status=null, StatusCode=0]",
+      "group": "dto/display-neighbor",
+      "compile": false
+    },
+    {
+      "id": "H052",
+      "code": "HttpResponse x=new HttpResponse(); x.setStatus('Created'); x.setStatusCode(201); r=''+x;",
+      "expected": "System.HttpResponse[Status=Created, StatusCode=201]",
+      "group": "dto/display-neighbor",
+      "compile": false
+    },
+    {
+      "id": "J001",
+      "code": "r=JSON.deserializeUntyped('bad json');",
+      "expected": "EXC|System.JSONException|Unexpected character ('b' (code 98)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at input location [1,2]",
+      "compile": false,
+      "group": "rest/json-diagnostic-neighbor"
+    },
+    {
+      "id": "J002",
+      "code": "r=JSON.deserializeUntyped('x');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at input location [1,2]",
+      "compile": false,
+      "group": "rest/json-diagnostic-neighbor"
+    },
+    {
+      "id": "J003",
+      "code": "r=JSON.deserializeUntyped('[x]');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:3]",
+      "compile": false,
+      "group": "rest/json-diagnostic-neighbor"
+    },
+    {
+      "id": "J004",
+      "code": "r=JSON.deserializeUntyped('{\"x\":x}');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:7]",
+      "compile": false,
+      "group": "rest/json-diagnostic-neighbor"
+    },
+    {
+      "id": "J005",
+      "code": "r=JSON.deserialize('bad json',Object.class);",
+      "expected": "EXC|System.JSONException|Unexpected character ('b' (code 98)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at input location [1,2]",
+      "compile": false,
+      "group": "rest/json-diagnostic-neighbor"
+    },
+    {
+      "id": "J006",
+      "code": "r=JSON.deserialize('x',Object.class);",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at input location [1,2]",
+      "compile": false,
+      "group": "rest/json-diagnostic-neighbor"
+    },
+    {
+      "id": "J007",
+      "code": "JSONParser x=JSON.createParser('bad json'); while(x.nextToken()!=null){} r='accepted';",
+      "expected": "EXC|System.JSONException|Unexpected character ('b' (code 98)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at input location [1,2]",
+      "compile": false,
+      "group": "rest/json-diagnostic-neighbor"
+    },
+    {
+      "id": "J008",
+      "code": "JSONParser x=JSON.createParser('[x]'); while(x.nextToken()!=null){} r='accepted';",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at input location [1,3]",
+      "compile": false,
+      "group": "rest/json-diagnostic-neighbor"
+    },
+    {
+      "id": "J009",
+      "code": "r=JSON.deserializeUntyped('{}');",
+      "expected": "{}",
+      "compile": false,
+      "group": "rest/json-diagnostic-neighbor"
+    },
+    {
+      "id": "J010",
+      "code": "r=JSON.deserializeUntyped('null');",
+      "expected": "null",
+      "compile": false,
+      "group": "rest/json-diagnostic-neighbor"
+    },
+    {
+      "id": "K006",
+      "code": "r=JSON.deserialize('bad json',Account.class);",
+      "expected": "EXC|System.JSONException|Unexpected character ('b' (code 98)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at input location [1,2]",
+      "compile": false,
+      "group": "rest/json-typed-delimiter-neighbor"
+    },
+    {
+      "id": "K007",
+      "code": "r=JSON.deserialize('{\"Name\":}',Account.class);",
+      "expected": "EXC|System.JSONException|Unexpected character ('}' (code 125)): expected a value at [line:1, column:10]",
+      "compile": false,
+      "group": "rest/json-typed-delimiter-neighbor"
+    },
+    {
+      "id": "U001",
+      "code": "r=JSON.deserializeUntyped('{\"x\":x}');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:7]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U002",
+      "code": "r=JSON.deserializeUntyped('{\"abc\":x}');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:9]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U003",
+      "code": "r=JSON.deserializeUntyped('{\"x\":1,\"y\":x}');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:13]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U004",
+      "code": "r=JSON.deserializeUntyped('{\"x\":[x]}');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:8]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U005",
+      "code": "r=JSON.deserializeUntyped('{\"x\":{\"y\":x}}');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:12]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U006",
+      "code": "r=JSON.deserializeUntyped(' {\"x\":x}');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:8]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U007",
+      "code": "r=JSON.deserializeUntyped('{\"x\":xx}');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:7]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U008",
+      "code": "r=JSON.deserializeUntyped('[xx]');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:3]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U009",
+      "code": "r=JSON.deserializeUntyped('xx');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at input location [1,2]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U010",
+      "code": "r=JSON.deserializeUntyped('{\\n \"x\":x}');",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:2, column:7]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U011",
+      "code": "r=JSON.deserializeUntyped('{\"x\":\"x\"}');",
+      "expected": "{x=x}",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U012",
+      "code": "r=JSON.deserializeUntyped('{\"x\":null}');",
+      "expected": "{x=null}",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U013",
+      "code": "r=JSON.deserialize('{\"Name\":x}',Account.class);",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:10]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "U014",
+      "code": "JSONParser p=JSON.createParser('{\"x\":x}'); while(p.nextToken()!=null){} r='accepted';",
+      "expected": "EXC|System.JSONException|Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at input location [1,7]",
+      "compile": false,
+      "group": "rest/json-object-value-position"
+    },
+    {
+      "id": "S001",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,null,new List<String>());} r='shape'; pq.out('S001',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "soap/options-type-boundary"
+    },
+    {
+      "id": "S002",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,null,new List<Integer>());} r='shape'; pq.out('S002',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "soap/options-type-boundary"
+    },
+    {
+      "id": "S003",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,null,new List<Object>());} r='shape'; pq.out('S003',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "soap/options-type-boundary"
+    },
+    {
+      "id": "S004",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,null,new List<Account>());} r='shape'; pq.out('S004',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "soap/options-type-boundary"
+    },
+    {
+      "id": "S005",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,null,new Set<Integer>());} r='shape'; pq.out('S005',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void invoke(NULL, NULL, NULL, Set<Integer>) from the type WebServiceCallout",
+      "compile": true,
+      "group": "soap/options-type-boundary",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void invoke(NULL, NULL, NULL, Set<Integer>) from the type WebServiceCallout"
+    },
+    {
+      "id": "S006",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,null,new Map<String,Object>());} r='shape'; pq.out('S006',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void invoke(NULL, NULL, NULL, Map<String,Object>) from the type WebServiceCallout",
+      "compile": true,
+      "group": "soap/options-type-boundary",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void invoke(NULL, NULL, NULL, Map<String,Object>) from the type WebServiceCallout"
+    },
+    {
+      "id": "S007",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,null,3);} r='shape'; pq.out('S007',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void invoke(NULL, NULL, NULL, Integer) from the type WebServiceCallout",
+      "compile": true,
+      "group": "soap/options-type-boundary",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void invoke(NULL, NULL, NULL, Integer) from the type WebServiceCallout"
+    },
+    {
+      "id": "S008",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,null,null);} r='shape'; pq.out('S008',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "soap/options-type-boundary"
+    },
+    {
+      "id": "S009",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,new Map<String,String>(),new List<String>());} r='shape'; pq.out('S009',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "soap/response-type-boundary"
+    },
+    {
+      "id": "S010",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,new Map<Integer,Account>(),new List<String>());} r='shape'; pq.out('S010',r);",
+      "expected": "shape",
+      "compile": true,
+      "group": "soap/response-type-boundary"
+    },
+    {
+      "id": "S011",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,new List<Integer>(),new List<String>());} r='shape'; pq.out('S011',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void invoke(NULL, NULL, List<Integer>, List<String>) from the type WebServiceCallout",
+      "compile": true,
+      "group": "soap/response-type-boundary",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void invoke(NULL, NULL, List<Integer>, List<String>) from the type WebServiceCallout"
+    },
+    {
+      "id": "S012",
+      "code": "Object r; if(false){WebServiceCallout.invoke(null,null,3,new List<String>());} r='shape'; pq.out('S012',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void invoke(NULL, NULL, Integer, List<String>) from the type WebServiceCallout",
+      "compile": true,
+      "group": "soap/response-type-boundary",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void invoke(NULL, NULL, Integer, List<String>) from the type WebServiceCallout"
+    },
+    {
+      "id": "S013",
+      "code": "Object r; if(false){Continuation.addHttpRequest();} r='shape'; pq.out('S013',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addHttpRequest() from the type System.Continuation",
+      "compile": true,
+      "group": "continuation/static-arity-boundary",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void addHttpRequest() from the type System.Continuation"
+    },
+    {
+      "id": "S014",
+      "code": "Object r; if(false){Continuation.addHttpRequest(new HttpRequest());} r='shape'; pq.out('S014',r);",
+      "expected": "COMPILE_ERROR\tline 6: Non static method cannot be referenced from a static context: String System.Continuation.addHttpRequest(System.HttpRequest)",
+      "compile": true,
+      "group": "continuation/static-arity-boundary",
+      "nativeDiagnostic": "Non static method cannot be referenced from a static context: String System.Continuation.addHttpRequest(System.HttpRequest)"
+    },
+    {
+      "id": "S015",
+      "code": "Object r; if(false){Continuation.addHttpRequest(null,null);} r='shape'; pq.out('S015',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void addHttpRequest(NULL, NULL) from the type System.Continuation",
+      "compile": true,
+      "group": "continuation/static-arity-boundary",
+      "nativeDiagnostic": "Method does not exist or incorrect signature: void addHttpRequest(NULL, NULL) from the type System.Continuation"
+    },
+    {
+      "id": "M001",
+      "code": "r=new Map<String,Object>{'x'=>'x'};",
+      "expected": "{x=x}",
+      "compile": false,
+      "group": "map/string-value"
+    },
+    {
+      "id": "M002",
+      "code": "r=new Map<String,Object>{'x'=>null};",
+      "expected": "{x=null}",
+      "compile": false,
+      "group": "map/null-value"
+    },
+    {
+      "id": "M003",
+      "code": "r=((Map<String,Object>)JSON.deserializeUntyped('{\"x\":\"x\"}')).toString();",
+      "expected": "{x=x}",
+      "compile": false,
+      "group": "map/json-toString"
+    },
+    {
+      "id": "M004",
+      "code": "r='prefix:'+JSON.deserializeUntyped('{\"x\":\"x\"}');",
+      "expected": "prefix:{x=x}",
+      "compile": false,
+      "group": "map/json-concatenation"
+    },
+    {
+      "id": "M005",
+      "code": "r=String.valueOf(new Map<String,Integer>{'a'=>1});",
+      "expected": "{a=1}",
+      "compile": false,
+      "group": "map/integer-valueOf"
+    },
+    {
+      "id": "M006",
+      "code": "Map<String,Integer> counts=new Map<String,Integer>{'a'=>1}; r=counts.toString();",
+      "expected": "{a=1}",
+      "compile": false,
+      "group": "map/integer-toString"
+    },
+    {
+      "id": "M007",
+      "code": "Map<String,Integer> counts=new Map<String,Integer>(); counts.put('b',2); counts.put('a',1); Map<String,Integer> copiedCounts=new Map<String,Integer>(counts); r=copiedCounts.toString();",
+      "expected": "{a=1, b=2}",
+      "compile": false,
+      "group": "map/copy-toString"
+    },
+    {
+      "id": "M008",
+      "code": "Map<String,Object> shape=new Map<String,Object>(); shape.put('b',new List<Integer>{2,3}); shape.put('a',null); r=shape.toString();",
+      "expected": "{a=null, b=(2, 3)}",
+      "compile": false,
+      "group": "map/list-value-toString"
+    },
+    {
+      "id": "M009",
+      "code": "r=new Map<String,Object>{'x'=>new Map<String,Object>{'n'=>2}};",
+      "expected": "{x={n=2}}",
+      "compile": false,
+      "group": "map/nested-map"
+    },
+    {
+      "id": "M010",
+      "code": "r=String.valueOf(Account.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName()).startsWith('{');",
+      "expected": "true",
+      "compile": false,
+      "group": "map/schema-prefix"
+    },
+    {
+      "id": "M011",
+      "code": "r=(new Map<String,List<Integer>>{'x'=>new List<Integer>{2,3}}).toString();",
+      "expected": "{x=(2, 3)}",
+      "compile": false,
+      "group": "map/typed-list-value"
+    },
+    {
+      "id": "M012",
+      "code": "r=(new List<Integer>{2,3}).toString();",
+      "expected": "(2, 3)",
+      "compile": false,
+      "group": "list/toString-control"
+    },
+    {
+      "id": "M013",
+      "code": "r=(new Set<Integer>{2,3}).toString();",
+      "expected": "{2, 3}",
+      "compile": false,
+      "group": "set/toString-control"
+    },
+    {
+      "id": "M014",
+      "code": "r=new Map<String,Object>();",
+      "expected": "{}",
+      "compile": false,
+      "group": "map/empty-control"
+    },
+    {
+      "id": "M015",
+      "code": "r=new Map<String,Object>{null=>'x'};",
+      "expected": "{null=x}",
+      "compile": false,
+      "group": "map/null-key"
+    },
+    {
+      "id": "M016",
+      "code": "r=new Map<Integer,Boolean>{3=>true};",
+      "expected": "{3=true}",
+      "compile": false,
+      "group": "map/integer-key"
+    },
+    {
+      "id": "M017",
+      "code": "r=new Map<String,Object>{'x'=>new Set<Integer>{2,3}};",
+      "expected": "{x={2, 3}}",
+      "compile": false,
+      "group": "map/set-value"
+    },
+    {
+      "id": "SH001",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nHttpRequest x=new HttpRequest(); x.marker='owned'; x.count=7; r=String.valueOf(x);",
+      "expected": "HttpRequest:[count=7, marker=owned]",
+      "group": "dto/source-shadow/HttpRequest/valueOf",
+      "isolated": true
+    },
+    {
+      "id": "SH002",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nHttpRequest x=new HttpRequest(); x.marker='owned'; x.count=7; r=''+x;",
+      "expected": "HttpRequest:[count=7, marker=owned]",
+      "group": "dto/source-shadow/HttpRequest/concat",
+      "isolated": true
+    },
+    {
+      "id": "SH003",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nHttpRequest x=new HttpRequest(); x.marker='owned'; x.count=7; r=x.toString();",
+      "expected": "HttpRequest:[count=7, marker=owned]",
+      "group": "dto/source-shadow/HttpRequest/toString",
+      "isolated": true
+    },
+    {
+      "id": "SH004",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nHttpRequest x=new HttpRequest(); x.marker='owned'; x.count=7; r=new Map<String,Object>{'item'=>x};",
+      "expected": "{item=HttpRequest:[count=7, marker=owned]}",
+      "group": "dto/source-shadow/HttpRequest/map-value",
+      "isolated": true
+    },
+    {
+      "id": "SH005",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nHttpResponse x=new HttpResponse(); x.marker='owned'; x.count=7; r=String.valueOf(x);",
+      "expected": "HttpResponse:[count=7, marker=owned]",
+      "group": "dto/source-shadow/HttpResponse/valueOf",
+      "isolated": true
+    },
+    {
+      "id": "SH006",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nHttpResponse x=new HttpResponse(); x.marker='owned'; x.count=7; r=''+x;",
+      "expected": "HttpResponse:[count=7, marker=owned]",
+      "group": "dto/source-shadow/HttpResponse/concat",
+      "isolated": true
+    },
+    {
+      "id": "SH007",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nHttpResponse x=new HttpResponse(); x.marker='owned'; x.count=7; r=x.toString();",
+      "expected": "HttpResponse:[count=7, marker=owned]",
+      "group": "dto/source-shadow/HttpResponse/toString",
+      "isolated": true
+    },
+    {
+      "id": "SH008",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nHttpResponse x=new HttpResponse(); x.marker='owned'; x.count=7; r=new Map<String,Object>{'item'=>x};",
+      "expected": "{item=HttpResponse:[count=7, marker=owned]}",
+      "group": "dto/source-shadow/HttpResponse/map-value",
+      "isolated": true
+    },
+    {
+      "id": "SH009",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nSystem.HttpRequest x=new System.HttpRequest(); r=String.valueOf(x);",
+      "expected": "System.HttpRequest[Endpoint=null, Method=null]",
+      "group": "dto/platform-neighbor/HttpRequest/valueOf",
+      "isolated": true
+    },
+    {
+      "id": "SH010",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nSystem.HttpRequest x=new System.HttpRequest(); r=new Map<String,Object>{'item'=>x};",
+      "expected": "{item=System.HttpRequest[Endpoint=null, Method=null]}",
+      "group": "dto/platform-neighbor/HttpRequest/map-value",
+      "isolated": true
+    },
+    {
+      "id": "SH011",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nSystem.HttpResponse x=new System.HttpResponse(); r=String.valueOf(x);",
+      "expected": "System.HttpResponse[Status=null, StatusCode=0]",
+      "group": "dto/platform-neighbor/HttpResponse/valueOf",
+      "isolated": true
+    },
+    {
+      "id": "SH012",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nSystem.HttpResponse x=new System.HttpResponse(); r=new Map<String,Object>{'item'=>x};",
+      "expected": "{item=System.HttpResponse[Status=null, StatusCode=0]}",
+      "group": "dto/platform-neighbor/HttpResponse/map-value",
+      "isolated": true
+    },
+    {
+      "id": "SH013",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nA40DisplayControl x=new A40DisplayControl(); x.marker='owned'; x.count=7; r=String.valueOf(x);",
+      "expected": "A40DisplayControl:[count=7, marker=owned]",
+      "group": "dto/source-neighbor/valueOf",
+      "isolated": true
+    },
+    {
+      "id": "SH014",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nA40DisplayControl x=new A40DisplayControl(); x.marker='owned'; x.count=7; r=''+x;",
+      "expected": "A40DisplayControl:[count=7, marker=owned]",
+      "group": "dto/source-neighbor/concat",
+      "isolated": true
+    },
+    {
+      "id": "SH015",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nA40DisplayControl x=new A40DisplayControl(); x.marker='owned'; x.count=7; r=x.toString();",
+      "expected": "A40DisplayControl:[count=7, marker=owned]",
+      "group": "dto/source-neighbor/toString",
+      "isolated": true
+    },
+    {
+      "id": "SH016",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nA40DisplayControl x=new A40DisplayControl(); x.marker='owned'; x.count=7; r=new Map<String,Object>{'item'=>x};",
+      "expected": "{item=A40DisplayControl:[count=7, marker=owned]}",
+      "group": "dto/source-neighbor/map-value",
+      "isolated": true
+    },
+    {
+      "id": "SH017",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nHttpRequest x=new HttpRequest(); r=String.valueOf(x);",
+      "expected": "HttpRequest:[count=null, marker=null]",
+      "group": "dto/source-neighbor/null-or-empty/HttpRequest",
+      "isolated": true
+    },
+    {
+      "id": "SH018",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nHttpResponse x=new HttpResponse(); r=String.valueOf(x);",
+      "expected": "HttpResponse:[count=null, marker=null]",
+      "group": "dto/source-neighbor/null-or-empty/HttpResponse",
+      "isolated": true
+    },
+    {
+      "id": "SH019",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nA40DisplayControl x=new A40DisplayControl(); r=String.valueOf(x);",
+      "expected": "A40DisplayControl:[count=null, marker=null]",
+      "group": "dto/source-neighbor/null-or-empty/A40DisplayControl",
+      "isolated": true
+    },
+    {
+      "id": "SH020",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nA40EmptyDisplayControl x=new A40EmptyDisplayControl(); r=String.valueOf(x);",
+      "expected": "A40EmptyDisplayControl:[]",
+      "group": "dto/source-neighbor/null-or-empty/A40EmptyDisplayControl",
+      "isolated": true
+    },
+    {
+      "id": "SH021",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nA40ValueDisplayControl x=new A40ValueDisplayControl(); x.value='owned'; x.message='retained'; r=String.valueOf(x);",
+      "expected": "A40ValueDisplayControl:[message=retained, value=owned]",
+      "group": "dto/source-neighbor/value-message/valueOf",
+      "isolated": true
+    },
+    {
+      "id": "SH022",
+      "code": "class HttpRequest {public String marker; public Integer count;}\nclass HttpResponse {public String marker; public Integer count;}\nclass A40DisplayControl {public String marker; public Integer count;}\nclass A40EmptyDisplayControl {}\nclass A40ValueDisplayControl {public String value; public String message;}\nA40ValueDisplayControl x=new A40ValueDisplayControl(); x.value='owned'; x.message='retained'; r=new Map<String,Object>{'item'=>x};",
+      "expected": "{item=A40ValueDisplayControl:[message=retained, value=owned]}",
+      "group": "dto/source-neighbor/value-message/map-value",
+      "isolated": true
+    }
+  ],
+  "controlsSource": "Owned HTTP controls at API 62.0 and 67.0.",
+  "reviewControlsSource": "Owned HTTP review controls at API 62.0 and 67.0.",
+  "retryControlsSource": "Owned HTTP retry controls K006/K007 at API 62.0 and 67.0.",
+  "conformanceControlsSource": "Owned HTTP conformance controls at API 62.0 and 67.0.",
+  "mapControlSource": "Owned HTTP map controls at API 62.0 and 67.0.",
+  "shadowControlsSource": "Owned anonymous and named HTTP shadow controls at API 62.0 and 67.0; exported SH001-SH022 map to observed S001-S022."
+}

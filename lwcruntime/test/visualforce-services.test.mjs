@@ -29,7 +29,9 @@ test("Visualforce Lightning Out provides local LWC service shims", async (t) => 
     assert.equal(await host.locator(".toast-title").innerText(), "VF Toast");
     assert.equal(await host.locator(".message-record").innerText(), "001XX0000000001");
     assert.equal(await host.locator(".resource-status").innerText(), "loaded");
-    assert.equal(await host.locator(".nav-error").innerText(), "GLADELWC042");
+    // Native L14 page_object_Account_new (VF host, APIs 59/67) resolves
+    // javascript:void(0); without an error. The conformance export checks the URL.
+    assert.equal(await host.locator(".nav-error").innerText(), "");
 
     const callbacks = await page.evaluate(() => window.__callbacks);
     assert.equal(callbacks["c:serviceHost"].status, "SUCCESS");

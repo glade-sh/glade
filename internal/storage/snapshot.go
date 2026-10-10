@@ -11,6 +11,9 @@ func (t RuntimeTemplate) CloneSnapshotOrg() OrgState {
 			out.Objects[name] = object.CloneRuntimeSnapshot()
 		}
 	}
+	if t.Org.objectNameCache != nil {
+		out.objectNameCache = newObjectNameCacheFrom(t.Org.objectNameCache, t.Org.Objects, out.Objects)
+	}
 	if t.Org.IDSequences != nil {
 		out.IDSequences = make(map[string]uint64, len(t.Org.IDSequences))
 		for object, sequence := range t.Org.IDSequences {
@@ -48,6 +51,10 @@ func SnapshotRuntimeOrg(org *OrgState) OrgState {
 			org.Objects[name] = live
 			out.Objects[name] = snapshot
 		}
+	}
+	if org.objectNameCache != nil {
+		// A restored snapshot keeps the name index instead of rebuilding it.
+		out.objectNameCache = newObjectNameCacheFrom(org.objectNameCache, org.Objects, out.Objects)
 	}
 	if org.IDSequences != nil {
 		out.IDSequences = make(map[string]uint64, len(org.IDSequences))

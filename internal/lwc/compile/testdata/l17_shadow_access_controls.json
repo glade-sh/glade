@@ -1,0 +1,157 @@
+{
+  "source": "Salesforce API native observation",
+  "case": {
+    "id": "dom_repeat_loadScript_once",
+    "group": "repeat loads",
+    "kind": "runtime",
+    "js": "import { LightningElement, api } from 'lwc';\nimport { loadScript, loadStyle } from 'lightning/platformResourceLoader';\nimport assets from '@salesforce/resourceUrl/FamilyL17Assets';\nexport default class FamilyResources extends LightningElement {\n result=''; classValue='owned-target'; _done=false;\n @api async run() {\n  if (this._done) return;\n  this._done=true;\n  const spec={\"id\": \"dom_repeat_loadScript_once\", \"method\": \"loadScript\", \"mode\": \"once\"};\n  const events=[], promises=[];\n  let count=0, identity=null;\n  const scrub = value => String(value || '').replace(/https?:\\/\\/[^\\s\"'<>]+/g,'[URL withheld]').replace(/\\/resource\\/[^\\s\"'<>]+/g,'[RESOURCE URL]').slice(0,1000);\n  const error = e => ({name:e && e.name || null,message:scrub(e && e.message || e),type:typeof e});\n  try {\n  const node=this.template.querySelector('[data-owned-target]');\n  const snapshot = () => {\n   const current=this.template.querySelector('[data-owned-target]');\n   const s=getComputedStyle(current);\n   return {color:s.color,backgroundColor:s.backgroundColor,display:s.display,visibility:s.visibility,\n    position:s.position,paddingTop:s.paddingTop,width:s.width,hook:s.getPropertyValue('--owned-color').trim(),\n    loaded:s.getPropertyValue('--owned-loaded').trim(),className:current.getAttribute('class'),style:current.getAttribute('style')};\n  };\n  const call = (url, self=this) => {\n   const n=++count;\n   try {\n    const p=(spec.method==='loadScript'?loadScript:loadStyle)(self,url);\n    const state={call:n,thenable:!!p && typeof p.then==='function',state:'pending'};\n    events.push({...state,phase:'immediate'});\n    promises.push(p);\n    const settled=Promise.resolve(p).then(value=>{\n     state.state='fulfilled'; events.push({call:n,phase:'settled',state:state.state,valueType:typeof value});\n    },e=>{state.state='rejected';events.push({call:n,phase:'settled',state:state.state,error:error(e)});});\n    Promise.resolve().then(()=>events.push({call:n,phase:'microtask',state:state.state}));\n    return settled;\n   } catch(e) {events.push({call:n,phase:'synchronous',state:'threw',error:error(e)});return Promise.resolve();}\n  };\n  const extension=spec.method==='loadStyle'?'.css':'.js';\n  const base=assets+'/cases/'+spec.id+'/';\n  let url=base+'ok'+extension;\n  if (spec.method==='styles') {\n   const mode=spec.mode;\n   if(mode==='inline') node.style.color='rgb(68, 85, 102)';\n   if(mode==='hook_set') this.template.host.style.setProperty('--owned-color','rgb(68, 85, 102)');\n   if(mode==='hook_inherited') node.parentElement.style.setProperty('--owned-color','rgb(68, 85, 102)');\n   if(mode==='hook_empty') node.style.setProperty('--owned-color',' ');\n   if(mode==='hook_invalid') node.style.setProperty('--owned-color','owned-invalid');\n   if(mode==='hook_nested') node.style.color='var(--owned-absent, var(--owned-color, rgb(68,85,102)))';\n   if(mode==='slds_grid') node.classList.add('slds-grid');\n   if(mode==='slds_hide') node.classList.add('slds-hide');\n   if(mode==='slds_assistive') node.classList.add('slds-assistive-text');\n   if(mode==='slds_spacing') node.classList.add('slds-p-around_small');\n   if(mode==='slds_button') node.classList.add('slds-button','slds-button_brand');\n   if(mode==='base_button_hook') this.template.host.style.setProperty('--slds-c-button-brand-color-background','rgb(68, 85, 102)');\n   if(mode==='class_conversion') {this.classValue={ 'owned-target':true, 'slds-grid':true };await Promise.resolve();}\n   if(mode==='external'||mode==='external_repeat') {\n    await loadStyle(this,base+'ok.css');\n    if(mode==='external_repeat') await loadStyle(this,base+'ok.css');\n   }\n   if(mode==='cascade_important') node.style.setProperty('color','rgb(68,85,102)','important');\n  } else {\n   if(spec.mode==='subpath') {\n    const paths={nested:'nested/ok',space:'space file',encoded_space:'space%20file',unicode:'caf\\u00e9',encoded_unicode:'caf%C3%A9',query:'ok',fragment:'ok',dot:'nested/../ok',uppercase:'OK',root:''};\n    url=base+paths[spec.path_variant]+(spec.path_variant==='root'?'':extension);\n    if(spec.path_variant==='query') url+='?owned=1';\n    if(spec.path_variant==='fragment') url+='#owned';\n   }\n   if(spec.mode==='missing'||spec.mode==='retry_failure') url=base+'owned_missing'+extension;\n   if(spec.mode==='syntax') url=base+'syntax'+extension;\n   if(spec.mode==='throws') url=base+'throws'+extension;\n   if(spec.mode==='null') url=null;\n   if(spec.mode==='undefined') url=undefined;\n   if(spec.mode==='empty') url='';\n   if(spec.mode==='number') url=123;\n   if(spec.mode==='object') url={toString(){return base+'ok'+extension;}};\n   const context=spec.mode==='null_context'?null:this;\n   if(spec.mode==='parallel2'||spec.mode==='parallel3'||spec.mode==='pending_repeat') {\n    const jobs=[call(url,context),call(url,context)];\n    if(spec.mode==='parallel3') jobs.push(call(url,context));\n    identity=promises.length>1?promises[0]===promises[1]:null;\n    await Promise.all(jobs);\n   } else if(spec.mode==='after_microtask') {\n    const first=call(url,context);await Promise.resolve();const second=call(url,context);\n    identity=promises.length>1?promises[0]===promises[1]:null;await Promise.all([first,second]);\n   } else {\n    await call(url,context);\n    if(spec.mode==='sequential2'||spec.mode==='sequential3'||spec.mode==='retry_failure') await call(url,context);\n    if(spec.mode==='sequential3') await call(url,context);\n    if(spec.mode==='query_changed') await call(url+'?owned=2',context);\n    if(spec.mode==='fragment_changed') await call(url+'#owned',context);\n    identity=promises.length>1?promises[0]===promises[1]:null;\n   }\n  }\n  await new Promise(resolve=>requestAnimationFrame(resolve));\n  const button=this.template.querySelector('lightning-button');\n  // A closed base-component shadow is an observed visibility boundary.\n  const internal=button && button.shadowRoot && button.shadowRoot.querySelector('button');\n  const shadowAccess = host => {\n   const value={hostPresent:!!host};\n   try {\n    const root=host.shadowRoot;\n    value.rootIsNull=root===null;\n    value.rootIsUndefined=root===undefined;\n    value.rootType=typeof root;\n    if(root!==null && root!==undefined) {\n     value.querySelectorType=typeof root.querySelector;\n     const child=root.querySelector('button');\n     value.buttonIsNull=child===null;\n     value.buttonIsUndefined=child===undefined;\n     value.buttonVisible=!!child;\n    }\n   } catch(e) { value.error=error(e); }\n   return value;\n  };\n  const shadowAccessControls={baseButton:shadowAccess(button),ordinaryElement:shadowAccess(node),component:shadowAccess(this)};\n  const baseButton={internalVisible:!!internal,background:internal?getComputedStyle(internal).backgroundColor:null,\n   declaredHook:button?getComputedStyle(button).getPropertyValue('--slds-c-button-brand-color-background').trim():null};\n  this.result=JSON.stringify({id:spec.id,events,promiseIdentity:identity,\n   scriptCount:(window.__familyL17Counts||{})[spec.id]||0,style:snapshot(),baseButton,shadowAccessControls});\n  } catch(e) {\n   this.result=JSON.stringify({id:spec.id,events,boundaryError:error(e)});\n  }\n }\n}\n",
+    "template": "<template><section data-case=\"dom_repeat_loadScript_once\"><button data-run onclick={run}>Capture owned row</button><div><span data-owned-target class={classValue}>owned</span></div><lightning-button label=\"owned\" variant=\"brand\"></lightning-button><pre data-result>{result}</pre></section></template>",
+    "method": "loadScript",
+    "css": ".owned-target { color: var(--owned-color, rgb(17,34,51)); width: 37px; }"
+  },
+  "captured": {
+    "59.0": {
+      "id": "dom_repeat_loadScript_once",
+      "events": [
+        {
+          "call": 1,
+          "thenable": true,
+          "state": "pending",
+          "phase": "immediate"
+        },
+        {
+          "call": 1,
+          "phase": "microtask",
+          "state": "pending"
+        },
+        {
+          "call": 1,
+          "phase": "settled",
+          "state": "fulfilled",
+          "valueType": "undefined"
+        }
+      ],
+      "promiseIdentity": null,
+      "scriptCount": 1,
+      "style": {
+        "color": "rgb(17, 34, 51)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "inline",
+        "visibility": "visible",
+        "position": "static",
+        "paddingTop": "0px",
+        "width": "37px",
+        "hook": "",
+        "loaded": "",
+        "className": "owned-target",
+        "style": null
+      },
+      "baseButton": {
+        "internalVisible": false,
+        "background": null,
+        "declaredHook": ""
+      },
+      "shadowAccessControls": {
+        "baseButton": {
+          "hostPresent": true,
+          "rootIsNull": true,
+          "rootIsUndefined": false,
+          "rootType": "object"
+        },
+        "ordinaryElement": {
+          "hostPresent": true,
+          "rootIsNull": true,
+          "rootIsUndefined": false,
+          "rootType": "object"
+        },
+        "component": {
+          "hostPresent": true,
+          "rootIsNull": true,
+          "rootIsUndefined": false,
+          "rootType": "object"
+        }
+      },
+      "console": [
+        {
+          "id": "dom_repeat_loadScript_once",
+          "type": "warning",
+          "message": "ComponentProfiler: Component-level profiling has not been enabled."
+        },
+        {
+          "id": "dom_repeat_loadScript_once",
+          "type": "warning",
+          "message": "An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing."
+        }
+      ]
+    },
+    "67.0": {
+      "id": "dom_repeat_loadScript_once",
+      "events": [
+        {
+          "call": 1,
+          "thenable": true,
+          "state": "pending",
+          "phase": "immediate"
+        },
+        {
+          "call": 1,
+          "phase": "microtask",
+          "state": "pending"
+        },
+        {
+          "call": 1,
+          "phase": "settled",
+          "state": "fulfilled",
+          "valueType": "undefined"
+        }
+      ],
+      "promiseIdentity": null,
+      "scriptCount": 1,
+      "style": {
+        "color": "rgb(17, 34, 51)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "inline",
+        "visibility": "visible",
+        "position": "static",
+        "paddingTop": "0px",
+        "width": "37px",
+        "hook": "",
+        "loaded": "",
+        "className": "owned-target",
+        "style": null
+      },
+      "baseButton": {
+        "internalVisible": false,
+        "background": null,
+        "declaredHook": ""
+      },
+      "shadowAccessControls": {
+        "baseButton": {
+          "hostPresent": true,
+          "rootIsNull": true,
+          "rootIsUndefined": false,
+          "rootType": "object"
+        },
+        "ordinaryElement": {
+          "hostPresent": true,
+          "rootIsNull": true,
+          "rootIsUndefined": false,
+          "rootType": "object"
+        },
+        "component": {
+          "hostPresent": true,
+          "rootIsNull": true,
+          "rootIsUndefined": false,
+          "rootType": "object"
+        }
+      },
+      "console": [
+        {
+          "id": "dom_repeat_loadScript_once",
+          "type": "warning",
+          "message": "An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing."
+        }
+      ]
+    }
+  }
+}

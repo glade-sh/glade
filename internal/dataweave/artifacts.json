@@ -1,0 +1,135 @@
+[
+  {
+    "path": "lib/aalto-xml-1.3.2.jar",
+    "url": "https://repo.maven.apache.org/maven2/com/fasterxml/aalto-xml/1.3.2/aalto-xml-1.3.2.jar",
+    "sha256": "dcf2d5f453056c3ce848caff4179021bfb83b5efb3a3d779433c5bd70976068b",
+    "bytes": 358134,
+    "classpath": true
+  },
+  {
+    "path": "lib/woodstox-core-6.6.1.jar",
+    "url": "https://repo.maven.apache.org/maven2/com/fasterxml/woodstox/woodstox-core/6.6.1/woodstox-core-6.6.1.jar",
+    "sha256": "5655c56e820b0140c1814ed4bddb3352efef88e33c382f3a0b51aad7ef89956c",
+    "bytes": 1549934,
+    "classpath": true
+  },
+  {
+    "path": "lib/commons-io-2.15.1.jar",
+    "url": "https://repo.maven.apache.org/maven2/commons-io/commons-io/2.15.1/commons-io-2.15.1.jar",
+    "sha256": "a58af12ee1b68cfd2ebb0c27caef164f084381a00ec81a48cc275fd7ea54e154",
+    "bytes": 501218,
+    "classpath": true
+  },
+  {
+    "path": "lib/jakarta.activation-api-2.1.4.jar",
+    "url": "https://repo.maven.apache.org/maven2/jakarta/activation/jakarta.activation-api/2.1.4/jakarta.activation-api-2.1.4.jar",
+    "sha256": "c9db52100ce6c8aac95cc39075f95720d2e561b11f8051b81c121ad4effd7004",
+    "bytes": 67380,
+    "classpath": true
+  },
+  {
+    "path": "lib/jakarta.mail-api-2.1.5.jar",
+    "url": "https://repo.maven.apache.org/maven2/jakarta/mail/jakarta.mail-api/2.1.5/jakarta.mail-api-2.1.5.jar",
+    "sha256": "aa493753acb7a8c45ba8f4c9cf1230a74e20237056dd5b5c8bc86c583e8cfa0e",
+    "bytes": 237267,
+    "classpath": true
+  },
+  {
+    "path": "lib/stax2-api-4.2.2.jar",
+    "url": "https://repo.maven.apache.org/maven2/org/codehaus/woodstox/stax2-api/4.2.2/stax2-api-4.2.2.jar",
+    "sha256": "a61c48d553efad78bc01fffc4ac528bebbae64cbaec170b2a5e39cf61eb51abe",
+    "bytes": 195922,
+    "classpath": true
+  },
+  {
+    "path": "lib/angus-activation-2.0.3.jar",
+    "url": "https://repo.maven.apache.org/maven2/org/eclipse/angus/angus-activation/2.0.3/angus-activation-2.0.3.jar",
+    "sha256": "a6bd35c538cf90fff941ad6258c40c08fca0b5c9c3f536c657114f27ce0527a7",
+    "bytes": 26729,
+    "classpath": true
+  },
+  {
+    "path": "lib/angus-mail-2.0.5.jar",
+    "url": "https://repo.maven.apache.org/maven2/org/eclipse/angus/angus-mail/2.0.5/angus-mail-2.0.5.jar",
+    "sha256": "b4d8c30d35f455def6c7a05fe595a1e62ea2b80cac3efec1e9ccf4118b23168a",
+    "bytes": 501288,
+    "classpath": true
+  },
+  {
+    "path": "lib/core-2.12.2.jar",
+    "url": "https://repository.mulesoft.org/nexus/content/repositories/releases/org/mule/weave/core/2.12.2/core-2.12.2.jar",
+    "sha256": "328f319d7da3c52d82f6038ca9ecdc87a22086da14d9cb01508a97ccb5a6af26",
+    "bytes": 2190065,
+    "classpath": true
+  },
+  {
+    "path": "lib/core-modules-2.12.2.jar",
+    "url": "https://repository.mulesoft.org/nexus/content/repositories/releases/org/mule/weave/core-modules/2.12.2/core-modules-2.12.2.jar",
+    "sha256": "a8b7bfa90a42f8106518b194c8b8830d17f2ed1b10d19f89ec9e1c4af842aa10",
+    "bytes": 797522,
+    "classpath": true
+  },
+  {
+    "path": "lib/debugger-2.12.2.jar",
+    "url": "https://repository.mulesoft.org/nexus/content/repositories/releases/org/mule/weave/debugger/2.12.2/debugger-2.12.2.jar",
+    "sha256": "07a43444a03c168cc8c0051c5affaffb4ebd7faccfca4d03ddccf7c2238de208",
+    "bytes": 176475,
+    "classpath": true
+  },
+  {
+    "path": "lib/parser-2.12.2.jar",
+    "url": "https://repository.mulesoft.org/nexus/content/repositories/releases/org/mule/weave/parser/2.12.2/parser-2.12.2.jar",
+    "sha256": "e20da01ea81179592c476b911130167a683b78ebceec0fbc88873db512824dae",
+    "bytes": 5591697,
+    "classpath": true
+  },
+  {
+    "path": "lib/runtime-2.12.2.jar",
+    "url": "https://repository.mulesoft.org/nexus/content/repositories/releases/org/mule/weave/runtime/2.12.2/runtime-2.12.2.jar",
+    "sha256": "7a58b63be8142df52cbad66fe5c6c5f3c1b07faf7295adc2288510411d929e4c",
+    "bytes": 4262745,
+    "classpath": true
+  },
+  {
+    "path": "lib/tooling-api-2.12.2.jar",
+    "url": "https://repository.mulesoft.org/nexus/content/repositories/releases/org/mule/weave/tooling-api/2.12.2/tooling-api-2.12.2.jar",
+    "sha256": "d6ab827a819aa10253e989554476ae2944dcd80a3caf5c9decd743d2c1de1618",
+    "bytes": 89974,
+    "classpath": true
+  },
+  {
+    "path": "lib/wlang-2.12.2.jar",
+    "url": "https://repository.mulesoft.org/nexus/content/repositories/releases/org/mule/weave/wlang/2.12.2/wlang-2.12.2.jar",
+    "sha256": "20e27cc5f48214f0dc20b95ec1fdb7bcc78ce7d895e9143ff833a57aa62d3156",
+    "bytes": 369588,
+    "classpath": true
+  },
+  {
+    "path": "lib/parboiled_2.12-2.5.1.jar",
+    "url": "https://repo.maven.apache.org/maven2/org/parboiled/parboiled_2.12/2.5.1/parboiled_2.12-2.5.1.jar",
+    "sha256": "d79e9c210e6200ce9ceda40027ed57065383b90d3523b41bfeff1fe95a860d89",
+    "bytes": 941232,
+    "classpath": true
+  },
+  {
+    "path": "lib/scala-library-2.12.21.jar",
+    "url": "https://repo.maven.apache.org/maven2/org/scala-lang/scala-library/2.12.21/scala-library-2.12.21.jar",
+    "sha256": "e2f4040c95cc4dd1cfeaae38bdde596e4b36933632451efa7d8564c6a359510c",
+    "bytes": 5437467,
+    "classpath": true
+  },
+  {
+    "path": "sources/jakarta.mail-api-2.1.5-sources.jar",
+    "url": "https://repo.maven.apache.org/maven2/jakarta/mail/jakarta.mail-api/2.1.5/jakarta.mail-api-2.1.5-sources.jar",
+    "sha256": "1deda3bda890b39c96f8c6af3d144fb71d45a103db749091bc725679336c4107",
+    "bytes": 300999,
+    "classpath": false
+  },
+  {
+    "path": "sources/angus-mail-2.0.5-sources.jar",
+    "url": "https://repo.maven.apache.org/maven2/org/eclipse/angus/angus-mail/2.0.5/angus-mail-2.0.5-sources.jar",
+    "sha256": "1b5608273dfc8dd94b2d6b6e8e07c0724987b2544267cd092a51155b2575dd33",
+    "bytes": 490630,
+    "classpath": false
+  }
+]

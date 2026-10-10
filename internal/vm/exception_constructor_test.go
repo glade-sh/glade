@@ -82,3 +82,36 @@ System.assertEquals('changed', value.getMessage());
 		t.Fatal(err)
 	}
 }
+
+// A39 K015-K024, captured at source APIs 62 and 67.
+func TestEventBusExceptionConstructorsPreserveMessagesAndCauses(t *testing.T) {
+	program, err := CompileAnonymous(`
+IllegalArgumentException cause = new IllegalArgumentException('cause');
+eventbus.InvalidReplayIdException invalidDefault = new eventbus.InvalidReplayIdException();
+eventbus.InvalidReplayIdException invalidCause = new eventbus.InvalidReplayIdException(cause);
+eventbus.InvalidReplayIdException invalidMessage = new eventbus.InvalidReplayIdException('invalid');
+eventbus.InvalidReplayIdException invalidWrapped = new eventbus.InvalidReplayIdException('wrapped-invalid', cause);
+System.assertEquals('Script-thrown exception', invalidDefault.getMessage());
+System.assertEquals('Script-thrown exception', invalidCause.getMessage());
+System.assertEquals('invalid', invalidMessage.getMessage());
+System.assertEquals('wrapped-invalid', invalidWrapped.getMessage());
+System.assert(invalidCause.getCause()!=null);
+System.assert(invalidWrapped.getCause()!=null);
+eventbus.RetryableException retryDefault = new eventbus.RetryableException();
+eventbus.RetryableException retryCause = new eventbus.RetryableException(cause);
+eventbus.RetryableException retryMessage = new eventbus.RetryableException('retry');
+eventbus.RetryableException retryWrapped = new eventbus.RetryableException('wrapped-retry', cause);
+System.assertEquals('Script-thrown exception', retryDefault.getMessage());
+System.assertEquals('Script-thrown exception', retryCause.getMessage());
+System.assertEquals('retry', retryMessage.getMessage());
+System.assertEquals('wrapped-retry', retryWrapped.getMessage());
+System.assert(retryCause.getCause()!=null);
+System.assert(retryWrapped.getCause()!=null);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}

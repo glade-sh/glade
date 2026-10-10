@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
@@ -33,51 +34,56 @@ func runRequestV1FromOptions(
 	returnClassShards bool,
 ) RunRequestV1 {
 	return RunRequestV1{
-		Filter:              options.Filter,
-		ChangedSince:        changedSince,
-		SelectedClasses:     append([]string(nil), options.SelectedClasses...),
-		SelectedMethod:      options.SelectedMethod,
-		LimitMode:           string(options.LimitMode),
-		LimitCaps:           limitCapsV1FromVM(options.LimitCaps),
-		LimitCapsSet:        options.LimitCapsSet,
-		TraceBlocked:        options.TraceBlocked,
-		TraceAll:            options.TraceAll,
-		SlowTestThresholdMS: options.SlowTestThresholdMS,
-		TimeoutMS:           options.TimeoutMS,
-		Parallelism:         options.Parallelism,
-		ParallelMethods:     options.ParallelMethods,
-		NoDiskCache:         options.NoDiskCache,
-		ClassDurationMS:     cloneInt64Map(options.ClassDurationMS),
-		MethodDurationMS:    cloneInt64Map(options.MethodDurationMS),
-		PerfCounters:        options.PerfCounters,
-		ShardCount:          shardCount,
-		ShardIndex:          shardIndex,
-		ReturnClassShards:   returnClassShards,
+		RuntimeRESTAPIVersion: options.RuntimeRESTAPIVersion,
+		Filter:                options.Filter,
+		ChangedSince:          changedSince,
+		SelectedClasses:       append([]string(nil), options.SelectedClasses...),
+		SelectedMethod:        options.SelectedMethod,
+		LimitMode:             string(options.LimitMode),
+		LimitCaps:             limitCapsV1FromVM(options.LimitCaps),
+		LimitCapsSet:          options.LimitCapsSet,
+		TraceBlocked:          options.TraceBlocked,
+		TraceAll:              options.TraceAll,
+		SlowTestThresholdMS:   options.SlowTestThresholdMS,
+		TimeoutMS:             options.TimeoutMS,
+		Parallelism:           options.Parallelism,
+		ParallelMethods:       options.ParallelMethods,
+		NoDiskCache:           options.NoDiskCache,
+		ClassDurationMS:       cloneInt64Map(options.ClassDurationMS),
+		MethodDurationMS:      cloneInt64Map(options.MethodDurationMS),
+		PerfCounters:          options.PerfCounters,
+		ShardCount:            shardCount,
+		ShardIndex:            shardIndex,
+		ReturnClassShards:     returnClassShards,
 	}
 }
 
 func apexOptionsFromRunRequestV1(request RunRequestV1) apextest.Options {
 	return apextest.Options{
-		Filter:              request.Filter,
-		SelectedClasses:     append([]string(nil), request.SelectedClasses...),
-		SelectedMethod:      request.SelectedMethod,
-		LimitMode:           vm.LimitMode(request.LimitMode),
-		LimitCaps:           vmLimitCapsFromV1(request.LimitCaps),
-		LimitCapsSet:        request.LimitCapsSet,
-		TraceBlocked:        request.TraceBlocked,
-		TraceAll:            request.TraceAll,
-		SlowTestThresholdMS: request.SlowTestThresholdMS,
-		TimeoutMS:           request.TimeoutMS,
-		Parallelism:         request.Parallelism,
-		ParallelMethods:     request.ParallelMethods,
-		NoDiskCache:         request.NoDiskCache,
-		ClassDurationMS:     cloneInt64Map(request.ClassDurationMS),
-		MethodDurationMS:    cloneInt64Map(request.MethodDurationMS),
-		PerfCounters:        request.PerfCounters,
+		RuntimeRESTAPIVersion: request.RuntimeRESTAPIVersion,
+		Filter:                request.Filter,
+		SelectedClasses:       append([]string(nil), request.SelectedClasses...),
+		SelectedMethod:        request.SelectedMethod,
+		LimitMode:             vm.LimitMode(request.LimitMode),
+		LimitCaps:             vmLimitCapsFromV1(request.LimitCaps),
+		LimitCapsSet:          request.LimitCapsSet,
+		TraceBlocked:          request.TraceBlocked,
+		TraceAll:              request.TraceAll,
+		SlowTestThresholdMS:   request.SlowTestThresholdMS,
+		TimeoutMS:             request.TimeoutMS,
+		Parallelism:           request.Parallelism,
+		ParallelMethods:       request.ParallelMethods,
+		NoDiskCache:           request.NoDiskCache,
+		ClassDurationMS:       cloneInt64Map(request.ClassDurationMS),
+		MethodDurationMS:      cloneInt64Map(request.MethodDurationMS),
+		PerfCounters:          request.PerfCounters,
 	}
 }
 
 func validateRunRequestV1(request RunRequestV1) error {
+	if _, err := storage.ResolveRESTAPIVersion(request.RuntimeRESTAPIVersion); err != nil {
+		return err
+	}
 	switch request.LimitMode {
 	case "", string(vm.LimitModePermissive), string(vm.LimitModeStrict):
 	default:
@@ -243,23 +249,71 @@ func (d *Daemon) RunRequestV1(
 }
 
 func exactSelectorFailureV1(index typesys.Index, options apextest.Options) (testreport.Run, bool) {
-	if len(options.SelectedClasses) != 1 {
+	if len(options.SelectedClasses) == 0 {
 		return testreport.Run{}, false
 	}
-	className := strings.TrimSpace(options.SelectedClasses[0])
-	if className == "" {
-		return testreport.Run{}, false
+	if len(options.SelectedClasses) == 1 {
+		className := strings.TrimSpace(options.SelectedClasses[0])
+		if className == "" {
+			return testreport.Run{}, false
+		}
+		selectorOptions := options
+		selectorOptions.Filter = ""
+		if len(apextest.Discover(index, selectorOptions)) > 0 {
+			return testreport.Run{}, false
+		}
+		methodName := strings.TrimSpace(options.SelectedMethod)
+		if methodName != "" {
+			classOptions := selectorOptions
+			classOptions.SelectedMethod = ""
+			if len(apextest.Discover(index, classOptions)) > 0 {
+				return selectorFailureRunV1(
+					"missing test method",
+					fmt.Sprintf("no test method matched --class %q --method %q", className, methodName),
+					fmt.Sprintf("Glade found test class %q, but no exact test method named %q.", className, methodName),
+				), true
+			}
+		}
+		return selectorFailureRunV1(
+			"missing test class",
+			fmt.Sprintf("no test class matched --class %q", className),
+			fmt.Sprintf("Glade did not discover an exact test class named %q.", className),
+		), true
 	}
-	selectorOptions := options
-	selectorOptions.Filter = ""
-	if len(apextest.Discover(index, selectorOptions)) > 0 {
-		return testreport.Run{}, false
+	classOptions := options
+	classOptions.Filter = ""
+	classOptions.SelectedMethod = ""
+	classCases := apextest.Discover(index, classOptions)
+	discoveredClasses := make(map[string]struct{}, len(classCases))
+	for _, testCase := range classCases {
+		if name := strings.ToLower(strings.TrimSpace(testCase.ClassName)); name != "" {
+			discoveredClasses[name] = struct{}{}
+		}
+	}
+	for _, requestedClass := range options.SelectedClasses {
+		requestedClass = strings.TrimSpace(requestedClass)
+		if requestedClass == "" {
+			continue
+		}
+		if _, ok := discoveredClasses[strings.ToLower(requestedClass)]; ok {
+			continue
+		}
+		selector := fmt.Sprintf("--class %q", requestedClass)
+		if len(options.SelectedClasses) > 1 {
+			selector = fmt.Sprintf("--class-file entry %q", requestedClass)
+		}
+		return selectorFailureRunV1(
+			"missing test class",
+			fmt.Sprintf("no test class matched %s", selector),
+			fmt.Sprintf("Glade did not discover a test class for explicitly requested name %q.", requestedClass),
+		), true
 	}
 	methodName := strings.TrimSpace(options.SelectedMethod)
 	if methodName != "" {
-		classOptions := selectorOptions
-		classOptions.SelectedMethod = ""
-		if len(apextest.Discover(index, classOptions)) > 0 {
+		methodOptions := options
+		methodOptions.Filter = ""
+		if len(apextest.Discover(index, methodOptions)) == 0 {
+			className := strings.TrimSpace(options.SelectedClasses[0])
 			return selectorFailureRunV1(
 				"missing test method",
 				fmt.Sprintf("no test method matched --class %q --method %q", className, methodName),
@@ -267,11 +321,7 @@ func exactSelectorFailureV1(index typesys.Index, options apextest.Options) (test
 			), true
 		}
 	}
-	return selectorFailureRunV1(
-		"missing test class",
-		fmt.Sprintf("no test class matched --class %q", className),
-		fmt.Sprintf("Glade did not discover an exact test class named %q.", className),
-	), true
+	return testreport.Run{}, false
 }
 
 func selectorFailureRunV1(name, message, detail string) testreport.Run {

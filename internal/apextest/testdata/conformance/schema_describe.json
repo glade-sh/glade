@@ -1,0 +1,2098 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "declarations": {
+    "SD": "public class SD {\n    public Schema.DescribeTabSetResult app() {\n        for (Schema.DescribeTabSetResult a : Schema.describeTabs()) {\n            if (a.getLabel() == 'A23 Oracle') { return a; }\n        }\n        return null;\n    }\n    public Schema.DescribeTabResult tab(String objectName) {\n        for (Schema.DescribeTabResult t : app().getTabs()) {\n            if (t.getSobjectName() == objectName) { return t; }\n        }\n        return null;\n    }\n    public Schema.ChildRelationship contactRelationship() {\n        for (Schema.ChildRelationship c : Account.SObjectType.getDescribe().getChildRelationships()) {\n            if (c.getChildSObject() == Contact.SObjectType && c.getField() == Contact.AccountId) {\n                return c;\n            }\n        }\n        return null;\n    }\n}"
+  },
+  "prelude": "SD sd = new SD();",
+  "metadata": {
+    "sfdx-project.json": "{\n  \"sourceApiVersion\": \"67.0\",\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ]\n}\n",
+    "glade.yml": "org:\n  domainUrl: https://offline.my.salesforce.com\n",
+    "force-app/main/default/objects/Account/Account.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Account</label><pluralLabel>Accounts</pluralLabel></CustomObject>\n",
+    "force-app/main/default/objects/Account/fieldSets/FamilyBaseline.fieldSet-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<FieldSet xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <fullName>FamilyBaseline</fullName>\n    <description>Bounded existing schema regression fixture</description>\n    <label>Family baseline</label>\n    <displayedFields><field>Name</field><isFieldManaged>false</isFieldManaged><isRequired>false</isRequired></displayedFields>\n</FieldSet>\n",
+    "force-app/main/default/objects/CartItem__c/CartItem__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>JSON A18 Cart Item</label>\n    <nameField>\n        <label>Cart Item Name</label>\n        <type>Text</type>\n    </nameField>\n    <pluralLabel>JSON A18 Cart Items</pluralLabel>\n    <sharingModel>ReadWrite</sharingModel>\n</CustomObject>\n",
+    "force-app/main/default/objects/CartItem__c/fields/A23_CaseExact__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <fullName>A23_CaseExact__c</fullName>\n    <caseSensitive>true</caseSensitive>\n    <label>A23 CaseExact</label>\n    <length>40</length>\n    <type>Text</type>\n    <unique>true</unique>\n</CustomField>\n",
+    "force-app/main/default/objects/CartItem__c/fields/A23_CaseFolded__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <fullName>A23_CaseFolded__c</fullName>\n    <caseSensitive>false</caseSensitive>\n    <label>A23 CaseFolded</label>\n    <length>40</length>\n    <type>Text</type>\n    <unique>true</unique>\n</CustomField>\n",
+    "force-app/main/default/objects/CartItem__c/fields/A23_Image__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <fullName>A23_Image__c</fullName>\n    <formula>IMAGE(\"https://example.invalid/a23.png\", \"A23 image\")</formula>\n    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>\n    <label>A23 Image</label>\n    <type>Text</type>\n</CustomField>\n",
+    "force-app/main/default/objects/CartItem__c/fields/A23_Link__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <fullName>A23_Link__c</fullName>\n    <formula>HYPERLINK(\"https://example.invalid/a23\", \"A23 link\")</formula>\n    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>\n    <label>A23 Link</label>\n    <type>Text</type>\n</CustomField>\n",
+    "force-app/main/default/objects/CartItem__c/fields/A23_PlainFormula__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <fullName>A23_PlainFormula__c</fullName>\n    <formula>\"A23 plain\"</formula>\n    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>\n    <label>A23 PlainFormula</label>\n    <type>Text</type>\n</CustomField>\n",
+    "force-app/main/default/objects/CartItem__c/fields/Total__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <fullName>Total__c</fullName>\n    <label>Total</label>\n    <precision>18</precision>\n    <required>false</required>\n    <scale>2</scale>\n    <type>Number</type>\n    <unique>false</unique>\n</CustomField>\n",
+    "force-app/main/default/objects/Contact/Contact.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Contact</label><pluralLabel>Contacts</pluralLabel></CustomObject>\n",
+    "force-app/main/default/objects/FamilyBaseline__c/FamilyBaseline__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>FamilyBaseline</label><pluralLabel>FamilyBaselines</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+    "force-app/main/default/objects/User/User.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>User</label><pluralLabel>Users</pluralLabel></CustomObject>\n",
+    "force-app/main/default/tabs/CartItem__c.tab-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomTab xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <customObject>true</customObject>\n    <motif>Custom57: Building Block</motif>\n</CustomTab>\n",
+    "force-app/main/default/applications/A23Oracle.app-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomApplication xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <description>A23 bounded Schema describe oracle fixture</description>\n    <label>A23 Oracle</label>\n    <tabs>standard-Account</tabs>\n    <tabs>CartItem__c</tabs>\n</CustomApplication>\n"
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "code": "r=String.valueOf(Account.SObjectType);",
+      "expected": "Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R002",
+      "code": "r=Schema.Account.SObjectType == Account.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R003",
+      "code": "r=Schema.getGlobalDescribe().get('Account') == Account.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R004",
+      "code": "r=Schema.getGlobalDescribe().get('account') == Account.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R005",
+      "code": "r=String.valueOf(Contact.SObjectType);",
+      "expected": "Contact",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R006",
+      "code": "r=Schema.Contact.SObjectType == Contact.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R007",
+      "code": "r=Schema.getGlobalDescribe().get('Contact') == Contact.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R008",
+      "code": "r=Schema.getGlobalDescribe().get('contact') == Contact.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R009",
+      "code": "r=String.valueOf(CartItem__c.SObjectType);",
+      "expected": "CartItem__c",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R010",
+      "code": "r=Schema.CartItem__c.SObjectType == CartItem__c.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R011",
+      "code": "r=Schema.getGlobalDescribe().get('CartItem__c') == CartItem__c.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R012",
+      "code": "r=Schema.getGlobalDescribe().get('cartitem__c') == CartItem__c.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R013",
+      "code": "r=String.valueOf(Account.Name);",
+      "expected": "Name",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R014",
+      "code": "r=Schema.Account.Name == Account.Name;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R015",
+      "code": "r=Account.SObjectType.getDescribe().fields.getMap().get('Name') == Account.Name;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R016",
+      "code": "r=String.valueOf(Account.OwnerId);",
+      "expected": "OwnerId",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R017",
+      "code": "r=Schema.Account.OwnerId == Account.OwnerId;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R018",
+      "code": "r=Account.SObjectType.getDescribe().fields.getMap().get('OwnerId') == Account.OwnerId;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R019",
+      "code": "r=String.valueOf(Contact.LastName);",
+      "expected": "LastName",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R020",
+      "code": "r=Schema.Contact.LastName == Contact.LastName;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R021",
+      "code": "r=Contact.SObjectType.getDescribe().fields.getMap().get('LastName') == Contact.LastName;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R022",
+      "code": "r=String.valueOf(TimeSlot.StartTime);",
+      "expected": "StartTime",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R023",
+      "code": "r=Schema.TimeSlot.StartTime == TimeSlot.StartTime;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R024",
+      "code": "r=TimeSlot.SObjectType.getDescribe().fields.getMap().get('StartTime') == TimeSlot.StartTime;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R025",
+      "code": "r=String.valueOf(CartItem__c.Total__c);",
+      "expected": "Total__c",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R026",
+      "code": "r=Schema.CartItem__c.Total__c == CartItem__c.Total__c;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R027",
+      "code": "r=CartItem__c.SObjectType.getDescribe().fields.getMap().get('Total__c') == CartItem__c.Total__c;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R028",
+      "code": "r=Schema.SObjectType.Account.getName();",
+      "expected": "Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R029",
+      "code": "r=Schema.SObjectType.Account.fields.Name.getName();",
+      "expected": "Name",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R030",
+      "code": "r=Schema.getGlobalDescribe().containsKey('ACCOUNT');",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R031",
+      "code": "r=Schema.getGlobalDescribe().get(null)==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R032",
+      "code": "r=Schema.getGlobalDescribe().get('A23MissingObject__c')==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R033",
+      "code": "r=Account.SObjectType.getDescribe().fields.getMap().get('NAME')==Account.Name;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R034",
+      "code": "r=Account.SObjectType.getDescribe().fields.getMap().get('A23MissingField__c')==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R035",
+      "code": "Object x=Account.SObjectType; Schema.SObjectType t=(Schema.SObjectType)x; r=t==Account.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R036",
+      "code": "Object x=Account.Name; Schema.SObjectField f=(Schema.SObjectField)x; r=f==Account.Name;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R037",
+      "code": "Schema.SObjectType t=Account.SObjectType; r=t.newSObject().getSObjectType()==t;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R038",
+      "code": "Schema.SObjectField f=Account.Name; r=f.getDescribe().getSObjectField()==f;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R039",
+      "code": "Schema.SObjectType t; r=String.valueOf(t);",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R040",
+      "code": "Schema.SObjectField f; r=String.valueOf(f);",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R041",
+      "code": "r=Schema.describeSObjects(new List<String>()).isEmpty();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R042",
+      "code": "r=Schema.describeSObjects(new List<String>{'Account'})[0].getName();",
+      "expected": "Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R043",
+      "code": "List<Schema.DescribeSObjectResult> ds=Schema.describeSObjects(new List<String>{'Contact','Account'}); r=ds[0].getName()+'|'+ds[1].getName();",
+      "expected": "Contact|Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R044",
+      "code": "List<Schema.DescribeSObjectResult> ds=Schema.describeSObjects(new List<String>{'Account','Account'}); r=ds[0].getSObjectType()==ds[1].getSObjectType();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R045",
+      "code": "r=Schema.describeSObjects(new List<String>{'account'})[0].getName();",
+      "expected": "Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R046",
+      "code": "r=Schema.describeSObjects(new List<String>{null}).isEmpty();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid sobject provided. The Schema.describeSObject() methods does not support the null sobject as a parameter. The sobject provided does not exist.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R047",
+      "code": "r=Schema.describeSObjects(new List<String>{'A23MissingObject__c'}).isEmpty();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid sobject provided. The Schema.describeSObject() methods does not support the A23MissingObject__c sobject as a parameter. The sobject provided does not exist.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R048",
+      "code": "List<String> names; r=Schema.describeSObjects(names).isEmpty();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R049",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.getName();",
+      "expected": "Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R050",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.getLocalName();",
+      "expected": "Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R051",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.getLabel();",
+      "expected": "Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R052",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.getLabelPlural();",
+      "expected": "Accounts",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R053",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.getKeyPrefix().length()==3;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R054",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.getSObjectType()==Account.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R055",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isAccessible();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R056",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isCreateable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R057",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isUpdateable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R058",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isDeletable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R059",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isUndeletable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R060",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isQueryable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R061",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isSearchable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R062",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isCustom();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R063",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isCustomSetting();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R064",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isDeprecatedAndHidden();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R065",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isFeedEnabled();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R066",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isMergeable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R067",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.isMruEnabled();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R068",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); r=d.fields.getMap().containsKey('Name');",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R069",
+      "code": "Schema.DescribeSObjectResult d=CartItem__c.SObjectType.getDescribe(); r=d.getName();",
+      "expected": "CartItem__c",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R070",
+      "code": "Schema.DescribeSObjectResult d=CartItem__c.SObjectType.getDescribe(); r=d.getLocalName();",
+      "expected": "CartItem__c",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R071",
+      "code": "Schema.DescribeSObjectResult d=CartItem__c.SObjectType.getDescribe(); r=d.isCustom();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R072",
+      "code": "Schema.DescribeSObjectResult d=CartItem__c.SObjectType.getDescribe(); r=d.isCustomSetting();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R073",
+      "code": "Schema.DescribeSObjectResult d=CartItem__c.SObjectType.getDescribe(); r=d.getKeyPrefix()!=null && d.getKeyPrefix().length()==3;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R074",
+      "code": "Schema.DescribeSObjectResult d=CartItem__c.SObjectType.getDescribe(); r=d.fields.getMap().containsKey('Total__c');",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R075",
+      "code": "Map<String,Schema.SObjectField> fm=Account.SObjectType.getDescribe().fields.getMap(); r=fm.get('name')==fm.get('Name');",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R076",
+      "code": "Map<String,Schema.SObjectField> fm=Account.SObjectType.getDescribe().fields.getMap(); fm.remove('Name'); r=Account.SObjectType.getDescribe().fields.getMap().containsKey('Name');",
+      "expected": "UNCAUGHT|System.FinalException: Collection is read-only",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R077",
+      "code": "r=sd.contactRelationship().getChildSObject()==Contact.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R078",
+      "code": "r=sd.contactRelationship().getField()==Contact.AccountId;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R079",
+      "code": "r=sd.contactRelationship().getRelationshipName();",
+      "expected": "Contacts",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R080",
+      "code": "r=sd.contactRelationship().isCascadeDelete();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R081",
+      "code": "r=sd.contactRelationship().isRestrictedDelete();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R082",
+      "code": "r=sd.contactRelationship().isDeprecatedAndHidden();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R083",
+      "code": "r=Account.Id.getDescribe().getType();",
+      "expected": "ID",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R084",
+      "code": "r=Account.Id.getDescribe().getSOAPType();",
+      "expected": "ID",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R085",
+      "code": "r=Account.Name.getDescribe().getType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R086",
+      "code": "r=Account.Name.getDescribe().getSOAPType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R087",
+      "code": "r=Account.AnnualRevenue.getDescribe().getType();",
+      "expected": "CURRENCY",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R088",
+      "code": "r=Account.AnnualRevenue.getDescribe().getSOAPType();",
+      "expected": "DOUBLE",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R089",
+      "code": "r=Account.NumberOfEmployees.getDescribe().getType();",
+      "expected": "INTEGER",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R090",
+      "code": "r=Account.NumberOfEmployees.getDescribe().getSOAPType();",
+      "expected": "INTEGER",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R091",
+      "code": "r=Account.BillingAddress.getDescribe().getType();",
+      "expected": "ADDRESS",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R092",
+      "code": "r=Account.BillingAddress.getDescribe().getSOAPType();",
+      "expected": "ADDRESS",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R093",
+      "code": "r=Account.OwnerId.getDescribe().getType();",
+      "expected": "REFERENCE",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R094",
+      "code": "r=Account.OwnerId.getDescribe().getSOAPType();",
+      "expected": "ID",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R095",
+      "code": "r=Account.CreatedDate.getDescribe().getType();",
+      "expected": "DATETIME",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R096",
+      "code": "r=Account.CreatedDate.getDescribe().getSOAPType();",
+      "expected": "DATETIME",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R097",
+      "code": "r=Account.IsDeleted.getDescribe().getType();",
+      "expected": "BOOLEAN",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R098",
+      "code": "r=Account.IsDeleted.getDescribe().getSOAPType();",
+      "expected": "BOOLEAN",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R099",
+      "code": "r=Account.Industry.getDescribe().getType();",
+      "expected": "PICKLIST",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R100",
+      "code": "r=Account.Industry.getDescribe().getSOAPType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R101",
+      "code": "r=Account.Description.getDescribe().getType();",
+      "expected": "TEXTAREA",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R102",
+      "code": "r=Account.Description.getDescribe().getSOAPType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R103",
+      "code": "r=Account.Phone.getDescribe().getType();",
+      "expected": "PHONE",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R104",
+      "code": "r=Account.Phone.getDescribe().getSOAPType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R105",
+      "code": "r=Account.Website.getDescribe().getType();",
+      "expected": "URL",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R106",
+      "code": "r=Account.Website.getDescribe().getSOAPType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R107",
+      "code": "r=Contact.Email.getDescribe().getType();",
+      "expected": "EMAIL",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R108",
+      "code": "r=Contact.Email.getDescribe().getSOAPType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R109",
+      "code": "r=Contact.Birthdate.getDescribe().getType();",
+      "expected": "DATE",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R110",
+      "code": "r=Contact.Birthdate.getDescribe().getSOAPType();",
+      "expected": "DATE",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R111",
+      "code": "r=Contact.LastName.getDescribe().getType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R112",
+      "code": "r=Contact.LastName.getDescribe().getSOAPType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R113",
+      "code": "r=TimeSlot.StartTime.getDescribe().getType();",
+      "expected": "TIME",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R114",
+      "code": "r=TimeSlot.StartTime.getDescribe().getSOAPType();",
+      "expected": "TIME",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R115",
+      "code": "r=CartItem__c.Total__c.getDescribe().getType();",
+      "expected": "DOUBLE",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R116",
+      "code": "r=CartItem__c.Total__c.getDescribe().getSOAPType();",
+      "expected": "DOUBLE",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R117",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.getName();",
+      "expected": "Name",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R118",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.getLocalName();",
+      "expected": "Name",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R119",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.getLabel();",
+      "expected": "Account Name",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R120",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.getLength();",
+      "expected": "255",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R121",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.getByteLength();",
+      "expected": "765",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R122",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.Total__c.getDescribe(); r=d.getPrecision();",
+      "expected": "18",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R123",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.Total__c.getDescribe(); r=d.getScale();",
+      "expected": "2",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R124",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.Total__c.getDescribe(); r=d.getDigits();",
+      "expected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R125",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.getInlineHelpText();",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R126",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.getDefaultValue();",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R127",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.getDefaultValueFormula();",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R128",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_Link__c.getDescribe(); r=d.getCalculatedFormula();",
+      "expected": "HYPERLINK(\"https://example.invalid/a23\", \"A23 link\")",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R129",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isAccessible();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R130",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isCreateable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R131",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isUpdateable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R132",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isNillable();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R133",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isDefaultedOnCreate();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R134",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isCalculated();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R135",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isAutoNumber();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R136",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isCustom();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R137",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isUnique();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R138",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isExternalId();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R139",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isIdLookup();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R140",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isNameField();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R141",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isNamePointing();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R142",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isFilterable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R143",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isGroupable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R144",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isSortable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R145",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isRestrictedPicklist();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R146",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isDependentPicklist();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R147",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isCaseSensitive();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R148",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isHtmlFormatted();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R149",
+      "code": "Schema.DescribeFieldResult d=Account.Name.getDescribe(); r=d.isDeprecatedAndHidden();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R150",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_CaseExact__c.getDescribe(); r=d.isCaseSensitive();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R151",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_CaseExact__c.getDescribe(); r=d.isUnique();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R152",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_CaseExact__c.getDescribe(); r=d.getType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R153",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_CaseExact__c.getDescribe(); r=d.getLength();",
+      "expected": "40",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R154",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_CaseFolded__c.getDescribe(); r=d.isCaseSensitive();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R155",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_CaseFolded__c.getDescribe(); r=d.isUnique();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R156",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_CaseFolded__c.getDescribe(); r=d.getType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R157",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_CaseFolded__c.getDescribe(); r=d.getLength();",
+      "expected": "40",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R158",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_Link__c.getDescribe(); r=d.isHtmlFormatted();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R159",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_Link__c.getDescribe(); r=d.isCalculated();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R160",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_Image__c.getDescribe(); r=d.isHtmlFormatted();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R161",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_Image__c.getDescribe(); r=d.isCalculated();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R162",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_PlainFormula__c.getDescribe(); r=d.isHtmlFormatted();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R163",
+      "code": "Schema.DescribeFieldResult d=CartItem__c.A23_PlainFormula__c.getDescribe(); r=d.isCalculated();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R166",
+      "code": "Schema.DescribeFieldResult d=Contact.AccountId.getDescribe(); r=d.getRelationshipName();",
+      "expected": "Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R167",
+      "code": "Schema.DescribeFieldResult d=Contact.AccountId.getDescribe(); r=d.getReferenceTo().contains(Account.SObjectType);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R168",
+      "code": "Schema.DescribeFieldResult d=Account.ParentId.getDescribe(); r=d.getReferenceTo().contains(Account.SObjectType);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R169",
+      "code": "r=Account.OwnerId.getDescribe().getReferenceTo().contains(User.SObjectType);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R170",
+      "code": "r=Contact.LastName.getDescribe().getCompoundFieldName();",
+      "expected": "Name",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R171",
+      "code": "r=Account.BillingCity.getDescribe().getCompoundFieldName();",
+      "expected": "BillingAddress",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R172",
+      "code": "r=Account.BillingAddress.getDescribe().getCompoundFieldName();",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R173",
+      "code": "r=Account.BillingLatitude.getDescribe().getScale();",
+      "expected": "15",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R174",
+      "code": "List<String> values=new List<String>(); for(Schema.PicklistEntry p:Account.Industry.getDescribe().getPicklistValues()){if(p.getValue()=='Technology'){values.add(p.getValue());}} values.sort(); r=String.join(values,',');",
+      "expected": "Technology",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R175",
+      "code": "Boolean active=false; for(Schema.PicklistEntry p:Account.Industry.getDescribe().getPicklistValues()){if(p.getValue()=='Technology'){active=p.isActive();}} r=active;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R176",
+      "code": "Boolean same=false; for(Schema.PicklistEntry p:Account.Industry.getDescribe().getPicklistValues()){if(p.getValue()=='Technology'){same=p.getLabel()==p.getValue();}} r=same;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R177",
+      "code": "r=Account.Name.getDescribe().getPicklistValues().isEmpty();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R178",
+      "code": "r=Account.Name.getDescribe().getType()==Schema.DisplayType.String;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R179",
+      "code": "r=TimeSlot.StartTime.getDescribe().getType()==Schema.DisplayType.Time;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R180",
+      "code": "r=TimeSlot.StartTime.getDescribe().getSOAPType()==Schema.SOAPType.Time;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R181",
+      "code": "r=TimeSlot.EndTime.getDescribe().getSOAPType()==Schema.SOAPType.Time;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R182",
+      "code": "Object x=TimeSlot.StartTime.getDescribe().getSOAPType(); r=((Schema.SOAPType)x)==Schema.SOAPType.Time;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R183",
+      "code": "Object x=Contact.Birthdate.getDescribe().getType(); r=((Schema.DisplayType)x)==Schema.DisplayType.Date;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R184",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); Schema.RecordTypeInfo rt=d.getRecordTypeInfosByDeveloperName().get('Master'); r=rt!=null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R185",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); Schema.RecordTypeInfo rt=d.getRecordTypeInfosByDeveloperName().get('Master'); r=rt.getName();",
+      "expected": "Master",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R186",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); Schema.RecordTypeInfo rt=d.getRecordTypeInfosByDeveloperName().get('Master'); r=rt.getDeveloperName();",
+      "expected": "Master",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R187",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); Schema.RecordTypeInfo rt=d.getRecordTypeInfosByDeveloperName().get('Master'); r=rt.isMaster();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R188",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); Schema.RecordTypeInfo rt=d.getRecordTypeInfosByDeveloperName().get('Master'); r=rt.isActive();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R189",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); Schema.RecordTypeInfo rt=d.getRecordTypeInfosByDeveloperName().get('Master'); r=rt.isAvailable();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R190",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); Schema.RecordTypeInfo rt=d.getRecordTypeInfosByDeveloperName().get('Master'); r=rt.isDefaultRecordTypeMapping();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R191",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); Schema.RecordTypeInfo rt=d.getRecordTypeInfosByDeveloperName().get('Master'); r=d.getRecordTypeInfosById().get(rt.getRecordTypeId()).isMaster();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R192",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); Schema.RecordTypeInfo rt=d.getRecordTypeInfosByDeveloperName().get('Master'); r=d.getRecordTypeInfosByName().get(rt.getName()).getDeveloperName()==rt.getDeveloperName();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R193",
+      "code": "Schema.DescribeSObjectResult d=Account.SObjectType.getDescribe(); Schema.RecordTypeInfo rt=d.getRecordTypeInfosByDeveloperName().get('Master'); r=d.getRecordTypeInfos().contains(rt);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R194",
+      "code": "r=Account.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName().get('A23MissingRecordType')==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R195",
+      "code": "r=Account.SObjectType.getDescribe().getRecordTypeInfosByName().get(null)==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R196",
+      "code": "r=Account.SObjectType.getDescribe().getRecordTypeInfosById().get(null)==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R197",
+      "code": "Schema.RecordTypeInfo rt=Contact.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName().get('Master'); r=rt.isMaster();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R198",
+      "code": "Schema.RecordTypeInfo rt=CartItem__c.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName().get('Master'); r=rt.isMaster();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R199",
+      "code": "Schema.RecordTypeInfo rt; r=rt?.getDeveloperName();",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R200",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getName();",
+      "expected": "FamilyBaseline",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R201",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getLabel();",
+      "expected": "Family baseline",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R202",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getDescription();",
+      "expected": "Bounded existing schema regression fixture",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R203",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getSObjectType()==Account.SObjectType;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R204",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getFields().size()==1;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R205",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getFields()[0].getFieldPath();",
+      "expected": "Name",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R206",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getFields()[0].getLabel();",
+      "expected": "Account Name",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R207",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getFields()[0].getRequired();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R208",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getFields()[0].getDBRequired();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R209",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getFields()[0].getType();",
+      "expected": "STRING",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R210",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getFields()[0].getType()==Schema.DisplayType.String;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R211",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getNamespace();",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R212",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getNamespace()==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R213",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getNamespace()=='';",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R214",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=String.isEmpty(fs.getNamespace());",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R215",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=String.valueOf(fs.getNamespace());",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R216",
+      "code": "r=Account.SObjectType.getDescribe().fieldSets.getMap().get('familybaseline')!=null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R217",
+      "code": "r=Account.SObjectType.getDescribe().fieldSets.getMap().get('a23pkg__FamilyBaseline')==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R218",
+      "code": "r=Account.SObjectType.getDescribe().fieldSets.getMap().get(null)==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R219",
+      "code": "r=CartItem__c.SObjectType.getDescribe().fieldSets.getMap().isEmpty();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R220",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); List<Schema.FieldSetMember> members=fs.getFields(); members.clear(); r=fs.getFields().size()==1;",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R221",
+      "code": "Schema.DescribeTabSetResult a=sd.app(); r=a!=null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R222",
+      "code": "Schema.DescribeTabSetResult a=sd.app(); r=a.getLabel();",
+      "expected": "A23 Oracle",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R223",
+      "code": "Schema.DescribeTabSetResult a=sd.app(); r=a.getDescription();",
+      "expected": "A23 bounded Schema describe oracle fixture",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R224",
+      "code": "Schema.DescribeTabSetResult a=sd.app(); r=a.getNamespace();",
+      "expected": "",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R225",
+      "code": "Schema.DescribeTabSetResult a=sd.app(); r=a.getLogoUrl()!=null && a.getLogoUrl().startsWith('https://');",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R226",
+      "code": "Schema.DescribeTabSetResult a=sd.app(); r=a.isSelected();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R227",
+      "code": "Schema.DescribeTabSetResult a=sd.app(); r=a.getTabs()!=null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R228",
+      "code": "Schema.DescribeTabResult t=sd.tab('Account'); r=t!=null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R229",
+      "code": "Schema.DescribeTabResult t=sd.tab('Account'); r=t.getLabel();",
+      "expected": "Accounts",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R230",
+      "code": "Schema.DescribeTabResult t=sd.tab('Account'); r=t.getSobjectName();",
+      "expected": "Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R231",
+      "code": "Schema.DescribeTabResult t=sd.tab('Account'); r=t.isCustom();",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R232",
+      "code": "Schema.DescribeTabResult t=sd.tab('Account'); r=t.getUrl()!=null && t.getUrl().startsWith('https://');",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R233",
+      "code": "Schema.DescribeTabResult t=sd.tab('Account'); r=t.getUrl().contains('/'+Schema.getGlobalDescribe().get('Account').getDescribe().getKeyPrefix());",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R234",
+      "code": "Schema.DescribeTabResult t=sd.tab('Account'); r=t.getUrl()==t.url;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R235",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t!=null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R236",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.getLabel();",
+      "expected": "JSON A18 Cart Items",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R237",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.getSobjectName();",
+      "expected": "CartItem__c",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R238",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.isCustom();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R239",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.getUrl()!=null && t.getUrl().startsWith('https://');",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R240",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.getUrl().contains('/'+Schema.getGlobalDescribe().get('CartItem__c').getDescribe().getKeyPrefix());",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R241",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.getUrl()==t.url;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R242",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.getLabel()==t.label;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R243",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.getSobjectName()==t.sobjectName;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R244",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.isCustom()==t.custom;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R245",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.getIconUrl()!=null && t.getIconUrl().startsWith('https://');",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R246",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.getMiniIconUrl()!=null && t.getMiniIconUrl().startsWith('https://');",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R247",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.getColors()!=null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R248",
+      "code": "Schema.DescribeTabResult t=sd.tab('CartItem__c'); r=t.getIcons()!=null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R249",
+      "code": "r=Schema.describeDataCategoryGroups(new List<String>()).isEmpty();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R250",
+      "code": "List<String> types; r=Schema.describeDataCategoryGroups(types).isEmpty();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R251",
+      "code": "r=Schema.describeDataCategoryGroups(new List<String>{null}).isEmpty();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid sobject provided. The Schema.describeDataCategoryGroups() methods does not support the null sobject as a parameter. The sobject provided does not exist.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R252",
+      "code": "r=Schema.describeDataCategoryGroups(new List<String>{'Account'}).isEmpty();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid sobject provided. The Schema.describeDataCategoryGroups() methods does not support the Account sobject as a parameter. The sobject provided can not be associated with data category groups.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R253",
+      "code": "r=Schema.describeDataCategoryGroups(new List<String>{'CartItem__c'}).isEmpty();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid sobject provided. The Schema.describeDataCategoryGroups() methods does not support the CartItem__c sobject as a parameter. The sobject provided can not be associated with data category groups.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R254",
+      "code": "r=Schema.describeDataCategoryGroups(new List<String>{'Account','Contact'}).isEmpty();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid sobject provided. The Schema.describeDataCategoryGroups() methods does not support the Account sobject as a parameter. The sobject provided can not be associated with data category groups.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R255",
+      "code": "r=Schema.describeDataCategoryGroups(new List<String>{'account'}).isEmpty();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid sobject provided. The Schema.describeDataCategoryGroups() methods does not support the account sobject as a parameter. The sobject provided can not be associated with data category groups.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R256",
+      "code": "Schema.DataCategoryGroupSobjectTypePair p=new Schema.DataCategoryGroupSobjectTypePair(); r=p.getSobject();",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R257",
+      "code": "Schema.DataCategoryGroupSobjectTypePair p=new Schema.DataCategoryGroupSobjectTypePair(); r=p.getDataCategoryGroupName();",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R258",
+      "code": "Schema.DataCategoryGroupSobjectTypePair p=new Schema.DataCategoryGroupSobjectTypePair(); p.setSobject('Account'); r=p.getSobject();",
+      "expected": "Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R259",
+      "code": "Schema.DataCategoryGroupSobjectTypePair p=new Schema.DataCategoryGroupSobjectTypePair(); p.setDataCategoryGroupName('A23MissingCategoryGroup'); r=p.getDataCategoryGroupName();",
+      "expected": "A23MissingCategoryGroup",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R260",
+      "code": "Schema.DataCategoryGroupSobjectTypePair p=new Schema.DataCategoryGroupSobjectTypePair(); p.setSobject(null); p.setDataCategoryGroupName(null); r=p.getSobject()==null && p.getDataCategoryGroupName()==null;",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R261",
+      "code": "r=Schema.describeDataCategoryGroupStructures(new List<Schema.DataCategoryGroupSobjectTypePair>(),true).isEmpty();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R262",
+      "code": "r=Schema.describeDataCategoryGroupStructures(new List<Schema.DataCategoryGroupSobjectTypePair>(),false).isEmpty();",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R263",
+      "code": "List<Schema.DataCategoryGroupSobjectTypePair> pairs; r=Schema.describeDataCategoryGroupStructures(pairs,true).isEmpty();",
+      "expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R265",
+      "code": "Schema.DataCategoryGroupSobjectTypePair p=new Schema.DataCategoryGroupSobjectTypePair(); p.setSobject('Account'); p.setDataCategoryGroupName('A23MissingCategoryGroup'); r=Schema.describeDataCategoryGroupStructures(new List<Schema.DataCategoryGroupSobjectTypePair>{p},false).isEmpty();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid sobject provided. The Schema.describeDataCategoryGroups() methods does not support the Account sobject as a parameter. The sobject provided can not be associated with data category groups.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R266",
+      "code": "Schema.SObjectType t; r=t.getDescribe();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R267",
+      "code": "Schema.SObjectField f; r=f.getDescribe();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R268",
+      "code": "Schema.DescribeSObjectResult d; r=d.getName();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R269",
+      "code": "Schema.DescribeFieldResult d; r=d.getType();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R270",
+      "code": "Schema.RecordTypeInfo rt; r=rt.getName();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R271",
+      "code": "Schema.FieldSet fs; r=fs.getNamespace();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R272",
+      "code": "Schema.FieldSetMember m; r=m.getFieldPath();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R273",
+      "code": "Schema.DescribeTabResult t; r=t.getUrl();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R274",
+      "code": "Schema.DescribeTabSetResult a; r=a.getTabs();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R275",
+      "code": "Schema.DataCategoryGroupSobjectTypePair p; r=p.getSobject();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R276",
+      "code": "Schema.SObjectType t; r=t?.getDescribe()?.getName();",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R277",
+      "code": "Schema.SObjectField f; r=f?.getDescribe()?.getType();",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R278",
+      "code": "Object x=Account.SObjectType; Schema.SObjectField f=(Schema.SObjectField)x; r=f;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Schema.SObjectType to Schema.SObjectField",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R279",
+      "code": "Object x=Account.Name; Schema.SObjectType t=(Schema.SObjectType)x; r=t;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Schema.SObjectField to Schema.SObjectType",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R280",
+      "code": "List<Schema.DescribeSObjectResult> ds=Schema.describeSObjects(new List<String>()); r=ds[0].getName();",
+      "expected": "EXC|System.ListException|List index out of bounds: 0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R281",
+      "code": "Schema.FieldSet fs=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=fs.getFields()[1].getFieldPath();",
+      "expected": "EXC|System.ListException|List index out of bounds: 1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R282",
+      "code": "Schema.FieldSet fs=Schema.SObjectType.Account.fieldSets.FamilyBaseline; Integer initialSize=fs.getFields().size(); List<Schema.FieldSetMember> members=fs.getFields(); members.clear(); Schema.FieldSet shorthandAgain=Schema.SObjectType.Account.fieldSets.FamilyBaseline; Schema.FieldSet describedAgain=Account.SObjectType.getDescribe().fieldSets.getMap().get('FamilyBaseline'); r=String.valueOf(initialSize)+'|'+String.valueOf(fs.getFields().size())+'|'+String.valueOf(shorthandAgain.getFields().size())+'|'+String.valueOf(describedAgain.getFields().size());",
+      "expected": "1|0|1|1",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "C001",
+      "code": "Schema.SObjectType t=Account.Name; pq.out('C001','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Schema.SObjectField to Schema.SObjectType",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C002",
+      "code": "Schema.SObjectField f=Account.SObjectType; pq.out('C002','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Schema.SObjectType to Schema.SObjectField",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C003",
+      "code": "Schema.DisplayType t=Schema.SOAPType.String; pq.out('C003','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Schema.SoapType to Schema.DisplayType",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C004",
+      "code": "Schema.SOAPType t=Schema.DisplayType.String; pq.out('C004','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Schema.DisplayType to Schema.SoapType",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C005",
+      "code": "String s=Account.Name.getDescribe().getType(); pq.out('C005','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Schema.DisplayType to String",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C006",
+      "code": "Schema.FieldSet f=new Schema.FieldSet(); pq.out('C006','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Schema.FieldSet",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C007",
+      "code": "Schema.DescribeSObjectResult d=new Schema.DescribeSObjectResult(); pq.out('C007','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Schema.DescribeSObjectResult",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C008",
+      "code": "Schema.DescribeFieldResult d=new Schema.DescribeFieldResult(); pq.out('C008','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Schema.DescribeFieldResult",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C009",
+      "code": "List<Schema.SObjectType> ts=new List<Schema.SObjectType>{Account.SObjectType}; Schema.describeSObjects(ts); pq.out('C009','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void describeSObjects(List<Schema.SObjectType>) from the type Schema",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C010",
+      "code": "Schema.describeDataCategoryGroups(new List<Schema.SObjectType>{Account.SObjectType}); pq.out('C010','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void describeDataCategoryGroups(List<Schema.SObjectType>) from the type Schema",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C011",
+      "code": "Schema.DescribeTabSetResult a; a.getName(); pq.out('C011','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getName() from the type Schema.DescribeTabSetResult",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C012",
+      "code": "Schema.RecordTypeInfo rt; rt.getNamespace(); pq.out('C012','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getNamespace() from the type Schema.RecordTypeInfo",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C013",
+      "code": "Boolean same=Schema.SObjectType.Account==Account.SObjectType; pq.out('C013','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Comparison arguments must be compatible types: Schema.DescribeSObjectResult, Schema.SObjectType",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C014",
+      "code": "Boolean same=Schema.SObjectType.Account.fields.Name==Account.Name; pq.out('C014','COMPILE_OK');",
+      "expected": "COMPILE_ERROR\tline 6: Comparison arguments must be compatible types: Schema.DescribeFieldResult, Schema.SObjectField",
+      "compile": true,
+      "nativeNull": false
+    }
+  ],
+  "remaining": [
+    {
+      "id": "R164",
+      "owner": "schema profiles",
+      "reason": "The numeric formula control has no captured metadata source in this fixture."
+    },
+    {
+      "id": "R165",
+      "owner": "schema profiles",
+      "reason": "The numeric formula control has no captured metadata source in this fixture."
+    },
+    {
+      "id": "R264",
+      "owner": "schema describe",
+      "reason": "A null category-pair element fails at the Salesforce SOAP transport boundary; local execution reports a null-pair error."
+    }
+  ]
+}

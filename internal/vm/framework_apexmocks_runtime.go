@@ -924,11 +924,18 @@ func (vm *VM) frameworkNamespacedAttributeMapGet(values Value, name string, impl
 		if value, ok := values.Map[mapKey(String(keyText))]; ok {
 			return value
 		}
-		if value, ok := values.Map[mapKey(String(strings.ToLower(stripAnyNamespaceToken(keyText))))]; ok {
-			return value
+		// An explicitly qualified request must not silently resolve to an
+		// unnamespaced entry.  The fallback is only for unqualified names,
+		// where the map may store a namespaced representation.
+		if storage.StripAnyNamespaceToken(name) == name {
+			if value, ok := values.Map[mapKey(String(strings.ToLower(stripAnyNamespaceToken(keyText))))]; ok {
+				return value
+			}
 		}
-		if value, ok := vm.specialMapLookup(values, String(keyText)); ok {
-			return value
+		if storage.StripAnyNamespaceToken(name) == name {
+			if value, ok := vm.specialMapLookup(values, String(keyText)); ok {
+				return value
+			}
 		}
 	}
 	return Null

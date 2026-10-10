@@ -19,7 +19,6 @@ func TestAnnotationCatalogRejectsUnknownAnnotationsAndProperties(t *testing.T) {
 		"duplicate property":                    `public class Probe { @AuraEnabled(cacheable=true cacheable=false) public static void run() {} }`,
 		"InvocableMethod string property":       `public class Probe { @InvocableMethod(label=true) public static void run(List<String> values) {} }`,
 		"InvocableMethod boolean property":      `public class Probe { @InvocableMethod(callout='yes') public static void run(List<String> values) {} }`,
-		"InvocableVariable boolean property":    `public class Probe { @InvocableVariable(required='true') public String value; }`,
 		"preview annotation":                    `@IntegrationTest public class Probe {}`,
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -28,6 +27,16 @@ func TestAnnotationCatalogRejectsUnknownAnnotationsAndProperties(t *testing.T) {
 				t.Fatalf("expected annotation catalog diagnostic, got %#v", result.Diagnostics)
 			}
 		})
+	}
+}
+
+// A05 C161: the native compiler accepts a quoted required flag.
+func TestInvocableVariableAcceptsQuotedRequired(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { @InvocableVariable(required='true') public String value; }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("quoted required was rejected: %#v", result.Diagnostics)
 	}
 }
 
@@ -203,6 +212,19 @@ func TestInvocableMethodCapabilityTypeFormat(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
 	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
 		t.Fatalf("invalid capabilityType was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestInvocableMethodAllowsArrayParameterSyntax(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe {
+  public class Input {}
+  @InvocableMethod(label='Run')
+  public static List<Input> run(Input[] values) { return new List<Input>(); }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("array syntax for an invocable List parameter was rejected: %#v", result.Diagnostics)
 	}
 }
 

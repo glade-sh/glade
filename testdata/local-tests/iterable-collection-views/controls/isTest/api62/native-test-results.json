@@ -1,0 +1,79 @@
+[
+  {
+    "FullName": "CRT62b1a472da9e81V001.V001",
+    "MethodName": "V001",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|V001|true|false|true",
+    "StackTrace": "Class.CRT62b1a472da9e81V001.V001: line 21, column 1"
+  },
+  {
+    "FullName": "CRT62b1a472da9e81V002.V002",
+    "MethodName": "V002",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|V002|true|false|true",
+    "StackTrace": "Class.CRT62b1a472da9e81V002.V002: line 21, column 1"
+  },
+  {
+    "FullName": "CRT62b1a472da9e81V003.V003",
+    "MethodName": "V003",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|V003|EXC|System.TypeException|Invalid conversion from runtime type Set<Integer> to Set<String>",
+    "StackTrace": "Class.CRT62b1a472da9e81V003.V003: line 17, column 1"
+  },
+  {
+    "FullName": "CRT62b1a472da9e81V004.V004",
+    "MethodName": "V004",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|V004|1",
+    "StackTrace": "Class.CRT62b1a472da9e81V004.V004: line 17, column 1"
+  },
+  {
+    "FullName": "CRT62b1a472da9e81V005.V005",
+    "MethodName": "V005",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|V005|true|false",
+    "StackTrace": "Class.CRT62b1a472da9e81V005.V005: line 16, column 1"
+  },
+  {
+    "FullName": "CRT62b1a472da9e81V006.V006",
+    "MethodName": "V006",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|V006|true|false",
+    "StackTrace": "Class.CRT62b1a472da9e81V006.V006: line 16, column 1"
+  },
+  {
+    "FullName": "CRT62b1a472da9e81V007.V007",
+    "MethodName": "V007",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|V007|true|true",
+    "StackTrace": "Class.CRT62b1a472da9e81V007.V007: line 15, column 1"
+  },
+  {
+    "FullName": "CRT62b1a472da9e81V008.V008",
+    "MethodName": "V008",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|V008|EXC|System.TypeException|Invalid conversion from runtime type Set<Integer> to Set<String>",
+    "StackTrace": "Class.CRT62b1a472da9e81V008.V008: line 16, column 1"
+  },
+  {
+    "FullName": "CRT62b1a472da9e81V009.V009",
+    "MethodName": "V009",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|V009|false",
+    "StackTrace": "Class.CRT62b1a472da9e81V009.V009: line 15, column 1"
+  },
+  {
+    "FullName": "CRT62b1a472da9e81V010.V010",
+    "MethodName": "V010",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|V010|true",
+    "StackTrace": "Class.CRT62b1a472da9e81V010.V010: line 15, column 1"
+  },
+  {
+    "FullName": "CRT62b1a472da9e81V011.V011",
+    "MethodName": "V011",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|V011|1",
+    "StackTrace": "Class.CRT62b1a472da9e81V011.V011: line 16, column 1"
+  }
+]

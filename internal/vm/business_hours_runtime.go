@@ -64,12 +64,28 @@ var businessHoursDayFields = []struct {
 }
 
 func (vm *VM) businessHoursAdd(callee string, args []Value) (Value, error) {
-	if len(args) != 3 || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueInt {
+	if len(args) != 3 {
 		return Null, fmt.Errorf("%s expects Id, Datetime, Long", callee)
 	}
 	id, err := businessHoursIDArgument(callee, args[0])
 	if err != nil {
 		return Null, err
+	}
+	// R235-R245 and C009: Salesforce checks nulls before value types.
+	if args[1].Kind == ValueNull {
+		if callee == "BusinessHours.addGmt" {
+			return Null, newExceptionError("System.MathException", `Cannot invoke "java.util.Calendar.clone()" because "startDateCal" is null`)
+		}
+		return Null, newExceptionError("System.NullPointerException", "Start date cannot be null")
+	}
+	if args[2].Kind == ValueNull {
+		if callee == "BusinessHours.addGmt" {
+			return Null, newExceptionError("System.MathException", `Cannot invoke "java.lang.Long.longValue()" because "interval" is null`)
+		}
+		return Null, newExceptionError("System.NullPointerException", "Interval cannot be null")
+	}
+	if args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueInt {
+		return Null, fmt.Errorf("%s expects Id, Datetime, Long", callee)
 	}
 	calendar, err := vm.businessHoursCalendar(id)
 	if err != nil {
@@ -83,12 +99,21 @@ func (vm *VM) businessHoursAdd(callee string, args []Value) (Value, error) {
 }
 
 func (vm *VM) businessHoursDiff(args []Value) (Value, error) {
-	if len(args) != 3 || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueObject || args[2].Type != "Datetime" {
+	if len(args) != 3 {
 		return Null, fmt.Errorf("BusinessHours.diff expects String, Datetime, Datetime")
 	}
 	id, err := businessHoursIDArgument("BusinessHours.diff", args[0])
 	if err != nil {
 		return Null, err
+	}
+	if args[1].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Start date cannot be null")
+	}
+	if args[2].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "End date cannot be null")
+	}
+	if args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueObject || args[2].Type != "Datetime" {
+		return Null, fmt.Errorf("BusinessHours.diff expects String, Datetime, Datetime")
 	}
 	calendar, err := vm.businessHoursCalendar(id)
 	if err != nil {
@@ -106,12 +131,18 @@ func (vm *VM) businessHoursDiff(args []Value) (Value, error) {
 }
 
 func (vm *VM) businessHoursIsWithin(args []Value) (Value, error) {
-	if len(args) != 2 || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
+	if len(args) != 2 {
 		return Null, fmt.Errorf("BusinessHours.isWithin expects String, Datetime")
 	}
 	id, err := businessHoursIDArgument("BusinessHours.isWithin", args[0])
 	if err != nil {
 		return Null, err
+	}
+	if args[1].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Target date cannot be null")
+	}
+	if args[1].Kind != ValueObject || args[1].Type != "Datetime" {
+		return Null, fmt.Errorf("BusinessHours.isWithin expects String, Datetime")
 	}
 	calendar, err := vm.businessHoursCalendar(id)
 	if err != nil {
@@ -125,12 +156,18 @@ func (vm *VM) businessHoursIsWithin(args []Value) (Value, error) {
 }
 
 func (vm *VM) businessHoursNextStartDate(args []Value) (Value, error) {
-	if len(args) != 2 || args[1].Kind != ValueObject || args[1].Type != "Datetime" {
+	if len(args) != 2 {
 		return Null, fmt.Errorf("BusinessHours.nextStartDate expects Id, Datetime")
 	}
 	id, err := businessHoursIDArgument("BusinessHours.nextStartDate", args[0])
 	if err != nil {
 		return Null, err
+	}
+	if args[1].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Target date cannot be null")
+	}
+	if args[1].Kind != ValueObject || args[1].Type != "Datetime" {
+		return Null, fmt.Errorf("BusinessHours.nextStartDate expects Id, Datetime")
 	}
 	calendar, err := vm.businessHoursCalendar(id)
 	if err != nil {
@@ -157,6 +194,11 @@ func businessHoursIDArgument(callee string, value Value) (string, error) {
 	id, ok := idTextFromValue(value)
 	if !ok {
 		return "", fmt.Errorf("%s expects Id", callee)
+	}
+	// R239/R246/R265 reject an empty String as an Id; R253/R259 use
+	// record-not-found instead. An empty argument never selects the default.
+	if id == "" && (callee == "BusinessHours.add" || callee == "BusinessHours.addGmt" || callee == "BusinessHours.nextStartDate") {
+		return "", newExceptionError("System.StringException", "Invalid id: ")
 	}
 	return id, nil
 }
@@ -198,7 +240,11 @@ func (vm *VM) businessHoursCalendar(id string) (businessHoursCalendar, error) {
 		if err != nil {
 			return businessHoursCalendar{}, err
 		}
-		if end > start {
+		if end == start && start == 0 {
+			// A fresh Salesforce scratch org represents its 24x7 default
+			// calendar as a zero-to-zero window for every weekday.
+			calendar.windows[day.weekday] = businessHoursWindow{start: 0, end: 24 * time.Hour}
+		} else if end > start {
 			calendar.windows[day.weekday] = businessHoursWindow{start: start, end: end}
 		}
 	}
@@ -546,16 +592,13 @@ func (vm *VM) businessHoursRecord(id string) (storage.Record, bool) {
 			return record, true
 		}
 		for _, record := range object.Records {
-			if string(record.ID) == id || storageStringField(record, "Id") == id {
+			// R268-R272: String.valueOf(Id) expands a 15-character local
+			// record ID to its checksum-qualified 18-character representation.
+			if apexIDTextEqual(string(record.ID), id) || apexIDTextEqual(storageStringField(record, "Id"), id) {
 				return record, true
 			}
 		}
 		return storage.Record{}, false
-	}
-	for _, record := range object.Records {
-		if strings.EqualFold(storageStringField(record, "IsDefault"), "true") && strings.EqualFold(storageStringField(record, "IsActive"), "true") {
-			return record, true
-		}
 	}
 	return storage.Record{}, false
 }
@@ -611,11 +654,12 @@ func (calendar businessHoursCalendar) add(start time.Time, amount time.Duration)
 			cursor = businessHoursLocalAt(cursor, segment.start, calendar.location)
 			offset = segment.start
 		}
-		available := segment.end - offset
+		windowEnd := businessHoursLocalAt(cursor, segment.end, calendar.location)
+		available := windowEnd.Sub(cursor)
 		if remaining <= available {
 			return cursor.Add(remaining).UTC()
 		}
-		cursor = businessHoursLocalAt(cursor, segment.end, calendar.location)
+		cursor = windowEnd
 		remaining -= available
 	}
 	return cursor.UTC()
@@ -625,26 +669,18 @@ func (calendar businessHoursCalendar) addBackward(start time.Time, amount time.D
 	remaining := amount
 	cursor := start.In(calendar.location)
 	for remaining > 0 {
-		segments := calendar.openSegments(cursor)
-		offset := businessHoursLocalOffset(cursor)
-		segment, ok := businessHoursCurrentOrPreviousSegment(segments, offset)
+		windowStart, windowEnd, ok := calendar.previousSegment(cursor)
 		if !ok {
-			previous, previousOK := calendar.previousEnd(cursor)
-			if !previousOK {
-				return cursor.UTC()
-			}
-			cursor = previous.In(calendar.location)
-			continue
+			return cursor.UTC()
 		}
-		if offset > segment.end {
-			cursor = businessHoursLocalAt(cursor, segment.end, calendar.location)
-			offset = segment.end
+		if cursor.After(windowEnd) {
+			cursor = windowEnd
 		}
-		available := offset - segment.start
+		available := cursor.Sub(windowStart)
 		if remaining <= available {
 			return cursor.Add(-remaining).UTC()
 		}
-		cursor = businessHoursLocalAt(cursor, segment.start, calendar.location)
+		cursor = windowStart
 		remaining -= available
 	}
 	return cursor.UTC()
@@ -691,7 +727,9 @@ func (calendar businessHoursCalendar) diff(start, end time.Time) time.Duration {
 
 func (calendar businessHoursCalendar) nextStart(instant time.Time) (time.Time, bool) {
 	if calendar.isWithin(instant) {
-		return instant.UTC(), true
+		// R008/R104/R222/R228: nextStartDate returns minute precision,
+		// even when the supplied instant is already in an open window.
+		return instant.Truncate(time.Minute).UTC(), true
 	}
 	local := instant.In(calendar.location)
 	for i := 0; i < 8; i++ {
@@ -706,19 +744,20 @@ func (calendar businessHoursCalendar) nextStart(instant time.Time) (time.Time, b
 	return time.Time{}, false
 }
 
-func (calendar businessHoursCalendar) previousEnd(instant time.Time) (time.Time, bool) {
+func (calendar businessHoursCalendar) previousSegment(instant time.Time) (time.Time, time.Time, bool) {
 	local := instant.In(calendar.location)
 	for i := 0; i < 8; i++ {
 		day := local.AddDate(0, 0, -i)
 		segments := calendar.openSegments(day)
 		for index := len(segments) - 1; index >= 0; index-- {
+			start := businessHoursLocalAt(day, segments[index].start, calendar.location)
 			end := businessHoursLocalAt(day, segments[index].end, calendar.location)
-			if !end.After(local) {
-				return end.UTC(), true
+			if start.Before(local) {
+				return start, end, true
 			}
 		}
 	}
-	return time.Time{}, false
+	return time.Time{}, time.Time{}, false
 }
 
 func (calendar businessHoursCalendar) openSegments(local time.Time) []businessHoursWindow {
@@ -757,15 +796,6 @@ func businessHoursCurrentOrNextSegment(segments []businessHoursWindow, offset ti
 	for _, segment := range segments {
 		if offset < segment.end {
 			return segment, true
-		}
-	}
-	return businessHoursWindow{}, false
-}
-
-func businessHoursCurrentOrPreviousSegment(segments []businessHoursWindow, offset time.Duration) (businessHoursWindow, bool) {
-	for index := len(segments) - 1; index >= 0; index-- {
-		if offset > segments[index].start {
-			return segments[index], true
 		}
 	}
 	return businessHoursWindow{}, false
@@ -896,6 +926,11 @@ func businessHoursLocalOffset(value time.Time) time.Duration {
 }
 
 func businessHoursLocalAt(day time.Time, offset time.Duration, location *time.Location) time.Time {
-	base := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, location)
-	return base.Add(offset)
+	// R207/R212: midnight-to-midnight spans 23 or 25 elapsed hours on
+	// DST transition days. The metadata offsets describe wall-clock times.
+	hour := int(offset / time.Hour)
+	minute := int(offset % time.Hour / time.Minute)
+	second := int(offset % time.Minute / time.Second)
+	nanosecond := int(offset % time.Second)
+	return time.Date(day.Year(), day.Month(), day.Day(), hour, minute, second, nanosecond, location)
 }

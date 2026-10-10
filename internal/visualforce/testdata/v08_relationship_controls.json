@@ -1,0 +1,171 @@
+{
+  "support": {
+    "59.0": {
+      "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"59.0\"\n}\n",
+      "force-app/main/default/classes/FamilyV08C59.cls": "public with sharing class FamilyV08C59 {\n public List<String> getWords(){return new List<String>{'A','B','C'};}\n public List<String> getEmptyWords(){return new List<String>();}\n public List<String> getNullWords(){return null;}\n public List<String> getOneWord(){return new List<String>{'ONLY'};}\n public List<String> getDuplicates(){return new List<String>{'A','A','B'};}\n public List<String> getNullMembers(){return new List<String>{null,'B',null};}\n public List<String> getSpecialWords(){return new List<String>{'<one>','A&B','\"quoted\"'};}\n public List<String> getBlanks(){return new List<String>{'',' ','END'};}\n public List<Integer> getNumbers(){return new List<Integer>{0,-1,2};}\n public List<Decimal> getDecimals(){return new List<Decimal>{1.25,0,-2.50};}\n public List<Boolean> getFlags(){return new List<Boolean>{true,false,null};}\n public List<Date> getDates(){return new List<Date>{Date.newInstance(2024,2,29),Date.newInstance(2000,1,1)};}\n public List<Account> getAccounts(){return new List<Account>{new Account(Name='ALPHA',Phone='111'),new Account(Name='BETA',Phone='222')};}\n public List<List<String>> getGroups(){return new List<List<String>>{new List<String>{'A1','A2'},new List<String>{'B1'}};}\n public List<String> getFields(){return new List<String>{'Name','Phone'};}\n public List<String> getReverseFields(){return new List<String>{'Phone','Name'};}\n public List<String> getOneField(){return new List<String>{'Name'};}\n public List<String> getDuplicateFields(){return new List<String>{'Name','Name'};}\n public List<String> getMissingFields(){return new List<String>{'FamilyV08Missing__c'};}\n public List<String> getNullFields(){return new List<String>{null,'Name'};}\n public String getOuter(){return 'OUTER';}\n public List<String> getExploding(){throw new V08Exception('V08_FIXED_EXCEPTION');}\n public class V08Exception extends Exception {}\n}\n",
+      "force-app/main/default/classes/FamilyV08C59.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><status>Active</status></ApexClass>"
+    },
+    "67.0": {
+      "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+      "force-app/main/default/classes/FamilyV08C67.cls": "public with sharing class FamilyV08C67 {\n public List<String> getWords(){return new List<String>{'A','B','C'};}\n public List<String> getEmptyWords(){return new List<String>();}\n public List<String> getNullWords(){return null;}\n public List<String> getOneWord(){return new List<String>{'ONLY'};}\n public List<String> getDuplicates(){return new List<String>{'A','A','B'};}\n public List<String> getNullMembers(){return new List<String>{null,'B',null};}\n public List<String> getSpecialWords(){return new List<String>{'<one>','A&B','\"quoted\"'};}\n public List<String> getBlanks(){return new List<String>{'',' ','END'};}\n public List<Integer> getNumbers(){return new List<Integer>{0,-1,2};}\n public List<Decimal> getDecimals(){return new List<Decimal>{1.25,0,-2.50};}\n public List<Boolean> getFlags(){return new List<Boolean>{true,false,null};}\n public List<Date> getDates(){return new List<Date>{Date.newInstance(2024,2,29),Date.newInstance(2000,1,1)};}\n public List<Account> getAccounts(){return new List<Account>{new Account(Name='ALPHA',Phone='111'),new Account(Name='BETA',Phone='222')};}\n public List<List<String>> getGroups(){return new List<List<String>>{new List<String>{'A1','A2'},new List<String>{'B1'}};}\n public List<String> getFields(){return new List<String>{'Name','Phone'};}\n public List<String> getReverseFields(){return new List<String>{'Phone','Name'};}\n public List<String> getOneField(){return new List<String>{'Name'};}\n public List<String> getDuplicateFields(){return new List<String>{'Name','Name'};}\n public List<String> getMissingFields(){return new List<String>{'FamilyV08Missing__c'};}\n public List<String> getNullFields(){return new List<String>{null,'Name'};}\n public String getOuter(){return 'OUTER';}\n public List<String> getExploding(){throw new V08Exception('V08_FIXED_EXCEPTION');}\n public class V08Exception extends Exception {}\n}\n",
+      "force-app/main/default/classes/FamilyV08C67.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>"
+    }
+  },
+  "cases": [
+    {
+      "id": "c_typed_row_owner_name",
+      "group": "row variables",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV08P59000",
+          "markup": "<apex:page controller=\"FamilyV08C59\" showHeader=\"false\" sidebar=\"false\"><section data-case=\"c_typed_row_owner_name\"><apex:dataTable value=\"{!accounts}\" var=\"row\" ><apex:column headerValue=\"VALUE\"><apex:outputText value=\"{!row.Owner.Name}\"/></apex:column></apex:dataTable></section></apex:page>\n",
+          "metadata": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV08P59000</label></ApexPage>"
+        },
+        "67.0": {
+          "name": "FamilyV08P67000",
+          "markup": "<apex:page controller=\"FamilyV08C67\" showHeader=\"false\" sidebar=\"false\"><section data-case=\"c_typed_row_owner_name\"><apex:dataTable value=\"{!accounts}\" var=\"row\" ><apex:column headerValue=\"VALUE\"><apex:outputText value=\"{!row.Owner.Name}\"/></apex:column></apex:dataTable></section></apex:page>\n",
+          "metadata": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV08P67000</label></ApexPage>"
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": {
+          "type": "",
+          "message": ""
+        },
+        "67.0": {
+          "type": "",
+          "message": ""
+        }
+      }
+    },
+    {
+      "id": "c_typed_row_parent_name",
+      "group": "row variables",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV08P59001",
+          "markup": "<apex:page controller=\"FamilyV08C59\" showHeader=\"false\" sidebar=\"false\"><section data-case=\"c_typed_row_parent_name\"><apex:repeat value=\"{!accounts}\" var=\"row\" ><apex:outputText value=\"{!row.Parent.Name}\"/></apex:repeat></section></apex:page>\n",
+          "metadata": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV08P59001</label></ApexPage>"
+        },
+        "67.0": {
+          "name": "FamilyV08P67001",
+          "markup": "<apex:page controller=\"FamilyV08C67\" showHeader=\"false\" sidebar=\"false\"><section data-case=\"c_typed_row_parent_name\"><apex:repeat value=\"{!accounts}\" var=\"row\" ><apex:outputText value=\"{!row.Parent.Name}\"/></apex:repeat></section></apex:page>\n",
+          "metadata": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV08P67001</label></ApexPage>"
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": {
+          "type": "",
+          "message": ""
+        },
+        "67.0": {
+          "type": "",
+          "message": ""
+        }
+      }
+    },
+    {
+      "id": "c_typed_row_created_by_name",
+      "group": "row variables",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV08P59002",
+          "markup": "<apex:page controller=\"FamilyV08C59\" showHeader=\"false\" sidebar=\"false\"><section data-case=\"c_typed_row_created_by_name\"><apex:dataList value=\"{!accounts}\" var=\"row\" ><apex:outputText value=\"{!row.CreatedBy.Name}\"/></apex:dataList></section></apex:page>\n",
+          "metadata": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV08P59002</label></ApexPage>"
+        },
+        "67.0": {
+          "name": "FamilyV08P67002",
+          "markup": "<apex:page controller=\"FamilyV08C67\" showHeader=\"false\" sidebar=\"false\"><section data-case=\"c_typed_row_created_by_name\"><apex:dataList value=\"{!accounts}\" var=\"row\" ><apex:outputText value=\"{!row.CreatedBy.Name}\"/></apex:dataList></section></apex:page>\n",
+          "metadata": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV08P67002</label></ApexPage>"
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": {
+          "type": "",
+          "message": ""
+        },
+        "67.0": {
+          "type": "",
+          "message": ""
+        }
+      }
+    },
+    {
+      "id": "c_typed_row_parent_owner_name",
+      "group": "row variables",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV08P59003",
+          "markup": "<apex:page controller=\"FamilyV08C59\" showHeader=\"false\" sidebar=\"false\"><section data-case=\"c_typed_row_parent_owner_name\"><apex:pageBlock><apex:pageBlockTable value=\"{!accounts}\" var=\"row\" ><apex:column headerValue=\"VALUE\"><apex:outputText value=\"{!row.Parent.Owner.Name}\"/></apex:column></apex:pageBlockTable></apex:pageBlock></section></apex:page>\n",
+          "metadata": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV08P59003</label></ApexPage>"
+        },
+        "67.0": {
+          "name": "FamilyV08P67003",
+          "markup": "<apex:page controller=\"FamilyV08C67\" showHeader=\"false\" sidebar=\"false\"><section data-case=\"c_typed_row_parent_owner_name\"><apex:pageBlock><apex:pageBlockTable value=\"{!accounts}\" var=\"row\" ><apex:column headerValue=\"VALUE\"><apex:outputText value=\"{!row.Parent.Owner.Name}\"/></apex:column></apex:pageBlockTable></apex:pageBlock></section></apex:page>\n",
+          "metadata": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV08P67003</label></ApexPage>"
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "diagnostics": {
+        "59.0": {
+          "type": "",
+          "message": ""
+        },
+        "67.0": {
+          "type": "",
+          "message": ""
+        }
+      }
+    },
+    {
+      "id": "c_invalid_unknown_row_field",
+      "group": "row variables",
+      "kind": "compile",
+      "inputs": {
+        "59.0": {
+          "name": "FamilyV08P59004",
+          "markup": "<apex:page controller=\"FamilyV08C59\" showHeader=\"false\" sidebar=\"false\"><section data-case=\"c_invalid_unknown_row_field\"><apex:dataTable value=\"{!accounts}\" var=\"row\" ><apex:column headerValue=\"VALUE\"><apex:outputText value=\"{!row.FamilyV08Missing__c}\"/></apex:column></apex:dataTable></section></apex:page>\n",
+          "metadata": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>59.0</apiVersion><label>FamilyV08P59004</label></ApexPage>"
+        },
+        "67.0": {
+          "name": "FamilyV08P67004",
+          "markup": "<apex:page controller=\"FamilyV08C67\" showHeader=\"false\" sidebar=\"false\"><section data-case=\"c_invalid_unknown_row_field\"><apex:dataTable value=\"{!accounts}\" var=\"row\" ><apex:column headerValue=\"VALUE\"><apex:outputText value=\"{!row.FamilyV08Missing__c}\"/></apex:column></apex:dataTable></section></apex:page>\n",
+          "metadata": "<ApexPage xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><label>FamilyV08P67004</label></ApexPage>"
+        }
+      },
+      "expected": {
+        "59.0": "COMPILE_ERROR",
+        "67.0": "COMPILE_ERROR"
+      },
+      "diagnostics": {
+        "59.0": {
+          "type": "Error",
+          "message": "Invalid field FamilyV08Missing__c for SObject Account"
+        },
+        "67.0": {
+          "type": "Error",
+          "message": "Invalid field FamilyV08Missing__c for SObject Account"
+        }
+      }
+    }
+  ]
+}

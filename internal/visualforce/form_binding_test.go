@@ -202,3 +202,20 @@ func TestApplyStandardControllerFormValuesUsesRecordValuesAndSchema(t *testing.T
 		t.Fatalf("Segments__c = %#v, want semicolon storage text from schema", got)
 	}
 }
+
+// Existing form-key matching uses lowercase normalization, which differs from
+// Unicode simple folding. A style cleanup must not widen that behavior.
+func TestParamSubmittedValuePreservesLowercaseNormalization(t *testing.T) {
+	value, found, err := visualforceParamSubmittedValue(map[string]string{"NAME": "ascii"}, "Name")
+	if err != nil || !found || value != "ascii" {
+		t.Fatalf("ASCII form key: value=%q found=%v err=%v", value, found, err)
+	}
+	value, found, err = visualforceParamSubmittedValue(map[string]string{"ſ": "long-s"}, "s")
+	if err != nil || found {
+		t.Fatalf("long-s must remain distinct from s: value=%q found=%v err=%v", value, found, err)
+	}
+	value, found, err = visualforceParamSubmittedValue(map[string]string{"S": "ascii", "ſ": "long-s"}, "s")
+	if err != nil || !found || value != "ascii" {
+		t.Fatalf("distinct Unicode key must not create an ASCII duplicate: value=%q found=%v err=%v", value, found, err)
+	}
+}

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/glade-sh/glade/internal/config"
 )
 
 const FixtureVersion = "glade.storage.v1"
@@ -61,10 +63,17 @@ func unsupportedRESTAPIVersion(requested string) error {
 	return fmt.Errorf("unsupported REST API version %q; supported versions: %s", requested, strings.Join(SupportedRESTAPIVersions, ", "))
 }
 
+// NormalizeOrgDomainURL shares canonical-origin validation with config. Unset
+// stays unset so callers can apply a seed before the VM's local default.
+func NormalizeOrgDomainURL(raw string) (string, error) {
+	return config.NormalizeOrgDomainURL(raw)
+}
+
 type OrgState struct {
 	OrgID        string                 `json:"orgId,omitempty"`
 	APIVersion   string                 `json:"apiVersion,omitempty"`
 	Namespace    string                 `json:"namespace,omitempty"`
+	DomainURL    string                 `json:"domainUrl,omitempty"`
 	Metadata     MetadataRegistry       `json:"metadata,omitempty"`
 	Objects      map[string]ObjectState `json:"objects"`
 	IDSequences  map[string]uint64      `json:"idSequences,omitempty"`
@@ -78,11 +87,24 @@ type OrgState struct {
 	objectNameCache                 *sync.Map
 	keyPrefixesValidated            bool
 	keyPrefixesValidatedObjectCount int
-	keyPrefixesValidatedPrefixes    map[string]string
+	keyPrefixesValidatedPrefixes    []keyPrefixSnapshotEntry
+	schemaGeneration                uint64
+}
+
+// SchemaGeneration counts ClearRuntimeSchemaStamp calls on this org value.
+// Every helper that changes definitions in place (EnsureMutableObjectDefinition
+// and the metadata paths) clears the stamp, so a cache built for an unstamped
+// org stays valid while the org pointer and this generation are unchanged.
+func (o *OrgState) SchemaGeneration() uint64 {
+	if o == nil {
+		return 0
+	}
+	return o.schemaGeneration
 }
 
 func (o *OrgState) ClearRuntimeSchemaStamp() {
 	if o != nil {
+		o.schemaGeneration++
 		o.RuntimeSchemaStamp = ""
 		o.keyPrefixesValidated = false
 		o.keyPrefixesValidatedObjectCount = 0
@@ -91,16 +113,20 @@ func (o *OrgState) ClearRuntimeSchemaStamp() {
 }
 
 type MetadataRegistry struct {
-	Labels                 []LabelMetadata          `json:"labels,omitempty"`
-	ManagedLabelNamespaces []string                 `json:"managedLabelNamespaces,omitempty"`
-	Tabs                   []TabMetadata            `json:"tabs,omitempty"`
-	DataCategoryGroups     []DataCategoryGroup      `json:"dataCategoryGroups,omitempty"`
-	QuickActions           []QuickActionMetadata    `json:"quickActions,omitempty"`
-	FieldSets              []FieldSetMetadata       `json:"fieldSets,omitempty"`
-	StaticResources        []StaticResourceMetadata `json:"staticResources,omitempty"`
-	ContentAssets          []ContentAssetMetadata   `json:"contentAssets,omitempty"`
-	Endpoints              []EndpointMetadata       `json:"endpoints,omitempty"`
-	EmailTemplates         []EmailTemplateMetadata  `json:"emailTemplates,omitempty"`
+	Flows                  []FlowRule                  `json:"flows,omitempty"`
+	DataWeaveResources     []DataWeaveResourceMetadata `json:"dataWeaveResources,omitempty"`
+	Labels                 []LabelMetadata             `json:"labels,omitempty"`
+	ManagedLabelNamespaces []string                    `json:"managedLabelNamespaces,omitempty"`
+	Tabs                   []TabMetadata               `json:"tabs,omitempty"`
+	Applications           []ApplicationMetadata       `json:"applications,omitempty"`
+	DataCategoryGroups     []DataCategoryGroup         `json:"dataCategoryGroups,omitempty"`
+	QuickActions           []QuickActionMetadata       `json:"quickActions,omitempty"`
+	FieldSets              []FieldSetMetadata          `json:"fieldSets,omitempty"`
+	StaticResources        []StaticResourceMetadata    `json:"staticResources,omitempty"`
+	ContentAssets          []ContentAssetMetadata      `json:"contentAssets,omitempty"`
+	Endpoints              []EndpointMetadata          `json:"endpoints,omitempty"`
+	EmailTemplates         []EmailTemplateMetadata     `json:"emailTemplates,omitempty"`
+	MessageChannels        []MessageChannelMetadata    `json:"messageChannels,omitempty"`
 }
 
 type LabelMetadata struct {
@@ -115,13 +141,26 @@ type LabelMetadata struct {
 }
 
 type TabMetadata struct {
-	Name        string `json:"name"`
-	Label       string `json:"label,omitempty"`
-	SObjectName string `json:"sObjectName,omitempty"`
-	Custom      bool   `json:"custom,omitempty"`
-	Motif       string `json:"motif,omitempty"`
-	Description string `json:"description,omitempty"`
-	File        string `json:"file,omitempty"`
+	// NavigationIdentity is the host-assigned objectApiName for a component
+	// tab. It is not an SObjectName and does not make the tab an object tab.
+	NavigationIdentity string `json:"navigationIdentity,omitempty"`
+	Name               string `json:"name"`
+	Label              string `json:"label,omitempty"`
+	SObjectName        string `json:"sObjectName,omitempty"`
+	Custom             bool   `json:"custom,omitempty"`
+	Motif              string `json:"motif,omitempty"`
+	Description        string `json:"description,omitempty"`
+	File               string `json:"file,omitempty"`
+}
+
+type ApplicationMetadata struct {
+	Name        string   `json:"name"`
+	Label       string   `json:"label,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Namespace   string   `json:"namespace,omitempty"`
+	Logo        string   `json:"logo,omitempty"`
+	Tabs        []string `json:"tabs,omitempty"`
+	File        string   `json:"file,omitempty"`
 }
 
 type DataCategoryGroup struct {
@@ -165,6 +204,17 @@ type FieldSetMetadata struct {
 type FieldSetMemberMetadata struct {
 	Field    string `json:"field"`
 	Required bool   `json:"required,omitempty"`
+}
+
+// DataWeaveResourceMetadata retains the original script source and effective
+// component API. ContentPath distinguishes a missing body from an empty script.
+type DataWeaveResourceMetadata struct {
+	Name         string `json:"name"`
+	Namespace    string `json:"namespace,omitempty"`
+	Content      string `json:"content"`
+	APIVersion   string `json:"apiVersion,omitempty"`
+	ContentPath  string `json:"contentPath,omitempty"`
+	MetadataPath string `json:"metadataPath,omitempty"`
 }
 
 type StaticResourceMetadata struct {
@@ -244,56 +294,74 @@ type ObjectDefinition struct {
 }
 
 type Field struct {
-	APIName               string              `json:"apiName"`
-	Label                 string              `json:"label,omitempty"`
-	InlineHelpText        string              `json:"inlineHelpText,omitempty"`
-	Type                  FieldType           `json:"type"`
-	DisplayType           string              `json:"displayType,omitempty"`
-	Length                int                 `json:"length,omitempty"`
-	Precision             int                 `json:"precision,omitempty"`
-	Scale                 int                 `json:"scale,omitempty"`
-	Formula               string              `json:"formula,omitempty"`
-	DefaultValue          string              `json:"defaultValue,omitempty"`
-	CompoundFieldName     string              `json:"compoundFieldName,omitempty"`
-	AutoNumber            bool                `json:"autoNumber,omitempty"`
-	DisplayFormat         string              `json:"displayFormat,omitempty"`
-	SummarizedField       string              `json:"summarizedField,omitempty"`
-	SummaryForeignKey     string              `json:"summaryForeignKey,omitempty"`
-	SummaryOperation      string              `json:"summaryOperation,omitempty"`
-	SummaryFilterItems    []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
-	FilteredLookupInfo    FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
-	Required              bool                `json:"required,omitempty"`
-	Nillable              *bool               `json:"nillable,omitempty"`
-	DefaultedOnCreate     *bool               `json:"defaultedOnCreate,omitempty"`
-	Accessible            *bool               `json:"accessible,omitempty"`
-	Createable            *bool               `json:"createable,omitempty"`
-	Updateable            *bool               `json:"updateable,omitempty"`
-	Filterable            *bool               `json:"filterable,omitempty"`
-	Groupable             *bool               `json:"groupable,omitempty"`
-	Sortable              *bool               `json:"sortable,omitempty"`
-	Aggregatable          *bool               `json:"aggregatable,omitempty"`
-	Permissionable        *bool               `json:"permissionable,omitempty"`
-	DeprecatedAndHidden   *bool               `json:"deprecatedAndHidden,omitempty"`
-	ExternalID            bool                `json:"externalId,omitempty"`
-	Unique                bool                `json:"unique,omitempty"`
-	Encrypted             bool                `json:"encrypted,omitempty"`
-	CaseSensitive         bool                `json:"caseSensitive,omitempty"`
-	RestrictedPicklist    bool                `json:"restrictedPicklist,omitempty"`
-	IDLookup              bool                `json:"idLookup,omitempty"`
-	NamePointing          bool                `json:"namePointing,omitempty"`
-	ReferenceTo           []string            `json:"referenceTo,omitempty"`
-	RelationshipName      string              `json:"relationshipName,omitempty"`
-	RelationshipOrder     *int                `json:"relationshipOrder,omitempty"`
-	ChildRelationshipName string              `json:"childRelationshipName,omitempty"`
-	PicklistController    string              `json:"picklistController,omitempty"`
-	PicklistValueSettings []PicklistSetting   `json:"picklistValueSettings,omitempty"`
-	PicklistValues        []PicklistValue     `json:"picklistValues,omitempty"`
+	APIName                  string              `json:"apiName"`
+	Label                    string              `json:"label,omitempty"`
+	InlineHelpText           string              `json:"inlineHelpText,omitempty"`
+	Type                     FieldType           `json:"type"`
+	MasterDetail             bool                `json:"masterDetail,omitempty"`
+	DisplayType              string              `json:"displayType,omitempty"`
+	Length                   int                 `json:"length,omitempty"`
+	Precision                int                 `json:"precision,omitempty"`
+	Scale                    int                 `json:"scale,omitempty"`
+	ScaleSpecified           bool                `json:"scaleSpecified,omitempty"`
+	Formula                  string              `json:"formula,omitempty"`
+	FormulaTreatBlanksAs     string              `json:"formulaTreatBlanksAs,omitempty"`
+	DefaultValue             string              `json:"defaultValue,omitempty"`
+	CompoundFieldName        string              `json:"compoundFieldName,omitempty"`
+	AutoNumber               bool                `json:"autoNumber,omitempty"`
+	DisplayFormat            string              `json:"displayFormat,omitempty"`
+	SummarizedField          string              `json:"summarizedField,omitempty"`
+	SummaryForeignKey        string              `json:"summaryForeignKey,omitempty"`
+	SummaryOperation         string              `json:"summaryOperation,omitempty"`
+	SummaryFilterItems       []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	FilteredLookupInfo       FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
+	Required                 bool                `json:"required,omitempty"`
+	Nillable                 *bool               `json:"nillable,omitempty"`
+	DefaultedOnCreate        *bool               `json:"defaultedOnCreate,omitempty"`
+	Accessible               *bool               `json:"accessible,omitempty"`
+	Createable               *bool               `json:"createable,omitempty"`
+	Updateable               *bool               `json:"updateable,omitempty"`
+	Filterable               *bool               `json:"filterable,omitempty"`
+	Groupable                *bool               `json:"groupable,omitempty"`
+	Sortable                 *bool               `json:"sortable,omitempty"`
+	Aggregatable             *bool               `json:"aggregatable,omitempty"`
+	Permissionable           *bool               `json:"permissionable,omitempty"`
+	DeprecatedAndHidden      *bool               `json:"deprecatedAndHidden,omitempty"`
+	ExternalID               bool                `json:"externalId,omitempty"`
+	Unique                   bool                `json:"unique,omitempty"`
+	Encrypted                bool                `json:"encrypted,omitempty"`
+	CaseSensitive            bool                `json:"caseSensitive,omitempty"`
+	RestrictedPicklist       bool                `json:"restrictedPicklist,omitempty"`
+	IDLookup                 bool                `json:"idLookup,omitempty"`
+	NamePointing             bool                `json:"namePointing,omitempty"`
+	ReferenceTo              []string            `json:"referenceTo,omitempty"`
+	RelationshipName         string              `json:"relationshipName,omitempty"`
+	RelationshipOrder        *int                `json:"relationshipOrder,omitempty"`
+	ReparentableMasterDetail bool                `json:"reparentableMasterDetail,omitempty"`
+	ChildRelationshipName    string              `json:"childRelationshipName,omitempty"`
+	PicklistController       string              `json:"picklistController,omitempty"`
+	PicklistValueSettings    []PicklistSetting   `json:"picklistValueSettings,omitempty"`
+	PicklistValues           []PicklistValue     `json:"picklistValues,omitempty"`
+	// Explicit org configuration can make a standard value set empty. It must
+	// not be filled back in by a catalog overlay when the object is described.
+	PicklistValuesConfigured bool `json:"picklistValuesConfigured,omitempty"`
 }
 
 type FilteredLookupInfo struct {
-	ControllingFields []string `json:"controllingFields,omitempty"`
-	Dependent         bool     `json:"dependent,omitempty"`
-	OptionalFilter    bool     `json:"optionalFilter,omitempty"`
+	ControllingFields []string           `json:"controllingFields,omitempty"`
+	Dependent         bool               `json:"dependent,omitempty"`
+	OptionalFilter    bool               `json:"optionalFilter,omitempty"`
+	Active            bool               `json:"active,omitempty"`
+	BooleanFilter     string             `json:"booleanFilter,omitempty"`
+	ErrorMessage      string             `json:"errorMessage,omitempty"`
+	FilterItems       []LookupFilterItem `json:"filterItems,omitempty"`
+}
+
+type LookupFilterItem struct {
+	Field      string `json:"field,omitempty"`
+	Operation  string `json:"operation,omitempty"`
+	Value      string `json:"value,omitempty"`
+	ValueField string `json:"valueField,omitempty"`
 }
 
 func BoolFlag(value bool) *bool {
@@ -429,6 +497,7 @@ type FlowRule struct {
 	TriggerOrder  int                    `json:"triggerOrder,omitempty"`
 	RunInMode     string                 `json:"runInMode,omitempty"`
 	Formula       string                 `json:"formula,omitempty"`
+	TextTemplates map[string]string      `json:"textTemplates,omitempty"`
 	Criteria      []WorkflowCriteriaItem `json:"criteria,omitempty"`
 	Branches      []FlowBranch           `json:"branches,omitempty"`
 	Steps         []FlowStep             `json:"steps,omitempty"`
@@ -439,6 +508,21 @@ type FlowRule struct {
 	RecordDeletes []FlowRecordDelete     `json:"recordDeletes,omitempty"`
 	CustomErrors  []FlowCustomError      `json:"customErrors,omitempty"`
 	ApexPlugins   []FlowApexPluginCall   `json:"apexPlugins,omitempty"`
+	Variables     []FlowVariable         `json:"variables,omitempty"`
+}
+
+// FlowVariable describes an autolaunched Flow interview variable. Keeping
+// this small metadata projection on the rule lets local Apex code query the
+// standard FlowDefinitionView/FlowVariableView surfaces without reparsing the
+// source file during execution.
+type FlowVariable struct {
+	Name         string `json:"name"`
+	Description  string `json:"description,omitempty"`
+	DataType     string `json:"dataType,omitempty"`
+	ObjectType   string `json:"objectType,omitempty"`
+	IsCollection bool   `json:"isCollection,omitempty"`
+	IsInput      bool   `json:"isInput,omitempty"`
+	IsOutput     bool   `json:"isOutput,omitempty"`
 }
 
 type FlowBranch struct {
@@ -478,6 +562,7 @@ type FlowAssignment struct {
 	Target       string `json:"target"`
 	Operator     string `json:"operator,omitempty"`
 	LiteralValue string `json:"literalValue,omitempty"`
+	Formula      string `json:"formula,omitempty"`
 	SourceField  string `json:"sourceField,omitempty"`
 }
 
@@ -582,6 +667,7 @@ const (
 	FieldDecimal       FieldType = "DECIMAL"
 	FieldDate          FieldType = "DATE"
 	FieldDateTime      FieldType = "DATETIME"
+	FieldTime          FieldType = "TIME"
 	FieldPicklist      FieldType = "PICKLIST"
 	FieldMultiPicklist FieldType = "MULTIPICKLIST"
 	FieldReference     FieldType = "REFERENCE"
@@ -593,12 +679,15 @@ const (
 )
 
 type Relationship struct {
+	// InheritedFrom retains relationship provenance for reverse describe.
+	InheritedFrom       string   `json:"inheritedFrom,omitempty"`
 	Field               string   `json:"field"`
 	ParentObjects       []string `json:"parentObjects"`
 	ParentRelationship  string   `json:"parentRelationship,omitempty"`
 	ChildRelationship   string   `json:"childRelationship,omitempty"`
 	CascadeDelete       bool     `json:"cascadeDelete,omitempty"`
 	RestrictedDelete    bool     `json:"restrictedDelete,omitempty"`
+	SetNullOnDelete     bool     `json:"setNullOnDelete,omitempty"`
 	DeprecatedAndHidden bool     `json:"deprecatedAndHidden,omitempty"`
 	JunctionIDListNames []string `json:"junctionIdListNames,omitempty"`
 	JunctionReferenceTo []string `json:"junctionReferenceTo,omitempty"`
@@ -607,6 +696,9 @@ type Relationship struct {
 }
 
 type Record struct {
+	// LoadedReferences is transient DML input provenance, never persisted.
+	// Each canonical field retains the reference ID from an unchanged SOQL view.
+	LoadedReferences    map[string]ID       `json:"-"`
 	ID                  ID                  `json:"id"`
 	Object              string              `json:"object"`
 	Fields              map[string]Value    `json:"fields,omitempty"`
@@ -647,15 +739,18 @@ func (r Record) HasExplicitNull(name string) bool {
 }
 
 type SystemFields struct {
-	CreatedByID      ID     `json:"createdById,omitempty"`
-	CreatedDate      string `json:"createdDate,omitempty"`
-	LastModifiedByID ID     `json:"lastModifiedById,omitempty"`
-	LastModifiedDate string `json:"lastModifiedDate,omitempty"`
-	SystemModstamp   string `json:"systemModstamp,omitempty"`
-	OwnerID          ID     `json:"ownerId,omitempty"`
-	IsDeleted        bool   `json:"isDeleted,omitempty"`
-	Locked           bool   `json:"locked,omitempty"`
-	HiddenFromSOQL   bool   `json:"-"`
+	CreatedByID            ID     `json:"createdById,omitempty"`
+	CreatedDate            string `json:"createdDate,omitempty"`
+	LastModifiedByID       ID     `json:"lastModifiedById,omitempty"`
+	LastModifiedDate       string `json:"lastModifiedDate,omitempty"`
+	SystemModstamp         string `json:"systemModstamp,omitempty"`
+	OwnerID                ID     `json:"ownerId,omitempty"`
+	IsDeleted              bool   `json:"isDeleted,omitempty"`
+	RecycleBinEmptied      bool   `json:"recycleBinEmptied,omitempty"`
+	CascadeDeletedByObject string `json:"cascadeDeletedByObject,omitempty"`
+	CascadeDeletedByID     ID     `json:"cascadeDeletedById,omitempty"`
+	Locked                 bool   `json:"locked,omitempty"`
+	HiddenFromSOQL         bool   `json:"-"`
 }
 
 type Value struct {
@@ -779,7 +874,7 @@ func DefaultValueForField(field Field) (Value, bool) {
 		}
 	case FieldReference:
 		return IDValue(ID(normalizeStringDefaultValue(raw))), true
-	case FieldString, FieldPicklist, FieldMultiPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
+	case FieldString, FieldPicklist, FieldMultiPicklist, FieldDate, FieldDateTime, FieldTime, FieldID, FieldAny:
 		return StringValue(normalizeStringDefaultValue(raw)), true
 	}
 	return Value{}, false
@@ -994,7 +1089,7 @@ func defaultValueFromRaw(field Field, raw string) (Value, bool) {
 		if _, err := strconv.ParseFloat(raw, 64); err == nil {
 			return DecimalValue(raw), true
 		}
-	case FieldString, FieldPicklist, FieldMultiPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
+	case FieldString, FieldPicklist, FieldMultiPicklist, FieldDate, FieldDateTime, FieldTime, FieldID, FieldAny:
 		return StringValue(normalizeStringDefaultValue(raw)), true
 	}
 	return Value{}, false
@@ -1081,71 +1176,75 @@ func ResolveObjectName(org OrgState, name string) (string, bool) {
 			}
 		}
 	}
+	resolved, ok := resolveObjectName(org, name)
+	if ok {
+		cacheResolvedObjectName(org, cacheKey, resolved)
+	}
+	return resolved, ok
+}
+
+func resolveObjectName(org OrgState, name string) (string, bool) {
 	if org.Namespace != "" && !hasNamespaceToken(name) && isCustomAPIName(name) {
 		prefixed := NamespaceTokenName(org.Namespace, name)
 		if prefixed != name {
 			if _, ok := org.Objects[prefixed]; ok {
-				cacheResolvedObjectName(org, cacheKey, prefixed)
 				return prefixed, true
 			}
 		}
 	}
 	if exact, ok := org.Objects[name]; ok {
 		if preferred, preferredOK := richerNamespacedObjectMatch(org, name, exact); preferredOK {
-			cacheResolvedObjectName(org, cacheKey, preferred)
 			return preferred, true
 		}
-		cacheResolvedObjectName(org, cacheKey, name)
 		return name, true
 	}
 	prefixed := NamespaceTokenName(org.Namespace, name)
 	if prefixed != name {
 		if _, ok := org.Objects[prefixed]; ok {
-			cacheResolvedObjectName(org, cacheKey, prefixed)
 			return prefixed, true
 		}
 	}
 	stripped := StripNamespaceToken(org.Namespace, name)
 	if stripped != name {
 		if _, ok := org.Objects[stripped]; ok {
-			cacheResolvedObjectName(org, cacheKey, stripped)
 			return stripped, true
 		}
 	}
-	for candidate := range org.Objects {
-		if strings.EqualFold(candidate, name) || strings.EqualFold(candidate, prefixed) || strings.EqualFold(candidate, stripped) {
-			cacheResolvedObjectName(org, cacheKey, candidate)
-			return candidate, true
+	// The remaining matches ignore case or namespace. They come from the
+	// name index, and a name that matches nothing is remembered as a miss.
+	index := objectNameIndexFor(org)
+	miss := objectNameMiss{namespace: org.Namespace, name: name}
+	if index != nil {
+		if _, missed := index.misses.Load(miss); missed {
+			return "", false
 		}
+	}
+	resolved, ok := resolveObjectNameFolding(org, index, name, prefixed, stripped)
+	if !ok && index != nil {
+		index.misses.Store(miss, struct{}{})
+	}
+	return resolved, ok
+}
+
+func resolveObjectNameFolding(org OrgState, index *objectNameIndex, name, prefixed, stripped string) (string, bool) {
+	if candidate, ok := firstObjectNameFolding(org, index, name, prefixed, stripped); ok {
+		return candidate, true
 	}
 	if hasNamespaceToken(name) {
 		unqualified := StripAnyNamespaceToken(name)
 		if unqualified != name {
 			if _, ok := org.Objects[unqualified]; ok {
-				cacheResolvedObjectName(org, cacheKey, unqualified)
 				return unqualified, true
 			}
-			for candidate := range org.Objects {
-				if strings.EqualFold(candidate, unqualified) {
-					cacheResolvedObjectName(org, cacheKey, candidate)
-					return candidate, true
-				}
+			if candidate, ok := firstObjectNameFolding(org, index, unqualified); ok {
+				return candidate, true
 			}
 		}
 	}
 	if !hasNamespaceToken(name) && isCustomAPIName(name) {
-		var match string
-		for candidate := range org.Objects {
-			if strings.EqualFold(StripAnyNamespaceToken(candidate), name) {
-				if match != "" {
-					return "", false
-				}
-				match = candidate
-			}
-		}
-		if match != "" {
-			cacheResolvedObjectName(org, cacheKey, match)
-			return match, true
+		// More than one namespace match is ambiguous.
+		if candidates := objectNamesStrippingTo(org, index, name); len(candidates) == 1 {
+			return candidates[0], true
 		}
 	}
 	return "", false
@@ -1168,20 +1267,19 @@ func richerNamespacedObjectMatch(org OrgState, name string, exact ObjectState) (
 		}
 	}
 	var match string
-	var matched ObjectState
-	for candidate, state := range org.Objects {
-		if strings.EqualFold(candidate, name) || !strings.EqualFold(StripAnyNamespaceToken(candidate), name) {
+	for _, candidate := range objectNamesStrippingTo(org, objectNameIndexFor(org), name) {
+		if strings.EqualFold(candidate, name) {
 			continue
 		}
 		if match != "" {
 			return "", false
 		}
 		match = candidate
-		matched = state
 	}
 	if match == "" {
 		return "", false
 	}
+	matched := org.Objects[match]
 	if objectDefinitionRicher(matched.Definition, exact.Definition) {
 		return match, true
 	}
@@ -1284,6 +1382,84 @@ func resolveLocationComponentField(definition ObjectDefinition, namespace, name 
 	return "", false
 }
 
+// ResolveFieldDefinition returns the canonical field name and its metadata.
+// Location component fields are exposed by Salesforce as virtual decimal
+// fields even though source metadata declares only the compound Location field.
+func ResolveFieldDefinition(definition ObjectDefinition, namespace, name string) (string, Field, bool) {
+	canonical, ok := ResolveFieldName(definition, namespace, name)
+	if !ok {
+		return "", Field{}, false
+	}
+	if field, exists := definition.Fields[canonical]; exists {
+		if field.APIName == "" {
+			field.APIName = canonical
+		}
+		return canonical, field, true
+	}
+	component, ok := ResolveLocationComponentField(definition, namespace, name)
+	if !ok {
+		return "", Field{}, false
+	}
+	return component.APIName, component, true
+}
+
+// ResolveLocationComponentField returns the Salesforce descriptor for a
+// virtual latitude or longitude component of a compound Location field.
+func ResolveLocationComponentField(definition ObjectDefinition, namespace, name string) (Field, bool) {
+	canonical, ok := resolveLocationComponentField(definition, namespace, name)
+	if !ok {
+		return Field{}, false
+	}
+	suffix := "__Latitude__s"
+	labelSuffix := "Latitude"
+	if strings.HasSuffix(strings.ToLower(canonical), strings.ToLower("__Longitude__s")) {
+		suffix = "__Longitude__s"
+		labelSuffix = "Longitude"
+	}
+	baseName := strings.TrimSuffix(canonical, suffix) + "__c"
+	baseField, ok := definition.Fields[baseName]
+	if !ok {
+		for candidate, field := range definition.Fields {
+			if strings.EqualFold(candidate, baseName) && field.Type == FieldLocation {
+				baseName = candidate
+				baseField = field
+				ok = true
+				break
+			}
+		}
+	}
+	if !ok || baseField.Type != FieldLocation {
+		return Field{}, false
+	}
+	compoundName := baseField.APIName
+	if compoundName == "" {
+		compoundName = baseName
+	}
+	label := strings.TrimSpace(baseField.Label)
+	if label == "" {
+		label = strings.TrimSuffix(compoundName, "__c")
+	}
+	component := Field{
+		APIName:             canonical,
+		Label:               label + " " + labelSuffix,
+		Type:                FieldDecimal,
+		DisplayType:         "DOUBLE",
+		Precision:           18,
+		Scale:               15,
+		CompoundFieldName:   compoundName,
+		Nillable:            BoolFlag(true),
+		Createable:          BoolFlag(true),
+		Updateable:          BoolFlag(true),
+		Filterable:          BoolFlag(true),
+		Groupable:           BoolFlag(false),
+		Sortable:            BoolFlag(true),
+		Aggregatable:        BoolFlag(true),
+		Permissionable:      baseField.Permissionable,
+		DeprecatedAndHidden: baseField.DeprecatedAndHidden,
+	}
+	return component, true
+}
+
 func locationComponentLocalName(name, suffix string) string {
 	if !hasAPISuffix(name, suffix) {
 		return name
@@ -1353,7 +1529,7 @@ func hasNamespaceToken(name string) bool {
 }
 
 func isCustomAPIName(name string) bool {
-	return hasAPISuffix(name, "__c") || hasAPISuffix(name, "__r") || hasAPISuffix(name, "__e") || hasAPISuffix(name, "__mdt")
+	return hasAPISuffix(name, "__c") || hasAPISuffix(name, "__r") || hasAPISuffix(name, "__e") || hasAPISuffix(name, "__mdt") || hasAPISuffix(name, "__share")
 }
 
 func hasAPISuffix(name, suffix string) bool {
@@ -1390,6 +1566,12 @@ func IsCustomSettingObject(org OrgState, name string) bool {
 
 func (r Record) Clone() Record {
 	out := r
+	if r.LoadedReferences != nil {
+		out.LoadedReferences = make(map[string]ID, len(r.LoadedReferences))
+		for field, id := range r.LoadedReferences {
+			out.LoadedReferences[field] = id
+		}
+	}
 	if r.Fields != nil {
 		out.Fields = make(map[string]Value, len(r.Fields))
 		for name, value := range r.Fields {
@@ -1520,6 +1702,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 	}
 	out.FlowRules = append([]FlowRule(nil), d.FlowRules...)
 	for i := range out.FlowRules {
+		out.FlowRules[i].TextTemplates = cloneStringMap(d.FlowRules[i].TextTemplates)
 		out.FlowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].Criteria...)
 		out.FlowRules[i].Steps = cloneFlowSteps(d.FlowRules[i].Steps)
 		out.FlowRules[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].FieldUpdates...)
@@ -1530,6 +1713,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.FlowRules[i].RecordDeletes = cloneFlowRecordDeletes(d.FlowRules[i].RecordDeletes)
 		out.FlowRules[i].CustomErrors = cloneFlowCustomErrors(d.FlowRules[i].CustomErrors)
 		out.FlowRules[i].ApexPlugins = cloneFlowApexPlugins(d.FlowRules[i].ApexPlugins)
+		out.FlowRules[i].Variables = append([]FlowVariable(nil), d.FlowRules[i].Variables...)
 	}
 	out.Indexes = append([]IndexDefinition(nil), d.Indexes...)
 	for i := range out.Indexes {
@@ -1563,6 +1747,36 @@ func cloneFlowSteps(steps []FlowStep) []FlowStep {
 		out[i].FaultBranch = cloneFlowSteps(steps[i].FaultBranch)
 		out[i].Loop.Steps = cloneFlowSteps(steps[i].Loop.Steps)
 		out[i].Branches = cloneFlowBranches(steps[i].Branches)
+	}
+	return out
+}
+
+func cloneFlowRules(rules []FlowRule) []FlowRule {
+	out := append([]FlowRule(nil), rules...)
+	for i := range out {
+		out[i].TextTemplates = cloneStringMap(rules[i].TextTemplates)
+		out[i].Criteria = append([]WorkflowCriteriaItem(nil), rules[i].Criteria...)
+		out[i].Steps = cloneFlowSteps(rules[i].Steps)
+		out[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), rules[i].FieldUpdates...)
+		out[i].Actions = cloneFlowActions(rules[i].Actions)
+		out[i].Branches = cloneFlowBranches(rules[i].Branches)
+		out[i].RecordLookups = cloneFlowRecordLookups(rules[i].RecordLookups)
+		out[i].RecordCreates = cloneFlowRecordCreates(rules[i].RecordCreates)
+		out[i].RecordDeletes = cloneFlowRecordDeletes(rules[i].RecordDeletes)
+		out[i].CustomErrors = cloneFlowCustomErrors(rules[i].CustomErrors)
+		out[i].ApexPlugins = cloneFlowApexPlugins(rules[i].ApexPlugins)
+		out[i].Variables = append([]FlowVariable(nil), rules[i].Variables...)
+	}
+	return out
+}
+
+func cloneStringMap(values map[string]string) map[string]string {
+	if values == nil {
+		return nil
+	}
+	out := make(map[string]string, len(values))
+	for key, value := range values {
+		out[key] = value
 	}
 	return out
 }
@@ -1651,13 +1865,14 @@ func (i IndexSet) Clone() IndexSet {
 
 func (o OrgState) Clone() OrgState {
 	out := o
-	out.objectNameCache = &sync.Map{}
+	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
 			out.Objects[name] = object.Clone()
 		}
 	}
+	out.objectNameCache = newObjectNameCacheFrom(o.objectNameCache, o.Objects, out.Objects)
 	if o.IDSequences != nil {
 		out.IDSequences = make(map[string]uint64, len(o.IDSequences))
 		for object, sequence := range o.IDSequences {
@@ -1680,13 +1895,14 @@ func (o OrgState) Clone() OrgState {
 func (o OrgState) CloneRuntime() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
-	out.objectNameCache = &sync.Map{}
+	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
 			out.Objects[name] = object.CloneRuntime()
 		}
 	}
+	out.objectNameCache = newObjectNameCacheFrom(o.objectNameCache, o.Objects, out.Objects)
 	if o.IDSequences != nil {
 		out.IDSequences = make(map[string]uint64, len(o.IDSequences))
 		for object, sequence := range o.IDSequences {
@@ -1711,13 +1927,14 @@ func (o OrgState) CloneRuntime() OrgState {
 func (o OrgState) CloneRuntimeFrozenDefinition() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
-	out.objectNameCache = &sync.Map{}
+	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
 			out.Objects[name] = object.CloneRuntimeFrozenDefinition()
 		}
 	}
+	out.objectNameCache = newObjectNameCacheFrom(o.objectNameCache, o.Objects, out.Objects)
 	if o.IDSequences != nil {
 		out.IDSequences = make(map[string]uint64, len(o.IDSequences))
 		for object, sequence := range o.IDSequences {
@@ -1748,22 +1965,7 @@ func (o OrgState) CloneRuntimeFrozenDefinition() OrgState {
 // mutation. DML to a shared metadata object still copy-on-writes through
 // EnsureMutableObjectRecords, so insert/update of these types stays isolated.
 func IsImmutableMetadataObject(objectName string) bool {
-	name := strings.TrimSpace(objectName)
-	if name == "" {
-		return false
-	}
-	switch strings.ToLower(name) {
-	case "apexclass", "apextrigger", "apexpage", "apexcomponent",
-		"fieldpermissions", "objectpermissions", "setupentityaccess",
-		"permissionset", "permissionsetgroup", "permissionsetgroupcomponent",
-		"profile", "userrole",
-		"recordtype", "layout", "staticresource",
-		"customapplication", "apptabmember", "tabdefinition",
-		"entitydefinition", "fielddefinition":
-		return true
-	default:
-		return false
-	}
+	return isImmutableMetadataObjectName(objectName)
 }
 
 // CloneRuntimeFrozenShared returns an isolated org copy that SHARES object
@@ -1783,7 +1985,6 @@ func IsImmutableMetadataObject(objectName string) bool {
 func (o OrgState) CloneRuntimeFrozenShared() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
-	out.objectNameCache = &sync.Map{}
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
@@ -1794,6 +1995,7 @@ func (o OrgState) CloneRuntimeFrozenShared() OrgState {
 			}
 		}
 	}
+	out.objectNameCache = newObjectNameCacheFrom(o.objectNameCache, o.Objects, out.Objects)
 	if o.IDSequences != nil {
 		out.IDSequences = make(map[string]uint64, len(o.IDSequences))
 		for object, sequence := range o.IDSequences {

@@ -1,0 +1,648 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "expectationStatus": "native captured",
+  "locale": "en_US",
+  "timezone": "America/Los_Angeles",
+  "language": "en_US",
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Contact x=new Contact(); r=Date.valueOf(x.get('Birthdate'));"
+    },
+    {
+      "id": "R002",
+      "code": "Contact x=new Contact(); r=Date.valueOf(x.get(Contact.Birthdate));"
+    },
+    {
+      "id": "R003",
+      "code": "Contact x=new Contact(Birthdate=null); r=Date.valueOf(x.get('Birthdate'));"
+    },
+    {
+      "id": "R004",
+      "code": "Contact x=new Contact(Birthdate=null); r=Date.valueOf(x.get(Contact.Birthdate));"
+    },
+    {
+      "id": "R005",
+      "code": "Event x=new Event(); r=Datetime.valueOf(x.get('StartDateTime'));"
+    },
+    {
+      "id": "R006",
+      "code": "Event x=new Event(); r=Datetime.valueOf(x.get(Event.StartDateTime));"
+    },
+    {
+      "id": "R007",
+      "code": "Event x=new Event(StartDateTime=null); r=Datetime.valueOf(x.get('StartDateTime'));"
+    },
+    {
+      "id": "R008",
+      "code": "Event x=new Event(StartDateTime=null); r=Datetime.valueOf(x.get(Event.StartDateTime));"
+    },
+    {
+      "id": "R009",
+      "code": "Object x; r=Date.valueOf(x);"
+    },
+    {
+      "id": "R010",
+      "code": "Object x; r=Datetime.valueOf(x);"
+    },
+    {
+      "id": "R011",
+      "code": "String x; r=Date.valueOf(x);"
+    },
+    {
+      "id": "R012",
+      "code": "String x; r=Datetime.valueOf(x);"
+    },
+    {
+      "id": "R013",
+      "code": "Contact x=new Contact(Birthdate=Date.newInstance(2026,5,4)); r=Date.valueOf(x.get('Birthdate'));"
+    },
+    {
+      "id": "R014",
+      "code": "Contact x=new Contact(Birthdate=Date.newInstance(2026,5,4)); r=Date.valueOf(x.get(Contact.Birthdate));"
+    },
+    {
+      "id": "R015",
+      "code": "Event x=new Event(StartDateTime=Datetime.newInstanceGmt(2026,5,2,1,2,3)); r=Datetime.valueOf(x.get('StartDateTime'));"
+    },
+    {
+      "id": "R016",
+      "code": "Event x=new Event(StartDateTime=Datetime.newInstanceGmt(2026,5,2,1,2,3)); r=Datetime.valueOf(x.get(Event.StartDateTime));"
+    },
+    {
+      "id": "R017",
+      "code": "Contact x=new Contact(Description='2026-05-04'); r=Date.valueOf(x.get('Description'));"
+    },
+    {
+      "id": "R018",
+      "code": "Contact x=new Contact(Description='2026-05-02 01:02:03'); r=Datetime.valueOf(x.get(Contact.Description));"
+    },
+    {
+      "id": "R019",
+      "code": "Contact x=new Contact(); r=Date.valueOf((String)x.get('Description'));"
+    },
+    {
+      "id": "R020",
+      "code": "Contact x=new Contact(); r=Datetime.valueOf((String)x.get(Contact.Description));"
+    },
+    {
+      "id": "R021",
+      "code": "Contact x=new Contact(Description='2026-05-04'); r=Date.valueOf((String)x.get('Description'));"
+    },
+    {
+      "id": "R022",
+      "code": "Contact x=new Contact(Description='2026-05-02 01:02:03'); r=Datetime.valueOf((String)x.get(Contact.Description));"
+    }
+  ],
+  "nativeObservations": [
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R001",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R002",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R003",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R004",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R005",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R006",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R007",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R008",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R009",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R010",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R011",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R012",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R013",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R014",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R015",
+      "observed": "2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R016",
+      "observed": "2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R017",
+      "observed": "EXC|System.TypeException|Invalid date: 2026-05-04"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R018",
+      "observed": "EXC|System.TypeException|Invalid date/time: 2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R019",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R020",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R021",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "id": "R022",
+      "observed": "2026-05-02 08:02:03"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R001",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R002",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R003",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R004",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R005",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R006",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R007",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R008",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R009",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R010",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R011",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R012",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R013",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R014",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R015",
+      "observed": "2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R016",
+      "observed": "2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R017",
+      "observed": "EXC|System.TypeException|Invalid date: 2026-05-04"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R018",
+      "observed": "EXC|System.TypeException|Invalid date/time: 2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R019",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R020",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R021",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "id": "R022",
+      "observed": "2026-05-02 08:02:03"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R001",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R002",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R003",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R004",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R005",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R006",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R007",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R008",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R009",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R010",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R011",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R012",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R013",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R014",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R015",
+      "observed": "2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R016",
+      "observed": "2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R017",
+      "observed": "EXC|System.TypeException|Invalid date: 2026-05-04"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R018",
+      "observed": "EXC|System.TypeException|Invalid date/time: 2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R019",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R020",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R021",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "id": "R022",
+      "observed": "2026-05-02 08:02:03"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R001",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R002",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R003",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R004",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R005",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R006",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R007",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R008",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R009",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R010",
+      "observed": "null"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R011",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R012",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R013",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R014",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R015",
+      "observed": "2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R016",
+      "observed": "2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R017",
+      "observed": "EXC|System.TypeException|Invalid date: 2026-05-04"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R018",
+      "observed": "EXC|System.TypeException|Invalid date/time: 2026-05-02 01:02:03"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R019",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R020",
+      "observed": "EXC|System.NullPointerException|Argument cannot be null."
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R021",
+      "observed": "2026-05-04 00:00:00"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "id": "R022",
+      "observed": "2026-05-02 08:02:03"
+    }
+  ],
+  "nativeSourceReferences": [
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous"
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous"
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest"
+    }
+  ]
+}

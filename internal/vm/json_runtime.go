@@ -4,8 +4,12 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"math"
+	"math/big"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -52,20 +56,20 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 				if !ok || seen[key] {
 					continue
 				}
-				out = append(out, orderedJSONField{name: mapStoredKey(value, key).String(), value: jsonFromValue(item, suppressObjectNulls)})
+				out = append(out, orderedJSONField{name: jsonMapKeyText(mapStoredKey(value, key)), value: jsonFromValue(item, suppressObjectNulls)})
 				seen[key] = true
 			}
 			for _, key := range sortedMapKeys(value.Map) {
 				if seen[key] {
 					continue
 				}
-				out = append(out, orderedJSONField{name: mapStoredKey(value, key).String(), value: jsonFromValue(value.Map[key], suppressObjectNulls)})
+				out = append(out, orderedJSONField{name: jsonMapKeyText(mapStoredKey(value, key)), value: jsonFromValue(value.Map[key], suppressObjectNulls)})
 			}
 			return out
 		}
 		out := make(map[string]any, len(value.Map))
 		for key, item := range value.Map {
-			out[mapStoredKey(value, key).String()] = jsonFromValue(item, suppressObjectNulls)
+			out[jsonMapKeyText(mapStoredKey(value, key))] = jsonFromValue(item, suppressObjectNulls)
 		}
 		return out
 	case ValueObject:
@@ -78,18 +82,98 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 	}
 }
 
+type jsonSerializationIdentity struct {
+	kind  ValueKind
+	token uint64
+}
+
+// jsonSerializationToken identifies the backing composite value while it is
+// on the active serialization path. Values are copied frequently by the VM,
+// so Ref is not sufficient for aliases that share a backing map or slice.
+func jsonSerializationToken(value Value) (jsonSerializationIdentity, bool) {
+	if value.Kind != ValueList && value.Kind != ValueSet && value.Kind != ValueMap && value.Kind != ValueObject {
+		return jsonSerializationIdentity{}, false
+	}
+	var pointer uintptr
+	switch value.Kind {
+	case ValueList, ValueSet:
+		if value.List != nil {
+			pointer = reflect.ValueOf(value.List).Pointer()
+		} else if value.Set != nil {
+			pointer = reflect.ValueOf(value.Set).Pointer()
+		}
+	case ValueMap:
+		if value.Map != nil {
+			pointer = reflect.ValueOf(value.Map).Pointer()
+		}
+	case ValueObject:
+		if value.Fields != nil {
+			pointer = reflect.ValueOf(value.Fields).Pointer()
+		}
+	}
+	if pointer != 0 {
+		return jsonSerializationIdentity{kind: value.Kind, token: uint64(pointer)}, true
+	}
+	if value.Ref != 0 {
+		return jsonSerializationIdentity{kind: value.Kind, token: value.Ref}, true
+	}
+	return jsonSerializationIdentity{}, false
+}
+
 func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) any {
+	// Most JSON.serialize calls are scalar or shallow values. Allocate the
+	// active-path table only once a composite value actually needs cycle
+	// tracking; the previous eager allocation made every scalar serialization
+	// pay for a map that it never used.
+	return vm.jsonFromValueForSerializeWithActive(value, suppressObjectNulls, nil)
+}
+
+func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNulls bool, active map[jsonSerializationIdentity]bool) any {
+	// Empty collections cannot recurse, so they cannot participate in a cycle.
+	// Preserve the ordered-object representation for maps while avoiding the
+	// reflection and active-table work for these common no-op values.
+	switch value.Kind {
+	case ValueList:
+		if len(value.List) == 0 {
+			return []any{}
+		}
+	case ValueSet:
+		if len(value.Set) == 0 {
+			return []any{}
+		}
+	case ValueMap:
+		if len(value.Map) == 0 {
+			if len(value.MapOrder) > 0 {
+				return orderedJSONObject{}
+			}
+			return map[string]any{}
+		}
+	}
+	if identity, ok := jsonSerializationToken(value); ok {
+		if active[identity] {
+			// A cyclic Apex object/collection can be constructed through loaded
+			// relationship aliases. Salesforce may surface an internal JSON
+			// failure for that graph, but the local runner must remain usable and
+			// produce a valid JSON value for the surrounding assertion/log path.
+			return nil
+		}
+		if active == nil {
+			active = make(map[jsonSerializationIdentity]bool)
+		}
+		active[identity] = true
+		defer delete(active, identity)
+	}
 	switch value.Kind {
 	case ValueList:
 		out := make([]any, 0, len(value.List))
 		for _, item := range value.List {
-			out = append(out, vm.jsonFromValueForSerialize(item, suppressObjectNulls))
+			out = append(out, vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active))
 		}
 		return out
 	case ValueSet:
 		out := make([]any, 0, len(value.Set))
 		for _, item := range value.Set {
-			out = append(out, vm.jsonFromValueForSerialize(item, suppressObjectNulls))
+			out = append(out, vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active))
 		}
 		return out
 	case ValueMap:
@@ -101,26 +185,38 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 				if !ok || seen[key] {
 					continue
 				}
-				name := mapStoredKey(value, key).String()
-				out = append(out, orderedJSONField{name: name, value: vm.jsonFromValueForSerialize(item, suppressObjectNulls)})
+				name := vm.jsonMapKeyText(mapStoredKey(value, key))
+				out = append(out, orderedJSONField{name: name, value: vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active)})
 				seen[key] = true
 			}
 			for _, key := range sortedMapKeys(value.Map) {
 				if seen[key] {
 					continue
 				}
-				out = append(out, orderedJSONField{name: mapStoredKey(value, key).String(), value: vm.jsonFromValueForSerialize(value.Map[key], suppressObjectNulls)})
+				out = append(out, orderedJSONField{name: vm.jsonMapKeyText(mapStoredKey(value, key)), value: vm.jsonFromValueForSerializeWithActive(value.Map[key], suppressObjectNulls, active)})
 			}
 			return out
 		}
 		out := make(map[string]any, len(value.Map))
 		for key, item := range value.Map {
-			out[mapStoredKey(value, key).String()] = vm.jsonFromValueForSerialize(item, suppressObjectNulls)
+			out[vm.jsonMapKeyText(mapStoredKey(value, key))] = vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active)
 		}
 		return out
 	case ValueObject:
+		if strings.EqualFold(value.Type, "Database.QueryLocator") {
+			return &queryLocatorJSONError{}
+		}
+		if strings.EqualFold(value.Type, "Database.Cursor") {
+			return vm.databaseCursorJSONValue(value, suppressObjectNulls)
+		}
 		if vm.isEnumObjectValue(value) {
 			return value.Text
+		}
+		if !vm.jsonAccessAllowed(value.Type, "serializable") {
+			return jsonAccessSerializationFailure{}
+		}
+		if strings.EqualFold(value.Type, "ApexPages.Message") {
+			return apexPagesMessageJSONFailure{}
 		}
 		if strings.EqualFold(value.Type, "Datetime") || strings.EqualFold(value.Type, "DateTime") {
 			if t, err := parsePlatformDatetime(value); err == nil {
@@ -138,7 +234,9 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 			// Salesforce preserves null SObject fields for JSON.serialize, even
 			// when the overload's Boolean argument is true. That flag only
 			// suppresses nulls on Apex objects and collections.
-			return jsonSObjectFromValue(value, false, vm.jsonFromValueForSerialize, version)
+			return jsonSObjectFromValue(value, false, func(item Value, suppress bool) any {
+				return vm.jsonFromValueForSerializeWithActive(item, suppress, active)
+			}, version)
 		}
 		base := orderedJSONObject{}
 		seen := map[string]bool{}
@@ -155,7 +253,7 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 				if field.Getter != nil && !field.Static {
 					getterValue, err := vm.callGetter(vm.getterOwner(owner, field), field, value)
 					if err == nil && !(suppressObjectNulls && getterValue.Kind == ValueNull) {
-						base = append(base, orderedJSONField{name: field.Name, value: vm.jsonFromValueForSerialize(getterValue, suppressObjectNulls)})
+						base = append(base, orderedJSONField{name: field.Name, value: vm.jsonFromValueForSerializeWithActive(getterValue, suppressObjectNulls, active)})
 						seen[fieldKey] = true
 					}
 					continue
@@ -171,7 +269,7 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 			if isInternalSObjectField(actualName) || (suppressObjectNulls && item.Kind == ValueNull) {
 				continue
 			}
-			base = append(base, orderedJSONField{name: actualName, value: vm.jsonFromValueForSerialize(item, suppressObjectNulls)})
+			base = append(base, orderedJSONField{name: actualName, value: vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active)})
 			seen[strings.ToLower(actualName)] = true
 		}
 		var extras []string
@@ -191,7 +289,7 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 			if suppressObjectNulls && item.Kind == ValueNull {
 				continue
 			}
-			base = append(base, orderedJSONField{name: field, value: vm.jsonFromValueForSerialize(item, suppressObjectNulls)})
+			base = append(base, orderedJSONField{name: field, value: vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active)})
 			seen[strings.ToLower(field)] = true
 		}
 		for _, field := range vm.jsonSerializableGetterFields(value.Type) {
@@ -206,7 +304,7 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 			if err != nil || (suppressObjectNulls && getterValue.Kind == ValueNull) {
 				continue
 			}
-			base = append(base, orderedJSONField{name: name, value: vm.jsonFromValueForSerialize(getterValue, suppressObjectNulls)})
+			base = append(base, orderedJSONField{name: name, value: vm.jsonFromValueForSerializeWithActive(getterValue, suppressObjectNulls, active)})
 			seen[strings.ToLower(name)] = true
 		}
 		return base
@@ -348,9 +446,78 @@ func salesforcePrettyPrimitiveArrayItem(item string) bool {
 type orderedJSONField struct {
 	name  string
 	value any
+	// Input positions are retained for typed Apex field conversion errors.
+	source                 string
+	start, end, inputStart int
+	// Enum errors retain the separator before later fields (K070-K084).
+	enumStart int
 }
 
 type orderedJSONObject []orderedJSONField
+
+func jsonMapKeyText(key Value) string {
+	if key.Kind == ValueObject && strings.EqualFold(key.Type, "Blob") {
+		if raw, ok := key.Fields["value"]; ok && raw.Kind == ValueString {
+			return fmt.Sprintf("Blob[%d]", len(raw.Text))
+		}
+	}
+	return key.String()
+}
+
+func (vm *VM) jsonMapKeyText(key Value) string {
+	// K097/K126-K129: registered enum keys use the same member text as
+	// serialized enum values. Other keys keep their existing rendering.
+	if vm.isEnumObjectValue(key) {
+		return key.Text
+	}
+	return jsonMapKeyText(key)
+}
+
+// Only actual JSON input carries source positions. Non-JSON coercion callers
+// keep their existing Object conversion and enum value lookup behavior.
+type jsonTypedInput struct {
+	value  any
+	source string
+	start  int
+	root   bool
+	// Schema relationship mapping must retain record provenance recursively,
+	// even when a loaded user class shadows the relationship's record type.
+	sObjectRecord bool
+}
+
+func jsonArrayInputStarts(input jsonTypedInput) []int {
+	if input.source == "" || input.start < 0 || input.start >= len(input.source) {
+		return nil
+	}
+	start := jsonTokenInputStart(input.source, input.start)
+	if start >= len(input.source) {
+		return nil
+	}
+	if input.source[start] != '[' {
+		// A field's diagnostic position is its key, while its array items
+		// start after the key and colon.
+		decoder := json.NewDecoder(strings.NewReader(input.source[start:]))
+		var key string
+		if err := decoder.Decode(&key); err != nil {
+			return nil
+		}
+		start = jsonTokenInputStart(input.source, start+int(decoder.InputOffset()))
+	}
+	decoder := json.NewDecoder(strings.NewReader(input.source[start:]))
+	if token, err := decoder.Token(); err != nil || token != json.Delim('[') {
+		return nil
+	}
+	var starts []int
+	for decoder.More() {
+		position := jsonEnumTokenInputStart(input.source, start+int(decoder.InputOffset()))
+		var item json.RawMessage
+		if err := decoder.Decode(&item); err != nil {
+			return nil
+		}
+		starts = append(starts, position)
+	}
+	return starts
+}
 
 func (object orderedJSONObject) MarshalJSON() ([]byte, error) {
 	var out bytes.Buffer
@@ -380,7 +547,11 @@ func jsonMarshalNoEscape(value any) ([]byte, error) {
 	encoder := json.NewEncoder(&out)
 	encoder.SetEscapeHTML(false)
 	if err := encoder.Encode(value); err != nil {
-		return nil, err
+		var unsupported *queryLocatorJSONError
+		if errors.As(err, &unsupported) {
+			return nil, unsupported
+		}
+		return nil, jsonAccessMarshalError(err)
 	}
 	data := out.Bytes()
 	if len(data) > 0 && data[len(data)-1] == '\n' {
@@ -395,7 +566,11 @@ func jsonMarshalNoEscapeIndent(value any, prefix, indent string) ([]byte, error)
 	encoder.SetEscapeHTML(false)
 	encoder.SetIndent(prefix, indent)
 	if err := encoder.Encode(value); err != nil {
-		return nil, err
+		var unsupported *queryLocatorJSONError
+		if errors.As(err, &unsupported) {
+			return nil, unsupported
+		}
+		return nil, jsonAccessMarshalError(err)
 	}
 	data := out.Bytes()
 	if len(data) > 0 && data[len(data)-1] == '\n' {
@@ -421,6 +596,22 @@ func jsonSObjectFromValue(value Value, suppressObjectNulls bool, convert func(Va
 		if suppressObjectNulls && item.Kind == ValueNull {
 			continue
 		}
+		if envelope := item.Fields[jsonChildQueryResultField]; item.Kind == ValueList && envelope.Kind == ValueObject {
+			// Queried empty relationships are absent from the serialized
+			// SObject. An explicitly deserialized empty envelope is retained.
+			if item.Fields[jsonQueriedChildRelationshipField].Bool && len(item.List) == 0 {
+				continue
+			}
+			children := orderedJSONObject{}
+			for _, name := range []string{"totalSize", "done"} {
+				if metadata, present := envelope.Fields[name]; present {
+					children = append(children, orderedJSONField{name: name, value: convert(metadata, false)})
+				}
+			}
+			children = append(children, orderedJSONField{name: "records", value: convert(item, suppressObjectNulls)})
+			out = append(out, orderedJSONField{name: field, value: children})
+			continue
+		}
 		out = append(out, orderedJSONField{name: field, value: convert(item, suppressObjectNulls)})
 	}
 	return out
@@ -430,7 +621,7 @@ func jsonSObjectFieldNames(value Value) []string {
 	regular := make([]string, 0, len(value.Fields))
 	system := make([]string, 0, 8)
 	for field, item := range value.Fields {
-		if isInternalSObjectField(field) {
+		if isInternalSObjectField(field) || isDefaultedSObjectField(value, field) {
 			continue
 		}
 		if isImplicitFalseIsDeleted(value, field, item) {
@@ -447,7 +638,64 @@ func jsonSObjectFieldNames(value Value) []string {
 	}
 	sort.Strings(regular)
 	sort.Strings(system)
-	return append(regular, system...)
+	return jsonOrderedSObjectFieldNames(value, regular, system)
+}
+
+// The private explicit-field marker owns insertion history and its JSON origin.
+// Its runtime tag is internal and never becomes an Apex field or map entry.
+const jsonDeserializedSObjectFieldOrder = "__glade_json_deserialized_sobject_fields"
+
+// Constructed SObjects retain their first assignment order (R222/R223/R368).
+// Deserialized SObjects use canonical-name hash buckets, including later writes.
+func jsonOrderedSObjectFieldNames(value Value, regular, system []string) []string {
+	customMetadata := strings.HasSuffix(strings.ToLower(value.Type), "__mdt")
+	byFoldedName := make(map[string]string, len(regular)+len(system))
+	for _, field := range regular {
+		byFoldedName[strings.ToLower(field)] = field
+	}
+	if customMetadata {
+		for _, field := range system {
+			byFoldedName[strings.ToLower(field)] = field
+		}
+	}
+	ordered := make([]string, 0, len(byFoldedName))
+	seen := make(map[string]bool, len(byFoldedName))
+	explicit := explicitSObjectFieldNamesInInsertionOrder(value)
+	for _, field := range explicit {
+		actual, ok := byFoldedName[strings.ToLower(field)]
+		if !ok || seen[actual] {
+			continue
+		}
+		ordered = append(ordered, actual)
+		seen[actual] = true
+	}
+	for _, field := range regular {
+		if !seen[field] {
+			ordered = append(ordered, field)
+		}
+	}
+	marker := value.Fields[sobjectExplicitFieldsField]
+	if marker.Runtime == jsonDeserializedSObjectFieldOrder {
+		// R364-R375 and R376-R389: buckets use canonical field names;
+		// collisions retain insertion order and 13 fields grow 16 to 32 buckets.
+		capacity := uint32(16)
+		for len(explicit) > int(capacity*3/4) {
+			capacity *= 2
+		}
+		bucket := func(field string) uint32 {
+			hash := uint32(javaStringHashCode(field))
+			return (hash ^ (hash >> 16)) & (capacity - 1)
+		}
+		sort.SliceStable(ordered, func(i, j int) bool {
+			return bucket(ordered[i]) < bucket(ordered[j])
+		})
+	}
+	for _, field := range system {
+		if !seen[field] {
+			ordered = append(ordered, field)
+		}
+	}
+	return ordered
 }
 
 func jsonGeneratedSystemField(field string) bool {
@@ -532,6 +780,16 @@ func jsonObjectFields(raw any) ([]orderedJSONField, bool) {
 	return out, true
 }
 
+// SObject aliases refer to the same field, so each occurrence must be applied
+// in textual order. Keep duplicate occurrences here; generic map conversion
+// deliberately retains its existing duplicate-key behavior.
+func jsonSObjectFieldsInTextualOrder(raw any) ([]orderedJSONField, bool) {
+	if fields, ok := raw.(orderedJSONObject); ok {
+		return fields, true
+	}
+	return jsonObjectFields(raw)
+}
+
 func reverseMapOrder(order []string) []string {
 	reversed := make([]string, len(order))
 	for i, key := range order {
@@ -552,16 +810,35 @@ func (vm *VM) jsonSerializableFieldNames(typeName string) []string {
 		if class.SuperClass != "" {
 			visit(class.SuperClass)
 		}
+		current := make([]string, 0, len(class.FieldOrder))
+		metadataChild := false
+		for _, field := range class.FieldOrder {
+			if strings.EqualFold(field, "fullName_type_info") {
+				metadataChild = true
+				break
+			}
+		}
 		for _, field := range class.FieldOrder {
 			key := strings.ToLower(field)
-			if _, ok := seen[key]; ok {
+			// WSDL2Apex metadata children redeclare fullName alongside the
+			// inherited member; Salesforce emits both occurrences. Ordinary
+			// shadowed fields remain deduplicated.
+			if _, ok := seen[key]; ok && !(metadataChild && strings.EqualFold(field, "fullName")) {
 				continue
 			}
 			seen[key] = struct{}{}
-			fields = append(fields, field)
+			current = append(current, field)
 		}
+		sort.SliceStable(current, func(i, j int) bool {
+			return strings.ToLower(current[i]) > strings.ToLower(current[j])
+		})
+		fields = append(fields, current...)
 	}
 	visit(typeName)
+	// Salesforce reflects Apex object members in case-insensitive descending
+	// name order within each inheritance level. This is observable for
+	// generated SOAP classes, where private *_type_info members are serialized
+	// alongside their public values, while superclass members remain first.
 	return fields
 }
 
@@ -611,7 +888,8 @@ func (vm *VM) getterOwner(typeName string, field Field) string {
 func decodeJSONValue(text string) (any, error) {
 	decoder := json.NewDecoder(strings.NewReader(text))
 	decoder.UseNumber()
-	return decodeJSONToken(decoder, text)
+	value, err := decodeJSONToken(decoder, text)
+	return value, jsonSyntaxErrorAtInput(err, text, int(decoder.InputOffset()))
 }
 
 func decodeJSONToken(decoder *json.Decoder, source string) (any, error) {
@@ -625,6 +903,8 @@ func decodeJSONToken(decoder *json.Decoder, source string) (any, error) {
 		case '{':
 			out := orderedJSONObject{}
 			for decoder.More() {
+				start := int(decoder.InputOffset())
+				enumStart := jsonEnumTokenInputStart(source, start)
 				keyToken, err := decoder.Token()
 				if err != nil {
 					return nil, err
@@ -633,11 +913,14 @@ func decodeJSONToken(decoder *json.Decoder, source string) (any, error) {
 				if !ok {
 					return nil, fmt.Errorf("expected object field name")
 				}
+				start = jsonTokenInputStart(source, start)
 				item, err := decodeJSONToken(decoder, source)
 				if err != nil {
 					return nil, err
 				}
-				out = append(out, orderedJSONField{name: key, value: item})
+				// J003/J004 and P001-P009: Integer conversion uses the same
+				// input boundary as enum errors, retaining a separating comma.
+				out = append(out, orderedJSONField{name: key, value: item, source: source, start: start, end: int(decoder.InputOffset()), enumStart: enumStart, inputStart: enumStart})
 			}
 			if end, err := decoder.Token(); err != nil {
 				return nil, err
@@ -673,7 +956,7 @@ func decodeJSONUntypedValue(text string) (Value, error) {
 	decoder.UseNumber()
 	value, err := decodeJSONUntypedToken(decoder, text)
 	if err != nil {
-		return Null, err
+		return Null, jsonUnexpectedCharacterError(jsonSyntaxErrorAtInput(err, text, int(decoder.InputOffset())), text)
 	}
 	return value, nil
 }
@@ -681,26 +964,32 @@ func decodeJSONUntypedValue(text string) (Value, error) {
 func decodeJSONUntypedToken(decoder *json.Decoder, source string) (Value, error) {
 	token, err := decoder.Token()
 	if err != nil {
-		return Null, err
+		return Null, jsonStringEOFError(err, source)
 	}
 	switch value := token.(type) {
 	case json.Delim:
 		switch value {
 		case '{':
 			out := Map()
+			out.Type = "Map<String,Object>"
+			completeValueAtEnd := false
+			scalarAtEnd := false
+			sawEntry := false
 			for decoder.More() {
 				keyToken, err := decoder.Token()
 				if err != nil {
-					return Null, err
+					return Null, jsonContainerEOFError(err, source, "OBJECT", sawEntry && !completeValueAtEnd, scalarAtEnd)
 				}
 				key, ok := keyToken.(string)
 				if !ok {
 					return Null, fmt.Errorf("expected object field name")
 				}
+				sawEntry = true
 				item, err := decodeJSONUntypedToken(decoder, source)
 				if err != nil {
-					return Null, err
+					return Null, jsonContainerEOFError(err, source, "OBJECT", sawEntry && !completeValueAtEnd, scalarAtEnd)
 				}
+				completeValueAtEnd, scalarAtEnd = jsonValueAtInputEnd(item, decoder, source)
 				encoded := mapKey(String(key))
 				if _, exists := out.Map[encoded]; !exists {
 					out.MapOrder = append(out.MapOrder, encoded)
@@ -709,22 +998,28 @@ func decodeJSONUntypedToken(decoder *json.Decoder, source string) (Value, error)
 				out.MapKeys[encoded] = String(key)
 			}
 			if end, err := decoder.Token(); err != nil {
-				return Null, err
+				return Null, jsonContainerEOFError(err, source, "OBJECT", sawEntry && !completeValueAtEnd, scalarAtEnd)
 			} else if end != json.Delim('}') {
 				return Null, fmt.Errorf("expected object end")
 			}
 			return out, nil
 		case '[':
 			out := List()
+			out.Type = "List<Object>"
+			completeValueAtEnd := false
+			scalarAtEnd := false
+			sawEntry := false
 			for decoder.More() {
 				item, err := decodeJSONUntypedToken(decoder, source)
 				if err != nil {
-					return Null, err
+					return Null, jsonContainerEOFError(err, source, "ARRAY", sawEntry && !completeValueAtEnd, scalarAtEnd)
 				}
+				sawEntry = true
+				completeValueAtEnd, scalarAtEnd = jsonValueAtInputEnd(item, decoder, source)
 				out.List = append(out.List, item)
 			}
 			if end, err := decoder.Token(); err != nil {
-				return Null, err
+				return Null, jsonContainerEOFError(err, source, "ARRAY", sawEntry && !completeValueAtEnd, scalarAtEnd)
 			} else if end != json.Delim(']') {
 				return Null, fmt.Errorf("expected array end")
 			}
@@ -740,6 +1035,11 @@ func decodeJSONUntypedToken(decoder *json.Decoder, source string) (Value, error)
 		return Bool(value), nil
 	case json.Number:
 		if integer, err := strconv.ParseInt(value.String(), 10, 64); err == nil {
+			// Untyped JSON retains Long identity outside the Integer range.
+			// Captured cases also distinguish small Integer values from Long.
+			if integer < math.MinInt32 || integer > math.MaxInt32 {
+				return longIntValue(integer), nil
+			}
 			return Int(integer), nil
 		}
 		if !strings.ContainsAny(value.String(), ".eE") {
@@ -754,6 +1054,206 @@ func decodeJSONUntypedToken(decoder *json.Decoder, source string) (Value, error)
 	default:
 		return valueFromJSON(value), nil
 	}
+}
+
+type jsonContainerInputError struct {
+	container     string
+	withinEntries bool
+	line          int
+	column        int
+}
+
+func (err *jsonContainerInputError) Error() string {
+	if err.withinEntries {
+		return fmt.Sprintf("Unexpected end-of-input within/between %s entries at [line:%d, column:%d]", err.container, err.line, err.column)
+	}
+	return fmt.Sprintf("Unexpected end-of-input: expected close marker for %s (from [line:%d, column:%d]", err.container, err.line, err.column)
+}
+
+// jsonValueAtInputEnd distinguishes a complete value at EOF from a value
+// whose reported close-marker position includes the input span. Strings use
+// the ordinary EOF position, while the other JSON scalar tokens use the
+// Salesforce-admitted scalar position.
+func jsonValueAtInputEnd(value Value, decoder *json.Decoder, source string) (bool, bool) {
+	if decoder.InputOffset() != int64(len(source)) {
+		return false, false
+	}
+	switch value.Kind {
+	case ValueNull, ValueBool, ValueInt, ValueDecimal:
+		return true, true
+	case ValueString:
+		return true, false
+	}
+	return false, false
+}
+
+// Observed EOF positions include the input span plus the final line span.
+// A bare scalar ending at EOF adds one more input span to the reported column.
+func jsonEOFPosition(source string, scalarAtEnd bool) (int, int) {
+	line, start := 1, 0
+	for i := 0; i < len(source); i++ {
+		if source[i] == '\r' {
+			line++
+			if i+1 < len(source) && source[i+1] == '\n' {
+				i++
+			}
+			start = i + 1
+		} else if source[i] == '\n' {
+			line++
+			start = i + 1
+		}
+	}
+	column := apexStringLength(source) + apexStringLength(source[start:]) + 1
+	if scalarAtEnd {
+		column += apexStringLength(source)
+	}
+	return line, column
+}
+
+func jsonContainerEOFError(err error, source, container string, withinEntries, scalarAtEnd bool) error {
+	message := ""
+	if err != nil {
+		message = err.Error()
+	}
+	if err != io.EOF && err != io.ErrUnexpectedEOF &&
+		!strings.Contains(message, "unexpected end of JSON input") &&
+		!strings.Contains(message, "unexpected EOF") {
+		return jsonStringEOFError(err, source)
+	}
+	line, column := jsonEOFPosition(source, scalarAtEnd)
+	return &jsonContainerInputError{container: container, withinEntries: withinEntries, line: line, column: column}
+}
+
+type jsonStringInputError struct {
+	escape       bool
+	line, column int
+}
+
+type jsonCharacterInputError struct {
+	char         rune
+	line, column int
+	nested       bool
+}
+
+func (err *jsonCharacterInputError) Error() string {
+	message := fmt.Sprintf("Unexpected character ('%c' (code %d)): %s", err.char, err.char, jsonExpectedValueDescription(err.char))
+	// Non-delimiter failures at the document root use
+	// input-location text; nested values and delimiter errors retain line/column.
+	if !err.nested && err.char != '}' && err.char != ']' {
+		return message + fmt.Sprintf(" at input location [%d,%d]", err.line, err.column)
+	}
+	return message + fmt.Sprintf(" at [line:%d, column:%d]", err.line, err.column)
+}
+
+func jsonExpectedValueDescription(character rune) string {
+	// Distinguish an unexpected closing delimiter from
+	// an unrecognized value token.
+	if character == '}' || character == ']' {
+		return "expected a value"
+	}
+	return "expected a valid value (number, String, array, object, 'true', 'false' or 'null')"
+}
+
+func jsonSyntaxErrorAtInput(err error, source string, offset int) error {
+	syntax, ok := err.(*json.SyntaxError)
+	if !ok || !strings.Contains(syntax.Error(), "looking for beginning of value") || offset < 0 || offset >= len(source) {
+		return err
+	}
+	if !strings.HasPrefix(syntax.Error(), "invalid character "+strconv.QuoteRune(rune(source[offset]))) {
+		return err
+	}
+	// J004/U001-U014: Token's scanner offset excludes structural tokens
+	// and previously read object keys. Its input cursor is document-relative.
+	// Keep the original error text for the separate root-closing parser path.
+	normalized := *syntax
+	normalized.Offset = int64(offset + 1)
+	return &normalized
+}
+
+func jsonUnexpectedCharacterError(err error, source string) error {
+	if syntax, ok := err.(*json.SyntaxError); ok && strings.Contains(syntax.Error(), "looking for beginning of value") {
+		offset := int(syntax.Offset)
+		// Decoder.Token reports an unconsumed delimiter at InputOffset,
+		// whereas scalar scanning reports the offset after the bad character.
+		consumed := offset > 0 && offset <= len(source) && strings.HasPrefix(syntax.Error(), "invalid character "+strconv.QuoteRune(rune(source[offset-1])))
+		if !consumed && offset >= 0 && offset < len(source) && strings.HasPrefix(syntax.Error(), "invalid character "+strconv.QuoteRune(rune(source[offset]))) {
+			offset++
+		}
+		if offset > 0 && offset <= len(source) {
+			line, column := jsonInputPosition(source, offset)
+			trimmed := strings.TrimSpace(source)
+			return &jsonCharacterInputError{char: rune(source[offset-1]), line: line, column: column, nested: strings.HasPrefix(trimmed, "[") || strings.HasPrefix(trimmed, "{")}
+		}
+	}
+	return err
+}
+
+func jsonTokenInputStart(source string, offset int) int {
+	for offset < len(source) && strings.ContainsRune(" \t\r\n,:", rune(source[offset])) {
+		offset++
+	}
+	return offset
+}
+
+func jsonEnumTokenInputStart(source string, offset int) int {
+	for offset < len(source) && strings.ContainsRune(" \t\r\n", rune(source[offset])) {
+		offset++
+	}
+	return offset
+}
+
+func jsonInputPosition(source string, offset int) (int, int) {
+	if offset > len(source) {
+		offset = len(source)
+	}
+	prefix := source[:offset]
+	line := strings.Count(prefix, "\n") + 1
+	start := strings.LastIndex(prefix, "\n") + 1
+	return line, apexStringLength(prefix[start:]) + 1
+}
+
+func (err *jsonStringInputError) Error() string {
+	context := ": was expecting closing quote for a string value"
+	if err.escape {
+		context = " in character escape sequence"
+	}
+	return fmt.Sprintf("Unexpected end-of-input%s at [line:%d, column:%d]", context, err.line, err.column)
+}
+
+func jsonStringEOFError(err error, source string) error {
+	if err != io.ErrUnexpectedEOF {
+		return err
+	}
+	quoted, escaped, unicodeDigits := false, false, 0
+	for _, char := range source {
+		if !quoted {
+			if char == '"' {
+				quoted = true
+			}
+			continue
+		}
+		if unicodeDigits > 0 {
+			unicodeDigits--
+			continue
+		}
+		if escaped {
+			escaped = false
+			if char == 'u' {
+				unicodeDigits = 4
+			}
+			continue
+		}
+		if char == '\\' {
+			escaped = true
+		} else if char == '"' {
+			quoted = false
+		}
+	}
+	if !quoted {
+		return err
+	}
+	line, column := jsonEOFPosition(source, false)
+	return &jsonStringInputError{escape: escaped || unicodeDigits > 0, line: line, column: column}
 }
 
 type jsonNumberInputError struct {
@@ -811,6 +1311,13 @@ func jsonNumberErrorBoundary(source string, end int) int {
 func decodeJSONValueForDeserialize(text string, strict bool) (any, error) {
 	decoded, err := decodeJSONValue(text)
 	if err != nil {
+		if character, ok := jsonUnexpectedCharacterError(err, text).(*jsonCharacterInputError); ok &&
+			(character.nested || (character.char != '}' && character.char != ']')) {
+			// Typed invalid values agree with
+			// untyped decoding. Root closing markers (K001-K005/K009-K012)
+			// use a separate parser error path, outside this value formatter.
+			return nil, character
+		}
 		if strings.Contains(err.Error(), "unexpected EOF") && strings.HasPrefix(strings.TrimSpace(text), `"`) {
 			return nil, fmt.Errorf("malformed JSON: %s", err.Error())
 		}
@@ -831,7 +1338,7 @@ func normalizeJSONDeserializeError(err error) error {
 		return nil
 	}
 	message := err.Error()
-	if strings.Contains(message, "unexpected EOF") || message == "EOF" {
+	if strings.Contains(message, "unexpected EOF") || strings.Contains(message, "unexpected end of JSON input") || message == "EOF" {
 		return fmt.Errorf("Unexpected end-of-input: %s", message)
 	}
 	if strings.HasPrefix(message, "JSON.deserializeStrict") {
@@ -839,6 +1346,13 @@ func normalizeJSONDeserializeError(err error) error {
 	}
 	if hasPrefixFold(message, "malformed json:") {
 		return err
+	}
+	// Salesforce capitalizes the malformed-object-key diagnostic surfaced by
+	// JSON.deserialize (the LogService corpus contract asserts this exact
+	// prefix). Keep the existing lower-case spelling for the other parser
+	// errors, whose local and Salesforce contracts are already covered.
+	if strings.Contains(message, "after object key") {
+		return fmt.Errorf("Malformed JSON: %s", message)
 	}
 	return fmt.Errorf("malformed JSON: %s", message)
 }
@@ -958,11 +1472,63 @@ func valueFromJSON(raw any) Value {
 	}
 }
 
+// jsonRootSObjectPayload recognizes the concrete SObject envelope accepted by
+// JSON.deserialize. Keep this at that entry point: recursive mapping, strict
+// deserialization and JSONParser have independent payload contracts.
+func (vm *VM) jsonRootSObjectPayload(typeName string, raw any) any {
+	typeName = vm.resolveJSONTypeName(typeName)
+	if _, userClass := vm.lookupClass(typeName); userClass {
+		return raw
+	}
+	if !vm.isSObjectLikeType(typeName) {
+		return raw
+	}
+	objectName, ok := vm.resolveObjectName(typeName)
+	if !ok {
+		return raw
+	}
+	fields, ok := jsonObjectMap(raw)
+	if !ok || len(fields) != 1 {
+		return raw
+	}
+	wrapped, ok := fields[objectName]
+	if !ok {
+		return raw
+	}
+	if _, ok := jsonObjectMap(wrapped); !ok {
+		return raw
+	}
+	return wrapped
+}
+
 func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, error) {
+	input, positioned := raw.(jsonTypedInput)
+	if positioned {
+		raw = input.value
+	}
 	if value, ok, err := typedScalarFromJSON(typeName, raw); ok || err != nil {
+		if input.root && err == nil {
+			vm.rememberLocalOnlyObject(value)
+		}
 		return value, err
 	}
-	typeName = vm.resolveJSONTypeName(typeName)
+	if _, ok := vm.explicitSchemaRecordType(typeName); ok {
+		typeName = typeName[len("Schema."):]
+		input.sObjectRecord = true
+	} else if !input.sObjectRecord {
+		typeName = vm.resolveJSONTypeName(typeName)
+	}
+	if !vm.jsonAccessAllowed(typeName, "deserializable") {
+		return Null, jsonDeserializeException("Type cannot be deserialized")
+	}
+	// R179-R184/N022-N038: query handles have their own closed JSON surface.
+	// Raw null has already followed the ordinary scalar-null path above.
+	if strings.EqualFold(typeName, "Database.QueryLocator") {
+		return Null, jsonDeserializeException("Apex Type unsupported in JSON: Database.QueryLocator")
+	}
+	if strings.EqualFold(typeName, "Database.Cursor") {
+		return vm.databaseCursorFromJSON(raw, strict)
+	}
 	if collectionBase(typeName) == "List" {
 		items, ok := raw.([]any)
 		if !ok {
@@ -973,13 +1539,25 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			}
 		}
 		elementType, _ := collectionElementType(typeName)
+		// K031-K034/K068/K069: Object is unsupported in nonempty typed
+		// collections, even when every item is null. Empty collections work.
+		if input.source != "" && len(items) != 0 && strings.EqualFold(vm.resolveJSONTypeName(elementType), "Object") {
+			return Null, jsonDeserializeException("Apex Type unsupported in JSON: Object")
+		}
 		out := List()
 		out.Type = typeName
-		for _, item := range items {
+		starts := jsonArrayInputStarts(input)
+		for i, item := range items {
+			if i < len(starts) {
+				item = jsonTypedInput{value: item, source: input.source, start: starts[i], sObjectRecord: input.sObjectRecord}
+			} else if input.sObjectRecord {
+				item = jsonTypedInput{value: item, sObjectRecord: true}
+			}
 			value, err := vm.typedValueFromJSON(elementType, item, strict)
 			if err != nil {
 				return Null, err
 			}
+			vm.markCollectionRefsEscaped(value)
 			out.List = append(out.List, value)
 		}
 		return out, nil
@@ -992,12 +1570,17 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		elementType, _ := collectionElementType(typeName)
 		out := Set()
 		out.Type = typeName
-		for _, item := range items {
+		starts := jsonArrayInputStarts(input)
+		for i, item := range items {
+			if i < len(starts) {
+				item = jsonTypedInput{value: item, source: input.source, start: starts[i]}
+			}
 			value, err := vm.typedValueFromJSON(elementType, item, strict)
 			if err != nil {
 				return Null, err
 			}
 			if !containsValue(out.Set, value) {
+				vm.markCollectionRefsEscaped(value)
 				out.Set = append(out.Set, value)
 			}
 		}
@@ -1015,12 +1598,18 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		out := Map()
 		out.Type = typeName
 		orderedFields, _ := jsonObjectFields(raw)
+		unsupportedObjectValue := input.source != "" && strings.EqualFold(vm.resolveJSONTypeName(valueType), "Object")
 		for _, field := range orderedFields {
-			keyValue, err := vm.typedJSONMapKey(keyType, field.name)
+			keyValue, err := vm.typedJSONMapKey(keyType, field.name, jsonTypedInput{source: input.source, start: field.enumStart})
 			if err != nil {
 				return Null, err
 			}
-			value, err := vm.typedValueFromJSON(valueType, field.value, strict)
+			// K094-K096: native validates a present key before its Object value,
+			// while an empty map never attempts either conversion.
+			if unsupportedObjectValue {
+				return Null, jsonDeserializeException("Apex Type unsupported in JSON: Object")
+			}
+			value, err := vm.typedValueFromJSON(valueType, jsonTypedInput{value: field.value, source: field.source, start: field.enumStart}, strict)
 			if err != nil {
 				return Null, err
 			}
@@ -1028,53 +1617,83 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			if _, exists := out.Map[encodedKey]; !exists {
 				out.MapOrder = append(out.MapOrder, encodedKey)
 			}
+			vm.markCollectionRefsEscaped(keyValue, value)
 			out.Map[encodedKey] = value
 			out.MapKeys[encodedKey] = keyValue
 		}
 		return out, nil
 	}
 	if strings.EqualFold(typeName, "Object") {
+		if input.source != "" {
+			return Null, jsonDeserializeException("Apex Type unsupported in JSON: Object")
+		}
 		return valueFromJSON(raw), nil
 	}
-	if enumValue, ok, err := vm.typedEnumValueFromJSON(typeName, raw); ok || err != nil {
+	if enumValue, ok, err := vm.typedEnumJSONInput(typeName, raw, input); ok || err != nil {
 		return enumValue, err
 	}
 	if strings.EqualFold(typeName, "sObject") {
-		return vm.sObjectValueFromJSON(raw, strict)
+		value, err := vm.sObjectValueFromJSON(raw, strict)
+		if input.root && err == nil {
+			vm.rememberLocalOnlyObject(value)
+		}
+		return value, err
 	}
 	if !vm.isJSONTypedObjectTarget(typeName) {
 		return Null, unsupportedCallError("JSON.deserialize local class/SObject mapping for " + typeName)
 	}
-	obj, err := vm.jsonObjectBaseValue(typeName)
+	var obj Value
+	var err error
+	if input.sObjectRecord && vm.isSObjectLikeType(typeName) {
+		// A schema relationship always allocates a record, never a same-name
+		// class instance or its constructor/field initializers.
+		obj = Object(typeName)
+	} else {
+		obj, err = vm.jsonObjectBaseValue(typeName)
+	}
 	if err != nil {
 		return Null, err
 	}
-	if vm.isSObjectLikeType(typeName) {
+	if input.root {
+		// The constructor path already tracks escapes. Register only the fresh
+		// fallback allocation, before a property setter can publish this root.
+		if class, registered := vm.lookupClass(typeName); !registered || !classHasZeroArgConstructor(class) {
+			vm.rememberLocalOnlyObject(obj)
+		}
+	}
+	// Class declarations take precedence over same-name SObject metadata,
+	// including the scalar-field container checks below.
+	_, registeredClass := vm.lookupClass(typeName)
+	typedObjectIsSObject := !obj.classInstance && vm.isSObjectLikeType(typeName)
+	if typedObjectIsSObject {
 		vm.markJSONDeserializedSObjectFields(&obj, typeName)
 	}
-	typedObjectIsSObject := vm.isSObjectLikeType(typeName)
 	fields, ok := jsonObjectMap(raw)
 	if !ok {
 		return Null, jsonTypeMappingError(typeName, raw)
 	}
 	if strict {
-		if !vm.allowOpenSObjectJSONFields(typeName) {
-			allowed := vm.jsonAllowedFields(typeName)
-			for key := range fields {
-				if key == "attributes" {
-					continue
-				}
-				if !jsonAllowedFieldContains(allowed, key) && !vm.jsonStrictAllowsRelationshipPayload(typeName, key, fields[key]) {
-					if typedObjectIsSObject {
-						return Null, newExceptionError("JSONException", fmt.Sprintf("No such column '%s' on sobject of type %s", key, typeName))
-					}
-					return Null, newExceptionError("JSONException", fmt.Sprintf("JSON.deserializeStrict found unknown field %q for %s", key, typeName))
-				}
-			}
+		if err := vm.jsonStrictObjectFieldsError(typeName, raw); err != nil {
+			return Null, err
 		}
 	}
-	for _, key := range vm.sortedJSONTypedObjectFields(typeName, fields) {
-		item := fields[key]
+	_, platformDTO := platformJSONDTOFields(typeName)
+	ignoreUnknownClassFields := !strict && registeredClass && !typedObjectIsSObject && !platformDTO
+	objectFields := make([]orderedJSONField, 0, len(fields))
+	if typedObjectIsSObject {
+		objectFields, _ = jsonSObjectFieldsInTextualOrder(raw)
+	} else {
+		inputFields, _ := jsonObjectFields(raw)
+		byName := make(map[string]orderedJSONField, len(inputFields))
+		for _, field := range inputFields {
+			byName[field.name] = field
+		}
+		for _, key := range vm.sortedJSONTypedObjectFields(typeName, fields) {
+			objectFields = append(objectFields, byName[key])
+		}
+	}
+	for _, inputField := range objectFields {
+		key, item := inputField.name, inputField.value
 		if key == "attributes" {
 			continue
 		}
@@ -1084,8 +1703,13 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		if jsonSObjectLowercaseIDShadowedByCanonical(fields, key) {
 			continue
 		}
+		if ignoreUnknownClassFields {
+			if _, _, declared := vm.lookupField(typeName, key); !declared {
+				continue
+			}
+		}
 		if typedObjectIsSObject {
-			if handled, err := vm.applyDottedSObjectJSONField(&obj, typeName, key, item, strict); handled || err != nil {
+			if handled, err := vm.applyDottedSObjectJSONField(&obj, typeName, key, jsonTypedInput{value: item, source: inputField.source, start: inputField.start}, strict); handled || err != nil {
 				if err != nil {
 					return Null, err
 				}
@@ -1094,27 +1718,20 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		if typedObjectIsSObject {
 			if relationshipType, ok := vm.jsonSObjectChildRelationshipType(typeName, key); ok {
-				if _, hasRecords := jsonQueryResultRecords(item); hasRecords {
-					value, err := vm.typedValueFromJSON(relationshipType, item, strict)
+				if value, handled, err := vm.jsonSObjectChildValueFromJSON(relationshipType, item, strict); handled {
 					if err != nil {
 						return Null, err
 					}
+					vm.markCollectionRefsEscaped(value)
 					obj.Fields[key] = value
-					continue
-				}
-				if _, isArray := item.([]any); isArray {
-					value, err := vm.typedValueFromJSON(relationshipType, item, strict)
-					if err != nil {
-						return Null, err
-					}
-					obj.Fields[key] = value
+					vm.registerSObjectAliasField(obj, key, value)
 					continue
 				}
 			}
 		}
 		if typedObjectIsSObject {
 			if relationshipType, ok := vm.jsonSObjectParentRelationshipType(typeName, key); ok {
-				value, err := vm.typedValueFromJSON(relationshipType, item, strict)
+				value, err := vm.jsonSObjectParentValueFromJSON(relationshipType, key, item, strict)
 				if err != nil {
 					return Null, err
 				}
@@ -1124,7 +1741,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		if typedObjectIsSObject {
 			if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
-				value, err := vm.typedSObjectFieldValueFromJSON(fieldType, item, strict)
+				value, err := vm.typedSObjectFieldValueFromJSON(fieldType, jsonTypedInput{value: item, source: inputField.source, start: inputField.start}, strict)
 				if err != nil {
 					return Null, err
 				}
@@ -1132,7 +1749,9 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 					value = markJSONSObjectIDValue(value)
 				}
 				fieldName := vm.resolveSObjectFieldName(typeName, key)
+				vm.markCollectionRefsEscaped(value)
 				obj.Fields[fieldName] = value
+				vm.registerSObjectAliasField(obj, fieldName, value)
 				markExplicitSObjectField(&obj, fieldName)
 				continue
 			}
@@ -1141,14 +1760,16 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			fieldName := vm.resolveSObjectFieldName(typeName, key)
 			if !strings.EqualFold(fieldName, key) {
 				if fieldType, ok := vm.jsonSObjectFieldType(typeName, fieldName); ok {
-					value, err := vm.typedValueFromJSON(fieldType, item, strict)
+					value, err := vm.typedSObjectFieldValueFromJSON(fieldType, jsonTypedInput{value: item, source: inputField.source, start: inputField.start}, strict)
 					if err != nil {
 						return Null, err
 					}
 					if vm.jsonSObjectFieldIsIDLike(typeName, fieldName) {
 						value = markJSONSObjectIDValue(value)
 					}
+					vm.markCollectionRefsEscaped(value)
 					obj.Fields[fieldName] = value
+					vm.registerSObjectAliasField(obj, fieldName, value)
 					markExplicitSObjectField(&obj, fieldName)
 					continue
 				}
@@ -1156,12 +1777,19 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		if field, owner, ok := vm.lookupField(typeName, key); ok && field.Type != "" {
 			fieldType := vm.resolveTypeNameInClass(owner, field.Type)
-			value, err := vm.typedValueFromJSON(fieldType, item, strict)
+			var value Value
+			var err error
+			if typedObjectIsSObject {
+				value, err = vm.typedSObjectFieldValueFromJSON(fieldType, jsonTypedInput{value: item, source: inputField.source, start: inputField.start}, strict)
+			} else {
+				value, err = vm.typedApexFieldValueFromJSON(fieldType, inputField, strict)
+			}
 			if err != nil {
-				if strict {
+				if unsupported, ok := err.(*RuntimeError); ok && unsupported.Type == "UnsupportedFeature" && !strict {
+					value = valueFromJSON(item)
+				} else {
 					return Null, err
 				}
-				value = valueFromJSON(item)
 			}
 			if field.Setter != nil {
 				updated, err := vm.callReceiverSetterReturningReceiver(obj, *field.Setter, value)
@@ -1175,9 +1803,11 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			if fieldName == "" {
 				fieldName = key
 			}
+			vm.markCollectionRefsEscaped(value)
 			if typedObjectIsSObject {
 				fieldName = vm.resolveSObjectFieldName(typeName, fieldName)
 				obj.Fields[fieldName] = value
+				vm.registerSObjectAliasField(obj, fieldName, value)
 				markExplicitSObjectField(&obj, fieldName)
 				continue
 			}
@@ -1185,21 +1815,109 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			continue
 		}
 		if fieldType, ok := platformJSONDTOFieldType(typeName, key); ok {
-			value, err := vm.typedValueFromJSON(fieldType, item, strict)
+			var value Value
+			var err error
+			// Salesforce treats LeadConvertResult Id fields as opaque values
+			// during JSON.deserialize. The value is returned unchanged by the
+			// getLeadId/getAccountId/etc. accessors, even when a test fixture
+			// uses a synthetic 18-character Id that would fail normal Id
+			// validation. Keep strict Id parsing for ordinary Apex and other
+			// DTO fields.
+			if strings.EqualFold(key, "id") && isOpaqueApprovalResultJSONType(typeName) {
+				// Approval result Id values are opaque response text. Salesforce
+				// preserves synthetic/non-checksum IDs returned by API fixtures.
+				value = valueFromJSON(item)
+			} else if strings.EqualFold(key, "id") && isDatabaseResultJSONType(typeName) {
+				// Salesforce accepts the DML-mock convention of a quoted
+				// "null" id while deserializing a Database result. The invalid
+				// text is rejected only when the result's Id is read.
+				if text, ok := item.(string); ok && text == "null" {
+					value = platformScalar("Id", text)
+				} else if text, ok := item.(string); ok && platformJSONDTOAllowsOpaqueID(typeName) && validateApexIDShape(text) == nil {
+					// Salesforce preserves shape-valid opaque Id text in these
+					// result DTOs, including synthetic values without a checksum.
+					// Keep it as response text so getId() does not apply ordinary
+					// SObject Id checksum validation to the opaque value.
+					value = valueFromJSON(item)
+				} else {
+					value, err = vm.typedValueFromJSON(fieldType, item, strict)
+				}
+			} else if isOpaqueLeadConvertResultIDField(typeName, fieldType) {
+				if text, ok := item.(string); ok {
+					value = platformScalar("Id", text)
+				} else {
+					value, err = vm.typedValueFromJSON(fieldType, item, strict)
+				}
+			} else {
+				value, err = vm.typedValueFromJSON(fieldType, item, strict)
+			}
 			if err != nil {
 				return Null, err
 			}
+			vm.markCollectionRefsEscaped(value)
 			obj.Fields[platformJSONDTOFieldName(key)] = value
 			continue
 		}
 		actualKey := key
+		if typedObjectIsSObject {
+			if handled, err := vm.discardUnknownSObjectJSONField(typeName, key, item); handled || err != nil {
+				if err != nil {
+					return Null, err
+				}
+				continue
+			}
+		}
 		if existingKey, _, ok := objectFieldValue(obj, key); ok {
 			actualKey = existingKey
 		}
 		obj.Fields[actualKey] = valueFromJSON(item)
+		if typedObjectIsSObject {
+			vm.registerSObjectAliasField(obj, actualKey, obj.Fields[actualKey])
+		}
 	}
 	vm.hydrateParentLookupFields(obj)
 	return obj, nil
+}
+
+func isDatabaseResultJSONType(typeName string) bool {
+	switch {
+	case strings.EqualFold(typeName, "Database.SaveResult"),
+		strings.EqualFold(typeName, "Database.DeleteResult"),
+		strings.EqualFold(typeName, "Database.UndeleteResult"),
+		strings.EqualFold(typeName, "Database.EmptyRecycleBinResult"),
+		strings.EqualFold(typeName, "Database.LockResult"),
+		strings.EqualFold(typeName, "Database.UnlockResult"),
+		strings.EqualFold(typeName, "Database.LeadConvertResult"),
+		strings.EqualFold(typeName, "Database.UpsertResult"),
+		strings.EqualFold(typeName, "Database.MergeResult"),
+		strings.EqualFold(typeName, "Approval.LockResult"),
+		strings.EqualFold(typeName, "Approval.UnlockResult"):
+		return true
+	default:
+		return false
+	}
+}
+
+func isOpaqueApprovalResultJSONType(typeName string) bool {
+	return strings.EqualFold(typeName, "Approval.LockResult") || strings.EqualFold(typeName, "Approval.UnlockResult")
+}
+
+func platformJSONDTOAllowsOpaqueID(typeName string) bool {
+	switch {
+	case strings.EqualFold(typeName, "Database.SaveResult"),
+		strings.EqualFold(typeName, "Database.DeleteResult"),
+		strings.EqualFold(typeName, "Database.EmptyRecycleBinResult"),
+		strings.EqualFold(typeName, "Database.MergeResult"),
+		strings.EqualFold(typeName, "Database.UndeleteResult"),
+		strings.EqualFold(typeName, "Database.UpsertResult"):
+		return true
+	default:
+		return false
+	}
+}
+
+func isOpaqueLeadConvertResultIDField(typeName, fieldType string) bool {
+	return strings.EqualFold(typeName, "Database.LeadConvertResult") && strings.EqualFold(fieldType, "Id")
 }
 
 func (vm *VM) callReceiverSetterReturningReceiver(receiver Value, setter Method, value Value) (Value, error) {
@@ -1282,7 +2000,20 @@ func (vm *VM) applySObjectMetadataDefaults(record *Value) {
 }
 
 func (vm *VM) markJSONDeserializedSObjectFields(record *Value, typeName string) {
-	if vm == nil || vm.Org == nil || record == nil || record.Kind != ValueObject {
+	if record == nil || record.Kind != ValueObject {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]Value)
+	}
+	marker, ok := record.Fields[sobjectExplicitFieldsField]
+	if !ok || marker.Kind != ValueMap {
+		marker = Map()
+		marker.Type = "Map<String,Boolean>"
+	}
+	marker.Runtime = jsonDeserializedSObjectFieldOrder
+	record.Fields[sobjectExplicitFieldsField] = marker
+	if vm == nil || vm.Org == nil {
 		return
 	}
 	objectName, ok := vm.resolveObjectName(typeName)
@@ -1322,10 +2053,28 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 			typeName = strings.TrimSpace(rawType)
 		}
 	}
+	if typeName == "sObject" {
+		return Null, jsonDeserializeException("Nested object for polymorphic foreign key must have an attributes field before any other fields.")
+	}
+	if vm.Org != nil {
+		if _, known := vm.resolveObjectName(typeName); !known {
+			return Null, jsonDeserializeException("")
+		}
+	}
+	if strict {
+		if err := vm.jsonStrictObjectFieldsError(typeName, raw); err != nil {
+			return Null, err
+		}
+	}
 	obj := Object(typeName)
 	vm.initializeFields(&obj, typeName)
+	// This entry point explicitly maps an SObject payload. A same-name class
+	// may supply field initialization, but cannot turn the record into its instance.
+	obj.classInstance = false
 	vm.markJSONDeserializedSObjectFields(&obj, typeName)
-	for key, item := range fields {
+	objectFields, _ := jsonSObjectFieldsInTextualOrder(raw)
+	for _, field := range objectFields {
+		key, item := field.name, field.value
 		if key == "attributes" {
 			continue
 		}
@@ -1335,32 +2084,25 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 		if jsonSObjectLowercaseIDShadowedByCanonical(fields, key) {
 			continue
 		}
-		if handled, err := vm.applyDottedSObjectJSONField(&obj, typeName, key, item, strict); handled || err != nil {
+		if handled, err := vm.applyDottedSObjectJSONField(&obj, typeName, key, jsonTypedInput{value: item, source: field.source, start: field.start}, strict); handled || err != nil {
 			if err != nil {
 				return Null, err
 			}
 			continue
 		}
 		if relationshipType, ok := vm.jsonSObjectChildRelationshipType(typeName, key); ok {
-			if _, hasRecords := jsonQueryResultRecords(item); hasRecords {
-				value, err := vm.typedValueFromJSON(relationshipType, item, strict)
+			if value, handled, err := vm.jsonSObjectChildValueFromJSON(relationshipType, item, strict); handled {
 				if err != nil {
 					return Null, err
 				}
+				vm.markCollectionRefsEscaped(value)
 				obj.Fields[key] = value
-				continue
-			}
-			if _, isArray := item.([]any); isArray {
-				value, err := vm.typedValueFromJSON(relationshipType, item, strict)
-				if err != nil {
-					return Null, err
-				}
-				obj.Fields[key] = value
+				vm.registerSObjectAliasField(obj, key, value)
 				continue
 			}
 		}
 		if relationshipType, ok := vm.jsonSObjectParentRelationshipType(typeName, key); ok {
-			value, err := vm.typedValueFromJSON(relationshipType, item, strict)
+			value, err := vm.jsonSObjectParentValueFromJSON(relationshipType, key, item, strict)
 			if err != nil {
 				return Null, err
 			}
@@ -1368,7 +2110,7 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 			continue
 		}
 		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
-			value, err := vm.typedValueFromJSON(fieldType, item, strict)
+			value, err := vm.typedSObjectFieldValueFromJSON(fieldType, jsonTypedInput{value: item, source: field.source, start: field.start}, strict)
 			if err != nil {
 				return Null, err
 			}
@@ -1376,33 +2118,128 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 				value = markJSONSObjectIDValue(value)
 			}
 			fieldName := vm.resolveSObjectFieldName(typeName, key)
+			vm.markCollectionRefsEscaped(value)
 			obj.Fields[fieldName] = value
+			vm.registerSObjectAliasField(obj, fieldName, value)
 			markExplicitSObjectField(&obj, fieldName)
 			continue
 		}
 		fieldName := vm.resolveSObjectFieldName(typeName, key)
 		if !strings.EqualFold(fieldName, key) {
 			if fieldType, ok := vm.jsonSObjectFieldType(typeName, fieldName); ok {
-				value, err := vm.typedSObjectFieldValueFromJSON(fieldType, item, strict)
+				value, err := vm.typedSObjectFieldValueFromJSON(fieldType, jsonTypedInput{value: item, source: field.source, start: field.start}, strict)
 				if err != nil {
 					return Null, err
 				}
 				if vm.jsonSObjectFieldIsIDLike(typeName, fieldName) {
 					value = markJSONSObjectIDValue(value)
 				}
+				vm.markCollectionRefsEscaped(value)
 				obj.Fields[fieldName] = value
+				vm.registerSObjectAliasField(obj, fieldName, value)
 				markExplicitSObjectField(&obj, fieldName)
 				continue
 			}
 		}
+		if handled, err := vm.discardUnknownSObjectJSONField(typeName, key, item); handled || err != nil {
+			if err != nil {
+				return Null, err
+			}
+			continue
+		}
 		obj.Fields[key] = valueFromJSON(item)
+		vm.registerSObjectAliasField(obj, key, obj.Fields[key])
 	}
 	vm.hydrateParentLookupFields(obj)
 	return obj, nil
 }
 
+func (vm *VM) discardUnknownSObjectJSONField(typeName, key string, raw any) (bool, error) {
+	if vm.allowOpenSObjectJSONFields(typeName) || jsonAllowedFieldContains(vm.jsonAllowedFields(typeName), key) {
+		return false, nil
+	}
+	// R331/R335/R343-R355: unknown scalar/object fields are discarded, but
+	// a nonempty array anywhere in that payload is not an SObject column.
+	return true, jsonUnknownSObjectPayloadError(typeName, raw)
+}
+
+func jsonUnknownSObjectPayloadError(typeName string, raw any) error {
+	switch value := raw.(type) {
+	case []any:
+		if len(value) > 0 {
+			return jsonDeserializeException("No field name specified on column for sobject of type %s", typeName)
+		}
+	case orderedJSONObject:
+		for _, field := range value {
+			if err := jsonUnknownSObjectPayloadError(typeName, field.value); err != nil {
+				return err
+			}
+		}
+	case map[string]any:
+		for _, item := range value {
+			if err := jsonUnknownSObjectPayloadError(typeName, item); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (vm *VM) typedSObjectFieldValueFromJSON(fieldType string, raw any, strict bool) (Value, error) {
-	value, err := vm.typedValueFromJSON(fieldType, raw, strict)
+	input, positioned := raw.(jsonTypedInput)
+	if positioned {
+		raw = input.value
+	}
+	canonical := canonicalJSONScalarType(fieldType)
+	switch canonical {
+	case "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "Id", "Blob", "UUID":
+		message := ""
+		locationSeparator := " "
+		switch raw.(type) {
+		case map[string]any, orderedJSONObject:
+			locationSeparator = " at "
+			message = fmt.Sprintf("Cannot deserialize instance of %s from START_OBJECT value { or request may be missing a required field", strings.ToLower(canonical))
+		case []any:
+			message = fmt.Sprintf("Cannot deserialize instance of %s from START_ARRAY value", strings.ToLower(canonical))
+		}
+		if message != "" {
+			if input.source != "" {
+				// SObject scalar diagnostics identify the field key, not the
+				// opening delimiter of its object or array value (SC014-SC016).
+				line, column := jsonInputPosition(input.source, input.start)
+				message += fmt.Sprintf("%s[line:%d, column:%d]", locationSeparator, line, column)
+			}
+			return Null, jsonDeserializeException("%s", message)
+		}
+	}
+	if text, ok := raw.(string); ok && strings.TrimSpace(text) == "" {
+		switch canonical {
+		case "Decimal", "Double":
+			return decimalFromText("0.0")
+		case "Integer", "Long":
+			return vm.typedValueFromJSON(fieldType, json.Number("0"), strict)
+		case "Datetime":
+			return Null, nil
+		}
+	}
+	value, err := vm.typedValueFromJSON(fieldType, jsonTypedInput{value: raw, sObjectRecord: true}, strict)
+	if err == nil && value.Kind == ValueDecimal && canonical == "Decimal" {
+		// SObject Number/Currency values discard input scale but retain a
+		// fractional digit for integral values.
+		text := decimalDisplayText(value)
+		if strings.Contains(text, ".") {
+			text = strings.TrimRight(strings.TrimRight(text, "0"), ".")
+		}
+		if !strings.Contains(text, ".") {
+			text += ".0"
+		}
+		return decimalFromText(text)
+	}
+	if err != nil && canonical == "Date" {
+		if text, ok := raw.(string); ok {
+			return Null, jsonDeserializeException("Cannot deserialize instance of date from VALUE_STRING value %s or request may be missing a required field", text)
+		}
+	}
 	if err == nil || !strings.EqualFold(fieldType, "Blob") {
 		return value, err
 	}
@@ -1411,6 +2248,148 @@ func (vm *VM) typedSObjectFieldValueFromJSON(fieldType string, raw any, strict b
 		return value, err
 	}
 	return platformScalar("Blob", text), nil
+}
+
+func (vm *VM) jsonSObjectParentValueFromJSON(typeName, fieldName string, raw any, strict bool) (Value, error) {
+	if raw == nil {
+		return Null, nil
+	}
+	fields, nested := jsonObjectFields(raw)
+	if !nested {
+		return Null, jsonDeserializeException("The value provided for foreign key reference %s is not a nested SObject", fieldName)
+	}
+	allowed := vm.jsonAllowedFields(typeName)
+	// R390-R393: report the first unknown string field in input order.
+	// jsonObjectFields also gives map-backed callers a deterministic fallback.
+	for _, field := range fields {
+		key, item := field.name, field.value
+		if key == "attributes" || jsonAllowedFieldContains(allowed, key) {
+			continue
+		}
+		if _, known := vm.jsonSObjectParentRelationshipType(typeName, key); known {
+			continue
+		}
+		if _, known := vm.jsonSObjectChildRelationshipType(typeName, key); known {
+			continue
+		}
+		if text, ok := item.(string); ok && !vm.allowOpenSObjectJSONFields(typeName) {
+			return Null, jsonDeserializeException("Cannot deserialize instance of <unknown> from VALUE_STRING value %s or request may be missing a required field", text)
+		}
+	}
+	return vm.typedValueFromJSON(typeName, jsonTypedInput{value: raw, sObjectRecord: true}, strict)
+}
+
+func (vm *VM) typedApexFieldValueFromJSON(fieldType string, field orderedJSONField, strict bool) (Value, error) {
+	// R042-R044/R046 and I001-I009: Integer class fields use the scalar token's
+	// exact text. Root scalars and SObject fields retain their own conversions.
+	if canonicalJSONScalarType(fieldType) == "Integer" {
+		text, textual := field.value.(string)
+		if number, numeric := field.value.(json.Number); numeric {
+			text, textual = number.String(), true
+		}
+		if value, boolean := field.value.(bool); boolean {
+			text, textual = strconv.FormatBool(value), true
+		}
+		if textual {
+			value, err := strconv.ParseInt(text, 10, 32)
+			if err == nil {
+				return Int(value), nil
+			}
+			message := fmt.Sprintf("For input string: %q", text)
+			if field.source != "" {
+				// R043/R044/R046 and J003/J004/P001-P009 identify the
+				// field's input boundary before its separating comma.
+				line, column := jsonInputPosition(field.source, field.inputStart)
+				message += fmt.Sprintf(" at [line:%d, column:%d]", line, column)
+			}
+			return Null, jsonDeserializeException("%s", message)
+		}
+	}
+	if text, quoted := field.value.(string); quoted {
+		message := ""
+		offset := field.start
+		switch canonicalJSONScalarType(fieldType) {
+		case "Boolean":
+			message = "Illegal value for boolean: " + text
+			offset = field.end
+		case "Date":
+			if text == "" {
+				message = `Invalid format: ""`
+			}
+		case "Decimal", "Double":
+			if text == "" {
+				message = "N/A"
+			} else if strings.TrimSpace(text) == "" {
+				message = fmt.Sprintf("Character %c is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.", []rune(text)[0])
+			}
+		}
+		if message != "" {
+			if field.source != "" {
+				line, column := jsonInputPosition(field.source, offset)
+				message += fmt.Sprintf(" at [line:%d, column:%d]", line, column)
+			}
+			return Null, jsonDeserializeException("%s", message)
+		}
+	}
+	return vm.typedValueFromJSON(fieldType, jsonTypedInput{value: field.value, source: field.source, start: field.enumStart}, strict)
+}
+
+func (vm *VM) typedEnumJSONInput(typeName string, raw any, input jsonTypedInput) (Value, bool, error) {
+	class, enum := vm.resolveEnumClass(typeName)
+	if !enum || input.source == "" {
+		return vm.typedEnumValueFromJSON(typeName, raw)
+	}
+	// K040-K043/K054/K055/K066/K067: a root enum expects an object and
+	// maps that object to null. Enum fields and array items accept scalars.
+	if input.root {
+		if _, object := jsonObjectMap(raw); !object {
+			return Null, true, jsonDeserializeException("Malformed JSON: Expected '{' at the beginning of object")
+		}
+		return Null, true, nil
+	}
+	text := ""
+	switch item := raw.(type) {
+	case string:
+		if value, _, err := vm.typedEnumValueFromJSON(typeName, raw); err == nil {
+			return value, true, nil
+		}
+		text = item
+	case json.Number, bool:
+		text = fmt.Sprint(item)
+	default:
+		return Null, true, jsonDeserializeException("Illegal value for primitive")
+	}
+	line, column := jsonInputPosition(input.source, input.start)
+	return Null, true, jsonDeserializeException("The type %s does not have an enum value %s at [line:%d, column:%d]", class.Name, text, line, column)
+}
+
+// K098-K121: scalar map-key failures retain the key token's native location.
+// Field/array conversion and non-JSON coercion keep their existing diagnostics.
+func jsonMapKeyInputError(typeName, key string, input jsonTypedInput, err error) error {
+	message := ""
+	switch canonicalJSONScalarType(typeName) {
+	case "Integer", "Long", "Double":
+		message = fmt.Sprintf("For input string: %q", key)
+		if strings.EqualFold(typeName, "Double") && strings.TrimSpace(key) == "" {
+			message = "empty String"
+		}
+	case "Decimal":
+		message = "N/A"
+		if key != "" {
+			message = fmt.Sprintf("Character %c is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.", []rune(key)[0])
+		}
+	case "Date", "Datetime", "Time":
+		message = fmt.Sprintf("Invalid format: %q", key)
+	case "Id":
+		// K099/K105/K130/K131: map-key diagnostics retain the input text,
+		// rather than the StringException wrapped by scalar Id conversion.
+		message = "bad id " + key
+	}
+	if message == "" {
+		return err
+	}
+	line, column := jsonInputPosition(input.source, input.start)
+	return jsonDeserializeException("%s at [line:%d, column:%d]", message, line, column)
 }
 
 func jsonSObjectLowercaseIDShadowedByCanonical(fields map[string]any, key string) bool {
@@ -1452,9 +2431,12 @@ func (vm *VM) setSObjectParentRelationshipValue(obj *Value, typeName, relationsh
 	if obj.Fields == nil {
 		obj.Fields = make(map[string]Value)
 	}
+	vm.markCollectionRefsEscaped(relationship)
 	obj.Fields[relationshipName] = relationship
+	vm.registerSObjectAliasField(*obj, relationshipName, relationship)
 	for _, alias := range vm.parentRelationshipValueAliases(typeName, relationshipName) {
 		obj.Fields[alias] = relationship
+		vm.registerSObjectAliasField(*obj, alias, relationship)
 	}
 }
 
@@ -1523,6 +2505,7 @@ func (vm *VM) applyDottedSObjectJSONField(obj *Value, typeName, key string, item
 	if !exists || relationship.Kind == ValueNull {
 		relationship = Object(relationshipType)
 		vm.initializeFields(&relationship, relationshipType)
+		relationship.classInstance = false // A dotted schema relationship is a record.
 	}
 	if relationship.Kind != ValueObject {
 		return true, fmt.Errorf("JSON dotted relationship %s on %s is not an SObject", relationshipName, typeName)
@@ -1531,7 +2514,9 @@ func (vm *VM) applyDottedSObjectJSONField(obj *Value, typeName, key string, item
 		if err != nil {
 			return true, err
 		}
+		vm.markCollectionRefsEscaped(relationship)
 		obj.Fields[actualRelationshipName] = relationship
+		vm.registerSObjectAliasField(*obj, actualRelationshipName, relationship)
 		return true, nil
 	}
 	if fieldType, ok := vm.jsonSObjectFieldType(relationshipType, childPath); ok {
@@ -1539,16 +2524,79 @@ func (vm *VM) applyDottedSObjectJSONField(obj *Value, typeName, key string, item
 		if err != nil {
 			return true, err
 		}
-		relationship.Fields[vm.resolveSObjectFieldName(relationshipType, childPath)] = value
+		fieldName := vm.resolveSObjectFieldName(relationshipType, childPath)
+		vm.markCollectionRefsEscaped(value)
+		relationship.Fields[fieldName] = value
+		vm.registerSObjectAliasField(relationship, fieldName, value)
+		vm.markCollectionRefsEscaped(relationship)
 		obj.Fields[actualRelationshipName] = relationship
+		vm.registerSObjectAliasField(*obj, actualRelationshipName, relationship)
 		return true, nil
 	}
 	if strict {
 		return true, newExceptionError("JSONException", fmt.Sprintf("JSON.deserializeStrict found unknown field %q for %s", childPath, relationshipType))
 	}
+	if input, positioned := item.(jsonTypedInput); positioned {
+		item = input.value
+	}
 	relationship.Fields[childPath] = valueFromJSON(item)
+	vm.registerSObjectAliasField(relationship, childPath, relationship.Fields[childPath])
+	vm.markCollectionRefsEscaped(relationship)
 	obj.Fields[actualRelationshipName] = relationship
+	vm.registerSObjectAliasField(*obj, actualRelationshipName, relationship)
 	return true, nil
+}
+
+const (
+	jsonChildQueryResultField         = "__glade_json_child_query_result"
+	jsonQueriedChildRelationshipField = "__glade_json_queried_child_relationship"
+)
+
+// Child relationships remain ordinary Apex lists. Their private metadata is
+// consumed only when they are serialized as a field of the containing SObject.
+// Value cloning and collection coercion preserve Fields independently of List.
+func markJSONChildQueryResult(value *Value, metadata map[string]Value, queried bool) {
+	if value.Fields == nil {
+		value.Fields = make(map[string]Value)
+	}
+	value.Fields[jsonChildQueryResultField] = Value{Kind: ValueObject, Fields: metadata}
+	value.Fields[jsonQueriedChildRelationshipField] = Bool(queried)
+}
+
+func (vm *VM) jsonSObjectChildValueFromJSON(typeName string, raw any, strict bool) (Value, bool, error) {
+	if _, isArray := raw.([]any); isArray {
+		return Null, true, jsonDeserializeException("QueryResult must start with '{'")
+	}
+	fields, isObject := jsonObjectMap(raw)
+	if !isObject {
+		return Null, false, nil
+	}
+	records, hasRecords := fields["records"]
+	if !hasRecords {
+		_, hasTotalSize := fields["totalSize"]
+		_, hasDone := fields["done"]
+		if !hasTotalSize && !hasDone {
+			return Null, false, nil
+		}
+		// R068 accepts a QueryResult envelope with no records member.
+		records = []any{}
+	} else if _, isArray := records.([]any); !isArray {
+		return Null, false, nil
+	}
+	value, err := vm.typedValueFromJSON(typeName, jsonTypedInput{value: records, sObjectRecord: true}, strict)
+	if err != nil {
+		return Null, true, err
+	}
+	metadata := make(map[string]Value, 2)
+	for _, name := range []string{"totalSize", "done"} {
+		if item, present := fields[name]; present {
+			metadata[name] = valueFromJSON(item)
+		}
+	}
+	// R065-R067 retain the supplied metadata even when it disagrees with
+	// the number of records. Do not derive it from the materialized list.
+	markJSONChildQueryResult(&value, metadata, false)
+	return value, true, nil
 }
 
 func jsonQueryResultRecords(raw any) ([]any, bool) {
@@ -1947,6 +2995,26 @@ func platformJSONDTOFields(typeName string) (map[string]string, bool) {
 		strings.EqualFold(typeName, "Database.UpsertResult"),
 		strings.EqualFold(typeName, "Database.MergeResult"):
 		return resultFields, true
+	case strings.EqualFold(typeName, "Approval.ProcessResult"):
+		return map[string]string{
+			"success":        "Boolean",
+			"entityId":       "String",
+			"instanceId":     "String",
+			"instanceStatus": "String",
+			"actorIds":       "List<Id>",
+			"newWorkitemIds": "List<Id>",
+			"errors":         "List<Database.Error>",
+		}, true
+	case strings.EqualFold(typeName, "Database.LeadConvertResult"):
+		return map[string]string{
+			"success":                "Boolean",
+			"leadId":                 "Id",
+			"accountId":              "Id",
+			"contactId":              "Id",
+			"opportunityId":          "Id",
+			"relatedPersonAccountId": "Id",
+			"errors":                 "List<Database.Error>",
+		}, true
 	case strings.EqualFold(typeName, "Database.Error"):
 		return map[string]string{
 			"message":              "String",
@@ -2022,7 +3090,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		}
 		return Bool(value), true, nil
 	case "Integer", "Long":
-		value, ok := jsonIntegralNumber(raw)
+		value, ok := jsonTruncatedIntegralNumber(raw)
 		if !ok {
 			if text, textOK := raw.(string); textOK {
 				parsed, err := strconv.ParseInt(strings.TrimSpace(text), 10, 64)
@@ -2037,6 +3105,9 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		}
 		if canonical == "Long" {
 			return longIntValue(value), true, nil
+		}
+		if value < -2147483648 || value > 2147483647 {
+			return Null, true, jsonParserException("Numeric value (%v) out of range of int", raw)
 		}
 		return Int(value), true, nil
 	case "Decimal", "Double":
@@ -2096,7 +3167,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		if err != nil {
 			return Null, true, jsonDeserializeException("%s", err.Error())
 		}
-		return platformScalar("Datetime", value.UTC().Format(time.RFC3339)), true, nil
+		return platformScalar("Datetime", value.UTC().Format(time.RFC3339Nano)), true, nil
 	case "Time":
 		text, ok := raw.(string)
 		if !ok {
@@ -2271,7 +3342,14 @@ func jsonTypeMappingError(typeName string, raw any) error {
 }
 func jsonDeserializeException(format string, args ...any) error {
 	if format == "JSON.deserializeUntyped invalid JSON input: %v" && len(args) == 1 {
-		if err, ok := args[0].(*jsonNumberInputError); ok {
+		switch err := args[0].(type) {
+		case *jsonNumberInputError:
+			return newExceptionError("JSONException", err.Error())
+		case *jsonContainerInputError:
+			return newExceptionError("JSONException", err.Error())
+		case *jsonStringInputError:
+			return newExceptionError("JSONException", err.Error())
+		case *jsonCharacterInputError:
 			return newExceptionError("JSONException", err.Error())
 		}
 	}
@@ -2309,14 +3387,15 @@ func (vm *VM) jsonAllowedFields(typeName string) map[string]struct{} {
 	if vm.Org != nil {
 		if objectName, ok := vm.resolveObjectName(typeName); ok {
 			object := vm.Org.Objects[objectName]
-			for name := range object.Definition.Fields {
+			definition := vm.describePreparedDefinition(objectName, object.Definition)
+			for name := range definition.Fields {
 				allowed[name] = struct{}{}
 				if vm.Org.Namespace != "" {
 					allowed[storage.StripNamespaceToken(vm.Org.Namespace, name)] = struct{}{}
 					allowed[storage.NamespaceTokenName(vm.Org.Namespace, name)] = struct{}{}
 				}
 			}
-			for _, relation := range object.Definition.Relations {
+			for _, relation := range definition.Relations {
 				for _, name := range []string{relation.ParentRelationship, relation.ChildRelationship} {
 					name = strings.TrimSpace(name)
 					if name == "" {
@@ -2354,17 +3433,33 @@ func jsonAllowedFieldContains(allowed map[string]struct{}, key string) bool {
 	}
 	return false
 }
-func (vm *VM) jsonStrictAllowsRelationshipPayload(typeName, key string, item any) bool {
+func (vm *VM) jsonStrictObjectFieldsError(typeName string, raw any) error {
+	if vm.allowOpenSObjectJSONFields(typeName) {
+		return nil
+	}
+	allowed := vm.jsonAllowedFields(typeName)
+	fields, _ := jsonObjectFields(raw)
+	for _, field := range fields {
+		if field.name == "attributes" || jsonAllowedFieldContains(allowed, field.name) || vm.jsonStrictAllowsRelationshipPayload(typeName, field.name) {
+			continue
+		}
+		if vm.isSObjectLikeType(typeName) {
+			return jsonDeserializeException("No such column '%s' on sobject of type %s", field.name, typeName)
+		}
+		return jsonDeserializeException("Unknown field: %s.%s", typeName, field.name)
+	}
+	return nil
+}
+
+func (vm *VM) jsonStrictAllowsRelationshipPayload(typeName, key string) bool {
 	if !vm.isSObjectLikeType(typeName) {
 		return false
 	}
-	if hasSuffixFold(key, "__r") {
+	if _, known := vm.jsonSObjectParentRelationshipType(typeName, key); known {
 		return true
 	}
-	if _, ok := jsonQueryResultRecords(item); ok {
-		return hasSuffixFold(key, "s")
-	}
-	return false
+	_, known := vm.jsonSObjectChildRelationshipType(typeName, key)
+	return known
 }
 func (vm *VM) allowOpenSObjectJSONFields(typeName string) bool {
 	if !vm.isSObjectLikeType(typeName) {
@@ -2378,4 +3473,47 @@ func (vm *VM) allowOpenSObjectJSONFields(typeName string) bool {
 	}
 	_, ok := vm.resolveObjectName(typeName)
 	return !ok
+}
+
+func jsonTruncatedIntegralNumber(raw any) (int64, bool) {
+	if number, ok := raw.(json.Number); ok {
+		rat, valid := new(big.Rat).SetString(number.String())
+		if !valid {
+			return 0, false
+		}
+		integer := new(big.Int).Quo(rat.Num(), rat.Denom())
+		return integer.Int64(), integer.IsInt64()
+	}
+	return jsonIntegralNumber(raw)
+}
+
+// JSON's scanner reports the cursor after a number. At EOF, its refill advances
+// the column by the consumed buffer length; preserve that observable location.
+func jsonNumericInputPosition(source string, offset int) (int, int) {
+	prefix := source[:offset]
+	line := strings.Count(prefix, "\n") + 1
+	column := offset - strings.LastIndex(prefix, "\n")
+	if offset == len(source) {
+		column += len(source)
+	}
+	return line, column
+}
+
+func jsonDeserializeScalarLocation(source string, decoded any, err error) error {
+	number, numeric := decoded.(json.Number)
+	thrown, exception := err.(*apexThrowError)
+	if _, quoted := decoded.(string); quoted && exception && thrown.value.Fields["message"].Text == "JSON.deserialize cannot map JSON String to Integer" {
+		line, column := jsonInputPosition(source, jsonTokenInputStart(source, 0))
+		return jsonDeserializeException("Value does not match expected type at [line:%d, column:%d]", line, column)
+	}
+	if !numeric || !exception || thrown.value.Fields["message"].Text != fmt.Sprintf("Numeric value (%s) out of range of int", number) {
+		return err
+	}
+	decoder := json.NewDecoder(strings.NewReader(source))
+	decoder.UseNumber()
+	if _, tokenErr := decoder.Token(); tokenErr != nil {
+		return err
+	}
+	line, column := jsonNumericInputPosition(source, int(decoder.InputOffset()))
+	return jsonDeserializeException("Numeric value (%s) out of range of int at [line:%d, column:%d]", number, line, column)
 }

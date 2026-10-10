@@ -195,7 +195,7 @@ func TestStandardObjectDefinitionIncludesReferenceBackedShape(t *testing.T) {
 }
 
 func TestStandardObjectDefinitionIncludesReferenceBackedObjectNames(t *testing.T) {
-	for _, name := range []string{"ApexInlineEventLog", "ConsumptionSchedule", "DataDetectPolicySnapshot", "ForecastingColumnDefinitionFormulaFieldDetails", "RpaRobot", "feedSignal"} {
+	for _, name := range []string{"ApexInlineEventLog", "ConsumptionSchedule", "DataDetectPolicySnapshot", "ForecastingColumnDefinitionFormulaFieldDetails", "RpaRobot", "feedSignal", "CareEpisode", "ClinicalMeasure", "SchedulingWorkspace", "SchedulingWorkspaceTerritory", "ServiceAppointmentCapacityUsage"} {
 		definition, ok := StandardObjectDefinition(name)
 		if !ok {
 			t.Fatalf("missing reference-backed standard object definition %s", name)
@@ -259,6 +259,9 @@ func TestNamespaceTokenNameCachesCustomAPINames(t *testing.T) {
 	}
 	if got := NamespaceTokenName("PKG", "Other__r"); got != "PKG__Other__r" {
 		t.Fatalf("NamespaceTokenName returned %q, want PKG__Other__r", got)
+	}
+	if got := NamespaceTokenName("PKG", "Other__Share"); got != "PKG__Other__Share" {
+		t.Fatalf("NamespaceTokenName returned %q, want PKG__Other__Share", got)
 	}
 	if got := NamespaceTokenName("PKG", "Other__Thing__c"); got != "Other__Thing__c" {
 		t.Fatalf("NamespaceTokenName double-prefixed %q", got)
@@ -361,6 +364,25 @@ func TestResolveFieldNameMapsLocationComponentFields(t *testing.T) {
 	resolved, ok = ResolveFieldName(definition, "", "PrimaryLocation__Latitude__s")
 	if !ok || resolved != "pkg__PrimaryLocation__Latitude__s" {
 		t.Fatalf("ResolveFieldName(PrimaryLocation__Latitude__s no namespace) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveFieldDefinitionSynthesizesLocationComponentMetadata(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{
+		"PrimaryLocation__c": {APIName: "PrimaryLocation__c", Label: "Primary Location", Type: FieldLocation},
+	}}
+
+	name, field, ok := ResolveFieldDefinition(definition, "", "PrimaryLocation__Latitude__s")
+	if !ok || name != "PrimaryLocation__Latitude__s" {
+		t.Fatalf("ResolveFieldDefinition(latitude) = %q, %#v, %v", name, field, ok)
+	}
+	if field.Type != FieldDecimal || field.DisplayType != "DOUBLE" || field.CompoundFieldName != "PrimaryLocation__c" {
+		t.Fatalf("latitude metadata = %#v", field)
+	}
+
+	name, field, ok = ResolveFieldDefinition(definition, "", "PrimaryLocation__Longitude__s")
+	if !ok || name != "PrimaryLocation__Longitude__s" || field.Type != FieldDecimal {
+		t.Fatalf("ResolveFieldDefinition(longitude) = %q, %#v, %v", name, field, ok)
 	}
 }
 
@@ -481,6 +503,17 @@ func TestResolveObjectNameMapsUnqualifiedCustomObjectToOrgNamespace(t *testing.T
 	resolved, ok := ResolveObjectName(org, "Thing__c")
 	if !ok || resolved != "pkg__Thing__c" {
 		t.Fatalf("ResolveObjectName(Thing__c) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveObjectNameMapsUnqualifiedGeneratedShareToOrgNamespace(t *testing.T) {
+	org := NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Thing__Share"] = ObjectState{Definition: ObjectDefinition{APIName: "pkg__Thing__Share"}}
+
+	resolved, ok := ResolveObjectName(org, "Thing__Share")
+	if !ok || resolved != "pkg__Thing__Share" {
+		t.Fatalf("ResolveObjectName(Thing__Share) = %q, %v", resolved, ok)
 	}
 }
 
@@ -697,6 +730,20 @@ func TestEnsureStandardObjectFieldsIncludesStubOverlayFields(t *testing.T) {
 	}
 	if field, ok := definition.Fields["ApexClassId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "ApexClass" {
 		t.Fatalf("ApexClassId field = %#v, %v", field, ok)
+	}
+}
+
+func TestEnsureStandardObjectFieldsAddsGroupMemberUserReference(t *testing.T) {
+	definition := ObjectDefinition{APIName: "GroupMember"}
+
+	EnsureStandardObjectFields(&definition)
+
+	field, ok := definition.Fields["UserOrGroupId"]
+	if !ok || field.Type != FieldReference {
+		t.Fatalf("UserOrGroupId field = %#v, %v", field, ok)
+	}
+	if !parentObjectsContain(field.ReferenceTo, "Group") || !parentObjectsContain(field.ReferenceTo, "User") {
+		t.Fatalf("UserOrGroupId targets = %#v", field.ReferenceTo)
 	}
 }
 
@@ -1126,7 +1173,7 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	if field, ok := org.Objects["Lead"].Definition.Fields["LastName"]; !ok || !field.Required {
 		t.Fatalf("Lead.LastName field = %#v, %v", field, ok)
 	}
-	if field, ok := org.Objects["Account"].Definition.Fields["AccountNumber"]; !ok || field.Type != FieldString {
+	if field, ok := org.Objects["Account"].Definition.Fields["AccountNumber"]; !ok || field.Type != FieldString || field.Length != 40 {
 		t.Fatalf("Account.AccountNumber field = %#v, %v", field, ok)
 	}
 	if field, ok := org.Objects["Account"].Definition.Fields["Ownership"]; !ok || field.Type != FieldPicklist || len(field.PicklistValues) == 0 || field.PicklistValues[0].Value == "" || !field.PicklistValues[0].Active {
@@ -1457,6 +1504,22 @@ func TestEnsureStandardObjectFieldsAddsCoreSystemFields(t *testing.T) {
 	}
 	if !hasRelationship(definition.Relations, "OwnerId", "User", "Owner") {
 		t.Fatalf("Owner relation missing: %#v", definition.Relations)
+	}
+	if !hasRelationship(definition.Relations, "OwnerId", "Group", "Owner") {
+		t.Fatalf("Owner group relation missing: %#v", definition.Relations)
+	}
+}
+
+func TestEnsureStandardObjectFieldsMarksAuditFieldsReadOnly(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Review_Workflow__c"}
+
+	EnsureStandardObjectFields(&definition)
+
+	for _, fieldName := range []string{"CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"} {
+		field, ok := definition.Fields[fieldName]
+		if !ok || FieldFlagValue(field.Createable, true) || FieldFlagValue(field.Updateable, true) {
+			t.Fatalf("%s flags = %#v, present=%v", fieldName, field, ok)
+		}
 	}
 }
 

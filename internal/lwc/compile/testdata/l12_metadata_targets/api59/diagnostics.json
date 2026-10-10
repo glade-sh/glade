@@ -1,0 +1,16 @@
+[
+  {
+    "id": "c_control_metadata_target_owned_missing",
+    "message": "lightning__OwnedMissing is not a valid TARGETS",
+    "type": "Error",
+    "line": null,
+    "column": null
+  },
+  {
+    "id": "c_control_metadata_target_bogus",
+    "message": "lightning__Bogus is not a valid TARGETS",
+    "type": "Error",
+    "line": null,
+    "column": null
+  }
+]

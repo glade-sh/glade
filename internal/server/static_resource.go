@@ -1,6 +1,7 @@
 package server
 
 import (
+	"archive/zip"
 	"errors"
 	"mime"
 	"net/http"
@@ -30,6 +31,14 @@ func (s *Server) handleStaticResource(w http.ResponseWriter, r *http.Request, pa
 		return
 	}
 	subpath := strings.Join(parts[1:], "/")
+	if subpath != "" {
+		// Archive member names use the URL path spelling. Native resource
+		// routes do not alias escaped spaces/Unicode to decoded zip entries.
+		escaped := strings.Split(strings.Trim(r.URL.EscapedPath(), "/"), "/")
+		if len(escaped) >= len(parts) {
+			subpath = strings.Join(escaped[len(escaped)-len(parts)+1:], "/")
+		}
+	}
 
 	content, filename, contentType, ok, err := s.lookupStaticResource(name, subpath)
 	if err != nil {
@@ -39,6 +48,29 @@ func (s *Server) handleStaticResource(w http.ResponseWriter, r *http.Request, pa
 	if !ok {
 		writeSalesforceError(w, errUnknownEndpoint, "unknown static resource")
 		return
+	}
+	if strings.HasSuffix(filename, "/") {
+		if r.Header.Get("Sec-Fetch-Dest") != "style" {
+			// The paired native directory controls distinguish stylesheet
+			// requests (opaque MIME rejection) from script requests (404).
+			writeSalesforceError(w, errUnknownEndpoint, "unknown static resource")
+			return
+		}
+		// Native directory styles fail strict MIME checking. Without this
+		// policy, Chromium accepts an empty opaque response as a stylesheet.
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+	}
+	if subpath != "" {
+		// Captured archive-member responses use these exact MIME types and
+		// strict MIME checking, independent of the host's MIME database.
+		switch filepath.Ext(filename) {
+		case ".js":
+			contentType = "application/x-javascript"
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+		case ".css":
+			contentType = "text/css"
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+		}
 	}
 	if contentType != "" {
 		w.Header().Set("Content-Type", contentType)
@@ -60,7 +92,9 @@ func (s *Server) lookupStaticResource(name, subpath string) (content []byte, fil
 					if content, filename, ok, err := staticResourceSubpath(resource, subpath); err != nil {
 						return nil, "", "", false, err
 					} else if ok {
-						return content, filename, resource.ContentType, true, nil
+						// Metadata describes the archive, not each member. Let
+						// the response infer the member's CSS/JS/image MIME type.
+						return content, filename, staticResourceMemberContentType(filename), true, nil
 					}
 				}
 				if subpath == "" && resource.ContentPath != "" {
@@ -82,7 +116,7 @@ func (s *Server) lookupStaticResource(name, subpath string) (content []byte, fil
 				if content, filename, ok, err := staticResourceSubpath(resource, subpath); err != nil {
 					return nil, "", "", false, err
 				} else if ok {
-					return content, filename, resource.ContentType, true, nil
+					return content, filename, staticResourceMemberContentType(filename), true, nil
 				}
 			}
 			if subpath == "" && resource.ContentPath != "" {
@@ -163,6 +197,12 @@ func staticResourceSubpath(resource storage.StaticResourceMetadata, subpath stri
 			}
 			return nil, "", false, err
 		}
+		for member := range resource.Files {
+			member, err := visualforce.NormalizeStaticResourceSubpath(member)
+			if err == nil && strings.HasPrefix(member, normalizedSubpath+"/") {
+				return nil, normalizedSubpath + "/", true, nil
+			}
+		}
 	}
 	if resource.ContentPath == "" {
 		return nil, "", false, nil
@@ -172,7 +212,26 @@ func staticResourceSubpath(resource storage.StaticResourceMetadata, subpath stri
 	} else if !errors.Is(err, visualforce.ErrStaticResourceNotFound) {
 		return nil, "", false, err
 	}
+	// ZIPs need not contain explicit directory entries. Native stylesheet
+	// requests for an existing directory still receive an opaque resource.
+	archive, err := zip.OpenReader(resource.ContentPath)
+	if err == nil {
+		defer archive.Close()
+		for _, entry := range archive.File {
+			member, err := visualforce.NormalizeStaticResourceSubpath(strings.TrimSuffix(entry.Name, "/"))
+			if err == nil && (strings.HasPrefix(member, normalizedSubpath+"/") || (member == normalizedSubpath && entry.FileInfo().IsDir())) {
+				return nil, normalizedSubpath + "/", true, nil
+			}
+		}
+	}
 	return nil, "", false, nil
+}
+
+func staticResourceMemberContentType(filename string) string {
+	if strings.HasSuffix(filename, "/") {
+		return "application/octet-stream"
+	}
+	return ""
 }
 
 func resourceForName(resources []storage.StaticResourceMetadata, name string) (storage.StaticResourceMetadata, bool) {

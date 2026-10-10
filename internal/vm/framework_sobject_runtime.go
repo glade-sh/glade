@@ -527,7 +527,7 @@ func (vm *VM) callFrameworkSObjectUnitOfWorkMember(receiver Value, method string
 			if !ok || emails.Kind != ValueList || len(emails.List) == 0 {
 				return Null, true, nil
 			}
-			_, err := vm.sendEmail([]Value{emails}, result)
+			_, err := vm.sendEmailForFramework([]Value{emails}, result)
 			return Null, true, err
 		}
 	}
@@ -1312,12 +1312,18 @@ func frameworkSObjectUnitOfWorkRecordBuckets(receiver Value, fieldName string) [
 	return out
 }
 func (vm *VM) applyFrameworkSObjectUnitOfWorkRecordAction(receiver Value, fieldName string, result *Result) error {
-	for _, records := range frameworkSObjectUnitOfWorkRecordLists(receiver, fieldName) {
+	buckets := frameworkSObjectUnitOfWorkRecordBuckets(receiver, fieldName)
+	reverseFrameworkSObjectUnitOfWorkRecordBuckets(buckets)
+	for _, bucket := range buckets {
+		records := bucket.records
 		if len(records.List) == 0 {
 			continue
 		}
 		if handled, err := vm.callFrameworkSObjectUnitOfWorkCustomDML(receiver, "emptyRecycleBin", records, result); handled || err != nil {
-			return err
+			if err != nil {
+				return err
+			}
+			continue
 		}
 		if _, err := vm.executeDatabaseRecordAction("emptyRecycleBin", []Value{records}, result, "Database.EmptyRecycleBinResult"); err != nil {
 			return err

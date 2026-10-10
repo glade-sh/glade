@@ -1,0 +1,2004 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "oracle": {
+    "apiEndpointsIdentical": true
+  },
+  "declarations": {
+    "TSBase": "public virtual class TSBase {\n public virtual String tag(){return 'base';}\n}",
+    "TSChild": "public class TSChild extends TSBase implements System.Callable {\n public override String tag(){return 'child';}\n public Object call(String action, Map<String,Object> args){return tag()+':'+action;}\n}",
+    "TSSibling": "public class TSSibling extends TSBase {\n public override String tag(){return 'sibling';}\n}",
+    "TSReflect": "public class TSReflect {\n public String text='ready';\n public TSReflect(){}\n}",
+    "TSNeedsArg": "public class TSNeedsArg {\n public TSNeedsArg(String value){}\n}",
+    "TSFailureException": "public class TSFailureException extends Exception {}",
+    "TSCallable": "public class TSCallable implements System.Callable {\n public Integer calls=0;\n public Object call(String action, Map<String,Object> args){\n  calls++;\n  if(action=='echo'){return args.get('value');}\n  if(action=='size'){return args.size();}\n  if(action=='null'){return null;}\n  if(action=='mutate'){args.put('seen',true);return args.get('seen');}\n  if(action=='fail'){throw new TSFailureException('call failed');}\n  throw new TSFailureException('unknown action');\n }\n}",
+    "TSOver": "public class TSOver {\n public String text(Object x){return 'Object';}\n public String text(String x){return 'String';}\n public String record(Object x){return 'Object';}\n public String record(SObject x){return 'SObject';}\n public String record(Account x){return 'Account';}\n public String custom(Object x){return 'Object';}\n public String custom(TSBase x){return 'TSBase';}\n public String custom(TSChild x){return 'TSChild';}\n public String callable(Object x){return 'Object';}\n public String callable(System.Callable x){return 'Callable';}\n public String pair(String x,Object y){return 'String,Object';}\n public String pair(Object x,String y){return 'Object,String';}\n public String sequence(Object x){return 'Object';}\n public String sequence(List<String> x){return 'List<String>';}\n}"
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "group": "casts/boxed/String",
+      "code": "String v='abc'; Object x=v; String y=(String)x; r=y;",
+      "expected": "abc"
+    },
+    {
+      "id": "R002",
+      "group": "casts/boxed/String",
+      "code": "String v=''; Object x=v; String y=(String)x; r=y;",
+      "expected": ""
+    },
+    {
+      "id": "R003",
+      "group": "casts/boxed/String",
+      "code": "String v=null; Object x=v; String y=(String)x; r=y;",
+      "expected": "null"
+    },
+    {
+      "id": "R004",
+      "group": "casts/boxed/Boolean",
+      "code": "Boolean v=true; Object x=v; Boolean y=(Boolean)x; r=y;",
+      "expected": "true"
+    },
+    {
+      "id": "R005",
+      "group": "casts/boxed/Boolean",
+      "code": "Boolean v=false; Object x=v; Boolean y=(Boolean)x; r=y;",
+      "expected": "false"
+    },
+    {
+      "id": "R006",
+      "group": "casts/boxed/Boolean",
+      "code": "Boolean v=null; Object x=v; Boolean y=(Boolean)x; r=y;",
+      "expected": "null"
+    },
+    {
+      "id": "R007",
+      "group": "casts/boxed/Integer",
+      "code": "Integer v=0; Object x=v; Integer y=(Integer)x; r=y;",
+      "expected": "0"
+    },
+    {
+      "id": "R008",
+      "group": "casts/boxed/Integer",
+      "code": "Integer v=-2147483648; Object x=v; Integer y=(Integer)x; r=y;",
+      "expected": "COMPILE_ERROR\tline 60: Illegal integer"
+    },
+    {
+      "id": "R009",
+      "group": "casts/boxed/Integer",
+      "code": "Integer v=null; Object x=v; Integer y=(Integer)x; r=y;",
+      "expected": "null"
+    },
+    {
+      "id": "R010",
+      "group": "casts/boxed/Long",
+      "code": "Long v=0L; Object x=v; Long y=(Long)x; r=y;",
+      "expected": "0"
+    },
+    {
+      "id": "R011",
+      "group": "casts/boxed/Long",
+      "code": "Long v=2147483648L; Object x=v; Long y=(Long)x; r=y;",
+      "expected": "2147483648"
+    },
+    {
+      "id": "R012",
+      "group": "casts/boxed/Long",
+      "code": "Long v=null; Object x=v; Long y=(Long)x; r=y;",
+      "expected": "null"
+    },
+    {
+      "id": "R013",
+      "group": "casts/boxed/Decimal",
+      "code": "Decimal v=0.0; Object x=v; Decimal y=(Decimal)x; r=y;",
+      "expected": "0.0"
+    },
+    {
+      "id": "R014",
+      "group": "casts/boxed/Decimal",
+      "code": "Decimal v=1.25; Object x=v; Decimal y=(Decimal)x; r=y;",
+      "expected": "1.25"
+    },
+    {
+      "id": "R015",
+      "group": "casts/boxed/Decimal",
+      "code": "Decimal v=null; Object x=v; Decimal y=(Decimal)x; r=y;",
+      "expected": "null"
+    },
+    {
+      "id": "R016",
+      "group": "casts/boxed/Double",
+      "code": "Double v=0.0; Object x=v; Double y=(Double)x; r=y;",
+      "expected": "0.0"
+    },
+    {
+      "id": "R017",
+      "group": "casts/boxed/Double",
+      "code": "Double v=1.25; Object x=v; Double y=(Double)x; r=y;",
+      "expected": "1.25"
+    },
+    {
+      "id": "R018",
+      "group": "casts/boxed/Double",
+      "code": "Double v=null; Object x=v; Double y=(Double)x; r=y;",
+      "expected": "null"
+    },
+    {
+      "id": "R019",
+      "group": "casts/boxed/Date",
+      "code": "Date v=Date.newInstance(2024,2,29); Object x=v; Date y=(Date)x; r=y;",
+      "expected": "2024-02-29 00:00:00"
+    },
+    {
+      "id": "R020",
+      "group": "casts/boxed/Date",
+      "code": "Date v=null; Object x=v; Date y=(Date)x; r=y;",
+      "expected": "null"
+    },
+    {
+      "id": "R021",
+      "group": "casts/boxed/Blob",
+      "code": "Blob v=Blob.valueOf('abc'); Object x=v; Blob y=(Blob)x; r=y==null ? null : y.toString();",
+      "expected": "abc"
+    },
+    {
+      "id": "R022",
+      "group": "casts/boxed/Blob",
+      "code": "Blob v=null; Object x=v; Blob y=(Blob)x; r=y==null ? null : y.toString();",
+      "expected": "null"
+    },
+    {
+      "id": "R023",
+      "group": "casts/boxed/Account",
+      "code": "Account v=new Account(Name='a'); Object x=v; Account y=(Account)x; r=y==null ? null : y.Name;",
+      "expected": "a"
+    },
+    {
+      "id": "R024",
+      "group": "casts/boxed/Account",
+      "code": "Account v=null; Object x=v; Account y=(Account)x; r=y==null ? null : y.Name;",
+      "expected": "null"
+    },
+    {
+      "id": "R025",
+      "group": "casts/boxed/Contact",
+      "code": "Contact v=new Contact(LastName='c'); Object x=v; Contact y=(Contact)x; r=y==null ? null : y.LastName;",
+      "expected": "c"
+    },
+    {
+      "id": "R026",
+      "group": "casts/boxed/Contact",
+      "code": "Contact v=null; Object x=v; Contact y=(Contact)x; r=y==null ? null : y.LastName;",
+      "expected": "null"
+    },
+    {
+      "id": "R027",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x='123';Integer y=(Integer)x; r=y;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type String to Integer"
+    },
+    {
+      "id": "R028",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=123;String y=(String)x; r=y;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Integer to String"
+    },
+    {
+      "id": "R029",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x='true';Boolean y=(Boolean)x; r=y;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type String to Boolean"
+    },
+    {
+      "id": "R030",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=true;String y=(String)x; r=y;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Boolean to String"
+    },
+    {
+      "id": "R031",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new Contact();Account y=(Account)x; r=y.Name;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Contact to Account"
+    },
+    {
+      "id": "R032",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new Account();Contact y=(Contact)x; r=y.LastName;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Account to Contact"
+    },
+    {
+      "id": "R033",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new TSBase();TSChild y=(TSChild)x; r=y.tag();",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type TSBase to TSChild"
+    },
+    {
+      "id": "R034",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new TSSibling();TSChild y=(TSChild)x; r=y.tag();",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type TSSibling to TSChild"
+    },
+    {
+      "id": "R035",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new TSChild();TSBase y=(TSBase)x; r=y.tag();",
+      "expected": "child"
+    },
+    {
+      "id": "R036",
+      "group": "casts/downcast-and-TypeException",
+      "code": "TSBase b=new TSChild(); Object x=b;TSChild y=(TSChild)x; r=y.tag();",
+      "expected": "child"
+    },
+    {
+      "id": "R037",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new TSChild();System.Callable y=(System.Callable)x; r=y.call('go',null);",
+      "expected": "child:go"
+    },
+    {
+      "id": "R038",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new TSBase();System.Callable y=(System.Callable)x; r=y.call('go',null);",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type TSBase to System.Callable"
+    },
+    {
+      "id": "R039",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new List<String>{'a'};List<String> y=(List<String>)x; r=y[0];",
+      "expected": "a"
+    },
+    {
+      "id": "R040",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new List<Integer>{1};List<String> y=(List<String>)x; r=y.size();",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type List<Integer> to List<String>"
+    },
+    {
+      "id": "R041",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new Map<String,String>{'k'=>'v'};Map<String,String> y=(Map<String,String>)x; r=y.get('k');",
+      "expected": "v"
+    },
+    {
+      "id": "R042",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new Map<String,Integer>();Map<String,String> y=(Map<String,String>)x; r=y.size();",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Map<String,Integer> to Map<String,String>"
+    },
+    {
+      "id": "R043",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new Set<String>{'a'};Set<String> y=(Set<String>)x; r=y.size();",
+      "expected": "1"
+    },
+    {
+      "id": "R044",
+      "group": "casts/downcast-and-TypeException",
+      "code": "Object x=new Set<Integer>{1};Set<String> y=(Set<String>)x; r=y.size();",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Set<Integer> to Set<String>"
+    },
+    {
+      "id": "R045",
+      "group": "casts/null",
+      "code": "Object x=null; TSBase y=(TSBase)x; r=y==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R046",
+      "group": "casts/null",
+      "code": "Object x=null; TSChild y=(TSChild)x; r=y==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R047",
+      "group": "casts/null",
+      "code": "Object x=null; System.Callable y=(System.Callable)x; r=y==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R048",
+      "group": "casts/null",
+      "code": "Object x=null; List<String> y=(List<String>)x; r=y==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R049",
+      "group": "casts/null",
+      "code": "Object x=null; Set<String> y=(Set<String>)x; r=y==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R050",
+      "group": "casts/null",
+      "code": "Object x=null; Map<String,Object> y=(Map<String,Object>)x; r=y==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R051",
+      "group": "casts/null",
+      "code": "Object x=null; SObject y=(SObject)x; r=y==null;",
+      "expected": "true"
+    },
+    {
+      "id": "R052",
+      "group": "casts/conversion-and-virtual-dispatch",
+      "code": "Object x='123'; r=Integer.valueOf((String)x);",
+      "expected": "123"
+    },
+    {
+      "id": "R053",
+      "group": "casts/conversion-and-virtual-dispatch",
+      "code": "Object x='bad'; r=Integer.valueOf((String)x);",
+      "expected": "EXC|System.TypeException|Invalid integer: bad"
+    },
+    {
+      "id": "R054",
+      "group": "casts/conversion-and-virtual-dispatch",
+      "code": "Object x=123; r=String.valueOf(x);",
+      "expected": "123"
+    },
+    {
+      "id": "R055",
+      "group": "casts/conversion-and-virtual-dispatch",
+      "code": "SObject x=new Account(Name='a'); Account y=(Account)x; r=y.Name;",
+      "expected": "a"
+    },
+    {
+      "id": "R056",
+      "group": "casts/conversion-and-virtual-dispatch",
+      "code": "SObject x=new Contact(); Account y=(Account)x; r=y.Name;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Contact to Account"
+    },
+    {
+      "id": "R057",
+      "group": "casts/conversion-and-virtual-dispatch",
+      "code": "TSChild x=new TSChild(); TSBase b=x; r=b.tag();",
+      "expected": "child"
+    },
+    {
+      "id": "R058",
+      "group": "casts/conversion-and-virtual-dispatch",
+      "code": "TSBase x=new TSChild(); r=((TSChild)x).tag();",
+      "expected": "child"
+    },
+    {
+      "id": "R059",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=null; r=x instanceof Object;",
+      "expected": "COMPILE_ERROR\tline 61: Operation instanceof is always true since an instance of Object is always an instance of Object"
+    },
+    {
+      "id": "R060",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=null; r=x instanceof String;",
+      "expected": "false"
+    },
+    {
+      "id": "R061",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=null; r=x instanceof SObject;",
+      "expected": "false"
+    },
+    {
+      "id": "R062",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=null; r=x instanceof Account;",
+      "expected": "false"
+    },
+    {
+      "id": "R063",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=null; r=x instanceof TSBase;",
+      "expected": "false"
+    },
+    {
+      "id": "R064",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=null; r=x instanceof TSChild;",
+      "expected": "false"
+    },
+    {
+      "id": "R065",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=null; r=x instanceof System.Callable;",
+      "expected": "false"
+    },
+    {
+      "id": "R066",
+      "group": "instanceof/object-matrix",
+      "code": "Object x='abc'; r=x instanceof Object;",
+      "expected": "COMPILE_ERROR\tline 67: Operation instanceof is always true since an instance of Object is always an instance of Object"
+    },
+    {
+      "id": "R067",
+      "group": "instanceof/object-matrix",
+      "code": "Object x='abc'; r=x instanceof String;",
+      "expected": "true"
+    },
+    {
+      "id": "R068",
+      "group": "instanceof/object-matrix",
+      "code": "Object x='abc'; r=x instanceof SObject;",
+      "expected": "false"
+    },
+    {
+      "id": "R069",
+      "group": "instanceof/object-matrix",
+      "code": "Object x='abc'; r=x instanceof Account;",
+      "expected": "false"
+    },
+    {
+      "id": "R070",
+      "group": "instanceof/object-matrix",
+      "code": "Object x='abc'; r=x instanceof TSBase;",
+      "expected": "false"
+    },
+    {
+      "id": "R071",
+      "group": "instanceof/object-matrix",
+      "code": "Object x='abc'; r=x instanceof TSChild;",
+      "expected": "false"
+    },
+    {
+      "id": "R072",
+      "group": "instanceof/object-matrix",
+      "code": "Object x='abc'; r=x instanceof System.Callable;",
+      "expected": "false"
+    },
+    {
+      "id": "R073",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=true; r=x instanceof Object;",
+      "expected": "COMPILE_ERROR\tline 73: Operation instanceof is always true since an instance of Object is always an instance of Object"
+    },
+    {
+      "id": "R074",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=true; r=x instanceof String;",
+      "expected": "false"
+    },
+    {
+      "id": "R075",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=true; r=x instanceof SObject;",
+      "expected": "false"
+    },
+    {
+      "id": "R076",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=true; r=x instanceof Account;",
+      "expected": "false"
+    },
+    {
+      "id": "R077",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=true; r=x instanceof TSBase;",
+      "expected": "false"
+    },
+    {
+      "id": "R078",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=true; r=x instanceof TSChild;",
+      "expected": "false"
+    },
+    {
+      "id": "R079",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=true; r=x instanceof System.Callable;",
+      "expected": "false"
+    },
+    {
+      "id": "R080",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Account(); r=x instanceof Object;",
+      "expected": "COMPILE_ERROR\tline 79: Operation instanceof is always true since an instance of Object is always an instance of Object"
+    },
+    {
+      "id": "R081",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Account(); r=x instanceof String;",
+      "expected": "false"
+    },
+    {
+      "id": "R082",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Account(); r=x instanceof SObject;",
+      "expected": "true"
+    },
+    {
+      "id": "R083",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Account(); r=x instanceof Account;",
+      "expected": "true"
+    },
+    {
+      "id": "R084",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Account(); r=x instanceof TSBase;",
+      "expected": "false"
+    },
+    {
+      "id": "R085",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Account(); r=x instanceof TSChild;",
+      "expected": "false"
+    },
+    {
+      "id": "R086",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Account(); r=x instanceof System.Callable;",
+      "expected": "false"
+    },
+    {
+      "id": "R087",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Contact(); r=x instanceof Object;",
+      "expected": "COMPILE_ERROR\tline 85: Operation instanceof is always true since an instance of Object is always an instance of Object"
+    },
+    {
+      "id": "R088",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Contact(); r=x instanceof String;",
+      "expected": "false"
+    },
+    {
+      "id": "R089",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Contact(); r=x instanceof SObject;",
+      "expected": "true"
+    },
+    {
+      "id": "R090",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Contact(); r=x instanceof Account;",
+      "expected": "false"
+    },
+    {
+      "id": "R091",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Contact(); r=x instanceof TSBase;",
+      "expected": "false"
+    },
+    {
+      "id": "R092",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Contact(); r=x instanceof TSChild;",
+      "expected": "false"
+    },
+    {
+      "id": "R093",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new Contact(); r=x instanceof System.Callable;",
+      "expected": "false"
+    },
+    {
+      "id": "R094",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSBase(); r=x instanceof Object;",
+      "expected": "COMPILE_ERROR\tline 91: Operation instanceof is always true since an instance of Object is always an instance of Object"
+    },
+    {
+      "id": "R095",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSBase(); r=x instanceof String;",
+      "expected": "false"
+    },
+    {
+      "id": "R096",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSBase(); r=x instanceof SObject;",
+      "expected": "false"
+    },
+    {
+      "id": "R097",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSBase(); r=x instanceof Account;",
+      "expected": "false"
+    },
+    {
+      "id": "R098",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSBase(); r=x instanceof TSBase;",
+      "expected": "true"
+    },
+    {
+      "id": "R099",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSBase(); r=x instanceof TSChild;",
+      "expected": "false"
+    },
+    {
+      "id": "R100",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSBase(); r=x instanceof System.Callable;",
+      "expected": "false"
+    },
+    {
+      "id": "R101",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSChild(); r=x instanceof Object;",
+      "expected": "COMPILE_ERROR\tline 53: Operation instanceof is always true since an instance of Object is always an instance of Object"
+    },
+    {
+      "id": "R102",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSChild(); r=x instanceof String;",
+      "expected": "false"
+    },
+    {
+      "id": "R103",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSChild(); r=x instanceof SObject;",
+      "expected": "false"
+    },
+    {
+      "id": "R104",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSChild(); r=x instanceof Account;",
+      "expected": "false"
+    },
+    {
+      "id": "R105",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSChild(); r=x instanceof TSBase;",
+      "expected": "true"
+    },
+    {
+      "id": "R106",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSChild(); r=x instanceof TSChild;",
+      "expected": "true"
+    },
+    {
+      "id": "R107",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSChild(); r=x instanceof System.Callable;",
+      "expected": "true"
+    },
+    {
+      "id": "R108",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSSibling(); r=x instanceof Object;",
+      "expected": "COMPILE_ERROR\tline 59: Operation instanceof is always true since an instance of Object is always an instance of Object"
+    },
+    {
+      "id": "R109",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSSibling(); r=x instanceof String;",
+      "expected": "false"
+    },
+    {
+      "id": "R110",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSSibling(); r=x instanceof SObject;",
+      "expected": "false"
+    },
+    {
+      "id": "R111",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSSibling(); r=x instanceof Account;",
+      "expected": "false"
+    },
+    {
+      "id": "R112",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSSibling(); r=x instanceof TSBase;",
+      "expected": "true"
+    },
+    {
+      "id": "R113",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSSibling(); r=x instanceof TSChild;",
+      "expected": "false"
+    },
+    {
+      "id": "R114",
+      "group": "instanceof/object-matrix",
+      "code": "Object x=new TSSibling(); r=x instanceof System.Callable;",
+      "expected": "false"
+    },
+    {
+      "id": "R115",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<String>{'a'}; r=x instanceof List<String>;",
+      "expected": "true"
+    },
+    {
+      "id": "R116",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<String>{'a'}; r=x instanceof List<Object>;",
+      "expected": "true"
+    },
+    {
+      "id": "R117",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<String>{'a'}; r=x instanceof List<Account>;",
+      "expected": "false"
+    },
+    {
+      "id": "R118",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<String>{'a'}; r=x instanceof List<SObject>;",
+      "expected": "false"
+    },
+    {
+      "id": "R119",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<Integer>{1}; r=x instanceof List<String>;",
+      "expected": "false"
+    },
+    {
+      "id": "R120",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<Integer>{1}; r=x instanceof List<Object>;",
+      "expected": "true"
+    },
+    {
+      "id": "R121",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<Integer>{1}; r=x instanceof List<Account>;",
+      "expected": "false"
+    },
+    {
+      "id": "R122",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<Integer>{1}; r=x instanceof List<SObject>;",
+      "expected": "false"
+    },
+    {
+      "id": "R123",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<Account>{new Account()}; r=x instanceof List<String>;",
+      "expected": "false"
+    },
+    {
+      "id": "R124",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<Account>{new Account()}; r=x instanceof List<Object>;",
+      "expected": "true"
+    },
+    {
+      "id": "R125",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<Account>{new Account()}; r=x instanceof List<Account>;",
+      "expected": "true"
+    },
+    {
+      "id": "R126",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<Account>{new Account()}; r=x instanceof List<SObject>;",
+      "expected": "true"
+    },
+    {
+      "id": "R127",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<SObject>{new Account()}; r=x instanceof List<String>;",
+      "expected": "false"
+    },
+    {
+      "id": "R128",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<SObject>{new Account()}; r=x instanceof List<Object>;",
+      "expected": "true"
+    },
+    {
+      "id": "R129",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<SObject>{new Account()}; r=x instanceof List<Account>;",
+      "expected": "true"
+    },
+    {
+      "id": "R130",
+      "group": "instanceof/generic-list",
+      "code": "Object x=new List<SObject>{new Account()}; r=x instanceof List<SObject>;",
+      "expected": "true"
+    },
+    {
+      "id": "R131",
+      "group": "instanceof/generic-list",
+      "code": "Object x=null; r=x instanceof List<String>;",
+      "expected": "false"
+    },
+    {
+      "id": "R132",
+      "group": "instanceof/generic-list",
+      "code": "Object x=null; r=x instanceof List<Object>;",
+      "expected": "false"
+    },
+    {
+      "id": "R133",
+      "group": "instanceof/generic-list",
+      "code": "Object x=null; r=x instanceof List<Account>;",
+      "expected": "false"
+    },
+    {
+      "id": "R134",
+      "group": "instanceof/generic-list",
+      "code": "Object x=null; r=x instanceof List<SObject>;",
+      "expected": "false"
+    },
+    {
+      "id": "R135",
+      "group": "instanceof/interface-null-and-generic",
+      "code": "TSBase x=new TSChild(); r=x instanceof TSChild;",
+      "expected": "true"
+    },
+    {
+      "id": "R136",
+      "group": "instanceof/interface-null-and-generic",
+      "code": "TSBase x=null; r=x instanceof TSBase;",
+      "expected": "COMPILE_ERROR\tline 86: Operation instanceof is always true since an instance of TSBase is always an instance of TSBase"
+    },
+    {
+      "id": "R137",
+      "group": "instanceof/interface-null-and-generic",
+      "code": "System.Callable x=new TSChild(); r=x instanceof TSBase;",
+      "expected": "true"
+    },
+    {
+      "id": "R138",
+      "group": "instanceof/interface-null-and-generic",
+      "code": "System.Callable x=null; r=x instanceof System.Callable;",
+      "expected": "COMPILE_ERROR\tline 87: Operation instanceof is always true since an instance of System.Callable is always an instance of System.Callable"
+    },
+    {
+      "id": "R139",
+      "group": "instanceof/interface-null-and-generic",
+      "code": "Object x=new Map<String,String>(); r=x instanceof Map<String,Object>;",
+      "expected": "true"
+    },
+    {
+      "id": "R140",
+      "group": "instanceof/interface-null-and-generic",
+      "code": "Object x=new Set<String>(); r=x instanceof Set<Object>;",
+      "expected": "false"
+    },
+    {
+      "id": "R141",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); String x='x'; r=o.text(x);",
+      "expected": "String"
+    },
+    {
+      "id": "R142",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); String x=null; r=o.text(x);",
+      "expected": "String"
+    },
+    {
+      "id": "R143",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Object x='x'; r=o.text(x);",
+      "expected": "Object"
+    },
+    {
+      "id": "R144",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Object x=null; r=o.text(x);",
+      "expected": "Object"
+    },
+    {
+      "id": "R145",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Account x=new Account(Name='a'); r=o.record(x);",
+      "expected": "Account"
+    },
+    {
+      "id": "R146",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Account x=null; r=o.record(x);",
+      "expected": "Account"
+    },
+    {
+      "id": "R147",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); SObject x=new Account(); r=o.record(x);",
+      "expected": "SObject"
+    },
+    {
+      "id": "R148",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); SObject x=new Contact(); r=o.record(x);",
+      "expected": "SObject"
+    },
+    {
+      "id": "R149",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); SObject x=null; r=o.record(x);",
+      "expected": "SObject"
+    },
+    {
+      "id": "R150",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Object x=new Account(); r=o.record(x);",
+      "expected": "Object"
+    },
+    {
+      "id": "R151",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Object x=null; r=o.record(x);",
+      "expected": "Object"
+    },
+    {
+      "id": "R152",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); TSBase x=new TSBase(); r=o.custom(x);",
+      "expected": "TSBase"
+    },
+    {
+      "id": "R153",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); TSBase x=new TSChild(); r=o.custom(x);",
+      "expected": "TSBase"
+    },
+    {
+      "id": "R154",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); TSBase x=null; r=o.custom(x);",
+      "expected": "TSBase"
+    },
+    {
+      "id": "R155",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); TSChild x=new TSChild(); r=o.custom(x);",
+      "expected": "TSChild"
+    },
+    {
+      "id": "R156",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); TSChild x=null; r=o.custom(x);",
+      "expected": "TSChild"
+    },
+    {
+      "id": "R157",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Object x=new TSChild(); r=o.custom(x);",
+      "expected": "Object"
+    },
+    {
+      "id": "R158",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Object x=null; r=o.custom(x);",
+      "expected": "Object"
+    },
+    {
+      "id": "R159",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); System.Callable x=new TSCallable(); r=o.callable(x);",
+      "expected": "Callable"
+    },
+    {
+      "id": "R160",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); System.Callable x=null; r=o.callable(x);",
+      "expected": "Callable"
+    },
+    {
+      "id": "R161",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Object x=new TSCallable(); r=o.callable(x);",
+      "expected": "Object"
+    },
+    {
+      "id": "R162",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Object x=null; r=o.callable(x);",
+      "expected": "Object"
+    },
+    {
+      "id": "R163",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); List<String> x=new List<String>{'a'}; r=o.sequence(x);",
+      "expected": "List<String>"
+    },
+    {
+      "id": "R164",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); List<String> x=null; r=o.sequence(x);",
+      "expected": "List<String>"
+    },
+    {
+      "id": "R165",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Object x=new List<String>{'a'}; r=o.sequence(x);",
+      "expected": "Object"
+    },
+    {
+      "id": "R166",
+      "group": "overload/declared-type",
+      "code": "TSOver o=new TSOver(); Object x=null; r=o.sequence(x);",
+      "expected": "Object"
+    },
+    {
+      "id": "R167",
+      "group": "overload/null-literal",
+      "code": "r=new TSOver().text(null);",
+      "expected": "COMPILE_ERROR\tline 69: Ambiguous method signature: void text(NULL)"
+    },
+    {
+      "id": "R168",
+      "group": "overload/null-literal",
+      "code": "r=new TSOver().record(null);",
+      "expected": "COMPILE_ERROR\tline 69: Ambiguous method signature: void record(NULL)"
+    },
+    {
+      "id": "R169",
+      "group": "overload/null-literal",
+      "code": "r=new TSOver().custom(null);",
+      "expected": "COMPILE_ERROR\tline 69: Ambiguous method signature: void custom(NULL)"
+    },
+    {
+      "id": "R170",
+      "group": "overload/null-literal",
+      "code": "r=new TSOver().callable(null);",
+      "expected": "COMPILE_ERROR\tline 69: Ambiguous method signature: void callable(NULL)"
+    },
+    {
+      "id": "R171",
+      "group": "overload/null-literal",
+      "code": "r=new TSOver().sequence(null);",
+      "expected": "COMPILE_ERROR\tline 69: Ambiguous method signature: void sequence(NULL)"
+    },
+    {
+      "id": "R172",
+      "group": "overload/cast-and-receiver",
+      "code": "r=new TSOver().pair('x',(Object)'y');",
+      "expected": "String,Object"
+    },
+    {
+      "id": "R173",
+      "group": "overload/cast-and-receiver",
+      "code": "r=new TSOver().pair((Object)'x','y');",
+      "expected": "Object,String"
+    },
+    {
+      "id": "R174",
+      "group": "overload/cast-and-receiver",
+      "code": "Object x='x'; r=new TSOver().text((String)x);",
+      "expected": "String"
+    },
+    {
+      "id": "R175",
+      "group": "overload/cast-and-receiver",
+      "code": "TSBase x=new TSChild(); r=new TSOver().custom((TSChild)x);",
+      "expected": "TSChild"
+    },
+    {
+      "id": "R176",
+      "group": "overload/cast-and-receiver",
+      "code": "TSBase x=new TSChild(); r=x.tag();",
+      "expected": "child"
+    },
+    {
+      "id": "R177",
+      "group": "overload/cast-and-receiver",
+      "code": "TSBase x=new TSSibling(); r=x.tag();",
+      "expected": "sibling"
+    },
+    {
+      "id": "R178",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('String'); r=t==null ? null : t.getName();",
+      "expected": "String"
+    },
+    {
+      "id": "R179",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('System.String'); r=t==null ? null : t.getName();",
+      "expected": "null"
+    },
+    {
+      "id": "R180",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('string'); r=t==null ? null : t.getName();",
+      "expected": "String"
+    },
+    {
+      "id": "R181",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('Integer'); r=t==null ? null : t.getName();",
+      "expected": "Integer"
+    },
+    {
+      "id": "R182",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('Boolean'); r=t==null ? null : t.getName();",
+      "expected": "Boolean"
+    },
+    {
+      "id": "R183",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('Object'); r=t==null ? null : t.getName();",
+      "expected": "Object"
+    },
+    {
+      "id": "R184",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('Account'); r=t==null ? null : t.getName();",
+      "expected": "Account"
+    },
+    {
+      "id": "R185",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('Schema.Account'); r=t==null ? null : t.getName();",
+      "expected": "Account"
+    },
+    {
+      "id": "R186",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('Contact'); r=t==null ? null : t.getName();",
+      "expected": "Contact"
+    },
+    {
+      "id": "R187",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('System.Callable'); r=t==null ? null : t.getName();",
+      "expected": "System.Callable"
+    },
+    {
+      "id": "R188",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('List<String>'); r=t==null ? null : t.getName();",
+      "expected": "List<String>"
+    },
+    {
+      "id": "R189",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('Map<String,Object>'); r=t==null ? null : t.getName();",
+      "expected": "Map<String,ANY>"
+    },
+    {
+      "id": "R190",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('Set<String>'); r=t==null ? null : t.getName();",
+      "expected": "Set<String>"
+    },
+    {
+      "id": "R193",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('NoSuchA02Type'); r=t==null ? null : t.getName();",
+      "expected": "null"
+    },
+    {
+      "id": "R194",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName(''); r=t==null ? null : t.getName();",
+      "expected": "null"
+    },
+    {
+      "id": "R195",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName(' String '); r=t==null ? null : t.getName();",
+      "expected": "null"
+    },
+    {
+      "id": "R196",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName(null); r=t==null ? null : t.getName();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R197",
+      "group": "reflection/namespace",
+      "code": "Type t=Type.forName('System','String'); r=t==null ? null : t.getName();",
+      "expected": "null"
+    },
+    {
+      "id": "R198",
+      "group": "reflection/namespace",
+      "code": "Type t=Type.forName('Schema','Account'); r=t==null ? null : t.getName();",
+      "expected": "null"
+    },
+    {
+      "id": "R199",
+      "group": "reflection/namespace",
+      "code": "Type t=Type.forName('','Account'); r=t==null ? null : t.getName();",
+      "expected": "Account"
+    },
+    {
+      "id": "R200",
+      "group": "reflection/namespace",
+      "code": "Type t=Type.forName(null,'Account'); r=t==null ? null : t.getName();",
+      "expected": "Account"
+    },
+    {
+      "id": "R201",
+      "group": "reflection/namespace",
+      "code": "Type t=Type.forName('NoSuchA02Namespace','String'); r=t==null ? null : t.getName();",
+      "expected": "null"
+    },
+    {
+      "id": "R202",
+      "group": "reflection/namespace",
+      "code": "Type t=Type.forName('System',null); r=t==null ? null : t.getName();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R203",
+      "group": "reflection/getName",
+      "code": "r=String.class.getName();",
+      "expected": "String"
+    },
+    {
+      "id": "R204",
+      "group": "reflection/getName",
+      "code": "r=Object.class.getName();",
+      "expected": "Object"
+    },
+    {
+      "id": "R205",
+      "group": "reflection/getName",
+      "code": "r=Account.class.getName();",
+      "expected": "Account"
+    },
+    {
+      "id": "R206",
+      "group": "reflection/getName",
+      "code": "r=Contact.class.getName();",
+      "expected": "Contact"
+    },
+    {
+      "id": "R207",
+      "group": "reflection/getName",
+      "code": "r=List<String>.class.getName();",
+      "expected": "COMPILE_ERROR\tline 59: Unexpected token 'List'."
+    },
+    {
+      "id": "R208",
+      "group": "reflection/getName",
+      "code": "r=Map<String,Object>.class.getName();",
+      "expected": "COMPILE_ERROR\tline 59: Unexpected token 'Map'."
+    },
+    {
+      "id": "R209",
+      "group": "reflection/getName",
+      "code": "r=Set<String>.class.getName();",
+      "expected": "COMPILE_ERROR\tline 59: Unexpected token '.'."
+    },
+    {
+      "id": "R210",
+      "group": "reflection/getName",
+      "code": "r=TSReflect.class.getName();",
+      "expected": "TSReflect"
+    },
+    {
+      "id": "R211",
+      "group": "reflection/getName",
+      "code": "r=TSNeedsArg.class.getName();",
+      "expected": "TSNeedsArg"
+    },
+    {
+      "id": "R212",
+      "group": "reflection/getName",
+      "code": "r=TSBase.class.getName();",
+      "expected": "TSBase"
+    },
+    {
+      "id": "R213",
+      "group": "reflection/getName",
+      "code": "r=TSChild.class.getName();",
+      "expected": "TSChild"
+    },
+    {
+      "id": "R214",
+      "group": "reflection/getName",
+      "code": "r=System.Callable.class.getName();",
+      "expected": "System.Callable"
+    },
+    {
+      "id": "R215",
+      "group": "reflection/equals",
+      "code": "r=String.class.equals(String.class);",
+      "expected": "true"
+    },
+    {
+      "id": "R216",
+      "group": "reflection/equals",
+      "code": "r=String.class.equals(Object.class);",
+      "expected": "false"
+    },
+    {
+      "id": "R217",
+      "group": "reflection/equals",
+      "code": "r=Account.class.equals(Contact.class);",
+      "expected": "false"
+    },
+    {
+      "id": "R218",
+      "group": "reflection/equals",
+      "code": "r=List<String>.class.equals(List<Object>.class);",
+      "expected": "COMPILE_ERROR\tline 67: Unexpected token 'List'."
+    },
+    {
+      "id": "R219",
+      "group": "reflection/equals",
+      "code": "r=TSBase.class.equals(TSChild.class);",
+      "expected": "false"
+    },
+    {
+      "id": "R220",
+      "group": "reflection/null-and-equality",
+      "code": "r=String.class.equals(null);",
+      "expected": "false"
+    },
+    {
+      "id": "R221",
+      "group": "reflection/null-and-equality",
+      "code": "r=String.class.equals('String');",
+      "expected": "false"
+    },
+    {
+      "id": "R222",
+      "group": "reflection/null-and-equality",
+      "code": "r=String.class.equals(Type.forName('System.String'));",
+      "expected": "false"
+    },
+    {
+      "id": "R223",
+      "group": "reflection/null-and-equality",
+      "code": "r=Account.class==Type.forName('Account');",
+      "expected": "true"
+    },
+    {
+      "id": "R224",
+      "group": "reflection/null-and-equality",
+      "code": "Type t=null; r=t.getName();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R225",
+      "group": "reflection/null-and-equality",
+      "code": "Type t=null; r=t.equals(String.class);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R227",
+      "group": "reflection/newInstance",
+      "code": "Object x=Contact.class.newInstance(); r=x instanceof Contact;",
+      "expected": "true"
+    },
+    {
+      "id": "R228",
+      "group": "reflection/newInstance",
+      "code": "Object x=List<String>.class.newInstance(); r=((List<String>)x).size();",
+      "expected": "COMPILE_ERROR\tline 76: Unexpected token 'List'."
+    },
+    {
+      "id": "R229",
+      "group": "reflection/newInstance",
+      "code": "Object x=Map<String,Object>.class.newInstance(); r=((Map<String,Object>)x).size();",
+      "expected": "COMPILE_ERROR\tline 76: Unexpected token 'Map'."
+    },
+    {
+      "id": "R230",
+      "group": "reflection/newInstance",
+      "code": "Object x=TSReflect.class.newInstance(); r=((TSReflect)x).text;",
+      "expected": "ready"
+    },
+    {
+      "id": "R231",
+      "group": "reflection/newInstance",
+      "code": "Object x=TSNeedsArg.class.newInstance(); r=x!=null;",
+      "expected": "EXC|System.TypeException|TSNeedsArg does not have a no-arg constructor"
+    },
+    {
+      "id": "R232",
+      "group": "reflection/newInstance",
+      "code": "Object x=TSBase.class.newInstance(); r=((TSBase)x).tag();",
+      "expected": "base"
+    },
+    {
+      "id": "R233",
+      "group": "reflection/newInstance",
+      "code": "Object x=TSChild.class.newInstance(); r=((TSBase)x).tag();",
+      "expected": "child"
+    },
+    {
+      "id": "R234",
+      "group": "reflection/newInstance",
+      "code": "Object x=System.Callable.class.newInstance(); r=x!=null;",
+      "expected": "EXC|System.TypeException|System.Callable cannot be constructed"
+    },
+    {
+      "id": "R235",
+      "group": "reflection/newInstance",
+      "code": "Object x=String.class.newInstance(); r=x;",
+      "expected": ""
+    },
+    {
+      "id": "R236",
+      "group": "reflection/newInstance-null-and-dynamic",
+      "code": "Type t=Type.forName('Account'); r=t.newInstance() instanceof Account;",
+      "expected": "true"
+    },
+    {
+      "id": "R237",
+      "group": "reflection/newInstance-null-and-dynamic",
+      "code": "Type t=Type.forName('NoSuchA02Type'); r=t.newInstance();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R238",
+      "group": "reflection/newInstance-null-and-dynamic",
+      "code": "Type t=null; r=t.newInstance();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R239",
+      "group": "callable/returns",
+      "code": "System.Callable c=new TSCallable(); Object x=c.call('echo',new Map<String,Object>{'value'=>'echoed'}); r=String.valueOf(x)+'|Account='+(x instanceof Account);",
+      "expected": "echoed|Account=false"
+    },
+    {
+      "id": "R240",
+      "group": "callable/returns",
+      "code": "System.Callable c=new TSCallable(); Object x=c.call('echo',new Map<String,Object>{'value'=>42}); r=String.valueOf(x)+'|Account='+(x instanceof Account);",
+      "expected": "42|Account=false"
+    },
+    {
+      "id": "R241",
+      "group": "callable/returns",
+      "code": "System.Callable c=new TSCallable(); Object x=c.call('echo',new Map<String,Object>{'value'=>true}); r=String.valueOf(x)+'|Account='+(x instanceof Account);",
+      "expected": "true|Account=false"
+    },
+    {
+      "id": "R242",
+      "group": "callable/returns",
+      "code": "System.Callable c=new TSCallable(); Object x=c.call('echo',new Map<String,Object>{'value'=>null}); r=String.valueOf(x)+'|Account='+(x instanceof Account);",
+      "expected": "null|Account=false"
+    },
+    {
+      "id": "R243",
+      "group": "callable/returns",
+      "code": "System.Callable c=new TSCallable(); Object x=c.call('echo',new Map<String,Object>{'value'=>new Account(Name='a')}); r=String.valueOf(x)+'|Account='+(x instanceof Account);",
+      "expected": "Account:{Name=a}|Account=true"
+    },
+    {
+      "id": "R244",
+      "group": "callable/returns",
+      "code": "System.Callable c=new TSCallable(); Object x=c.call('echo',new Map<String,Object>{'value'=>new List<String>()}); r=String.valueOf(x)+'|Account='+(x instanceof Account);",
+      "expected": "()|Account=false"
+    },
+    {
+      "id": "R245",
+      "group": "callable/null-boundary-exception",
+      "code": "System.Callable c=new TSCallable(); r=c.call('size',new Map<String,Object>());",
+      "expected": "0"
+    },
+    {
+      "id": "R246",
+      "group": "callable/null-boundary-exception",
+      "code": "System.Callable c=new TSCallable(); r=c.call('size',new Map<String,Object>{'a'=>1});",
+      "expected": "1"
+    },
+    {
+      "id": "R247",
+      "group": "callable/null-boundary-exception",
+      "code": "System.Callable c=new TSCallable(); r=c.call('echo',new Map<String,Object>());",
+      "expected": "null"
+    },
+    {
+      "id": "R248",
+      "group": "callable/null-boundary-exception",
+      "code": "System.Callable c=new TSCallable(); r=c.call('echo',null);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R249",
+      "group": "callable/null-boundary-exception",
+      "code": "System.Callable c=new TSCallable(); r=c.call('size',null);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R250",
+      "group": "callable/null-boundary-exception",
+      "code": "System.Callable c=new TSCallable(); r=c.call('null',null);",
+      "expected": "null"
+    },
+    {
+      "id": "R251",
+      "group": "callable/null-boundary-exception",
+      "code": "System.Callable c=new TSCallable(); r=c.call('fail',null);",
+      "expected": "EXC|TSFailureException|call failed"
+    },
+    {
+      "id": "R252",
+      "group": "callable/null-boundary-exception",
+      "code": "System.Callable c=new TSCallable(); r=c.call('unknown',null);",
+      "expected": "EXC|TSFailureException|unknown action"
+    },
+    {
+      "id": "R253",
+      "group": "callable/null-boundary-exception",
+      "code": "System.Callable c=new TSCallable(); r=c.call('null',new Map<String,Object>());",
+      "expected": "null"
+    },
+    {
+      "id": "R254",
+      "group": "callable/dispatch-state-and-null",
+      "code": "Map<String,Object> args=new Map<String,Object>(); System.Callable c=new TSCallable(); c.call('mutate',args); r=args.get('seen');",
+      "expected": "true"
+    },
+    {
+      "id": "R255",
+      "group": "callable/dispatch-state-and-null",
+      "code": "TSCallable c=new TSCallable(); c.call('null',null); c.call('null',null); r=c.calls;",
+      "expected": "2"
+    },
+    {
+      "id": "R256",
+      "group": "callable/dispatch-state-and-null",
+      "code": "System.Callable c=new TSChild(); r=c.call('go',null);",
+      "expected": "child:go"
+    },
+    {
+      "id": "R257",
+      "group": "callable/dispatch-state-and-null",
+      "code": "Object x=new TSCallable(); r=((System.Callable)x).call('size',new Map<String,Object>());",
+      "expected": "0"
+    },
+    {
+      "id": "R258",
+      "group": "callable/dispatch-state-and-null",
+      "code": "System.Callable c=null; r=c.call('go',null);",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object"
+    },
+    {
+      "id": "R259",
+      "group": "callable/dispatch-state-and-null",
+      "code": "System.Callable c=new TSCallable(); r=c.call(null,null);",
+      "expected": "EXC|TSFailureException|unknown action"
+    },
+    {
+      "id": "R260",
+      "group": "callable/dispatch-state-and-null",
+      "code": "System.Callable c=new TSCallable(); r=c.call('',null);",
+      "expected": "EXC|TSFailureException|unknown action"
+    },
+    {
+      "id": "C001",
+      "group": "compile-boundary/casts",
+      "code": "String x=123; r=x;",
+      "expected": "COMPILE_ERROR\tline 53: Illegal assignment from Integer to String"
+    },
+    {
+      "id": "C002",
+      "group": "compile-boundary/casts",
+      "code": "Integer x=(Integer)'123'; r=x;",
+      "expected": "COMPILE_ERROR\tline 53: Incompatible types since an instance of String is never an instance of Integer"
+    },
+    {
+      "id": "C003",
+      "group": "compile-boundary/casts",
+      "code": "Account x=(Account)new Contact(); r=x;",
+      "expected": "COMPILE_ERROR\tline 53: Incompatible types since an instance of Contact is never an instance of Account"
+    },
+    {
+      "id": "C004",
+      "group": "compile-boundary/casts",
+      "code": "TSChild x=new TSBase(); r=x;",
+      "expected": "COMPILE_ERROR\tline 53: Illegal assignment from TSBase to TSChild"
+    },
+    {
+      "id": "C005",
+      "group": "compile-boundary/casts",
+      "code": "System.Callable x=new TSBase(); r=x;",
+      "expected": "COMPILE_ERROR\tline 53: Illegal assignment from TSBase to System.Callable"
+    },
+    {
+      "id": "C006",
+      "group": "compile-boundary/instanceof",
+      "code": "r=null instanceof String;",
+      "expected": "COMPILE_ERROR\tline 53: Operation instanceof is always true since an instance of NULL is always an instance of String"
+    },
+    {
+      "id": "C007",
+      "group": "compile-boundary/instanceof",
+      "code": "r='a' instanceof Account;",
+      "expected": "COMPILE_ERROR\tline 53: Operation instanceof is always false since an instance of String is never an instance of Account"
+    },
+    {
+      "id": "C008",
+      "group": "compile-boundary/instanceof",
+      "code": "r=new TSBase() instanceof TSChild;",
+      "expected": "false"
+    },
+    {
+      "id": "C009",
+      "group": "compile-boundary/overload",
+      "code": "r=new TSOver().pair('x','y');",
+      "expected": "COMPILE_ERROR\tline 53: Ambiguous method signature: void pair(String, String)"
+    },
+    {
+      "id": "C010",
+      "group": "compile-boundary/overload",
+      "code": "r=new TSOver().pair(null,null);",
+      "expected": "COMPILE_ERROR\tline 53: Ambiguous method signature: void pair(NULL, NULL)"
+    },
+    {
+      "id": "C011",
+      "group": "compile-boundary/overload",
+      "code": "r=new TSOver().record(new Contact());",
+      "expected": "SObject"
+    },
+    {
+      "id": "C012",
+      "group": "compile-boundary/overload",
+      "code": "r=new TSOver().text();",
+      "expected": "COMPILE_ERROR\tline 53: Method does not exist or incorrect signature: void text() from the type TSOver"
+    },
+    {
+      "id": "C013",
+      "group": "compile-boundary/overload",
+      "code": "r=new TSOver().text(true);",
+      "expected": "Object"
+    },
+    {
+      "id": "C014",
+      "group": "compile-boundary/reflection",
+      "code": "r=Type.forName(1);",
+      "expected": "COMPILE_ERROR\tline 53: Method does not exist or incorrect signature: void forName(Integer) from the type System.Type"
+    },
+    {
+      "id": "C015",
+      "group": "compile-boundary/reflection",
+      "code": "r=String.class.newInstance(1);",
+      "expected": "COMPILE_ERROR\tline 53: Method does not exist or incorrect signature: void newInstance(Integer) from the type System.Type"
+    },
+    {
+      "id": "C016",
+      "group": "compile-boundary/reflection",
+      "code": "r=String.class.getName(1);",
+      "expected": "COMPILE_ERROR\tline 53: Method does not exist or incorrect signature: void getName(Integer) from the type System.Type"
+    },
+    {
+      "id": "C017",
+      "group": "compile-boundary/reflection",
+      "code": "r=String.class.isAssignableFrom(Object.class);",
+      "expected": "false"
+    },
+    {
+      "id": "C018",
+      "group": "compile-boundary/callable",
+      "code": "r=new TSCallable().call('go');",
+      "expected": "COMPILE_ERROR\tline 53: Method does not exist or incorrect signature: void call(String) from the type TSCallable"
+    },
+    {
+      "id": "C019",
+      "group": "compile-boundary/callable",
+      "code": "r=new TSCallable().call('go',new List<Object>());",
+      "expected": "COMPILE_ERROR\tline 53: Method does not exist or incorrect signature: void call(String, List<Object>) from the type TSCallable"
+    },
+    {
+      "id": "C020",
+      "group": "compile-boundary/callable",
+      "code": "System.Callable c=new TSCallable(); r=c.calls;",
+      "expected": "COMPILE_ERROR\tline 53: Variable does not exist: calls"
+    }
+  ],
+  "remaining": [
+    {
+      "id": "R191",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('TSReflect'); r=t==null ? null : t.getName();",
+      "expected": "null",
+      "owner": "source syntax",
+      "reason": "Anonymous declaration provenance is not retained for Type.forName visibility."
+    },
+    {
+      "id": "R192",
+      "group": "reflection/forName",
+      "code": "Type t=Type.forName('TSChild'); r=t==null ? null : t.getName();",
+      "expected": "null",
+      "owner": "source syntax",
+      "reason": "Anonymous declaration provenance is not retained for Type.forName visibility."
+    },
+    {
+      "id": "R226",
+      "group": "reflection/newInstance",
+      "code": "Object x=Account.class.newInstance(); r=((Account)x).Name;",
+      "expected": "null",
+      "owner": "schema describe",
+      "reason": "Missing standard SObject fields require schema defaults when no org fixture is loaded."
+    }
+  ],
+  "diagnosticTextOwner": "A01",
+  "caseRows": {
+    "all": [
+      "R001",
+      "R002",
+      "R003",
+      "R004",
+      "R005",
+      "R006",
+      "R007",
+      "R008",
+      "R009",
+      "R010",
+      "R011",
+      "R012",
+      "R013",
+      "R014",
+      "R015",
+      "R016",
+      "R017",
+      "R018",
+      "R019",
+      "R020",
+      "R021",
+      "R022",
+      "R023",
+      "R024",
+      "R025",
+      "R026",
+      "R027",
+      "R028",
+      "R029",
+      "R030",
+      "R031",
+      "R032",
+      "R033",
+      "R034",
+      "R035",
+      "R036",
+      "R037",
+      "R038",
+      "R039",
+      "R040",
+      "R041",
+      "R042",
+      "R043",
+      "R044",
+      "R045",
+      "R046",
+      "R047",
+      "R048",
+      "R049",
+      "R050",
+      "R051",
+      "R052",
+      "R053",
+      "R054",
+      "R055",
+      "R056",
+      "R057",
+      "R058",
+      "R059",
+      "R060",
+      "R061",
+      "R062",
+      "R063",
+      "R064",
+      "R065",
+      "R066",
+      "R067",
+      "R068",
+      "R069",
+      "R070",
+      "R071",
+      "R072",
+      "R073",
+      "R074",
+      "R075",
+      "R076",
+      "R077",
+      "R078",
+      "R079",
+      "R080",
+      "R081",
+      "R082",
+      "R083",
+      "R084",
+      "R085",
+      "R086",
+      "R087",
+      "R088",
+      "R089",
+      "R090",
+      "R091",
+      "R092",
+      "R093",
+      "R094",
+      "R095",
+      "R096",
+      "R097",
+      "R098",
+      "R099",
+      "R100",
+      "R101",
+      "R102",
+      "R103",
+      "R104",
+      "R105",
+      "R106",
+      "R107",
+      "R108",
+      "R109",
+      "R110",
+      "R111",
+      "R112",
+      "R113",
+      "R114",
+      "R115",
+      "R116",
+      "R117",
+      "R118",
+      "R119",
+      "R120",
+      "R121",
+      "R122",
+      "R123",
+      "R124",
+      "R125",
+      "R126",
+      "R127",
+      "R128",
+      "R129",
+      "R130",
+      "R131",
+      "R132",
+      "R133",
+      "R134",
+      "R135",
+      "R136",
+      "R137",
+      "R138",
+      "R139",
+      "R140",
+      "R141",
+      "R142",
+      "R143",
+      "R144",
+      "R145",
+      "R146",
+      "R147",
+      "R148",
+      "R149",
+      "R150",
+      "R151",
+      "R152",
+      "R153",
+      "R154",
+      "R155",
+      "R156",
+      "R157",
+      "R158",
+      "R159",
+      "R160",
+      "R161",
+      "R162",
+      "R163",
+      "R164",
+      "R165",
+      "R166",
+      "R167",
+      "R168",
+      "R169",
+      "R170",
+      "R171",
+      "R172",
+      "R173",
+      "R174",
+      "R175",
+      "R176",
+      "R177",
+      "R178",
+      "R179",
+      "R180",
+      "R181",
+      "R182",
+      "R183",
+      "R184",
+      "R185",
+      "R186",
+      "R187",
+      "R188",
+      "R189",
+      "R190",
+      "R191",
+      "R192",
+      "R193",
+      "R194",
+      "R195",
+      "R196",
+      "R197",
+      "R198",
+      "R199",
+      "R200",
+      "R201",
+      "R202",
+      "R203",
+      "R204",
+      "R205",
+      "R206",
+      "R207",
+      "R208",
+      "R209",
+      "R210",
+      "R211",
+      "R212",
+      "R213",
+      "R214",
+      "R215",
+      "R216",
+      "R217",
+      "R218",
+      "R219",
+      "R220",
+      "R221",
+      "R222",
+      "R223",
+      "R224",
+      "R225",
+      "R226",
+      "R227",
+      "R228",
+      "R229",
+      "R230",
+      "R231",
+      "R232",
+      "R233",
+      "R234",
+      "R235",
+      "R236",
+      "R237",
+      "R238",
+      "R239",
+      "R240",
+      "R241",
+      "R242",
+      "R243",
+      "R244",
+      "R245",
+      "R246",
+      "R247",
+      "R248",
+      "R249",
+      "R250",
+      "R251",
+      "R252",
+      "R253",
+      "R254",
+      "R255",
+      "R256",
+      "R257",
+      "R258",
+      "R259",
+      "R260",
+      "C001",
+      "C002",
+      "C003",
+      "C004",
+      "C005",
+      "C006",
+      "C007",
+      "C008",
+      "C009",
+      "C010",
+      "C011",
+      "C012",
+      "C013",
+      "C014",
+      "C015",
+      "C016",
+      "C017",
+      "C018",
+      "C019",
+      "C020"
+    ]
+  },
+  "anonymousDeclarations": {
+    "TSBase": "class TSBase {\n public virtual String tag(){return 'base';}\n}",
+    "TSChild": "class TSChild extends TSBase implements System.Callable {\n public override String tag(){return 'child';}\n public Object call(String action, Map<String,Object> args){return tag()+':'+action;}\n}",
+    "TSSibling": "class TSSibling extends TSBase {\n public override String tag(){return 'sibling';}\n}",
+    "TSReflect": "class TSReflect {\n public String text='ready';\n public TSReflect(){}\n}",
+    "TSNeedsArg": "class TSNeedsArg {\n public TSNeedsArg(String value){}\n}",
+    "TSFailureException": "class TSFailureException extends Exception {}",
+    "TSCallable": "class TSCallable implements System.Callable {\n public Integer calls=0;\n public Object call(String action, Map<String,Object> args){\n  calls++;\n  if(action=='echo'){return args.get('value');}\n  if(action=='size'){return args.size();}\n  if(action=='null'){return null;}\n  if(action=='mutate'){args.put('seen',true);return args.get('seen');}\n  if(action=='fail'){throw new TSFailureException('call failed');}\n  throw new TSFailureException('unknown action');\n }\n}",
+    "TSOver": "class TSOver {\n public String text(Object x){return 'Object';}\n public String text(String x){return 'String';}\n public String record(Object x){return 'Object';}\n public String record(SObject x){return 'SObject';}\n public String record(Account x){return 'Account';}\n public String custom(Object x){return 'Object';}\n public String custom(TSBase x){return 'TSBase';}\n public String custom(TSChild x){return 'TSChild';}\n public String callable(Object x){return 'Object';}\n public String callable(System.Callable x){return 'Callable';}\n public String pair(String x,Object y){return 'String,Object';}\n public String pair(Object x,String y){return 'Object,String';}\n public String sequence(Object x){return 'Object';}\n public String sequence(List<String> x){return 'List<String>';}\n}"
+  }
+}

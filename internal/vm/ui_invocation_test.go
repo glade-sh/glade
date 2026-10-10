@@ -20,8 +20,10 @@ return out;
 	if err := machine.RegisterClass(Class{
 		Name: "Wrapper",
 		Fields: map[string]Field{
-			"name":  {Name: "name", Type: "String"},
-			"count": {Name: "count", Type: "Integer"},
+			// Native r_control_populated_dto_imperative/wire excludes populated
+			// unannotated fields and exposes the annotated public visibleField.
+			"name":  {Name: "name", Type: "String", Modifiers: []string{"AuraEnabled"}},
+			"count": {Name: "count", Type: "Integer", Modifiers: []string{"AuraEnabled"}},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -455,6 +457,27 @@ return controller.delete();
 	}
 	if findTraceEventWithArg(result.Trace, "apex.visualforce.standard_controller.action.complete", "method", "cancel") == nil {
 		t.Fatalf("cancel completion trace missing: %#v", result.Trace)
+	}
+}
+
+func TestExecStandardControllerActionsUseCanonicalInsertedID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'VF Canonical ID');
+insert account;
+ApexPages.StandardController controller = new ApexPages.StandardController(account);
+String expected = '/' + String.valueOf(account.Id);
+System.assertEquals(expected, controller.view().getUrl());
+System.assertEquals(expected, controller.edit().getUrl());
+System.assertEquals(expected, controller.cancel().getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

@@ -3,9 +3,12 @@
 package apexast
 
 import (
+	"errors"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/glade-sh/apex-parser/internal/tsapex"
 	tree_sitter "github.com/tree-sitter/go-tree-sitter"
@@ -17,14 +20,51 @@ type Parser struct {
 	err    error
 }
 
+var openParsers atomic.Int64
+var errParserClosed = errors.New("parser is closed")
+
 const voidIdentifierSentinel = "v0id"
 const triggerContextSentinel = "Tr1gger"
 const packageQualifiedTypeSentinel = "Packxge"
 
 func NewParser() *Parser {
-	parser := tree_sitter.NewParser()
-	err := parser.SetLanguage(tsapex.GetLanguage())
-	return &Parser{parser: parser, err: err}
+	p := &Parser{}
+	p.initLocked()
+	return p
+}
+
+// initLocked also supports a zero-value Parser. The caller must hold p.mu or
+// have exclusive ownership of a newly allocated Parser.
+func (p *Parser) initLocked() {
+	if p.parser != nil || p.err != nil {
+		return
+	}
+	p.parser = tree_sitter.NewParser()
+	p.err = p.parser.SetLanguage(tsapex.GetLanguage())
+	openParsers.Add(1)
+	runtime.SetFinalizer(p, (*Parser).Close)
+}
+
+// Close releases the native parser. It is nil-safe and idempotent. A closed
+// Parser cannot be reused: subsequent parses return a parser-closed diagnostic.
+func (p *Parser) Close() {
+	if p == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.parser != nil {
+		p.parser.Close()
+		p.parser = nil
+		openParsers.Add(-1)
+	}
+	p.err = errParserClosed
+	runtime.SetFinalizer(p, nil)
+}
+
+// OpenParsersForTesting returns the number of native parsers not yet closed.
+func OpenParsersForTesting() int64 {
+	return openParsers.Load()
 }
 
 func (p *Parser) ParseFile(path string) (File, error) {
@@ -46,24 +86,22 @@ func (p *Parser) ParseFileAST(path string) (ASTFile, error) {
 func (p *Parser) ParseSource(path, source string) File {
 	out := File{Path: path, Kind: FileKindUnknown}
 	parseSource := normalizeApexSource(source)
-	if p.parser == nil && p.err == nil {
-		parser := tree_sitter.NewParser()
-		p.err = parser.SetLanguage(tsapex.GetLanguage())
-		p.parser = parser
-	}
-	if p.err != nil {
+	p.mu.Lock()
+	p.initLocked()
+	if err := p.err; err != nil {
+		p.mu.Unlock()
 		out.Diagnostics = append(out.Diagnostics, Diagnostic{
 			Severity: Error,
 			Code:     "APEXPARSE001",
-			Message:  p.err.Error(),
+			Message:  err.Error(),
 			File:     path,
 		})
 		return out
 	}
 
-	p.mu.Lock()
 	tree := p.parser.Parse([]byte(parseSource), nil)
 	p.mu.Unlock()
+	runtime.KeepAlive(p)
 	if tree == nil {
 		out.Diagnostics = append(out.Diagnostics, Diagnostic{
 			Severity: Error,
@@ -102,24 +140,22 @@ func (p *Parser) ParseSource(path, source string) File {
 func (p *Parser) ParseSourceAST(path, source string) ASTFile {
 	out := ASTFile{Path: path}
 	parseSource := normalizeApexSource(source)
-	if p.parser == nil && p.err == nil {
-		parser := tree_sitter.NewParser()
-		p.err = parser.SetLanguage(tsapex.GetLanguage())
-		p.parser = parser
-	}
-	if p.err != nil {
+	p.mu.Lock()
+	p.initLocked()
+	if err := p.err; err != nil {
+		p.mu.Unlock()
 		out.Diagnostics = append(out.Diagnostics, Diagnostic{
 			Severity: Error,
 			Code:     "APEXPARSE001",
-			Message:  p.err.Error(),
+			Message:  err.Error(),
 			File:     path,
 		})
 		return out
 	}
 
-	p.mu.Lock()
 	tree := p.parser.Parse([]byte(parseSource), nil)
 	p.mu.Unlock()
+	runtime.KeepAlive(p)
 	if tree == nil {
 		out.Diagnostics = append(out.Diagnostics, Diagnostic{
 			Severity: Error,
@@ -149,7 +185,134 @@ func (p *Parser) ParseSourceAST(path, source string) ASTFile {
 }
 
 func normalizeApexSource(source string) string {
-	return normalizeExplicitConstructorInvocations(normalizePackageQualifiedReferences(normalizeTriggerContextReferences(normalizeVoidIdentifiers(source))))
+	return normalizeInlineSOSL(normalizeExplicitConstructorInvocations(normalizePackageQualifiedReferences(normalizeTriggerContextReferences(normalizeVoidIdentifiers(source)))))
+}
+
+// The upstream tree grammar rejects SOSL forms that Apex accepts before runtime
+// search validation. Normalize only those forms and preserve every byte offset;
+// declarations, expressions and diagnostics continue reading the original text.
+func normalizeInlineSOSL(source string) string {
+	out := []byte(source)
+	for i := 0; i < len(source); {
+		switch {
+		case source[i] == '\'':
+			i = skipApexString(source, i)
+		case hasPrefixAt(source, i, "//"):
+			i = skipUntilNewline(source, i)
+		case hasPrefixAt(source, i, "/*"):
+			i = skipBlockComment(source, i)
+		case source[i] == '[':
+			start := nextSignificantIndex(source, i+1)
+			if !hasWordAtFold(source, start, "FIND") {
+				i++
+				continue
+			}
+			end := inlineSOSLEnd(source, start)
+			if end < 0 {
+				i++
+				continue
+			}
+			normalizeInlineSOSLQuery(source, out, start, end)
+			i = end + 1
+		default:
+			i++
+		}
+	}
+	return string(out)
+}
+
+func inlineSOSLEnd(source string, start int) int {
+	depth := 1
+	for i := start; i < len(source); {
+		switch {
+		case source[i] == '\'':
+			i = skipApexString(source, i)
+		case hasPrefixAt(source, i, "//"):
+			i = skipUntilNewline(source, i)
+		case hasPrefixAt(source, i, "/*"):
+			i = skipBlockComment(source, i)
+		case source[i] == '[':
+			depth++
+			i++
+		case source[i] == ']':
+			depth--
+			if depth == 0 {
+				return i
+			}
+			i++
+		default:
+			i++
+		}
+	}
+	return -1
+}
+
+func normalizeInlineSOSLQuery(source string, out []byte, start, end int) {
+	term := nextSignificantIndex(source, start+len("FIND"))
+	if term+1 < end && source[term:term+2] == "''" && skipApexString(source, term) == term+2 {
+		copy(out[term:term+2], ":x") // C003: preserve the original empty term.
+	}
+	returning := false
+	depth := 0
+	for i := start + len("FIND"); i < end; {
+		switch {
+		case source[i] == '\'':
+			i = skipApexString(source, i)
+		case hasPrefixAt(source, i, "//"):
+			i = skipUntilNewline(source, i)
+		case hasPrefixAt(source, i, "/*"):
+			i = skipBlockComment(source, i)
+		case source[i] == '(':
+			depth++
+			i++
+		case source[i] == ')':
+			depth--
+			i++
+		case hasWordAtFold(source, i, "RETURNING") && depth == 0:
+			returning = true
+			i += len("RETURNING")
+		case !returning && depth == 0 && hasWordAtFold(source, i, "IN"):
+			scope := nextSignificantIndex(source, i+len("IN"))
+			scopeEnd := scope
+			for scopeEnd < end && isIdentifierByte(source[scopeEnd]) {
+				scopeEnd++
+			}
+			fields := nextSignificantIndex(source, scopeEnd)
+			if scopeEnd > scope && (source[scope] < '0' || source[scope] > '9') && hasWordAtFold(source, fields, "FIELDS") {
+				switch strings.ToUpper(source[scope:scopeEnd]) {
+				case "ALL", "NAME", "EMAIL", "PHONE", "SIDEBAR":
+				default:
+					blankInlineSOSL(out, i, fields+len("FIELDS"))
+				}
+			}
+			i += len("IN")
+		case depth == 0 && hasWordAtFold(source, i, "WITH"):
+			mode := nextSignificantIndex(source, i+len("WITH"))
+			for _, word := range []string{"USER_MODE", "SYSTEM_MODE"} {
+				if hasWordAtFold(source, mode, word) {
+					blankInlineSOSL(out, i, mode+len(word))
+					break
+				}
+			}
+			i += len("WITH")
+		case returning && depth > 0 && hasWordAtFold(source, i, "OFFSET"):
+			value := nextSignificantIndex(source, i+len("OFFSET"))
+			if value+1 < end && source[value] == '-' && source[value+1] >= '0' && source[value+1] <= '9' {
+				out[value] = ' '
+			}
+			i += len("OFFSET")
+		default:
+			i++
+		}
+	}
+}
+
+func blankInlineSOSL(out []byte, start, end int) {
+	for i := start; i < end && i < len(out); i++ {
+		if out[i] != '\n' && out[i] != '\r' {
+			out[i] = ' '
+		}
+	}
 }
 
 func normalizePackageQualifiedReferences(source string) string {
@@ -514,7 +677,26 @@ func splitAnnotationArguments(text string) []annotationArgumentText {
 	start, depth := 0, 0
 	for i := 0; i < len(text); i++ {
 		if text[i] == '\'' {
-			i = skipApexString(text, i) - 1
+			end := skipApexString(text, i)
+			// Salesforce accepts adjacent named annotation arguments even when
+			// the source omits whitespace between a closing string quote and the
+			// next property name, for example label='Body'description='...'.
+			// Split that boundary before the normal whitespace/equals handling.
+			if end < len(text) {
+				next := end
+				for next < len(text) && (text[next] == '_' || text[next] >= 'A' && text[next] <= 'Z' || text[next] >= 'a' && text[next] <= 'z') {
+					next++
+				}
+				equals := next
+				for equals < len(text) && (text[equals] == ' ' || text[equals] == '\t' || text[equals] == '\r' || text[equals] == '\n') {
+					equals++
+				}
+				if next > end && equals < len(text) && text[equals] == '=' {
+					out = append(out, annotationArgumentText{text: text[start:end], start: start})
+					start = end
+				}
+			}
+			i = end - 1
 			continue
 		}
 		switch text[i] {

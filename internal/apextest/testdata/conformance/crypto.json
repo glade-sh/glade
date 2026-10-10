@@ -1,0 +1,2246 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "declarations": {
+    "CryptoFixture": "public class CryptoFixture {\n public Blob privateKey(){return EncodingUtil.base64Decode('MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCjaw5n7/Z+mX0rg4kKQD3NIC/X/dZ9+XwUBLTIpv+BHWiuN6Hea5ggVyCEp9+mpPNLQ15E13aXHhJiFeSbDoLdb/t91VZ1oy0v4WlYJ5+N09q6J4Txw7yTOxzVGkGyPyA0lpmWwEjYLy8vbK8w0y21fRiJN0mE7bsKUrxLfXLoOXmf6o4LIavd6yuAfpbLjRgsO8qbKI8YKh1f+FBTyZdhnreICuJtUmZdAuwJgmddckz3vOG1QRNsaeGqlFI3Y2NfPaMwi363iIT2rBtCfVDcDzVeKjFbE+qt2z5LAD80r5t4R5cWQgercDN2aPbfiuW7OD7kyyvNFjnraD0nWb6jAgMBAAECggEAMt3eeJTVfbeqIhLJ49J2SjTEH6/IBaNUL2j9mt18d4Sfcmcnr/N+wUZNfW1BrP34Kwu3uqb0p3o5T6Wv6GHecy3pstPmmyxlItu/rix7OirhEQO/GoAKYSvLwDtxipminSvpd+a3Ze9d+R2T9JcvSag8LG30qPdUupRhPwA39bd6z2t0muwRVcATAu1hohErKKzwqSusqqyaiIqP8iHKYJg8bJANYOUWE2CNHxLBRHc88eklGDLXpBt+LaykayZCKjjaNqZtQk7x90pcMHqSeoXrBYr/CNUhaa3KIgvwMx5PxhALi7R45dkPsPeZtPjm4qJs9mFv6hEvCFg2ETjCGQKBgQDTrCYR09CErdNz0/P6gC6c9g9xcI1Rwhf2TRg7pRdINyVoBPPERHt3pTtGY+LQzFhgKCNOdWsMRnOQxd/jxfZszX+dlI+Q1yIdUCJuU3U4dLhNSb5iCJLN7rwJ73fVOSBP4gzplkBSmDTwttrYZL4u0vWeEDlC/Hn5Z0qAFaP5yQKBgQDFo/m+hzw3suOfNyAA0+VLvujSislZDaU1ldBU4EUJLgSDhnj/PRg6HV12AHtpEp3VBzE6O5BUupakgef9OcRj79sRcXvqJxmxlPopYy27Ng8/1NiUhkl9l5UrqbU/6QsG1kB6/fudA5h1M9VkCilspwZj5+J3VM3CAyGRNC9rCwKBgQCu8WehclOzZMsPvwy1a72awo8u7ZwPB4CwczVlDmQ4rkM/PmCORR9aWnisC6AJe+pKxsGvdcIcqhmXfMM3SIULlag0f/VL+1JZscJTNqz6FRXB4wHzmixjAT3uZDnBQ26eNzD+2cydtuiCTk5/bHv2zSptEfGRmIPjCmh7hec5aQKBgQCks/TRcXOeWybTrSWvauZgDDWMF3qaCwQNts6JnOgLMV0zmmHFGs3QyF31k4tE0e3T9I1yoOazpVcauuNwpK5kNiOS0sbYKEOCOMuMqAkZRYDJyf+/LnWaAzOd0myoWPYGeY/8ryH7BF8N9Oc02j8RO9PYeArDNVnO/7r+fcWyZwKBgHFkoRu4ukIjEBN/CgoqgUYXs8hCw4uecHn+igHLxf3mRAZ6KuAHleRFZRiZQXGHW20rWiRxaTJSbcg03Ya76EUmIXGCHnbZxc2ZTydcpHu0x34k5YhoetDFCk4GwrnQqhFcvfsTjDTRQdhWn0UshKwcvQs1ymm4hRyqyEPEx0cn');}\n public Blob publicKey(){return EncodingUtil.base64Decode('MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo2sOZ+/2fpl9K4OJCkA9zSAv1/3Wffl8FAS0yKb/gR1orjeh3muYIFcghKffpqTzS0NeRNd2lx4SYhXkmw6C3W/7fdVWdaMtL+FpWCefjdPauieE8cO8kzsc1RpBsj8gNJaZlsBI2C8vL2yvMNMttX0YiTdJhO27ClK8S31y6Dl5n+qOCyGr3esrgH6Wy40YLDvKmyiPGCodX/hQU8mXYZ63iAribVJmXQLsCYJnXXJM97zhtUETbGnhqpRSN2NjXz2jMIt+t4iE9qwbQn1Q3A81XioxWxPqrds+SwA/NK+beEeXFkIHq3Azdmj234rluzg+5MsrzRY562g9J1m+owIDAQAB');}\n public Blob otherPublicKey(){return EncodingUtil.base64Decode('MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsNLD+c+4vNzIt3MUrKnL0QIH959khMmiy98bWnWzSTahDeH7s9fWrjTHiYdRcH8YBB8yZ5WGAKh6rPddJPedZHzM34uZ6D8ONO03BrEi8ZknbIOLCGG6GjXpP2uAg7nn+3b/w+G7wT/4yTf5a+eNmnAS13ppV4IU0fszGWNiuqtG9JmHl0NRT0yGEzxZmNm9wswLAlCwz72mppKSvrUC+Ch730TNtyCNB8++5k+qrj+l2MpqjtaUMOcienB9cfZO0DlDnSn0OLDEhcrlPV+WNurn9r30uS6cacBWD9t2wLTf6HNf4MQ1/lCH8TkX5d9Zk8stCMJHudINvX8TOlSf0wIDAQAB');}\n}"
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('MD5',Blob.valueOf('')));",
+      "expected": "d41d8cd98f00b204e9800998ecf8427e",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R002",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('MD5',Blob.valueOf('abc')));",
+      "expected": "900150983cd24fb0d6963f7d28e17f72",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R003",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('MD5',Blob.valueOf('café雪😀')));",
+      "expected": "e33fb851feab2a2547ca31a3751fe1f0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R004",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('MD5',EncodingUtil.convertFromHex('00017f80ff')));",
+      "expected": "feea43e9b76fc31c34bcec403dcc4bf8",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R005",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('MD5',Blob.valueOf('x'.repeat(64))));",
+      "expected": "c1bb4f81d892b2d57947682aeb252456",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R006",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('MD5',Blob.valueOf('x'.repeat(65))));",
+      "expected": "1bc932052302d074bdec39795fe00cf6",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R007",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA1',Blob.valueOf('')));",
+      "expected": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R008",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA1',Blob.valueOf('abc')));",
+      "expected": "a9993e364706816aba3e25717850c26c9cd0d89d",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R009",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA1',Blob.valueOf('café雪😀')));",
+      "expected": "8f75d0291ad7c553a3d97f1b0160d1ae744eb474",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R010",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA1',EncodingUtil.convertFromHex('00017f80ff')));",
+      "expected": "47f6e64339628a989dbed958beba5944d0ea6d7b",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R011",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA1',Blob.valueOf('x'.repeat(64))));",
+      "expected": "bb2fa3ee7afb9f54c6dfb5d021f14b1ffe40c163",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R012",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA1',Blob.valueOf('x'.repeat(65))));",
+      "expected": "78c741ddc482e4cdf8c474a0876347a0905b6233",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R013",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA224',Blob.valueOf('')));",
+      "expected": "d14a028c2a3a2bc9476102bb288234c415a2b01f828ea62ac5b3e42f",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R014",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA224',Blob.valueOf('abc')));",
+      "expected": "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R015",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA224',Blob.valueOf('café雪😀')));",
+      "expected": "4aa149c9d9d5652f60f7c3afad69246a72d9b58e08dbb381e443b372",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R016",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA224',EncodingUtil.convertFromHex('00017f80ff')));",
+      "expected": "a94dd0016cadef34bd1152d6e14d810558ede8728f549860f98dec68",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R017",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA224',Blob.valueOf('x'.repeat(64))));",
+      "expected": "08c3050e95fe11eacb9dc7824bf6a92bcf2d59c21701321fba0e62c5",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R018",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA224',Blob.valueOf('x'.repeat(65))));",
+      "expected": "b14ef0fefbdb3c42af0d9b42709410c66506d0ed003cd65463a8f96b",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R019",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA256',Blob.valueOf('')));",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R020",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA256',Blob.valueOf('abc')));",
+      "expected": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R021",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA256',Blob.valueOf('café雪😀')));",
+      "expected": "f780ee9f30a39965d047b15dc8dd9c67c28cf3bd264803eea9909cc8d20712ef",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R022",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA256',EncodingUtil.convertFromHex('00017f80ff')));",
+      "expected": "0150a92bb1212cd00516b65fde0704614760000963874fcbb11eaa734ee87809",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R023",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA256',Blob.valueOf('x'.repeat(64))));",
+      "expected": "7ce100971f64e7001e8fe5a51973ecdfe1ced42befe7ee8d5fd6219506b5393c",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R024",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA256',Blob.valueOf('x'.repeat(65))));",
+      "expected": "9537c5fdf120482f7d58d25e9ed583f52c02b4e304ea814db1633ad565aed7e9",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R025",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA384',Blob.valueOf('')));",
+      "expected": "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R026",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA384',Blob.valueOf('abc')));",
+      "expected": "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R027",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA384',Blob.valueOf('café雪😀')));",
+      "expected": "097707630ccd6305f928953390ae0b0e72d397e0b6cac11787d479e4fca6e7c69d6fad42a2bfdf0676c24e62015df63d",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R028",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA384',EncodingUtil.convertFromHex('00017f80ff')));",
+      "expected": "d38fdccd554bf1b074892ad4728a8a0cd15d86aef522caa1ef2b0450b7f15b05d9eb66c89c70a2bf7f3a8f1e7e7ae429",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R029",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA384',Blob.valueOf('x'.repeat(64))));",
+      "expected": "06122472d006e27564bf1287c9623bbd83f33f8358a24668ab81527f114566393f79645fd25bb5713ae8aed491031cbe",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R030",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA384',Blob.valueOf('x'.repeat(65))));",
+      "expected": "633e075b2d10a4ab6452e3210aae74ae002a6bbb368e11f51e2029e208aef9a70180da262c87f1fb1c7007d48412bf88",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R031",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA512',Blob.valueOf('')));",
+      "expected": "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R032",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA512',Blob.valueOf('abc')));",
+      "expected": "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R033",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA512',Blob.valueOf('café雪😀')));",
+      "expected": "56c71616465838dfc4cb44c9f379588eedd1d08550881bc10b1d4bc503b1b60f82c2afd2c7b4fbe858305ddb35bb2fcdb8140671489e23af105bccfd2a5ef02c",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R034",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA512',EncodingUtil.convertFromHex('00017f80ff')));",
+      "expected": "d55e59d0d67df995ae97c835d9f4814a1c8bf9a974c190e70e2cc32e3eb578068b5b50160fcc473e0c90586fa16e05d956187885dbb99f037d1f932d7603cd3e",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R035",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA512',Blob.valueOf('x'.repeat(64))));",
+      "expected": "791c91ff44685987a5c01d2811eede6f3a28d65e43709953c295931afc4941251e3a5dccbacabaf01dd729589b1c4d47da93f6991c414f21188fb8449a2d1064",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R036",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA512',Blob.valueOf('x'.repeat(65))));",
+      "expected": "460d9da1179e60cf8ee45d2c687e45c963611cdf87d24f006e503608ddf286344cffdc6d4ecdc58ee6b0aa83dad625629e4bb0c22b0161135ea53597a4106850",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R037",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('sha256',Blob.valueOf('abc')));",
+      "expected": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R038",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf('abc')));",
+      "expected": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R039",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest(' SHA256 ',Blob.valueOf('abc')));",
+      "expected": "EXC|System.SecurityException| SHA256  MessageDigest not available",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R040",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('',Blob.valueOf('abc')));",
+      "expected": "EXC|System.SecurityException| MessageDigest not available",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R041",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateDigest('bogus',Blob.valueOf('abc')));",
+      "expected": "EXC|System.SecurityException|bogus MessageDigest not available",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R042",
+      "code": "r=Crypto.generateDigest(null,Blob.valueOf('abc'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R043",
+      "code": "r=Crypto.generateDigest('SHA256',null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R044",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacMD5',Blob.valueOf(''),Blob.valueOf('key')));",
+      "expected": "63530468a04e386459855da0063b6596",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R045",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacMD5',Blob.valueOf('abc'),Blob.valueOf('key')));",
+      "expected": "d2fe98063f876b03193afb49b4979591",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R046",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacMD5',Blob.valueOf('café雪😀'),Blob.valueOf('key')));",
+      "expected": "2b5bdf3952a14aba155c3461db4fb748",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R047",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacMD5',d,k); r=Crypto.verifyHMac('HmacMD5',d,k,m);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R048",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacMD5',d,k); r=Crypto.verifyHMac('HmacMD5',Blob.valueOf('changed'),k,m);",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R049",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacMD5',d,k); r=Crypto.verifyHMac('HmacMD5',d,k,Blob.valueOf('bad'));",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R050",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA1',Blob.valueOf(''),Blob.valueOf('key')));",
+      "expected": "f42bb0eeb018ebbd4597ae7213711ec60760843f",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R051",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA1',Blob.valueOf('abc'),Blob.valueOf('key')));",
+      "expected": "4fd0b215276ef12f2b3e4c8ecac2811498b656fc",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R052",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA1',Blob.valueOf('café雪😀'),Blob.valueOf('key')));",
+      "expected": "91b5460005d1d7b36f094e7c2dba557e9cce53a0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R053",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA1',d,k); r=Crypto.verifyHMac('HmacSHA1',d,k,m);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R054",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA1',d,k); r=Crypto.verifyHMac('HmacSHA1',Blob.valueOf('changed'),k,m);",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R055",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA1',d,k); r=Crypto.verifyHMac('HmacSHA1',d,k,Blob.valueOf('bad'));",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R056",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA256',Blob.valueOf(''),Blob.valueOf('key')));",
+      "expected": "5d5d139563c95b5967b9bd9a8c9b233a9dedb45072794cd232dc1b74832607d0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R057",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA256',Blob.valueOf('abc'),Blob.valueOf('key')));",
+      "expected": "9c196e32dc0175f86f4b1cb89289d6619de6bee699e4c378e68309ed97a1a6ab",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R058",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA256',Blob.valueOf('café雪😀'),Blob.valueOf('key')));",
+      "expected": "b1555bad24b280585e9c36d02dcb1d780d101c4ed5f7981d1f9a9500d0915f26",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R059",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA256',d,k); r=Crypto.verifyHMac('HmacSHA256',d,k,m);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R060",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA256',d,k); r=Crypto.verifyHMac('HmacSHA256',Blob.valueOf('changed'),k,m);",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R061",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA256',d,k); r=Crypto.verifyHMac('HmacSHA256',d,k,Blob.valueOf('bad'));",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R062",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA384',Blob.valueOf(''),Blob.valueOf('key')));",
+      "expected": "99f44bb4e73c9d0ef26533596c8d8a32a5f8c10a9b997d30d89a7e35ba1ccf200b985f72431202b891fe350da410e43f",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R063",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA384',Blob.valueOf('abc'),Blob.valueOf('key')));",
+      "expected": "30ddb9c8f347cffbfb44e519d814f074cf4047a55d6f563324f1c6a33920e5edfb2a34bac60bdc96cd33a95623d7d638",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R064",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA384',Blob.valueOf('café雪😀'),Blob.valueOf('key')));",
+      "expected": "ffe378f3dd82feb15c143a20e195628018837b685da792d5d3fd292d5f7a889f949694d4f69243658c2938b51b229e6c",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R065",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA384',d,k); r=Crypto.verifyHMac('HmacSHA384',d,k,m);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R066",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA384',d,k); r=Crypto.verifyHMac('HmacSHA384',Blob.valueOf('changed'),k,m);",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R067",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA384',d,k); r=Crypto.verifyHMac('HmacSHA384',d,k,Blob.valueOf('bad'));",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R068",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA512',Blob.valueOf(''),Blob.valueOf('key')));",
+      "expected": "84fa5aa0279bbc473267d05a53ea03310a987cecc4c1535ff29b6d76b8f1444a728df3aadb89d4a9a6709e1998f373566e8f824a8ca93b1821f0b69bc2a2f65e",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R069",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA512',Blob.valueOf('abc'),Blob.valueOf('key')));",
+      "expected": "3926a207c8c42b0c41792cbd3e1a1aaaf5f7a25704f62dfc939c4987dd7ce060009c5bb1c2447355b3216f10b537e9afa7b64a4e5391b0d631172d07939e087a",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R070",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA512',Blob.valueOf('café雪😀'),Blob.valueOf('key')));",
+      "expected": "c4fc19e22af75c21892db448bee5c7f79a9d46667bbcb79593ff66b0e9fddd9237c8d02342dd70000a0fc28be00b2ca9a025ee1928eac44c9c9720e2add02c75",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R071",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA512',d,k); r=Crypto.verifyHMac('HmacSHA512',d,k,m);",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R072",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA512',d,k); r=Crypto.verifyHMac('HmacSHA512',Blob.valueOf('changed'),k,m);",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R073",
+      "code": "Blob d=Blob.valueOf('message'); Blob k=Blob.valueOf('key'); Blob m=Crypto.generateMac('HmacSHA512',d,k); r=Crypto.verifyHMac('HmacSHA512',d,k,Blob.valueOf('bad'));",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R074",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('k'.repeat(0))));",
+      "expected": "EXC|System.SecurityException|Empty key",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R075",
+      "code": "Blob d=Blob.valueOf('message'); Blob m=Crypto.generateMac('HmacSHA256',d,Blob.valueOf('key')); r=Crypto.verifyHMac('HmacSHA256',d,Blob.valueOf('k'.repeat(0)),m);",
+      "expected": "EXC|System.SecurityException|Empty key",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R076",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('k'.repeat(1))));",
+      "expected": "9831a5afefa770d5fe6c985f6c343796ca3d27651d69e24864f1f9948debfacf",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R077",
+      "code": "Blob d=Blob.valueOf('message'); Blob m=Crypto.generateMac('HmacSHA256',d,Blob.valueOf('key')); r=Crypto.verifyHMac('HmacSHA256',d,Blob.valueOf('k'.repeat(1)),m);",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R078",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('k'.repeat(3))));",
+      "expected": "000e9df912fe0cfe38f4fb921947a01d7f4f6275cbc2ec35c55754e13a2949d7",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R079",
+      "code": "Blob d=Blob.valueOf('message'); Blob m=Crypto.generateMac('HmacSHA256',d,Blob.valueOf('key')); r=Crypto.verifyHMac('HmacSHA256',d,Blob.valueOf('k'.repeat(3)),m);",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R080",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('k'.repeat(4095))));",
+      "expected": "2da18ba8021deab38c77c1ea1f7ab8faac7b716ab1ecc6b60f70534a8f723e40",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R081",
+      "code": "Blob d=Blob.valueOf('message'); Blob m=Crypto.generateMac('HmacSHA256',d,Blob.valueOf('key')); r=Crypto.verifyHMac('HmacSHA256',d,Blob.valueOf('k'.repeat(4095)),m);",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R082",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('k'.repeat(4096))));",
+      "expected": "EXC|System.SecurityException|Private Key should be of size less than 4k",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R083",
+      "code": "Blob d=Blob.valueOf('message'); Blob m=Crypto.generateMac('HmacSHA256',d,Blob.valueOf('key')); r=Crypto.verifyHMac('HmacSHA256',d,Blob.valueOf('k'.repeat(4096)),m);",
+      "expected": "EXC|System.SecurityException|Private Key should be of size less than 4k",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R084",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('k'.repeat(4097))));",
+      "expected": "EXC|System.SecurityException|Private Key should be of size less than 4k",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R085",
+      "code": "Blob d=Blob.valueOf('message'); Blob m=Crypto.generateMac('HmacSHA256',d,Blob.valueOf('key')); r=Crypto.verifyHMac('HmacSHA256',d,Blob.valueOf('k'.repeat(4097)),m);",
+      "expected": "EXC|System.SecurityException|Private Key should be of size less than 4k",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R086",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('k'.repeat(5000))));",
+      "expected": "EXC|System.SecurityException|Private Key should be of size less than 4k",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R087",
+      "code": "Blob d=Blob.valueOf('message'); Blob m=Crypto.generateMac('HmacSHA256',d,Blob.valueOf('key')); r=Crypto.verifyHMac('HmacSHA256',d,Blob.valueOf('k'.repeat(5000)),m);",
+      "expected": "EXC|System.SecurityException|Private Key should be of size less than 4k",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R088",
+      "code": "r=Crypto.generateMac(null,Blob.valueOf('m'),Blob.valueOf('k'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R089",
+      "code": "r=Crypto.generateMac('HmacSHA256',null,Blob.valueOf('k'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R090",
+      "code": "r=Crypto.generateMac('HmacSHA256',Blob.valueOf('m'),null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R091",
+      "code": "r=Crypto.verifyHMac(null,Blob.valueOf('m'),Blob.valueOf('k'),Blob.valueOf('s'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R092",
+      "code": "r=Crypto.verifyHMac('HmacSHA256',null,Blob.valueOf('k'),Blob.valueOf('s'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R093",
+      "code": "r=Crypto.verifyHMac('HmacSHA256',Blob.valueOf('m'),null,Blob.valueOf('s'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R094",
+      "code": "r=Crypto.verifyHMac('HmacSHA256',Blob.valueOf('m'),Blob.valueOf('k'),null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R095",
+      "code": "r=Crypto.generateMac('hmacsha256',Blob.valueOf('m'),Blob.valueOf('k'));",
+      "expected": "Blob[32]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R096",
+      "code": "r=Crypto.verifyHMac('hmacsha256',Blob.valueOf('m'),Blob.valueOf('k'),Blob.valueOf('s'));",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R097",
+      "code": "r=Crypto.generateMac('HMAC-SHA256',Blob.valueOf('m'),Blob.valueOf('k'));",
+      "expected": "Blob[32]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R098",
+      "code": "r=Crypto.verifyHMac('HMAC-SHA256',Blob.valueOf('m'),Blob.valueOf('k'),Blob.valueOf('s'));",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R099",
+      "code": "r=Crypto.generateMac('',Blob.valueOf('m'),Blob.valueOf('k'));",
+      "expected": "EXC|System.SecurityException|Algorithm  not available",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R100",
+      "code": "r=Crypto.verifyHMac('',Blob.valueOf('m'),Blob.valueOf('k'),Blob.valueOf('s'));",
+      "expected": "EXC|System.SecurityException|Algorithm  not available",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R101",
+      "code": "r=Crypto.generateMac('bogus',Blob.valueOf('m'),Blob.valueOf('k'));",
+      "expected": "EXC|System.SecurityException|Algorithm bogus not available",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R102",
+      "code": "r=Crypto.verifyHMac('bogus',Blob.valueOf('m'),Blob.valueOf('k'),Blob.valueOf('s'));",
+      "expected": "EXC|System.SecurityException|Algorithm bogus not available",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R103",
+      "code": "r=Crypto.generateMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('雪'.repeat(1366)));",
+      "expected": "EXC|System.SecurityException|Private Key should be of size less than 4k",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R104",
+      "code": "r=Crypto.verifyHMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('雪'.repeat(1366)),Crypto.generateMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('key')));",
+      "expected": "EXC|System.SecurityException|Private Key should be of size less than 4k",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R105",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf(''); Blob c=Crypto.encrypt('AES128',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES128',k,iv,c));",
+      "expected": "0143db63ee66b0cdff9f69917680151e|",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R106",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf(''); Blob c=Crypto.encryptWithManagedIV('AES128',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES128',k,c));",
+      "expected": "32|",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R107",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'); Blob c=Crypto.encrypt('AES128',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES128',k,iv,c));",
+      "expected": "1dd733a04c633c194fdeacf97c59d237|78",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R108",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'); Blob c=Crypto.encryptWithManagedIV('AES128',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES128',k,c));",
+      "expected": "32|78",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R109",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(15)); Blob c=Crypto.encrypt('AES128',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES128',k,iv,c));",
+      "expected": "f5d2a2c36a0952c9d0a6f160d1d83e24|787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R110",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(15)); Blob c=Crypto.encryptWithManagedIV('AES128',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES128',k,c));",
+      "expected": "32|787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R111",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(16)); Blob c=Crypto.encrypt('AES128',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES128',k,iv,c));",
+      "expected": "f1a709887ef4228cdaca975b4f3047405238370f9d5c4e5f678fb7c3c09aec3a|78787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R112",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(16)); Blob c=Crypto.encryptWithManagedIV('AES128',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES128',k,c));",
+      "expected": "48|78787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R113",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(17)); Blob c=Crypto.encrypt('AES128',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES128',k,iv,c));",
+      "expected": "f1a709887ef4228cdaca975b4f304740ec6665ff11bee8d465ac02d7b5f4285e|7878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R114",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(17)); Blob c=Crypto.encryptWithManagedIV('AES128',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES128',k,c));",
+      "expected": "48|7878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R115",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(32)); Blob c=Crypto.encrypt('AES128',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES128',k,iv,c));",
+      "expected": "f1a709887ef4228cdaca975b4f304740b8c5b68c68d66f8e9908ed8f5ea277856b7aa62509bbd79d37665cd9794721da|7878787878787878787878787878787878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R116",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(32)); Blob c=Crypto.encryptWithManagedIV('AES128',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES128',k,c));",
+      "expected": "64|7878787878787878787878787878787878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R117",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('café雪😀'); Blob c=Crypto.encrypt('AES128',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES128',k,iv,c));",
+      "expected": "15bed2d8e998d320743742878f500d0a|636166c3a9e99baaf09f9880",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R118",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('café雪😀'); Blob c=Crypto.encryptWithManagedIV('AES128',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES128',k,c));",
+      "expected": "32|636166c3a9e99baaf09f9880",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R119",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=EncodingUtil.convertFromHex('00017f80ff'); Blob c=Crypto.encrypt('AES128',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES128',k,iv,c));",
+      "expected": "afa5639b866cfc7ff733e43119b8dbb6|00017f80ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R120",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=EncodingUtil.convertFromHex('00017f80ff'); Blob c=Crypto.encryptWithManagedIV('AES128',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES128',k,c));",
+      "expected": "32|00017f80ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R121",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf(''); Blob c=Crypto.encrypt('AES192',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES192',k,iv,c));",
+      "expected": "02bb292527e726fd51eb29894d6f0aad|",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R122",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf(''); Blob c=Crypto.encryptWithManagedIV('AES192',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES192',k,c));",
+      "expected": "32|",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R123",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'); Blob c=Crypto.encrypt('AES192',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES192',k,iv,c));",
+      "expected": "b1d787917ec1ec3b6a3b030db97f52a1|78",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R124",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'); Blob c=Crypto.encryptWithManagedIV('AES192',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES192',k,c));",
+      "expected": "32|78",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R125",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(15)); Blob c=Crypto.encrypt('AES192',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES192',k,iv,c));",
+      "expected": "69695884fa5020cd8c0f7549e3c648d5|787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R126",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(15)); Blob c=Crypto.encryptWithManagedIV('AES192',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES192',k,c));",
+      "expected": "32|787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R127",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(16)); Blob c=Crypto.encrypt('AES192',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES192',k,iv,c));",
+      "expected": "e05aa4a215279a14adb321bb3046a12dca6979ec776019c22e9409024b61999a|78787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R128",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(16)); Blob c=Crypto.encryptWithManagedIV('AES192',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES192',k,c));",
+      "expected": "48|78787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R129",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(17)); Blob c=Crypto.encrypt('AES192',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES192',k,iv,c));",
+      "expected": "e05aa4a215279a14adb321bb3046a12d69204208e928aee358f1cf65c3c82669|7878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R130",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(17)); Blob c=Crypto.encryptWithManagedIV('AES192',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES192',k,c));",
+      "expected": "48|7878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R131",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(32)); Blob c=Crypto.encrypt('AES192',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES192',k,iv,c));",
+      "expected": "e05aa4a215279a14adb321bb3046a12d503403ecc9242fbf9094b793d3dcbe832317cf5c7f200229baa1004bf21e228d|7878787878787878787878787878787878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R132",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(32)); Blob c=Crypto.encryptWithManagedIV('AES192',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES192',k,c));",
+      "expected": "64|7878787878787878787878787878787878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R133",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('café雪😀'); Blob c=Crypto.encrypt('AES192',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES192',k,iv,c));",
+      "expected": "3d66ec59655ed0d480a9f1ac6bbc6d8c|636166c3a9e99baaf09f9880",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R134",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('café雪😀'); Blob c=Crypto.encryptWithManagedIV('AES192',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES192',k,c));",
+      "expected": "32|636166c3a9e99baaf09f9880",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R135",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=EncodingUtil.convertFromHex('00017f80ff'); Blob c=Crypto.encrypt('AES192',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES192',k,iv,c));",
+      "expected": "e51e5ef811ea58e27fd63516719ee946|00017f80ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R136",
+      "code": "Blob k=EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=EncodingUtil.convertFromHex('00017f80ff'); Blob c=Crypto.encryptWithManagedIV('AES192',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES192',k,c));",
+      "expected": "32|00017f80ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R137",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf(''); Blob c=Crypto.encrypt('AES256',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES256',k,iv,c));",
+      "expected": "1f788fe6d86c317549697fbf0c07fa43|",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R138",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf(''); Blob c=Crypto.encryptWithManagedIV('AES256',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES256',k,c));",
+      "expected": "32|",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R139",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'); Blob c=Crypto.encrypt('AES256',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES256',k,iv,c));",
+      "expected": "36446e44fc71357b37fcf756956a4b2b|78",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R140",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'); Blob c=Crypto.encryptWithManagedIV('AES256',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES256',k,c));",
+      "expected": "32|78",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R141",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(15)); Blob c=Crypto.encrypt('AES256',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES256',k,iv,c));",
+      "expected": "ee3431f61757d6711d0737bef87c78da|787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R142",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(15)); Blob c=Crypto.encryptWithManagedIV('AES256',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES256',k,c));",
+      "expected": "32|787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R143",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(16)); Blob c=Crypto.encrypt('AES256',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES256',k,iv,c));",
+      "expected": "88ea967846f23885c0d4f1d70a6c3b3c26c821b700f17dbe79e531c866e38197|78787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R144",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(16)); Blob c=Crypto.encryptWithManagedIV('AES256',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES256',k,c));",
+      "expected": "48|78787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R145",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(17)); Blob c=Crypto.encrypt('AES256',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES256',k,iv,c));",
+      "expected": "88ea967846f23885c0d4f1d70a6c3b3ce7be2faaae690ab30ae83ae1a6db2f6d|7878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R146",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(17)); Blob c=Crypto.encryptWithManagedIV('AES256',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES256',k,c));",
+      "expected": "48|7878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R147",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(32)); Blob c=Crypto.encrypt('AES256',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES256',k,iv,c));",
+      "expected": "88ea967846f23885c0d4f1d70a6c3b3c0d5aeb4b124ea10898850dd62ea3e9d2eba097275e269e34010090a7883f932b|7878787878787878787878787878787878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R148",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('x'.repeat(32)); Blob c=Crypto.encryptWithManagedIV('AES256',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES256',k,c));",
+      "expected": "64|7878787878787878787878787878787878787878787878787878787878787878",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R149",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('café雪😀'); Blob c=Crypto.encrypt('AES256',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES256',k,iv,c));",
+      "expected": "8ab96257cc574a9ff7e2a4ed278d5513|636166c3a9e99baaf09f9880",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R150",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('café雪😀'); Blob c=Crypto.encryptWithManagedIV('AES256',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES256',k,c));",
+      "expected": "32|636166c3a9e99baaf09f9880",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R151",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=EncodingUtil.convertFromHex('00017f80ff'); Blob c=Crypto.encrypt('AES256',k,iv,d); r=EncodingUtil.convertToHex(c)+'|'+EncodingUtil.convertToHex(Crypto.decrypt('AES256',k,iv,c));",
+      "expected": "cfa7cfc4d0add08f39fd5eedf79d9304|00017f80ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R152",
+      "code": "Blob k=EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=EncodingUtil.convertFromHex('00017f80ff'); Blob c=Crypto.encryptWithManagedIV('AES256',k,d); r=String.valueOf(c.size())+'|'+EncodingUtil.convertToHex(Crypto.decryptWithManagedIV('AES256',k,c));",
+      "expected": "32|00017f80ff",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R153",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex(''),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R154",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex(''),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R155",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R156",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R157",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R158",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R159",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R160",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R161",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R162",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R163",
+      "code": "r=Crypto.encrypt('AES192',EncodingUtil.convertFromHex(''),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 24 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R164",
+      "code": "r=Crypto.decrypt('AES192',EncodingUtil.convertFromHex(''),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 24 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R165",
+      "code": "r=Crypto.encrypt('AES192',EncodingUtil.convertFromHex('000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 24 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R166",
+      "code": "r=Crypto.decrypt('AES192',EncodingUtil.convertFromHex('000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 24 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R167",
+      "code": "r=Crypto.encrypt('AES192',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 24 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R168",
+      "code": "r=Crypto.decrypt('AES192',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 24 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R169",
+      "code": "r=Crypto.encrypt('AES192',EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 24 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R170",
+      "code": "r=Crypto.decrypt('AES192',EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 24 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R171",
+      "code": "r=Crypto.encrypt('AES192',EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 24 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R172",
+      "code": "r=Crypto.decrypt('AES192',EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 24 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R173",
+      "code": "r=Crypto.encrypt('AES256',EncodingUtil.convertFromHex(''),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 32 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R174",
+      "code": "r=Crypto.decrypt('AES256',EncodingUtil.convertFromHex(''),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 32 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R175",
+      "code": "r=Crypto.encrypt('AES256',EncodingUtil.convertFromHex('000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 32 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R176",
+      "code": "r=Crypto.decrypt('AES256',EncodingUtil.convertFromHex('000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 32 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R177",
+      "code": "r=Crypto.encrypt('AES256',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 32 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R178",
+      "code": "r=Crypto.decrypt('AES256',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 32 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R179",
+      "code": "r=Crypto.encrypt('AES256',EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 32 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R180",
+      "code": "r=Crypto.decrypt('AES256',EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 32 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R181",
+      "code": "r=Crypto.encrypt('AES256',EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 32 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R182",
+      "code": "r=Crypto.decrypt('AES256',EncodingUtil.convertFromHex('000000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 32 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R183",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex(''),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R184",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex(''),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R185",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R186",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R187",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R188",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R189",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('0000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R190",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('0000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R191",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R192",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R193",
+      "code": "r=Crypto.encrypt(null,EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R194",
+      "code": "r=Crypto.encrypt('AES128',null,EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R195",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),null,EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R196",
+      "code": "r=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R197",
+      "code": "r=Crypto.decrypt(null,EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R198",
+      "code": "r=Crypto.decrypt('AES128',null,EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R199",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),null,EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R200",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R201",
+      "code": "r=Crypto.encryptWithManagedIV(null,EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R202",
+      "code": "r=Crypto.encryptWithManagedIV('AES128',null,EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R203",
+      "code": "r=Crypto.encryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R204",
+      "code": "r=Crypto.decryptWithManagedIV(null,EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R205",
+      "code": "r=Crypto.decryptWithManagedIV('AES128',null,EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R206",
+      "code": "r=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R207",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex(''));",
+      "expected": "Blob[0]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R208",
+      "code": "r=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex(''));",
+      "expected": "EXC|System.InvalidParameterValueException|Unable to parse initialization vector from encrypted data.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R209",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00'));",
+      "expected": "EXC|System.SecurityException|Input length must be multiple of 16 when decrypting with padded cipher",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R210",
+      "code": "r=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R211",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('000000000000000000000000000000'));",
+      "expected": "EXC|System.SecurityException|Input length must be multiple of 16 when decrypting with padded cipher",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R212",
+      "code": "r=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R213",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.SecurityException|Given final block not properly padded. Such issues can arise if a bad key is used during decryption.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R214",
+      "code": "r=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "Blob[0]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R215",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('0000000000000000000000000000000000'));",
+      "expected": "EXC|System.SecurityException|Input length must be multiple of 16 when decrypting with padded cipher",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R216",
+      "code": "r=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('0000000000000000000000000000000000'));",
+      "expected": "EXC|System.SecurityException|Input length must be multiple of 16 when decrypting with padded cipher",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R217",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000000000000000000000000000000000'));",
+      "expected": "EXC|System.SecurityException|Input length must be multiple of 16 when decrypting with padded cipher",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R218",
+      "code": "r=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000000000000000000000000000000000'));",
+      "expected": "EXC|System.SecurityException|Input length must be multiple of 16 when decrypting with padded cipher",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R219",
+      "code": "r=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'));",
+      "expected": "EXC|System.SecurityException|Given final block not properly padded. Such issues can arise if a bad key is used during decryption.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R220",
+      "code": "r=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'));",
+      "expected": "EXC|System.SecurityException|Given final block not properly padded. Such issues can arise if a bad key is used during decryption.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R221",
+      "code": "r=Crypto.encrypt('aes128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm 'aes128'. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R222",
+      "code": "r=Crypto.decrypt('aes128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm 'aes128'. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R223",
+      "code": "r=Crypto.encrypt('',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm ''. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R224",
+      "code": "r=Crypto.decrypt('',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm ''. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R225",
+      "code": "r=Crypto.encrypt('bogus',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm 'bogus'. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R226",
+      "code": "r=Crypto.decrypt('bogus',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm 'bogus'. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R227",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048576)); Integer n=d.size(); try {Blob c=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|ciphertext-bytes='+c.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048576|ciphertext-bytes=1048592",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R228",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048576)); Integer n=d.size(); try {Blob c=Crypto.encryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|ciphertext-bytes='+c.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048576|ciphertext-bytes=1048608",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R229",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048577)); Integer n=d.size(); try {Blob c=Crypto.encrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|ciphertext-bytes='+c.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048577|EXC|System.InvalidParameterValueException|Invalid data. Input data is 1048577 bytes, which exceeds the limit of 1048576 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R230",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048577)); Integer n=d.size(); try {Blob c=Crypto.encryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|ciphertext-bytes='+c.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048577|EXC|System.InvalidParameterValueException|Invalid data. Input data is 1048577 bytes, which exceeds the limit of 1048576 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R231",
+      "code": "Blob k=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob iv=EncodingUtil.convertFromHex('00000000000000000000000000000000'); Blob d=Blob.valueOf('hello'); Blob c=Crypto.encrypt('AES128',k,iv,d); r=Crypto.decrypt('AES128',k,iv,c).toString();",
+      "expected": "hello",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R232",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA1',d,fixture.privateKey()); r=EncodingUtil.convertToHex(s);",
+      "expected": "61b1e29f8dda31628731b5a7473fc8688a70b856a3fd3ad53f27cc2e877edb432b5b58607464a525fca960c7e9e8764afe608fe6e34d1e5d0c7ccc509e87fca28ced4eb521cd3a701c5c93c8288865cf18a072ab41be0de59fb9c01c3ea4a6428bd844d727f0fbb61f86fc26e0f46711758959d3f556eb4975c90b3208ccce57ced7f4bb73b123bb0e6a16a0665dd4f8356f7a74315dc62335e26e707b0a9644d01a93adddea93af227d0370c72a2cb48634c25ea3ea8bc7002275361fb99662d1f0392ba664e0de1171e4fe0a626cdfbe3e6b2a72af8dc43fe8fbedccf697b14e0e6c816ca6998bc46912d11b61d21b49341bc86261a9144fc26aefd7ceeac4",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R233",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA1',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA1',d,s,fixture.publicKey());",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R234",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA1',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA1',Blob.valueOf('changed'),s,fixture.publicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R235",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA1',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA1',d,s,fixture.otherPublicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R236",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA1',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA1',d,Blob.valueOf('bad'),fixture.publicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R237",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA256',d,fixture.privateKey()); r=EncodingUtil.convertToHex(s);",
+      "expected": "9c655d830af201b18b1bef134f2082ef87743c1b56681a0425709ba4a16ac669643993928cc580d949ae8b7eda36500f5d42e2f8ffe0b2f2200246d4f34dca0b64581a6c9ecf0e8e8cf8f6e6bbd03cdcf486462336865197b7d1fdddc726ced5ba0429a8341c5bf755f10b0c175db0deb4f1d66a2b2d85a70d2c239c518e2d6ac25ac7290767c902739961bba7c76aee1a091bb9dd69367d8f873a9feb3d38ce88a898dbcde632704a92ece02b33545e18ea373aa2b052292dd3d373cb2bce06a4984e1cf84a4ab0c4310f9eadf1d661b7bd7a625ab2e13cd1142427c9f94f8ebb80df698a7389c084ba9c65da2c33d0f16b355463514b0eeb47361cd03aea2c",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R238",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA256',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA256',d,s,fixture.publicKey());",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R239",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA256',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA256',Blob.valueOf('changed'),s,fixture.publicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R240",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA256',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA256',d,s,fixture.otherPublicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R241",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA256',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA256',d,Blob.valueOf('bad'),fixture.publicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R242",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA384',d,fixture.privateKey()); r=EncodingUtil.convertToHex(s);",
+      "expected": "9ee6090c648d38d5a4fe4acc6ec49cd406da67b6bb79ed84e0402b102be93a62a7a5d71217b05498231b987106814932a4644df7e8ac9ff15d38ddf922995adb2dde9275ac79fdfac3ccabc46772518bf330c7760f4caa47e640297411219f1650966f2344889c9c191afe399a17ed8d831616a0e0160cf561dda3fe0789da88977d01b3887c57bc25bff84ad3801ca73c8a0d0a37a17959ac686108ea2efe3179129c0d562a4c51168bc2a3b403ece54464f4e9cbfaf12c43b3e9c5ff625834ef64db40b50e3db36ff34b1731dadcf32007c029e3d95608a25d2d01f0947e44d086c38e0d1f5ab8ff3e20f0876a013969aaffb69eb7aaa3b70f72b7a9b8359a",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R243",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA384',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA384',d,s,fixture.publicKey());",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R244",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA384',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA384',Blob.valueOf('changed'),s,fixture.publicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R245",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA384',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA384',d,s,fixture.otherPublicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R246",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA384',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA384',d,Blob.valueOf('bad'),fixture.publicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R247",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA512',d,fixture.privateKey()); r=EncodingUtil.convertToHex(s);",
+      "expected": "8b9fd1377229d6105723e1b61ddf327f28dfe265b35d73b3fd03674c0c70c9aa1046089f11fadf700e14dbcb539c1cec4d36608197cef1bfbfe1ad54c2aa59e89d74af543c62315001c72dfc8cb7875218504e8644b6b4636ea5acafb5cac80e8b1c0631f6270699d320709ddfe7d2dbc090168017dbc026059766df8b7ff4a83adb741403547eff70755e936b691240d4fbeca1020110400bd94cbf03e84bd4408577d87b6f895ed24b0bd42fb995a6ba1daadef3b9d772c836c8fc76434d7b078931928854e7e06a02d56248899604c2bf74163d2002fc36de0d8a338708550b27cb979cd4198e92e672da4463ef936007508123532ab1544fa22ab13b0248",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R248",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA512',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA512',d,s,fixture.publicKey());",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R249",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA512',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA512',Blob.valueOf('changed'),s,fixture.publicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R250",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA512',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA512',d,s,fixture.otherPublicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R251",
+      "code": "Blob d=Blob.valueOf('message'); Blob s=Crypto.sign('RSA-SHA512',d,fixture.privateKey()); r=Crypto.verify('RSA-SHA512',d,Blob.valueOf('bad'),fixture.publicKey());",
+      "expected": "false",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R252",
+      "code": "r=Crypto.sign('RSA-SHA256',Blob.valueOf('m'),Blob.valueOf(''));",
+      "expected": "EXC|System.SecurityException|Invalid Crypto Key",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R253",
+      "code": "r=Crypto.verify('RSA-SHA256',Blob.valueOf('m'),EncodingUtil.convertFromHex('00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'),Blob.valueOf(''));",
+      "expected": "EXC|System.SecurityException|Invalid Crypto Key",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R254",
+      "code": "r=Crypto.sign('RSA-SHA256',Blob.valueOf('m'),Blob.valueOf('not-a-key'));",
+      "expected": "EXC|System.SecurityException|Invalid Crypto Key",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R255",
+      "code": "r=Crypto.verify('RSA-SHA256',Blob.valueOf('m'),EncodingUtil.convertFromHex('00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'),Blob.valueOf('not-a-key'));",
+      "expected": "EXC|System.SecurityException|Invalid Crypto Key",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R256",
+      "code": "r=Crypto.sign('RSA-SHA256',Blob.valueOf('m'),EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'));",
+      "expected": "EXC|System.SecurityException|Invalid Crypto Key",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R257",
+      "code": "r=Crypto.verify('RSA-SHA256',Blob.valueOf('m'),EncodingUtil.convertFromHex('00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'),EncodingUtil.convertFromHex('0000000000000000000000000000000000000000000000000000000000000000'));",
+      "expected": "EXC|System.SecurityException|Invalid Crypto Key",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R258",
+      "code": "r=Crypto.sign(null,Blob.valueOf('message'),fixture.privateKey());",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R259",
+      "code": "r=Crypto.sign('RSA-SHA256',null,fixture.privateKey());",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R260",
+      "code": "r=Crypto.sign('RSA-SHA256',Blob.valueOf('message'),null);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R261",
+      "code": "r=Crypto.verify(null,Blob.valueOf('message'),EncodingUtil.convertFromHex('00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'),fixture.publicKey());",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R262",
+      "code": "r=Crypto.verify('RSA-SHA256',null,EncodingUtil.convertFromHex('00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'),fixture.publicKey());",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R263",
+      "code": "r=Crypto.verify('RSA-SHA256',Blob.valueOf('message'),null,fixture.publicKey());",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R264",
+      "code": "r=Crypto.verify('RSA-SHA256',Blob.valueOf('message'),EncodingUtil.convertFromHex('00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'),null);",
+      "expected": "COMPILE_ERROR\tline 25: Ambiguous method signature: void verify(String, Blob, Blob, NULL)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R265",
+      "code": "r=Crypto.sign('rsa-sha256',Blob.valueOf('m'),fixture.privateKey());",
+      "expected": "Blob[256]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R266",
+      "code": "r=Crypto.sign('SHA256',Blob.valueOf('m'),fixture.privateKey());",
+      "expected": "EXC|System.SecurityException|Unrecognized algorithm: SHA256",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R267",
+      "code": "r=Crypto.sign('bogus',Blob.valueOf('m'),fixture.privateKey());",
+      "expected": "EXC|System.SecurityException|Unrecognized algorithm: bogus",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R268",
+      "code": "Blob k=Crypto.generateAesKey(128); r=String.valueOf(k.size())+'|hex-length='+EncodingUtil.convertToHex(k).length();",
+      "expected": "16|hex-length=32",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R269",
+      "code": "Blob k=Crypto.generateAesKey(192); r=String.valueOf(k.size())+'|hex-length='+EncodingUtil.convertToHex(k).length();",
+      "expected": "24|hex-length=48",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R270",
+      "code": "Blob k=Crypto.generateAesKey(256); r=String.valueOf(k.size())+'|hex-length='+EncodingUtil.convertToHex(k).length();",
+      "expected": "32|hex-length=64",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R271",
+      "code": "Blob k=Crypto.generateAesKey(0); r=String.valueOf(k.size())+'|hex-length='+EncodingUtil.convertToHex(k).length();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid size for AES key generation (must be 128, 192, or 256)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R272",
+      "code": "Blob k=Crypto.generateAesKey(127); r=String.valueOf(k.size())+'|hex-length='+EncodingUtil.convertToHex(k).length();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid size for AES key generation (must be 128, 192, or 256)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R273",
+      "code": "Blob k=Crypto.generateAesKey(129); r=String.valueOf(k.size())+'|hex-length='+EncodingUtil.convertToHex(k).length();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid size for AES key generation (must be 128, 192, or 256)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R274",
+      "code": "Blob k=Crypto.generateAesKey(512); r=String.valueOf(k.size())+'|hex-length='+EncodingUtil.convertToHex(k).length();",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid size for AES key generation (must be 128, 192, or 256)",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R275",
+      "code": "Integer bits=null; r=Crypto.generateAesKey(bits);",
+      "expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R276",
+      "code": "Object n=Crypto.getRandomInteger(); r=String.valueOf(n instanceof Integer)+'|nonnull='+(n!=null);",
+      "expected": "true|nonnull=true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R277",
+      "code": "Object n=Crypto.getRandomLong(); r=String.valueOf(n instanceof Long)+'|nonnull='+(n!=null);",
+      "expected": "true|nonnull=true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R278",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048592)); Integer n=d.size(); try {Blob plain=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|plaintext-bytes='+plain.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048592|EXC|System.SecurityException|Given final block not properly padded. Such issues can arise if a bad key is used during decryption.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R279",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048592)); Integer n=d.size(); try {Blob plain=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|plaintext-bytes='+plain.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048592|EXC|System.SecurityException|Given final block not properly padded. Such issues can arise if a bad key is used during decryption.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R280",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048593)); Integer n=d.size(); try {Blob plain=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|plaintext-bytes='+plain.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048593|EXC|System.SecurityException|Input length must be multiple of 16 when decrypting with padded cipher",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R281",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048593)); Integer n=d.size(); try {Blob plain=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|plaintext-bytes='+plain.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048593|EXC|System.SecurityException|Input length must be multiple of 16 when decrypting with padded cipher",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R282",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048608)); Integer n=d.size(); try {Blob plain=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|plaintext-bytes='+plain.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048608|EXC|System.SecurityException|Given final block not properly padded. Such issues can arise if a bad key is used during decryption.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R283",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048608)); Integer n=d.size(); try {Blob plain=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|plaintext-bytes='+plain.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048608|EXC|System.SecurityException|Given final block not properly padded. Such issues can arise if a bad key is used during decryption.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R284",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048609)); Integer n=d.size(); try {Blob plain=Crypto.decrypt('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|plaintext-bytes='+plain.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048609|EXC|System.InvalidParameterValueException|Invalid data. Input data is 1048609 bytes, which exceeds the limit of 1048608 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R285",
+      "code": "Blob d=Blob.valueOf('x'.repeat(1048609)); Integer n=d.size(); try {Blob plain=Crypto.decryptWithManagedIV('AES128',EncodingUtil.convertFromHex('00000000000000000000000000000000'),d); r=String.valueOf(n)+'|plaintext-bytes='+plain.size();} catch(Exception e){r=String.valueOf(n)+'|EXC|'+e.getTypeName()+'|'+e.getMessage();}",
+      "expected": "1048609|EXC|System.InvalidParameterValueException|Invalid data. Input data is 1048609 bytes, which exceeds the limit of 1048608 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R286",
+      "code": "r=EncodingUtil.convertToHex(Crypto.generateMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('key')));",
+      "expected": "6e9ef29b75fffc5b7abae527d58fdadb2fe42e7219011976917343065f58ed4a",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R287",
+      "code": "r=Crypto.verifyHMac('HmacSHA256',Blob.valueOf('message'),Blob.valueOf('key'),EncodingUtil.convertFromHex('6e9ef29b75fffc5b7abae527d58fdadb2fe42e7219011976917343065f58ed4a'));",
+      "expected": "true",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "C001",
+      "code": "Object r; r=Crypto.generateDigest('SHA256','abc'); pq.out('C001',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void generateDigest(String, String) from the type System.Crypto",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C002",
+      "code": "Object r; String s=Crypto.generateDigest('SHA256',Blob.valueOf('abc')); r=s; pq.out('C002',r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Blob to String",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C003",
+      "code": "Object r; r=Crypto.generateMac('HmacSHA256',Blob.valueOf('m'),'key'); pq.out('C003',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void generateMac(String, Blob, String) from the type System.Crypto",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C004",
+      "code": "Object r; r=Crypto.verifyHMac('HmacSHA256',Blob.valueOf('m'),Blob.valueOf('k')); pq.out('C004',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void verifyHMac(String, Blob, Blob) from the type System.Crypto",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C005",
+      "code": "Object r; r=Crypto.encrypt('AES128',Blob.valueOf('key'),Blob.valueOf('data')); pq.out('C005',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void encrypt(String, Blob, Blob) from the type System.Crypto",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C006",
+      "code": "Object r; r=Crypto.decrypt('AES128',Blob.valueOf('key'),'iv',Blob.valueOf('data')); pq.out('C006',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void decrypt(String, Blob, String, Blob) from the type System.Crypto",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C007",
+      "code": "Object r; r=Crypto.sign('RSA-SHA256',Blob.valueOf('m'),'key'); pq.out('C007',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void sign(String, Blob, String) from the type System.Crypto",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C008",
+      "code": "Object r; r=Crypto.verify('RSA-SHA256',Blob.valueOf('m'),Blob.valueOf('s')); pq.out('C008',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void verify(String, Blob, Blob) from the type System.Crypto",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C009",
+      "code": "Object r; Long bits=128L; r=Crypto.generateAesKey(bits); pq.out('C009',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void generateAesKey(Long) from the type System.Crypto",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C010",
+      "code": "Object r; r=Crypto.getRandomInteger(1); pq.out('C010',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getRandomInteger(Integer) from the type System.Crypto",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C011",
+      "code": "Object r; Object b=Crypto.generateDigest('SHA256',Blob.valueOf('abc')); r=b instanceof Blob; pq.out('C011',r);",
+      "expected": "true",
+      "compile": true,
+      "nativeNull": false
+    },
+    {
+      "id": "C012",
+      "code": "Object r; Object b=Crypto.verifyHMac('HmacSHA256',Blob.valueOf('m'),Blob.valueOf('k'),Blob.valueOf('s')); r=b instanceof Boolean; pq.out('C012',r);",
+      "expected": "true",
+      "compile": true,
+      "nativeNull": false
+    }
+  ],
+  "controls": [
+    {
+      "id": "L001",
+      "code": "r=Crypto.encrypt(' aes-256 ',Blob.valueOf('0123456789abcdef0123456789abcdef'),Blob.valueOf('abcdef9876543210'),Blob.valueOf('hello'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm ' aes-256 '. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L002",
+      "code": "r=Crypto.decrypt(' aes-256 ',Blob.valueOf('0123456789abcdef0123456789abcdef'),Blob.valueOf('abcdef9876543210'),Blob.valueOf('hello'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm ' aes-256 '. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L003",
+      "code": "r=Crypto.encrypt('AES256-CBC',Blob.valueOf('0123456789abcdef0123456789abcdef'),Blob.valueOf('abcdef9876543210'),Blob.valueOf('hello'));",
+      "expected": "Blob[16]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L004",
+      "code": "r=Crypto.decrypt('AES256-CBC',Blob.valueOf('0123456789abcdef0123456789abcdef'),Blob.valueOf('abcdef9876543210'),Blob.valueOf('hello'));",
+      "expected": "EXC|System.SecurityException|Input length must be multiple of 16 when decrypting with padded cipher",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L005",
+      "code": "r=Crypto.encryptWithManagedIV('AES256-CBC',Blob.valueOf('0123456789abcdef0123456789abcdef'),Blob.valueOf('hello'));",
+      "expected": "Blob[32]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L006",
+      "code": "r=Crypto.decryptWithManagedIV('AES256-CBC',Blob.valueOf('0123456789abcdef0123456789abcdef'),Blob.valueOf('hello'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L007",
+      "code": "r=Crypto.generateMac('hmacSHA999',Blob.valueOf('x'),Blob.valueOf('key'));",
+      "expected": "EXC|System.SecurityException|Algorithm hmacSHA999 not available",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L008",
+      "code": "r=Crypto.verifyHMac('hmacSHA999',Blob.valueOf('x'),Blob.valueOf('key'),Blob.valueOf('mac'));",
+      "expected": "EXC|System.SecurityException|Algorithm hmacSHA999 not available",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L009",
+      "code": "r=Crypto.encrypt('AES999',Blob.valueOf('0123456789abcdef'),Blob.valueOf('abcdef9876543210'),Blob.valueOf('x'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm 'AES999'. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L010",
+      "code": "r=Crypto.encrypt('AES256',Blob.valueOf('short'),Blob.valueOf('abcdef9876543210'),Blob.valueOf('x'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 32 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L011",
+      "code": "r=Crypto.encrypt(' aes-256 ',Blob.valueOf('short'),Blob.valueOf('abcdef9876543210'),Blob.valueOf('x'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm ' aes-256 '. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L012",
+      "code": "r=Crypto.encrypt('AES128',Blob.valueOf('0123456789abcdef'),Blob.valueOf('short'),Blob.valueOf('x'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L013",
+      "code": "r=Crypto.decryptWithManagedIV('AES128',Blob.valueOf('0123456789abcdef'),Blob.valueOf('data'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid initialization vector. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L014",
+      "code": "r=Crypto.decrypt('AES128',Blob.valueOf('short'),Blob.valueOf('abcdef9876543210'),Blob.valueOf('data'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L015",
+      "code": "r=Crypto.encryptWithManagedIV('AES128',Blob.valueOf('key'),Blob.valueOf('data'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid private key. Must be 16 bytes.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L016",
+      "code": "r=Crypto.sign('RSA-SHA999',Blob.valueOf('data'),Blob.valueOf('key'));",
+      "expected": "EXC|System.SecurityException|Unrecognized algorithm: RSA-SHA999",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L018",
+      "code": "r=Crypto.encrypt('AES128-CBC',Blob.valueOf('k'.repeat(16)),Blob.valueOf('abcdef9876543210'),Blob.valueOf('hello'));",
+      "expected": "Blob[16]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L019",
+      "code": "r=Crypto.encrypt('AES192-CBC',Blob.valueOf('k'.repeat(24)),Blob.valueOf('abcdef9876543210'),Blob.valueOf('hello'));",
+      "expected": "Blob[16]",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L020",
+      "code": "r=Crypto.encrypt('AES256CBC',Blob.valueOf('0123456789abcdef0123456789abcdef'),Blob.valueOf('abcdef9876543210'),Blob.valueOf('hello'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm 'AES256CBC'. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "L021",
+      "code": "r=Crypto.encrypt('aes256-cbc',Blob.valueOf('0123456789abcdef0123456789abcdef'),Blob.valueOf('abcdef9876543210'),Blob.valueOf('hello'));",
+      "expected": "EXC|System.InvalidParameterValueException|Invalid algorithm 'aes256-cbc'. Must be AES128, AES192, AES256, AES384, or AES512.",
+      "compile": false,
+      "nativeNull": false
+    }
+  ]
+}

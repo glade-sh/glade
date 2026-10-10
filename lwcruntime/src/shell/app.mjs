@@ -33,7 +33,7 @@ export async function bootGladeShell({ root = document.body, config = readConfig
 }
 
 function bindFlowDiagnostics(root) {
-  for (const eventName of ["flowattributechange", "flownavigationnext", "flownavigationback", "flownavigationpause", "flownavigationfinish"]) {
+  for (const eventName of ["lightning__flowattributechange", "lightning__flownavigation"]) {
     root.addEventListener(eventName, captureFlowEvent);
   }
 }

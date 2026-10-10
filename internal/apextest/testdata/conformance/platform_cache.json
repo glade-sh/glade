@@ -1,0 +1,2393 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "Declarations": {
+    "A42ListBuilder": "global class A42ListBuilder implements Cache.CacheBuilder { global Object doLoad(String key) { return new List<Integer>{2,4}; } }\n",
+    "A42NullBuilder": "global class A42NullBuilder implements Cache.CacheBuilder { global Object doLoad(String key) { return null; } }\n",
+    "A42ProbeBuilder": "global class A42ProbeBuilder implements Cache.CacheBuilder { global Object doLoad(String key) { return 'built:'+key; } }\n",
+    "A42ThrowBuilder": "global class A42ThrowBuilder implements Cache.CacheBuilder { global Object doLoad(String key) { throw new A42BuildException('A42 builder failure'); } global class A42BuildException extends Exception {} }\n",
+    "A42Value": "global class A42Value { global String text; global Integer amount; global A42Value(String t,Integer n) { text=t;amount=n; } }\n",
+    "A42WrongBuilder": "global class A42WrongBuilder { global Object doLoad(String key) { return 'wrong'; } }\n"
+  },
+  "Fixture": {
+    "version": "glade.storage.v1",
+    "objects": [
+      {
+        "name": "PlatformCachePartition",
+        "records": [
+          {
+            "id": "0Px000000000101",
+            "fields": {
+              "DeveloperName": {
+                "kind": "string",
+                "string": "A42Oracle"
+              },
+              "MasterLabel": {
+                "kind": "string",
+                "string": "A42Oracle"
+              },
+              "NamespacePrefix": {
+                "kind": "string",
+                "string": ""
+              },
+              "IsDefaultPartition": {
+                "kind": "boolean",
+                "boolean": true
+              }
+            }
+          },
+          {
+            "id": "0Px000000000102",
+            "fields": {
+              "DeveloperName": {
+                "kind": "string",
+                "string": "A42Zero"
+              },
+              "MasterLabel": {
+                "kind": "string",
+                "string": "A42Zero"
+              },
+              "NamespacePrefix": {
+                "kind": "string",
+                "string": ""
+              },
+              "IsDefaultPartition": {
+                "kind": "boolean",
+                "boolean": false
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "PlatformCachePartitionType",
+        "records": [
+          {
+            "id": "0Py000000000101",
+            "fields": {
+              "PlatformCachePartitionId": {
+                "kind": "id",
+                "id": "0Px000000000101"
+              },
+              "CacheType": {
+                "kind": "string",
+                "string": "Organization"
+              },
+              "AllocatedCapacity": {
+                "kind": "integer",
+                "integer": 1
+              }
+            }
+          },
+          {
+            "id": "0Py000000000102",
+            "fields": {
+              "PlatformCachePartitionId": {
+                "kind": "id",
+                "id": "0Px000000000101"
+              },
+              "CacheType": {
+                "kind": "string",
+                "string": "Session"
+              },
+              "AllocatedCapacity": {
+                "kind": "integer",
+                "integer": 1
+              }
+            }
+          },
+          {
+            "id": "0Py000000000103",
+            "fields": {
+              "PlatformCachePartitionId": {
+                "kind": "id",
+                "id": "0Px000000000102"
+              },
+              "CacheType": {
+                "kind": "string",
+                "string": "Organization"
+              },
+              "AllocatedCapacity": {
+                "kind": "integer",
+                "integer": 0
+              }
+            }
+          },
+          {
+            "id": "0Py000000000104",
+            "fields": {
+              "PlatformCachePartitionId": {
+                "kind": "id",
+                "id": "0Px000000000102"
+              },
+              "CacheType": {
+                "kind": "string",
+                "string": "Session"
+              },
+              "AllocatedCapacity": {
+                "kind": "integer",
+                "integer": 0
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "Cases": [
+    {
+      "ID": "R001",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R002",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('A42Oracle'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R003",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Zero'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R004",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Missing'); r=p!=null;",
+      "Expected": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.A42Missing' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R005",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('other.A42Oracle'); r=p!=null;",
+      "Expected": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'other.A42Oracle' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R006",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('LOCAL.A42Oracle'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R007",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.a42oracle'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R008",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local'); r=p!=null;",
+      "Expected": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.local' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R009",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition(''); r=p!=null;",
+      "Expected": "EXC|cache.InvalidParamException|Partition name cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R010",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition(null); r=p!=null;",
+      "Expected": "EXC|cache.InvalidParamException|Partition name cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R011",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle.extra'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R012",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition(' local.A42Oracle'); r=p!=null;",
+      "Expected": "EXC|cache.Org.OrgCacheException|Invalid partition - partition ' local.A42Oracle' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R013",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.'); r=p!=null;",
+      "Expected": "EXC|cache.Org.OrgCacheException|Invalid partition: partition is null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R014",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R015",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('A42Oracle'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R016",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Zero'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R017",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Missing'); r=p!=null;",
+      "Expected": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.A42Missing' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R018",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('other.A42Oracle'); r=p!=null;",
+      "Expected": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'other.A42Oracle' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R019",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('LOCAL.A42Oracle'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R020",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.a42oracle'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R021",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local'); r=p!=null;",
+      "Expected": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.local' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R022",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition(''); r=p!=null;",
+      "Expected": "EXC|cache.InvalidParamException|Partition name cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R023",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition(null); r=p!=null;",
+      "Expected": "EXC|cache.InvalidParamException|Partition name cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R024",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle.extra'); r=p!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R025",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition(' local.A42Oracle'); r=p!=null;",
+      "Expected": "EXC|cache.Session.SessionCacheException|Invalid partition: partition ' local.A42Oracle' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R026",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.'); r=p!=null;",
+      "Expected": "EXC|cache.Session.SessionCacheException|Invalid partition: partition is null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R027",
+      "Code": "r=Cache.Session.isAvailable();",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R028",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R028'); r=Cache.Org.get('local.A42Oracle.A42R028'); Cache.Org.remove('local.A42Oracle.A42R028');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": true
+    },
+    {
+      "ID": "R029",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R029'); r=Cache.Org.contains('local.A42Oracle.A42R029'); Cache.Org.remove('local.A42Oracle.A42R029');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R030",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R030'); r=Cache.Org.remove('local.A42Oracle.A42R030'); Cache.Org.remove('local.A42Oracle.A42R030');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R031",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R031'); Cache.Org.put('local.A42Oracle.A42R031','value'); r=Cache.Org.get('local.A42Oracle.A42R031'); Cache.Org.remove('local.A42Oracle.A42R031');",
+      "Expected": "value",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R032",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R032'); Cache.Org.put('local.A42Oracle.A42R032','value'); r=Cache.Org.contains('local.A42Oracle.A42R032'); Cache.Org.remove('local.A42Oracle.A42R032');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R033",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R033'); Cache.Org.put('local.A42Oracle.A42R033','value'); r=Cache.Org.remove('local.A42Oracle.A42R033'); Cache.Org.remove('local.A42Oracle.A42R033');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R034",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R034'); Cache.Org.put('local.A42Oracle.A42R034','value'); Cache.Org.remove('local.A42Oracle.A42R034'); r=Cache.Org.get('local.A42Oracle.A42R034'); Cache.Org.remove('local.A42Oracle.A42R034');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": true
+    },
+    {
+      "ID": "R035",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R035'); Cache.Org.put('local.A42Oracle.A42R035','value'); Cache.Org.remove('local.A42Oracle.A42R035'); r=Cache.Org.contains('local.A42Oracle.A42R035'); Cache.Org.remove('local.A42Oracle.A42R035');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R036",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R036'); Cache.Org.put('local.A42Oracle.A42R036','first'); Cache.Org.put('local.A42Oracle.A42R036','second'); r=Cache.Org.get('local.A42Oracle.A42R036'); Cache.Org.remove('local.A42Oracle.A42R036');",
+      "Expected": "second",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R037",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R037'); Cache.Org.put('local.A42Oracle.A42R037','value'); Boolean a=Cache.Org.remove('local.A42Oracle.A42R037'); Boolean b=Cache.Org.remove('local.A42Oracle.A42R037'); r=String.valueOf(a)+'|'+b; Cache.Org.remove('local.A42Oracle.A42R037');",
+      "Expected": "true|false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R038",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R038'); Cache.Org.put('local.A42Oracle.A42R038',null); r=Cache.Org.get('local.A42Oracle.A42R038'); Cache.Org.remove('local.A42Oracle.A42R038');",
+      "Expected": "EXC|cache.InvalidParamException|Value cannot be null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R039",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R039'); Cache.Org.put('local.A42Oracle.A42R039','value'); Cache.Org.put('local.A42Oracle.A42R039',null); r=String.valueOf(Cache.Org.get('local.A42Oracle.A42R039'))+'|'+Cache.Org.contains('local.A42Oracle.A42R039'); Cache.Org.remove('local.A42Oracle.A42R039');",
+      "Expected": "EXC|cache.InvalidParamException|Value cannot be null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R040",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R040'); r=p.get('A42R040'); p.remove('A42R040');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": true
+    },
+    {
+      "ID": "R041",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R041'); r=p.contains('A42R041'); p.remove('A42R041');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R042",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R042'); r=p.remove('A42R042'); p.remove('A42R042');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R043",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R043'); p.put('A42R043','value'); r=p.get('A42R043'); p.remove('A42R043');",
+      "Expected": "value",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R044",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R044'); p.put('A42R044','value'); r=p.contains('A42R044'); p.remove('A42R044');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R045",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R045'); p.put('A42R045','value'); r=p.remove('A42R045'); p.remove('A42R045');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R046",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R046'); p.put('A42R046','value'); p.remove('A42R046'); r=p.get('A42R046'); p.remove('A42R046');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": true
+    },
+    {
+      "ID": "R047",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R047'); p.put('A42R047','value'); p.remove('A42R047'); r=p.contains('A42R047'); p.remove('A42R047');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R048",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R048'); p.put('A42R048','first'); p.put('A42R048','second'); r=p.get('A42R048'); p.remove('A42R048');",
+      "Expected": "second",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R049",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R049'); p.put('A42R049','value'); Boolean a=p.remove('A42R049'); Boolean b=p.remove('A42R049'); r=String.valueOf(a)+'|'+b; p.remove('A42R049');",
+      "Expected": "true|false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R050",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R050'); p.put('A42R050',null); r=p.get('A42R050'); p.remove('A42R050');",
+      "Expected": "EXC|cache.InvalidParamException|Value cannot be null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R051",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R051'); p.put('A42R051','value'); p.put('A42R051',null); r=String.valueOf(p.get('A42R051'))+'|'+p.contains('A42R051'); p.remove('A42R051');",
+      "Expected": "EXC|cache.InvalidParamException|Value cannot be null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R052",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R052'); r=Cache.Session.get('local.A42Oracle.A42R052'); Cache.Session.remove('local.A42Oracle.A42R052');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": true
+    },
+    {
+      "ID": "R053",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R053'); r=Cache.Session.contains('local.A42Oracle.A42R053'); Cache.Session.remove('local.A42Oracle.A42R053');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R054",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R054'); r=Cache.Session.remove('local.A42Oracle.A42R054'); Cache.Session.remove('local.A42Oracle.A42R054');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R055",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R055'); Cache.Session.put('local.A42Oracle.A42R055','value'); r=Cache.Session.get('local.A42Oracle.A42R055'); Cache.Session.remove('local.A42Oracle.A42R055');",
+      "Expected": "value",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R056",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R056'); Cache.Session.put('local.A42Oracle.A42R056','value'); r=Cache.Session.contains('local.A42Oracle.A42R056'); Cache.Session.remove('local.A42Oracle.A42R056');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R057",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R057'); Cache.Session.put('local.A42Oracle.A42R057','value'); r=Cache.Session.remove('local.A42Oracle.A42R057'); Cache.Session.remove('local.A42Oracle.A42R057');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R058",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R058'); Cache.Session.put('local.A42Oracle.A42R058','value'); Cache.Session.remove('local.A42Oracle.A42R058'); r=Cache.Session.get('local.A42Oracle.A42R058'); Cache.Session.remove('local.A42Oracle.A42R058');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": true
+    },
+    {
+      "ID": "R059",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R059'); Cache.Session.put('local.A42Oracle.A42R059','value'); Cache.Session.remove('local.A42Oracle.A42R059'); r=Cache.Session.contains('local.A42Oracle.A42R059'); Cache.Session.remove('local.A42Oracle.A42R059');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R060",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R060'); Cache.Session.put('local.A42Oracle.A42R060','first'); Cache.Session.put('local.A42Oracle.A42R060','second'); r=Cache.Session.get('local.A42Oracle.A42R060'); Cache.Session.remove('local.A42Oracle.A42R060');",
+      "Expected": "second",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R061",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R061'); Cache.Session.put('local.A42Oracle.A42R061','value'); Boolean a=Cache.Session.remove('local.A42Oracle.A42R061'); Boolean b=Cache.Session.remove('local.A42Oracle.A42R061'); r=String.valueOf(a)+'|'+b; Cache.Session.remove('local.A42Oracle.A42R061');",
+      "Expected": "true|false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R062",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R062'); Cache.Session.put('local.A42Oracle.A42R062',null); r=Cache.Session.get('local.A42Oracle.A42R062'); Cache.Session.remove('local.A42Oracle.A42R062');",
+      "Expected": "EXC|cache.InvalidParamException|Value cannot be null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R063",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R063'); Cache.Session.put('local.A42Oracle.A42R063','value'); Cache.Session.put('local.A42Oracle.A42R063',null); r=String.valueOf(Cache.Session.get('local.A42Oracle.A42R063'))+'|'+Cache.Session.contains('local.A42Oracle.A42R063'); Cache.Session.remove('local.A42Oracle.A42R063');",
+      "Expected": "EXC|cache.InvalidParamException|Value cannot be null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R064",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R064'); r=p.get('A42R064'); p.remove('A42R064');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": true
+    },
+    {
+      "ID": "R065",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R065'); r=p.contains('A42R065'); p.remove('A42R065');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R066",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R066'); r=p.remove('A42R066'); p.remove('A42R066');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R067",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R067'); p.put('A42R067','value'); r=p.get('A42R067'); p.remove('A42R067');",
+      "Expected": "value",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R068",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R068'); p.put('A42R068','value'); r=p.contains('A42R068'); p.remove('A42R068');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R069",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R069'); p.put('A42R069','value'); r=p.remove('A42R069'); p.remove('A42R069');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R070",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R070'); p.put('A42R070','value'); p.remove('A42R070'); r=p.get('A42R070'); p.remove('A42R070');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": true
+    },
+    {
+      "ID": "R071",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R071'); p.put('A42R071','value'); p.remove('A42R071'); r=p.contains('A42R071'); p.remove('A42R071');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R072",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R072'); p.put('A42R072','first'); p.put('A42R072','second'); r=p.get('A42R072'); p.remove('A42R072');",
+      "Expected": "second",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R073",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R073'); p.put('A42R073','value'); Boolean a=p.remove('A42R073'); Boolean b=p.remove('A42R073'); r=String.valueOf(a)+'|'+b; p.remove('A42R073');",
+      "Expected": "true|false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R074",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R074'); p.put('A42R074',null); r=p.get('A42R074'); p.remove('A42R074');",
+      "Expected": "EXC|cache.InvalidParamException|Value cannot be null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R075",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R075'); p.put('A42R075','value'); p.put('A42R075',null); r=String.valueOf(p.get('A42R075'))+'|'+p.contains('A42R075'); p.remove('A42R075');",
+      "Expected": "EXC|cache.InvalidParamException|Value cannot be null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R076",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R076'); Cache.Org.put('local.A42Oracle.A42R076',''); Object v=Cache.Org.get('local.A42Oracle.A42R076'); r=(String)v; Cache.Org.remove('local.A42Oracle.A42R076');",
+      "Expected": "",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R077",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R077'); Cache.Org.put('local.A42Oracle.A42R077','café雪'); Object v=Cache.Org.get('local.A42Oracle.A42R077'); r=(String)v; Cache.Org.remove('local.A42Oracle.A42R077');",
+      "Expected": "café雪",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R078",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R078'); Cache.Org.put('local.A42Oracle.A42R078',0); Object v=Cache.Org.get('local.A42Oracle.A42R078'); r=(Integer)v; Cache.Org.remove('local.A42Oracle.A42R078');",
+      "Expected": "0",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R079",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R079'); Cache.Org.put('local.A42Oracle.A42R079',-7); Object v=Cache.Org.get('local.A42Oracle.A42R079'); r=(Integer)v; Cache.Org.remove('local.A42Oracle.A42R079');",
+      "Expected": "-7",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R080",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R080'); Cache.Org.put('local.A42Oracle.A42R080',9223372036854775807L); Object v=Cache.Org.get('local.A42Oracle.A42R080'); r=(Long)v; Cache.Org.remove('local.A42Oracle.A42R080');",
+      "Expected": "9223372036854775807",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R081",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R081'); Cache.Org.put('local.A42Oracle.A42R081',12.25); Object v=Cache.Org.get('local.A42Oracle.A42R081'); r=(Decimal)v; Cache.Org.remove('local.A42Oracle.A42R081');",
+      "Expected": "12.25",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R082",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R082'); Cache.Org.put('local.A42Oracle.A42R082',false); Object v=Cache.Org.get('local.A42Oracle.A42R082'); r=(Boolean)v; Cache.Org.remove('local.A42Oracle.A42R082');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R083",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R083'); Cache.Org.put('local.A42Oracle.A42R083',true); Object v=Cache.Org.get('local.A42Oracle.A42R083'); r=(Boolean)v; Cache.Org.remove('local.A42Oracle.A42R083');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R084",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R084'); Cache.Org.put('local.A42Oracle.A42R084',Date.newInstance(2024,2,29)); Object v=Cache.Org.get('local.A42Oracle.A42R084'); r=(Date)v; Cache.Org.remove('local.A42Oracle.A42R084');",
+      "Expected": "2024-02-29 00:00:00",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R085",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R085'); Cache.Org.put('local.A42Oracle.A42R085',new List<Integer>{2,null,4}); Object v=Cache.Org.get('local.A42Oracle.A42R085'); r=JSON.serialize(v); Cache.Org.remove('local.A42Oracle.A42R085');",
+      "Expected": "[2,null,4]",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R086",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R086'); Cache.Org.put('local.A42Oracle.A42R086',new Account(Name='A42Fixed')); Object v=Cache.Org.get('local.A42Oracle.A42R086'); r=v==null?null:((Account)v).Name; Cache.Org.remove('local.A42Oracle.A42R086');",
+      "Expected": "A42Fixed",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R087",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R087'); Cache.Org.put('local.A42Oracle.A42R087',new A42Value('fixed',7)); Object v=Cache.Org.get('local.A42Oracle.A42R087'); r=v==null?null:((A42Value)v).text; Cache.Org.remove('local.A42Oracle.A42R087');",
+      "Expected": "fixed",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R088",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R088'); p.put('A42R088',''); Object v=p.get('A42R088'); r=(String)v; p.remove('A42R088');",
+      "Expected": "",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R089",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R089'); p.put('A42R089','café雪'); Object v=p.get('A42R089'); r=(String)v; p.remove('A42R089');",
+      "Expected": "café雪",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R090",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R090'); p.put('A42R090',0); Object v=p.get('A42R090'); r=(Integer)v; p.remove('A42R090');",
+      "Expected": "0",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R091",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R091'); p.put('A42R091',-7); Object v=p.get('A42R091'); r=(Integer)v; p.remove('A42R091');",
+      "Expected": "-7",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R092",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R092'); p.put('A42R092',9223372036854775807L); Object v=p.get('A42R092'); r=(Long)v; p.remove('A42R092');",
+      "Expected": "9223372036854775807",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R093",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R093'); p.put('A42R093',12.25); Object v=p.get('A42R093'); r=(Decimal)v; p.remove('A42R093');",
+      "Expected": "12.25",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R094",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R094'); p.put('A42R094',false); Object v=p.get('A42R094'); r=(Boolean)v; p.remove('A42R094');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R095",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R095'); p.put('A42R095',true); Object v=p.get('A42R095'); r=(Boolean)v; p.remove('A42R095');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R096",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R096'); p.put('A42R096',Date.newInstance(2024,2,29)); Object v=p.get('A42R096'); r=(Date)v; p.remove('A42R096');",
+      "Expected": "2024-02-29 00:00:00",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R097",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R097'); p.put('A42R097',new List<Integer>{2,null,4}); Object v=p.get('A42R097'); r=JSON.serialize(v); p.remove('A42R097');",
+      "Expected": "[2,null,4]",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R098",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R098'); p.put('A42R098',new Account(Name='A42Fixed')); Object v=p.get('A42R098'); r=v==null?null:((Account)v).Name; p.remove('A42R098');",
+      "Expected": "A42Fixed",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R099",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R099'); p.put('A42R099',new A42Value('fixed',7)); Object v=p.get('A42R099'); r=v==null?null:((A42Value)v).text; p.remove('A42R099');",
+      "Expected": "fixed",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R100",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R100'); Cache.Session.put('local.A42Oracle.A42R100',''); Object v=Cache.Session.get('local.A42Oracle.A42R100'); r=(String)v; Cache.Session.remove('local.A42Oracle.A42R100');",
+      "Expected": "",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R101",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R101'); Cache.Session.put('local.A42Oracle.A42R101','café雪'); Object v=Cache.Session.get('local.A42Oracle.A42R101'); r=(String)v; Cache.Session.remove('local.A42Oracle.A42R101');",
+      "Expected": "café雪",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R102",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R102'); Cache.Session.put('local.A42Oracle.A42R102',0); Object v=Cache.Session.get('local.A42Oracle.A42R102'); r=(Integer)v; Cache.Session.remove('local.A42Oracle.A42R102');",
+      "Expected": "0",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R103",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R103'); Cache.Session.put('local.A42Oracle.A42R103',-7); Object v=Cache.Session.get('local.A42Oracle.A42R103'); r=(Integer)v; Cache.Session.remove('local.A42Oracle.A42R103');",
+      "Expected": "-7",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R104",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R104'); Cache.Session.put('local.A42Oracle.A42R104',9223372036854775807L); Object v=Cache.Session.get('local.A42Oracle.A42R104'); r=(Long)v; Cache.Session.remove('local.A42Oracle.A42R104');",
+      "Expected": "9223372036854775807",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R105",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R105'); Cache.Session.put('local.A42Oracle.A42R105',12.25); Object v=Cache.Session.get('local.A42Oracle.A42R105'); r=(Decimal)v; Cache.Session.remove('local.A42Oracle.A42R105');",
+      "Expected": "12.25",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R106",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R106'); Cache.Session.put('local.A42Oracle.A42R106',false); Object v=Cache.Session.get('local.A42Oracle.A42R106'); r=(Boolean)v; Cache.Session.remove('local.A42Oracle.A42R106');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R107",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R107'); Cache.Session.put('local.A42Oracle.A42R107',true); Object v=Cache.Session.get('local.A42Oracle.A42R107'); r=(Boolean)v; Cache.Session.remove('local.A42Oracle.A42R107');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R108",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R108'); Cache.Session.put('local.A42Oracle.A42R108',Date.newInstance(2024,2,29)); Object v=Cache.Session.get('local.A42Oracle.A42R108'); r=(Date)v; Cache.Session.remove('local.A42Oracle.A42R108');",
+      "Expected": "2024-02-29 00:00:00",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R109",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R109'); Cache.Session.put('local.A42Oracle.A42R109',new List<Integer>{2,null,4}); Object v=Cache.Session.get('local.A42Oracle.A42R109'); r=JSON.serialize(v); Cache.Session.remove('local.A42Oracle.A42R109');",
+      "Expected": "[2,null,4]",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R110",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R110'); Cache.Session.put('local.A42Oracle.A42R110',new Account(Name='A42Fixed')); Object v=Cache.Session.get('local.A42Oracle.A42R110'); r=v==null?null:((Account)v).Name; Cache.Session.remove('local.A42Oracle.A42R110');",
+      "Expected": "A42Fixed",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R111",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R111'); Cache.Session.put('local.A42Oracle.A42R111',new A42Value('fixed',7)); Object v=Cache.Session.get('local.A42Oracle.A42R111'); r=v==null?null:((A42Value)v).text; Cache.Session.remove('local.A42Oracle.A42R111');",
+      "Expected": "fixed",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R112",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R112'); p.put('A42R112',''); Object v=p.get('A42R112'); r=(String)v; p.remove('A42R112');",
+      "Expected": "",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R113",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R113'); p.put('A42R113','café雪'); Object v=p.get('A42R113'); r=(String)v; p.remove('A42R113');",
+      "Expected": "café雪",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R114",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R114'); p.put('A42R114',0); Object v=p.get('A42R114'); r=(Integer)v; p.remove('A42R114');",
+      "Expected": "0",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R115",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R115'); p.put('A42R115',-7); Object v=p.get('A42R115'); r=(Integer)v; p.remove('A42R115');",
+      "Expected": "-7",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R116",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R116'); p.put('A42R116',9223372036854775807L); Object v=p.get('A42R116'); r=(Long)v; p.remove('A42R116');",
+      "Expected": "9223372036854775807",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R117",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R117'); p.put('A42R117',12.25); Object v=p.get('A42R117'); r=(Decimal)v; p.remove('A42R117');",
+      "Expected": "12.25",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R118",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R118'); p.put('A42R118',false); Object v=p.get('A42R118'); r=(Boolean)v; p.remove('A42R118');",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R119",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R119'); p.put('A42R119',true); Object v=p.get('A42R119'); r=(Boolean)v; p.remove('A42R119');",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R120",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R120'); p.put('A42R120',Date.newInstance(2024,2,29)); Object v=p.get('A42R120'); r=(Date)v; p.remove('A42R120');",
+      "Expected": "2024-02-29 00:00:00",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R121",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R121'); p.put('A42R121',new List<Integer>{2,null,4}); Object v=p.get('A42R121'); r=JSON.serialize(v); p.remove('A42R121');",
+      "Expected": "[2,null,4]",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R122",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R122'); p.put('A42R122',new Account(Name='A42Fixed')); Object v=p.get('A42R122'); r=v==null?null:((Account)v).Name; p.remove('A42R122');",
+      "Expected": "A42Fixed",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R123",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R123'); p.put('A42R123',new A42Value('fixed',7)); Object v=p.get('A42R123'); r=v==null?null:((A42Value)v).text; p.remove('A42R123');",
+      "Expected": "fixed",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R124",
+      "Code": "Integer ttl=-1; Cache.Org.remove('local.A42Oracle.A42R124'); Cache.Org.put('local.A42Oracle.A42R124',7,ttl); r=String.valueOf(Cache.Org.get('local.A42Oracle.A42R124'))+'|'+Cache.Org.contains('local.A42Oracle.A42R124'); Cache.Org.remove('local.A42Oracle.A42R124');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R125",
+      "Code": "Integer ttl=0; Cache.Org.remove('local.A42Oracle.A42R125'); Cache.Org.put('local.A42Oracle.A42R125',7,ttl); r=String.valueOf(Cache.Org.get('local.A42Oracle.A42R125'))+'|'+Cache.Org.contains('local.A42Oracle.A42R125'); Cache.Org.remove('local.A42Oracle.A42R125');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R126",
+      "Code": "Cache.Org.remove('local.A42Oracle.A42R126'); Cache.Org.put('local.A42Oracle.A42R126',7,1); Object v=Cache.Org.get('local.A42Oracle.A42R126'); r=v==null || (Integer)v==7; Cache.Org.remove('local.A42Oracle.A42R126');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Org.put() for key 'local.A42Oracle.A42R126': Organization Cache TTL, 1, below minimum allowed: 300 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R127",
+      "Code": "Integer ttl=300; Cache.Org.remove('local.A42Oracle.A42R127'); Cache.Org.put('local.A42Oracle.A42R127',7,ttl); r=String.valueOf(Cache.Org.get('local.A42Oracle.A42R127'))+'|'+Cache.Org.contains('local.A42Oracle.A42R127'); Cache.Org.remove('local.A42Oracle.A42R127');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R128",
+      "Code": "Integer ttl=3600; Cache.Org.remove('local.A42Oracle.A42R128'); Cache.Org.put('local.A42Oracle.A42R128',7,ttl); r=String.valueOf(Cache.Org.get('local.A42Oracle.A42R128'))+'|'+Cache.Org.contains('local.A42Oracle.A42R128'); Cache.Org.remove('local.A42Oracle.A42R128');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R129",
+      "Code": "Integer ttl=28800; Cache.Org.remove('local.A42Oracle.A42R129'); Cache.Org.put('local.A42Oracle.A42R129',7,ttl); r=String.valueOf(Cache.Org.get('local.A42Oracle.A42R129'))+'|'+Cache.Org.contains('local.A42Oracle.A42R129'); Cache.Org.remove('local.A42Oracle.A42R129');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R130",
+      "Code": "Integer ttl=86400; Cache.Org.remove('local.A42Oracle.A42R130'); Cache.Org.put('local.A42Oracle.A42R130',7,ttl); r=String.valueOf(Cache.Org.get('local.A42Oracle.A42R130'))+'|'+Cache.Org.contains('local.A42Oracle.A42R130'); Cache.Org.remove('local.A42Oracle.A42R130');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R131",
+      "Code": "Integer ttl=172800; Cache.Org.remove('local.A42Oracle.A42R131'); Cache.Org.put('local.A42Oracle.A42R131',7,ttl); r=String.valueOf(Cache.Org.get('local.A42Oracle.A42R131'))+'|'+Cache.Org.contains('local.A42Oracle.A42R131'); Cache.Org.remove('local.A42Oracle.A42R131');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R132",
+      "Code": "Integer ttl=172801; Cache.Org.remove('local.A42Oracle.A42R132'); Cache.Org.put('local.A42Oracle.A42R132',7,ttl); r=String.valueOf(Cache.Org.get('local.A42Oracle.A42R132'))+'|'+Cache.Org.contains('local.A42Oracle.A42R132'); Cache.Org.remove('local.A42Oracle.A42R132');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Org.put() for key 'local.A42Oracle.A42R132': Organization Cache TTL, 172801, above maximum allowed: 172800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R133",
+      "Code": "Integer ttl=2147483647; Cache.Org.remove('local.A42Oracle.A42R133'); Cache.Org.put('local.A42Oracle.A42R133',7,ttl); r=String.valueOf(Cache.Org.get('local.A42Oracle.A42R133'))+'|'+Cache.Org.contains('local.A42Oracle.A42R133'); Cache.Org.remove('local.A42Oracle.A42R133');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Org.put() for key 'local.A42Oracle.A42R133': Organization Cache TTL, 2147483647, above maximum allowed: 172800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R134",
+      "Code": "Integer ttl=null; Cache.Org.remove('local.A42Oracle.A42R134'); Cache.Org.put('local.A42Oracle.A42R134',7,ttl); r=String.valueOf(Cache.Org.get('local.A42Oracle.A42R134'))+'|'+Cache.Org.contains('local.A42Oracle.A42R134'); Cache.Org.remove('local.A42Oracle.A42R134');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R135",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Integer ttl=-1; p.remove('A42R135'); p.put('A42R135',7,ttl); r=String.valueOf(p.get('A42R135'))+'|'+p.contains('A42R135'); p.remove('A42R135');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R136",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Integer ttl=0; p.remove('A42R136'); p.put('A42R136',7,ttl); r=String.valueOf(p.get('A42R136'))+'|'+p.contains('A42R136'); p.remove('A42R136');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R137",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R137'); p.put('A42R137',7,1); Object v=p.get('A42R137'); r=v==null || (Integer)v==7; p.remove('A42R137');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Org.put() for key 'A42R137': Organization Cache TTL, 1, below minimum allowed: 300 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R138",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Integer ttl=300; p.remove('A42R138'); p.put('A42R138',7,ttl); r=String.valueOf(p.get('A42R138'))+'|'+p.contains('A42R138'); p.remove('A42R138');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R139",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Integer ttl=3600; p.remove('A42R139'); p.put('A42R139',7,ttl); r=String.valueOf(p.get('A42R139'))+'|'+p.contains('A42R139'); p.remove('A42R139');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R140",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Integer ttl=28800; p.remove('A42R140'); p.put('A42R140',7,ttl); r=String.valueOf(p.get('A42R140'))+'|'+p.contains('A42R140'); p.remove('A42R140');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R141",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Integer ttl=86400; p.remove('A42R141'); p.put('A42R141',7,ttl); r=String.valueOf(p.get('A42R141'))+'|'+p.contains('A42R141'); p.remove('A42R141');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R142",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Integer ttl=172800; p.remove('A42R142'); p.put('A42R142',7,ttl); r=String.valueOf(p.get('A42R142'))+'|'+p.contains('A42R142'); p.remove('A42R142');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R143",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Integer ttl=172801; p.remove('A42R143'); p.put('A42R143',7,ttl); r=String.valueOf(p.get('A42R143'))+'|'+p.contains('A42R143'); p.remove('A42R143');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Org.put() for key 'A42R143': Organization Cache TTL, 172801, above maximum allowed: 172800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R144",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Integer ttl=2147483647; p.remove('A42R144'); p.put('A42R144',7,ttl); r=String.valueOf(p.get('A42R144'))+'|'+p.contains('A42R144'); p.remove('A42R144');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Org.put() for key 'A42R144': Organization Cache TTL, 2147483647, above maximum allowed: 172800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R145",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Integer ttl=null; p.remove('A42R145'); p.put('A42R145',7,ttl); r=String.valueOf(p.get('A42R145'))+'|'+p.contains('A42R145'); p.remove('A42R145');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R146",
+      "Code": "Integer ttl=-1; Cache.Session.remove('local.A42Oracle.A42R146'); Cache.Session.put('local.A42Oracle.A42R146',7,ttl); r=String.valueOf(Cache.Session.get('local.A42Oracle.A42R146'))+'|'+Cache.Session.contains('local.A42Oracle.A42R146'); Cache.Session.remove('local.A42Oracle.A42R146');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R147",
+      "Code": "Integer ttl=0; Cache.Session.remove('local.A42Oracle.A42R147'); Cache.Session.put('local.A42Oracle.A42R147',7,ttl); r=String.valueOf(Cache.Session.get('local.A42Oracle.A42R147'))+'|'+Cache.Session.contains('local.A42Oracle.A42R147'); Cache.Session.remove('local.A42Oracle.A42R147');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R148",
+      "Code": "Cache.Session.remove('local.A42Oracle.A42R148'); Cache.Session.put('local.A42Oracle.A42R148',7,1); Object v=Cache.Session.get('local.A42Oracle.A42R148'); r=v==null || (Integer)v==7; Cache.Session.remove('local.A42Oracle.A42R148');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Session.put() for key 'local.A42Oracle.A42R148': Session Cache TTL, 1, below minimum allowed: 300 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R149",
+      "Code": "Integer ttl=300; Cache.Session.remove('local.A42Oracle.A42R149'); Cache.Session.put('local.A42Oracle.A42R149',7,ttl); r=String.valueOf(Cache.Session.get('local.A42Oracle.A42R149'))+'|'+Cache.Session.contains('local.A42Oracle.A42R149'); Cache.Session.remove('local.A42Oracle.A42R149');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R150",
+      "Code": "Integer ttl=3600; Cache.Session.remove('local.A42Oracle.A42R150'); Cache.Session.put('local.A42Oracle.A42R150',7,ttl); r=String.valueOf(Cache.Session.get('local.A42Oracle.A42R150'))+'|'+Cache.Session.contains('local.A42Oracle.A42R150'); Cache.Session.remove('local.A42Oracle.A42R150');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R151",
+      "Code": "Integer ttl=28800; Cache.Session.remove('local.A42Oracle.A42R151'); Cache.Session.put('local.A42Oracle.A42R151',7,ttl); r=String.valueOf(Cache.Session.get('local.A42Oracle.A42R151'))+'|'+Cache.Session.contains('local.A42Oracle.A42R151'); Cache.Session.remove('local.A42Oracle.A42R151');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R152",
+      "Code": "Integer ttl=86400; Cache.Session.remove('local.A42Oracle.A42R152'); Cache.Session.put('local.A42Oracle.A42R152',7,ttl); r=String.valueOf(Cache.Session.get('local.A42Oracle.A42R152'))+'|'+Cache.Session.contains('local.A42Oracle.A42R152'); Cache.Session.remove('local.A42Oracle.A42R152');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Session.put() for key 'local.A42Oracle.A42R152': Session Cache TTL, 86400, above maximum allowed: 28800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R153",
+      "Code": "Integer ttl=172800; Cache.Session.remove('local.A42Oracle.A42R153'); Cache.Session.put('local.A42Oracle.A42R153',7,ttl); r=String.valueOf(Cache.Session.get('local.A42Oracle.A42R153'))+'|'+Cache.Session.contains('local.A42Oracle.A42R153'); Cache.Session.remove('local.A42Oracle.A42R153');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Session.put() for key 'local.A42Oracle.A42R153': Session Cache TTL, 172800, above maximum allowed: 28800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R154",
+      "Code": "Integer ttl=172801; Cache.Session.remove('local.A42Oracle.A42R154'); Cache.Session.put('local.A42Oracle.A42R154',7,ttl); r=String.valueOf(Cache.Session.get('local.A42Oracle.A42R154'))+'|'+Cache.Session.contains('local.A42Oracle.A42R154'); Cache.Session.remove('local.A42Oracle.A42R154');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Session.put() for key 'local.A42Oracle.A42R154': Session Cache TTL, 172801, above maximum allowed: 28800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R155",
+      "Code": "Integer ttl=2147483647; Cache.Session.remove('local.A42Oracle.A42R155'); Cache.Session.put('local.A42Oracle.A42R155',7,ttl); r=String.valueOf(Cache.Session.get('local.A42Oracle.A42R155'))+'|'+Cache.Session.contains('local.A42Oracle.A42R155'); Cache.Session.remove('local.A42Oracle.A42R155');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Session.put() for key 'local.A42Oracle.A42R155': Session Cache TTL, 2147483647, above maximum allowed: 28800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R156",
+      "Code": "Integer ttl=null; Cache.Session.remove('local.A42Oracle.A42R156'); Cache.Session.put('local.A42Oracle.A42R156',7,ttl); r=String.valueOf(Cache.Session.get('local.A42Oracle.A42R156'))+'|'+Cache.Session.contains('local.A42Oracle.A42R156'); Cache.Session.remove('local.A42Oracle.A42R156');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R157",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Integer ttl=-1; p.remove('A42R157'); p.put('A42R157',7,ttl); r=String.valueOf(p.get('A42R157'))+'|'+p.contains('A42R157'); p.remove('A42R157');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R158",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Integer ttl=0; p.remove('A42R158'); p.put('A42R158',7,ttl); r=String.valueOf(p.get('A42R158'))+'|'+p.contains('A42R158'); p.remove('A42R158');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R159",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R159'); p.put('A42R159',7,1); Object v=p.get('A42R159'); r=v==null || (Integer)v==7; p.remove('A42R159');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Session.put() for key 'A42R159': Session Cache TTL, 1, below minimum allowed: 300 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R160",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Integer ttl=300; p.remove('A42R160'); p.put('A42R160',7,ttl); r=String.valueOf(p.get('A42R160'))+'|'+p.contains('A42R160'); p.remove('A42R160');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R161",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Integer ttl=3600; p.remove('A42R161'); p.put('A42R161',7,ttl); r=String.valueOf(p.get('A42R161'))+'|'+p.contains('A42R161'); p.remove('A42R161');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R162",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Integer ttl=28800; p.remove('A42R162'); p.put('A42R162',7,ttl); r=String.valueOf(p.get('A42R162'))+'|'+p.contains('A42R162'); p.remove('A42R162');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R163",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Integer ttl=86400; p.remove('A42R163'); p.put('A42R163',7,ttl); r=String.valueOf(p.get('A42R163'))+'|'+p.contains('A42R163'); p.remove('A42R163');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Session.put() for key 'A42R163': Session Cache TTL, 86400, above maximum allowed: 28800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R164",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Integer ttl=172800; p.remove('A42R164'); p.put('A42R164',7,ttl); r=String.valueOf(p.get('A42R164'))+'|'+p.contains('A42R164'); p.remove('A42R164');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Session.put() for key 'A42R164': Session Cache TTL, 172800, above maximum allowed: 28800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R165",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Integer ttl=172801; p.remove('A42R165'); p.put('A42R165',7,ttl); r=String.valueOf(p.get('A42R165'))+'|'+p.contains('A42R165'); p.remove('A42R165');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Session.put() for key 'A42R165': Session Cache TTL, 172801, above maximum allowed: 28800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R166",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Integer ttl=2147483647; p.remove('A42R166'); p.put('A42R166',7,ttl); r=String.valueOf(p.get('A42R166'))+'|'+p.contains('A42R166'); p.remove('A42R166');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Session.put() for key 'A42R166': Session Cache TTL, 2147483647, above maximum allowed: 28800 secs",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R167",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Integer ttl=null; p.remove('A42R167'); p.put('A42R167',7,ttl); r=String.valueOf(p.get('A42R167'))+'|'+p.contains('A42R167'); p.remove('A42R167');",
+      "Expected": "7|true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R168",
+      "Code": "String k=null; Cache.Org.put(k,1); r='put-returned'; Cache.Org.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R169",
+      "Code": "String k=''; Cache.Org.put(k,1); r='put-returned'; Cache.Org.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R170",
+      "Code": "String k='local.A42Oracle.A42R170bad key'; Cache.Org.put(k,1); r='put-returned'; Cache.Org.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Org operation for key 'local.A42Oracle.A42R170bad key': Invalid key: key must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R171",
+      "Code": "String k='local.A42Oracle.A42R171bad_key'; Cache.Org.put(k,1); r='put-returned'; Cache.Org.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Org operation for key 'local.A42Oracle.A42R171bad_key': Invalid key: key must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R172",
+      "Code": "String k='local.A42Oracle.A42R172bad-key'; Cache.Org.put(k,1); r='put-returned'; Cache.Org.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Org operation for key 'local.A42Oracle.A42R172bad-key': Invalid key: key must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R173",
+      "Code": "String k='local.A42Oracle.A42R173bad.key.extra.parts'; Cache.Org.put(k,1); r='put-returned'; Cache.Org.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R174",
+      "Code": "String k='local.A42Oracle.A42R174雪'; Cache.Org.put(k,1); r='put-returned'; Cache.Org.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Org operation for key 'local.A42Oracle.A42R174雪': Invalid key: key must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R175",
+      "Code": "String k=null; r=Cache.Org.get(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R176",
+      "Code": "String k=null; r=Cache.Org.contains(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R177",
+      "Code": "String k=null; r=Cache.Org.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R178",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k=null; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R179",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k=''; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R180",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k='A42R180bad key'; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R181",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k='A42R181bad_key'; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R182",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k='A42R182bad-key'; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R183",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k='A42R183bad.key.extra.parts'; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R184",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k='A42R184雪'; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Org operation for key 'A42R184雪': Invalid key: key must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R185",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k=null; r=p.get(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R186",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k=null; r=p.contains(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R187",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k=null; r=p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R188",
+      "Code": "String k=null; Cache.Session.put(k,1); r='put-returned'; Cache.Session.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R189",
+      "Code": "String k=''; Cache.Session.put(k,1); r='put-returned'; Cache.Session.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R190",
+      "Code": "String k='local.A42Oracle.A42R190bad key'; Cache.Session.put(k,1); r='put-returned'; Cache.Session.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Session operation for key 'local.A42Oracle.A42R190bad key': Invalid key: key must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R191",
+      "Code": "String k='local.A42Oracle.A42R191bad_key'; Cache.Session.put(k,1); r='put-returned'; Cache.Session.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Session operation for key 'local.A42Oracle.A42R191bad_key': Invalid key: key must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R192",
+      "Code": "String k='local.A42Oracle.A42R192bad-key'; Cache.Session.put(k,1); r='put-returned'; Cache.Session.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Session operation for key 'local.A42Oracle.A42R192bad-key': Invalid key: key must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R193",
+      "Code": "String k='local.A42Oracle.A42R193bad.key.extra.parts'; Cache.Session.put(k,1); r='put-returned'; Cache.Session.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R194",
+      "Code": "String k='local.A42Oracle.A42R194雪'; Cache.Session.put(k,1); r='put-returned'; Cache.Session.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Session operation for key 'local.A42Oracle.A42R194雪': Invalid key: key must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R195",
+      "Code": "String k=null; r=Cache.Session.get(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R196",
+      "Code": "String k=null; r=Cache.Session.contains(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R197",
+      "Code": "String k=null; r=Cache.Session.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R198",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k=null; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R199",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k=''; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R200",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k='A42R200bad key'; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R201",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k='A42R201bad_key'; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R202",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k='A42R202bad-key'; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R203",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k='A42R203bad.key.extra.parts'; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R204",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k='A42R204雪'; p.put(k,1); r='put-returned'; p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Session operation for key 'A42R204雪': Invalid key: key must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R205",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k=null; r=p.get(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R206",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k=null; r=p.contains(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R207",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k=null; r=p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R208",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Zero'); p.remove('A42R208'); p.put('A42R208',7); r=String.valueOf(p.get('A42R208'))+'|'+p.contains('A42R208')+'|'+p.remove('A42R208');",
+      "Expected": "null|false|false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R209",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Zero'); p.remove('A42R209'); p.put('A42R209',7); r=String.valueOf(p.get('A42R209'))+'|'+p.contains('A42R209')+'|'+p.remove('A42R209');",
+      "Expected": "null|false|false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R210",
+      "Code": "Cache.Org.remove(A42ProbeBuilder.class,'local.A42Oracle.A42R210'); Object v=Cache.Org.get(A42ProbeBuilder.class,'local.A42Oracle.A42R210'); r=JSON.serialize(v); Cache.Org.remove(A42ProbeBuilder.class,'local.A42Oracle.A42R210');",
+      "Expected": "\"built:A42R210\"",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R211",
+      "Code": "Cache.Org.remove(A42NullBuilder.class,'local.A42Oracle.A42R211'); Object v=Cache.Org.get(A42NullBuilder.class,'local.A42Oracle.A42R211'); r=JSON.serialize(v); Cache.Org.remove(A42NullBuilder.class,'local.A42Oracle.A42R211');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R212",
+      "Code": "Cache.Org.remove(A42ThrowBuilder.class,'local.A42Oracle.A42R212'); Object v=Cache.Org.get(A42ThrowBuilder.class,'local.A42Oracle.A42R212'); r=JSON.serialize(v); Cache.Org.remove(A42ThrowBuilder.class,'local.A42Oracle.A42R212');",
+      "Expected": "EXC|cache.CacheBuilderExecutionException|Failed Cache.Org.get() for key 'local.A42Oracle.A42R212': Exception while executing cache builder's load method: A42ThrowBuilder.A42BuildException, A42 builder failure",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R213",
+      "Code": "Cache.Org.remove(A42ListBuilder.class,'local.A42Oracle.A42R213'); Object v=Cache.Org.get(A42ListBuilder.class,'local.A42Oracle.A42R213'); r=JSON.serialize(v); Cache.Org.remove(A42ListBuilder.class,'local.A42Oracle.A42R213');",
+      "Expected": "[2,4]",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R214",
+      "Code": "Cache.Org.remove(A42WrongBuilder.class,'local.A42Oracle.A42R214'); Object v=Cache.Org.get(A42WrongBuilder.class,'local.A42Oracle.A42R214'); r=JSON.serialize(v); Cache.Org.remove(A42WrongBuilder.class,'local.A42Oracle.A42R214');",
+      "Expected": "EXC|cache.InvalidCacheBuilderException|A42WrongBuilder does not implement CacheBuilder",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R215",
+      "Code": "Cache.Org.remove(A42ProbeBuilder.class,'local.A42Oracle.A42R215'); Object a=Cache.Org.get(A42ProbeBuilder.class,'local.A42Oracle.A42R215'); Object b=Cache.Org.get(A42ProbeBuilder.class,'local.A42Oracle.A42R215'); r=String.valueOf(a)+'|'+b; Cache.Org.remove(A42ProbeBuilder.class,'local.A42Oracle.A42R215');",
+      "Expected": "built:A42R215|built:A42R215",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R216",
+      "Code": "Type t=null; r=Cache.Org.get(t,'local.A42Oracle.A42R216');",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R217",
+      "Code": "String k=null; r=Cache.Org.get(A42ProbeBuilder.class,k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R218",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove(A42ProbeBuilder.class,'A42R218'); Object v=p.get(A42ProbeBuilder.class,'A42R218'); r=JSON.serialize(v); p.remove(A42ProbeBuilder.class,'A42R218');",
+      "Expected": "\"built:A42R218\"",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R219",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove(A42NullBuilder.class,'A42R219'); Object v=p.get(A42NullBuilder.class,'A42R219'); r=JSON.serialize(v); p.remove(A42NullBuilder.class,'A42R219');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R220",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove(A42ThrowBuilder.class,'A42R220'); Object v=p.get(A42ThrowBuilder.class,'A42R220'); r=JSON.serialize(v); p.remove(A42ThrowBuilder.class,'A42R220');",
+      "Expected": "EXC|cache.CacheBuilderExecutionException|Failed Cache.Org.get() for key 'A42R220': Exception while executing cache builder's load method: A42ThrowBuilder.A42BuildException, A42 builder failure",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R221",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove(A42ListBuilder.class,'A42R221'); Object v=p.get(A42ListBuilder.class,'A42R221'); r=JSON.serialize(v); p.remove(A42ListBuilder.class,'A42R221');",
+      "Expected": "[2,4]",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R222",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove(A42WrongBuilder.class,'A42R222'); Object v=p.get(A42WrongBuilder.class,'A42R222'); r=JSON.serialize(v); p.remove(A42WrongBuilder.class,'A42R222');",
+      "Expected": "EXC|cache.InvalidCacheBuilderException|A42WrongBuilder does not implement CacheBuilder",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R223",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove(A42ProbeBuilder.class,'A42R223'); Object a=p.get(A42ProbeBuilder.class,'A42R223'); Object b=p.get(A42ProbeBuilder.class,'A42R223'); r=String.valueOf(a)+'|'+b; p.remove(A42ProbeBuilder.class,'A42R223');",
+      "Expected": "built:A42R223|built:A42R223",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R224",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Type t=null; r=p.get(t,'A42R224');",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R225",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k=null; r=p.get(A42ProbeBuilder.class,k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R226",
+      "Code": "Cache.Session.remove(A42ProbeBuilder.class,'local.A42Oracle.A42R226'); Object v=Cache.Session.get(A42ProbeBuilder.class,'local.A42Oracle.A42R226'); r=JSON.serialize(v); Cache.Session.remove(A42ProbeBuilder.class,'local.A42Oracle.A42R226');",
+      "Expected": "\"built:A42R226\"",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R227",
+      "Code": "Cache.Session.remove(A42NullBuilder.class,'local.A42Oracle.A42R227'); Object v=Cache.Session.get(A42NullBuilder.class,'local.A42Oracle.A42R227'); r=JSON.serialize(v); Cache.Session.remove(A42NullBuilder.class,'local.A42Oracle.A42R227');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R228",
+      "Code": "Cache.Session.remove(A42ThrowBuilder.class,'local.A42Oracle.A42R228'); Object v=Cache.Session.get(A42ThrowBuilder.class,'local.A42Oracle.A42R228'); r=JSON.serialize(v); Cache.Session.remove(A42ThrowBuilder.class,'local.A42Oracle.A42R228');",
+      "Expected": "EXC|cache.CacheBuilderExecutionException|Failed Cache.Session.get() for key 'local.A42Oracle.A42R228': Exception while executing cache builder's load method: A42ThrowBuilder.A42BuildException, A42 builder failure",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R229",
+      "Code": "Cache.Session.remove(A42ListBuilder.class,'local.A42Oracle.A42R229'); Object v=Cache.Session.get(A42ListBuilder.class,'local.A42Oracle.A42R229'); r=JSON.serialize(v); Cache.Session.remove(A42ListBuilder.class,'local.A42Oracle.A42R229');",
+      "Expected": "[2,4]",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R230",
+      "Code": "Cache.Session.remove(A42WrongBuilder.class,'local.A42Oracle.A42R230'); Object v=Cache.Session.get(A42WrongBuilder.class,'local.A42Oracle.A42R230'); r=JSON.serialize(v); Cache.Session.remove(A42WrongBuilder.class,'local.A42Oracle.A42R230');",
+      "Expected": "EXC|cache.InvalidCacheBuilderException|A42WrongBuilder does not implement CacheBuilder",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R231",
+      "Code": "Cache.Session.remove(A42ProbeBuilder.class,'local.A42Oracle.A42R231'); Object a=Cache.Session.get(A42ProbeBuilder.class,'local.A42Oracle.A42R231'); Object b=Cache.Session.get(A42ProbeBuilder.class,'local.A42Oracle.A42R231'); r=String.valueOf(a)+'|'+b; Cache.Session.remove(A42ProbeBuilder.class,'local.A42Oracle.A42R231');",
+      "Expected": "built:A42R231|built:A42R231",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R232",
+      "Code": "Type t=null; r=Cache.Session.get(t,'local.A42Oracle.A42R232');",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R233",
+      "Code": "String k=null; r=Cache.Session.get(A42ProbeBuilder.class,k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R234",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove(A42ProbeBuilder.class,'A42R234'); Object v=p.get(A42ProbeBuilder.class,'A42R234'); r=JSON.serialize(v); p.remove(A42ProbeBuilder.class,'A42R234');",
+      "Expected": "\"built:A42R234\"",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R235",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove(A42NullBuilder.class,'A42R235'); Object v=p.get(A42NullBuilder.class,'A42R235'); r=JSON.serialize(v); p.remove(A42NullBuilder.class,'A42R235');",
+      "Expected": "null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R236",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove(A42ThrowBuilder.class,'A42R236'); Object v=p.get(A42ThrowBuilder.class,'A42R236'); r=JSON.serialize(v); p.remove(A42ThrowBuilder.class,'A42R236');",
+      "Expected": "EXC|cache.CacheBuilderExecutionException|Failed Cache.Session.get() for key 'A42R236': Exception while executing cache builder's load method: A42ThrowBuilder.A42BuildException, A42 builder failure",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R237",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove(A42ListBuilder.class,'A42R237'); Object v=p.get(A42ListBuilder.class,'A42R237'); r=JSON.serialize(v); p.remove(A42ListBuilder.class,'A42R237');",
+      "Expected": "[2,4]",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R238",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove(A42WrongBuilder.class,'A42R238'); Object v=p.get(A42WrongBuilder.class,'A42R238'); r=JSON.serialize(v); p.remove(A42WrongBuilder.class,'A42R238');",
+      "Expected": "EXC|cache.InvalidCacheBuilderException|A42WrongBuilder does not implement CacheBuilder",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R239",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove(A42ProbeBuilder.class,'A42R239'); Object a=p.get(A42ProbeBuilder.class,'A42R239'); Object b=p.get(A42ProbeBuilder.class,'A42R239'); r=String.valueOf(a)+'|'+b; p.remove(A42ProbeBuilder.class,'A42R239');",
+      "Expected": "built:A42R239|built:A42R239",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R240",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Type t=null; r=p.get(t,'A42R240');",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R241",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k=null; r=p.get(A42ProbeBuilder.class,k);",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R242",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R242'); String value='x'.repeat(131072); p.put('A42R242',value); Object v=p.get('A42R242'); r=v==null?null:((String)v).length(); p.remove('A42R242');",
+      "Expected": "131072",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R243",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R243'); String value='x'.repeat(131073); p.put('A42R243',value); Object v=p.get('A42R243'); r=v==null?null:((String)v).length(); p.remove('A42R243');",
+      "Expected": "131073",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R244",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R244'); p.put('A42R244',7); Object v=p.get('A42R244'); r=(Account)v; p.remove('A42R244');",
+      "Expected": "EXC|System.TypeException|Invalid conversion from runtime type Integer to Account",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R245",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k='A42R245'+'x'.repeat(255-'A42R245'.length()); p.remove(k); p.put(k,7); r=p.get(k); p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Org operation for key 'A42R245xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': Invalid key: max key length is 50",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R246",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k='A42R246'+'x'.repeat(256-'A42R246'.length()); p.remove(k); p.put(k,7); r=p.get(k); p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Org operation for key 'A42R246xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': Invalid key: max key length is 50",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R247",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k='A42R247'+'x'.repeat(257-'A42R247'.length()); p.remove(k); p.put(k,7); r=p.get(k); p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Org operation for key 'A42R247xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': Invalid key: max key length is 50",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R248",
+      "Code": "Cache.OrgPartition p=null; r=p.get('A42R248');",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R249",
+      "Code": "Cache.OrgPartition p=null; r=p.remove('A42R249');",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R250",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R250'); String value='x'.repeat(131072); p.put('A42R250',value); Object v=p.get('A42R250'); r=v==null?null:((String)v).length(); p.remove('A42R250');",
+      "Expected": "131072",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R251",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R251'); String value='x'.repeat(131073); p.put('A42R251',value); Object v=p.get('A42R251'); r=v==null?null:((String)v).length(); p.remove('A42R251');",
+      "Expected": "131073",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R252",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); p.remove('A42R252'); p.put('A42R252',7); Object v=p.get('A42R252'); r=(Account)v; p.remove('A42R252');",
+      "Expected": "EXC|System.TypeException|Invalid conversion from runtime type Integer to Account",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R253",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k='A42R253'+'x'.repeat(255-'A42R253'.length()); p.remove(k); p.put(k,7); r=p.get(k); p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Session operation for key 'A42R253xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': Invalid key: max key length is 50",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R254",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k='A42R254'+'x'.repeat(256-'A42R254'.length()); p.remove(k); p.put(k,7); r=p.get(k); p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Session operation for key 'A42R254xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': Invalid key: max key length is 50",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R255",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); String k='A42R255'+'x'.repeat(257-'A42R255'.length()); p.remove(k); p.put(k,7); r=p.get(k); p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Session operation for key 'A42R255xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': Invalid key: max key length is 50",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R256",
+      "Code": "Cache.SessionPartition p=null; r=p.get('A42R256');",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R257",
+      "Code": "Cache.SessionPartition p=null; r=p.remove('A42R257');",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R258",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R258'); p.put('A42R258',7,300,Cache.Visibility.ALL,true); r=p.get('A42R258'); p.remove('A42R258');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Org.remove() for key 'A42R258': Key 'A42R258' is immutable",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R259",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R259'); p.put('A42R259',7,300,Cache.Visibility.ALL,false); r=p.get('A42R259'); p.remove('A42R259');",
+      "Expected": "7",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R260",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R260'); p.put('A42R260',7,300,Cache.Visibility.NAMESPACE,true); r=p.get('A42R260'); p.remove('A42R260');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Failed Cache.Org.remove() for key 'A42R260': Key 'A42R260' is immutable",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "R261",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42R261'); p.put('A42R261',7,300,Cache.Visibility.NAMESPACE,false); r=p.get('A42R261'); p.remove('A42R261');",
+      "Expected": "7",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "C001",
+      "Code": "Cache.OrgPartition p=new Cache.OrgPartition(); pq.out('C001','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method is not visible: void cache.OrgPartition.<init>()",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method is not visible: void cache.OrgPartition.<init>()"
+    },
+    {
+      "ID": "C002",
+      "Code": "Cache.SessionPartition p=new Cache.SessionPartition(); pq.out('C002','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method is not visible: void cache.SessionPartition.<init>()",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method is not visible: void cache.SessionPartition.<init>()"
+    },
+    {
+      "ID": "C003",
+      "Code": "Cache.OrgPartition p=Cache.Session.getPartition('local.A42Oracle'); pq.out('C003','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from cache.SessionPartition to cache.OrgPartition",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Illegal assignment from cache.SessionPartition to cache.OrgPartition"
+    },
+    {
+      "ID": "C004",
+      "Code": "Cache.SessionPartition p=Cache.Org.getPartition('local.A42Oracle'); pq.out('C004','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from cache.OrgPartition to cache.SessionPartition",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Illegal assignment from cache.OrgPartition to cache.SessionPartition"
+    },
+    {
+      "ID": "C005",
+      "Code": "Cache.Org.getPartition(7); pq.out('C005','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getPartition(Integer) from the type cache.Org",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void getPartition(Integer) from the type cache.Org"
+    },
+    {
+      "ID": "C006",
+      "Code": "Cache.Session.getPartition(true); pq.out('C006','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getPartition(Boolean) from the type cache.Session",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void getPartition(Boolean) from the type cache.Session"
+    },
+    {
+      "ID": "C007",
+      "Code": "Cache.Org.put('local.A42Oracle.A42Compile'); pq.out('C007','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void put(String) from the type cache.Org",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void put(String) from the type cache.Org"
+    },
+    {
+      "ID": "C008",
+      "Code": "Cache.Session.put('local.A42Oracle.A42Compile'); pq.out('C008','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void put(String) from the type cache.Session",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void put(String) from the type cache.Session"
+    },
+    {
+      "ID": "C009",
+      "Code": "Cache.Org.get(7); pq.out('C009','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get(Integer) from the type cache.Org",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void get(Integer) from the type cache.Org"
+    },
+    {
+      "ID": "C010",
+      "Code": "Cache.Session.contains(7); pq.out('C010','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void contains(Integer) from the type cache.Session",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void contains(Integer) from the type cache.Session"
+    },
+    {
+      "ID": "C011",
+      "Code": "Cache.Org.remove(new Account()); pq.out('C011','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void remove(Account) from the type cache.Org",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void remove(Account) from the type cache.Org"
+    },
+    {
+      "ID": "C012",
+      "Code": "Cache.Org.put('local.A42Oracle.A42Compile',7,1.5); pq.out('C012','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void put(String, Integer, Decimal) from the type cache.Org",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void put(String, Integer, Decimal) from the type cache.Org"
+    },
+    {
+      "ID": "C013",
+      "Code": "Cache.Session.put('local.A42Oracle.A42Compile',7,'60'); pq.out('C013','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void put(String, Integer, String) from the type cache.Session",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void put(String, Integer, String) from the type cache.Session"
+    },
+    {
+      "ID": "C014",
+      "Code": "Cache.Org.put('local.A42Oracle.A42Compile',7,60L); pq.out('C014','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void put(String, Integer, Long) from the type cache.Org",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void put(String, Integer, Long) from the type cache.Org"
+    },
+    {
+      "ID": "C015",
+      "Code": "Boolean v=Cache.Org.put('local.A42Oracle.A42Compile',7); pq.out('C015','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from void to Boolean",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Illegal assignment from void to Boolean"
+    },
+    {
+      "ID": "C016",
+      "Code": "String v=Cache.Org.get('local.A42Oracle.A42Compile'); pq.out('C016','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Object to String",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Illegal assignment from Object to String"
+    },
+    {
+      "ID": "C017",
+      "Code": "Cache.CacheBuilder b=new Cache.CacheBuilder(); pq.out('C017','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: cache.CacheBuilder",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Type cannot be constructed: cache.CacheBuilder"
+    },
+    {
+      "ID": "C018",
+      "Code": "Cache.CacheBuilder b=new A42WrongBuilder(); pq.out('C018','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from A42WrongBuilder to cache.CacheBuilder",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Illegal assignment from A42WrongBuilder to cache.CacheBuilder"
+    },
+    {
+      "ID": "C019",
+      "Code": "Cache.Org.get('A42ProbeBuilder','local.A42Oracle.A42Compile'); pq.out('C019','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get(String, String) from the type cache.Org",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void get(String, String) from the type cache.Org"
+    },
+    {
+      "ID": "C020",
+      "Code": "Cache.Session.get(A42ProbeBuilder.class,7); pq.out('C020','compiled');",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get(System.Type, Integer) from the type cache.Session",
+      "Compile": true,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method does not exist or incorrect signature: void get(System.Type, Integer) from the type cache.Session"
+    },
+    {
+      "ID": "C021",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Object r=p.getName(); pq.out('C021',r);",
+      "Expected": "local.A42Oracle",
+      "Compile": true,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "C022",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Object r=p.getCapacity()>=0; pq.out('C022',r);",
+      "Expected": "true",
+      "Compile": true,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "C023",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Object r=p.getNumKeys()>=0; pq.out('C023',r);",
+      "Expected": "true",
+      "Compile": true,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "C024",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Object r=p.getKeys().size()>=0; pq.out('C024',r);",
+      "Expected": "true",
+      "Compile": true,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "C025",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); Object r=p.isAvailable(); pq.out('C025',r);",
+      "Expected": "true",
+      "Compile": true,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "C026",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Object r=p.getName(); pq.out('C026',r);",
+      "Expected": "local.A42Oracle",
+      "Compile": true,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "C027",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Object r=p.getCapacity()>=0; pq.out('C027',r);",
+      "Expected": "true",
+      "Compile": true,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "C028",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Object r=p.getNumKeys()>=0; pq.out('C028',r);",
+      "Expected": "true",
+      "Compile": true,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "C029",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Object r=p.getKeys().size()>=0; pq.out('C029',r);",
+      "Expected": "true",
+      "Compile": true,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "C030",
+      "Code": "Cache.SessionPartition p=Cache.Session.getPartition('local.A42Oracle'); Object r=p.isAvailable(); pq.out('C030',r);",
+      "Expected": "true",
+      "Compile": true,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "D001",
+      "Code": "r=[SELECT IsDefaultPartition FROM PlatformCachePartition WHERE DeveloperName='A42Oracle' AND NamespacePrefix=null LIMIT 1].IsDefaultPartition;",
+      "Expected": "true",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "D002",
+      "Code": "r=[SELECT IsDefaultPartition FROM PlatformCachePartition WHERE DeveloperName='A42Zero' AND NamespacePrefix=null LIMIT 1].IsDefaultPartition;",
+      "Expected": "false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "D003",
+      "Code": "Cache.Org.remove('A42DefaultControl'); Cache.Org.remove('local.A42Oracle.A42DefaultControl'); Cache.Org.remove('local.A42Zero.A42DefaultControl'); Cache.Org.put('A42DefaultControl',9); r=String.valueOf(Cache.Org.get('A42DefaultControl'))+'|'+String.valueOf(Cache.Org.get('local.A42Oracle.A42DefaultControl'))+'|'+String.valueOf(Cache.Org.get('local.A42Zero.A42DefaultControl')); Cache.Org.remove('A42DefaultControl'); Cache.Org.remove('local.A42Oracle.A42DefaultControl'); Cache.Org.remove('local.A42Zero.A42DefaultControl');",
+      "Expected": "9|9|null",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "D004",
+      "Code": "Cache.Session.remove('A42DefaultControl'); Cache.Session.remove('local.A42Oracle.A42DefaultControl'); Cache.Session.remove('local.A42Zero.A42DefaultControl'); Cache.Session.put('A42DefaultControl',9); r=String.valueOf(Cache.Session.get('A42DefaultControl'))+'|'+String.valueOf(Cache.Session.get('local.A42Oracle.A42DefaultControl'))+'|'+String.valueOf(Cache.Session.get('local.A42Zero.A42DefaultControl')); Cache.Session.remove('A42DefaultControl'); Cache.Session.remove('local.A42Oracle.A42DefaultControl'); Cache.Session.remove('local.A42Zero.A42DefaultControl');",
+      "Expected": "9|9|null",
+      "Compile": false,
+      "ExpectedNull": false
+    }
+  ],
+  "Controls": [
+    {
+      "ID": "N001",
+      "Code": "Cache.Org.remove('A42Control'); Cache.Org.put('A42Control',9); r=Cache.Org.get('A42Control'); Cache.Org.remove('A42Control');",
+      "Expected": "9",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N002",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42Control'); Cache.Org.put('A42Control',9); r=p.get('A42Control'); Cache.Org.remove('A42Control');",
+      "Expected": "9",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N003",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.put('CacheLoader.shape',7); r=p.get('CacheLoader.shape');",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N004",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('local.A42Oracle.A42Control'); p.put('local.A42Oracle.A42Control',9); r=p.get('A42Control'); p.remove('A42Control');",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key cannot be null or empty and must be alphanumeric",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N005",
+      "Code": "r=Cache.Org.getPartition('cb114-test');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Invalid partition: partition name must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N006",
+      "Code": "r=Cache.Org.getPartition(' local');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Invalid partition: partition name must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N007",
+      "Code": "r=Cache.Session.getPartition('cb114-test');",
+      "Expected": "EXC|cache.Session.SessionCacheException|Invalid partition: partition name must be alphanumeric.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N008",
+      "Code": "r=Cache.Org.getPartition('LOCAL.a42oracle.extra').getName();",
+      "Expected": "local.A42Oracle",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N009",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove('A42Control'); p.put('A42Control',7,300,Cache.Visibility.ALL,true); p.put('A42Control',8); r=p.get('A42Control');",
+      "Expected": "8",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N010",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k='A42'+'x'.repeat(47); p.remove(k); p.put(k,9); r=p.get(k); p.remove(k);",
+      "Expected": "9",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N011",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); String k='A42'+'x'.repeat(48); p.remove(k); p.put(k,9); r=p.get(k); p.remove(k);",
+      "Expected": "EXC|cache.InvalidParamException|Failed Cache.Org operation for key 'A42xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': Invalid key: max key length is 50",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N012",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); p.remove(A42ProbeBuilder.class,'A42Control2'); r=p.get(A42ProbeBuilder.class,'A42Control2'); p.remove(A42ProbeBuilder.class,'A42Control2');",
+      "Expected": "built:A42Control2",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N013",
+      "Code": "r=Cache.Org.get('local.A42Missing.A42Control');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.A42Missing' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N014",
+      "Code": "Cache.Org.put('local.A42Missing.A42Control',9); r='put-returned';",
+      "Expected": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.A42Missing' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N015",
+      "Code": "r=Cache.Org.contains('local.A42Missing.A42Control');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.A42Missing' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N016",
+      "Code": "r=Cache.Org.remove('local.A42Missing.A42Control');",
+      "Expected": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.A42Missing' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N017",
+      "Code": "Cache.Session.put('local.A42Missing.A42Control',9); r='put-returned';",
+      "Expected": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.A42Missing' does not exist.",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N018",
+      "Code": "Cache.OrgPartition p=Cache.Org.getPartition('local.A42Oracle'); r=p.contains('CacheLoader.shape');",
+      "Expected": "EXC|cache.InvalidParamException|Invalid Key, Key is not properly qualified with partition and namespace. Valid key format is <namespace>.<partition>.<key>",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N019",
+      "Code": "Cache.Org.remove('A42Bulk'); Cache.Org.put('A42Bulk',9); r=JSON.serialize(Cache.Org.get(new List<String>{'local.A42Oracle.A42Bulk','A42BulkMissing'})); Cache.Org.remove('A42Bulk');",
+      "Expected": "COMPILE_ERROR\tline 24: Method was removed after version 54.0: get",
+      "Compile": false,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method was removed after version 54.0: get"
+    },
+    {
+      "ID": "N020",
+      "Code": "Cache.Org.remove('A42Bulk'); Cache.Org.put('A42Bulk',9); Map<String,Boolean> values=Cache.Org.contains(new Set<String>{'local.A42Oracle.A42Bulk','A42BulkMissing'}); r=String.valueOf(values.get('local.A42Oracle.A42Bulk'))+'|'+values.get('A42BulkMissing'); Cache.Org.remove('A42Bulk');",
+      "Expected": "true|false",
+      "Compile": false,
+      "ExpectedNull": false
+    },
+    {
+      "ID": "N021",
+      "Code": "Cache.Org.remove('A42Bulk'); Cache.Org.put('A42Bulk',9); r=JSON.serialize(Cache.Org.remove(new List<String>{'local.A42Oracle.A42Bulk','A42BulkMissing'}));",
+      "Expected": "COMPILE_ERROR\tline 25: Method was removed after version 54.0: remove",
+      "Compile": false,
+      "ExpectedNull": false,
+      "NativeDiagnostic": "Method was removed after version 54.0: remove"
+    }
+  ],
+  "Metadata": {
+    "force-app/main/default/cachePartitions/A42Oracle.cachePartition-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PlatformCachePartition xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <isDefaultPartition>true</isDefaultPartition>\n    <masterLabel>A42Oracle</masterLabel>\n    <platformCachePartitionTypes>\n        <allocatedCapacity>1</allocatedCapacity>\n        <allocatedPartnerCapacity>0</allocatedPartnerCapacity>\n        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>\n        <allocatedTrialCapacity>0</allocatedTrialCapacity>\n        <cacheType>Organization</cacheType>\n    </platformCachePartitionTypes>\n    <platformCachePartitionTypes>\n        <allocatedCapacity>1</allocatedCapacity>\n        <allocatedPartnerCapacity>0</allocatedPartnerCapacity>\n        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>\n        <allocatedTrialCapacity>0</allocatedTrialCapacity>\n        <cacheType>Session</cacheType>\n    </platformCachePartitionTypes>\n</PlatformCachePartition>\n",
+    "force-app/main/default/cachePartitions/A42Zero.cachePartition-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PlatformCachePartition xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <isDefaultPartition>false</isDefaultPartition>\n    <masterLabel>A42Zero</masterLabel>\n    <platformCachePartitionTypes>\n        <allocatedCapacity>0</allocatedCapacity>\n        <allocatedPartnerCapacity>0</allocatedPartnerCapacity>\n        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>\n        <allocatedTrialCapacity>0</allocatedTrialCapacity>\n        <cacheType>Organization</cacheType>\n    </platformCachePartitionTypes>\n    <platformCachePartitionTypes>\n        <allocatedCapacity>0</allocatedCapacity>\n        <allocatedPartnerCapacity>0</allocatedPartnerCapacity>\n        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>\n        <allocatedTrialCapacity>0</allocatedTrialCapacity>\n        <cacheType>Session</cacheType>\n    </platformCachePartitionTypes>\n</PlatformCachePartition>\n"
+  },
+  "MetadataControls": [
+    {
+      "ID": "M001",
+      "Metadata": {
+        "force-app/main/default/cachePartitions/A42Zero.cachePartition-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PlatformCachePartition xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <isDefaultPartition>true</isDefaultPartition>\n    <masterLabel>A42Zero</masterLabel>\n    <platformCachePartitionTypes>\n        <allocatedCapacity>0</allocatedCapacity>\n        <allocatedPartnerCapacity>0</allocatedPartnerCapacity>\n        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>\n        <allocatedTrialCapacity>0</allocatedTrialCapacity>\n        <cacheType>Organization</cacheType>\n    </platformCachePartitionTypes>\n    <platformCachePartitionTypes>\n        <allocatedCapacity>0</allocatedCapacity>\n        <allocatedPartnerCapacity>0</allocatedPartnerCapacity>\n        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>\n        <allocatedTrialCapacity>0</allocatedTrialCapacity>\n        <cacheType>Session</cacheType>\n    </platformCachePartitionTypes>\n</PlatformCachePartition>\n"
+      },
+      "Expected": "DEPLOY_ERROR|Only one default partition is allowed per organization"
+    }
+  ],
+  "Boundaries": [
+    "Mixed local/managed defaults cannot be installed in the scratch orgs; prefer the local namespace default deterministically, without claiming native managed-package routing parity."
+  ]
+}

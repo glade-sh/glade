@@ -74,12 +74,11 @@ func callWaveQueryNodeMember(receiver Value, method string, args []Value) (Value
 		}
 		return String(waveQueryNodeBuild(receiver, args[0].Text)), receiver, false, true, nil
 	case "execute":
-		if len(args) != 1 || args[0].Kind != ValueString {
+		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) {
 			return Null, receiver, false, true, fmt.Errorf("wave.QueryNode.execute expects String streamName")
 		}
-		out := Object("ConnectApi.LiteralJson")
-		out.Fields["json"] = typedList("List<Object>")
-		return out, receiver, false, true, nil
+		// Executing a Wave query is a hosted boundary.
+		return Null, receiver, false, true, newExceptionError("System.UnsupportedOperationException", "wave.QueryNode.execute requires the hosted CRM Analytics service")
 	case "cap", "filter", "foreach", "group", "order":
 		if strings.EqualFold(method, "group") && len(args) > 1 {
 			return Null, receiver, false, true, fmt.Errorf("wave.QueryNode.group expects 0 or 1 argument")

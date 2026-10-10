@@ -100,11 +100,20 @@ System.assertEquals(0, value.getInaccessibleFields().size());
 }
 
 func TestCurrentBaseSystemVersionAndURLUseLocalContext(t *testing.T) {
+	// A14 V063 at API62/67: keep the unmanaged boundary separate from
+	// the existing local URL/context assertions below.
+	versionProgram, err := CompileAnonymous(`System.requestVersion().toString();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(versionProgram); err == nil || err.Error() != "System.ProcedureException: Method is not supported from an unmanaged namespace" {
+		t.Fatalf("unmanaged requestVersion error=%v", err)
+	}
+
 	program, err := CompileAnonymous(`
-System.assertEquals('65.0.0', System.requestVersion().toString());
 URL base = URL.getSalesforceBaseUrl();
 System.assertEquals('https://trail.example.test:8443', base.toExternalForm());
-System.assertEquals(base.toExternalForm(), URL.getOrgDomainUrl().toExternalForm());
+System.assertEquals('https://local.glade.example', URL.getOrgDomainUrl().toExternalForm());
 `)
 	if err != nil {
 		t.Fatal(err)

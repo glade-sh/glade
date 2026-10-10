@@ -1,0 +1,1 @@
+<aura:application access="GLOBAL" extends="ltng:outApp"><aura:dependency resource="c:familyL14VFControl67"/></aura:application>

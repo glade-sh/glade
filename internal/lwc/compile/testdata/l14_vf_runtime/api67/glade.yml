@@ -1,0 +1,4 @@
+project:
+  root: .
+  packageDirs: [force-app]
+  defaultNamespace: ""

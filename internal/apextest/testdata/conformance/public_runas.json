@@ -1,0 +1,1900 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "nativeEvidence": {
+    "anonymous": {
+      "62.0": {
+        "orgTSV": "R001\tEXC|System.TypeException|System.runAs can only be used within a test method: \nR002\tEXC|System.TypeException|System.runAs can only be used within a test method: \nR003\tGET\nR004\ttrue\nR005\ttrue\nR006\ttrue\nR007\ttrue\nC001\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC002\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC003\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getMethod() from the type HttpRequest\nC004\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getErrors() from the type SaveResult\nC005\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC006\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC007\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\n",
+        "runtimeSource": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\ntry { Object r; Schema.User acting = [SELECT Id FROM User WHERE Id = :System.UserInfo.getUserId()]; System.runAs(acting) { r = System.UserInfo.getUserId() == acting.Id; } pq.out('R001', r); } catch (Exception e) { pq.err('R001', e); }\ntry { Object r; System.runAs(new Schema.User(Id=System.UserInfo.getUserId())) { r = true; } pq.out('R002', r); } catch (Exception e) { pq.err('R002', e); }\ntry { Object r; System.HttpRequest req = new System.HttpRequest(); req.setMethod('GET'); r = req.getMethod(); pq.out('R003', r); } catch (Exception e) { pq.err('R003', e); }\ntry { Object r; Database.SaveResult value = null; r = value == null; pq.out('R004', r); } catch (Exception e) { pq.err('R004', e); }\ntry { Object r; Object boxed = 'oak'; String text = 'oak'; r = boxed === text; pq.out('R005', r); } catch (Exception e) { pq.err('R005', e); }\ntry { Object r; Object boxed = 'oak'; String text = 'oak'; r = text === boxed; pq.out('R006', r); } catch (Exception e) { pq.err('R006', e); }\ntry { Object r; Object left = new List<Integer>(); Object right = left; r = left === right; pq.out('R007', r); } catch (Exception e) { pq.err('R007', e); }\n"
+      },
+      "67.0": {
+        "orgTSV": "R001\tEXC|System.TypeException|System.runAs can only be used within a test method: \nR002\tEXC|System.TypeException|System.runAs can only be used within a test method: \nR003\tGET\nR004\ttrue\nR005\ttrue\nR006\ttrue\nR007\ttrue\nC001\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC002\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC003\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getMethod() from the type HttpRequest\nC004\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getErrors() from the type SaveResult\nC005\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC006\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC007\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\n",
+        "runtimeSource": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\ntry { Object r; Schema.User acting = [SELECT Id FROM User WHERE Id = :System.UserInfo.getUserId()]; System.runAs(acting) { r = System.UserInfo.getUserId() == acting.Id; } pq.out('R001', r); } catch (Exception e) { pq.err('R001', e); }\ntry { Object r; System.runAs(new Schema.User(Id=System.UserInfo.getUserId())) { r = true; } pq.out('R002', r); } catch (Exception e) { pq.err('R002', e); }\ntry { Object r; System.HttpRequest req = new System.HttpRequest(); req.setMethod('GET'); r = req.getMethod(); pq.out('R003', r); } catch (Exception e) { pq.err('R003', e); }\ntry { Object r; Database.SaveResult value = null; r = value == null; pq.out('R004', r); } catch (Exception e) { pq.err('R004', e); }\ntry { Object r; Object boxed = 'oak'; String text = 'oak'; r = boxed === text; pq.out('R005', r); } catch (Exception e) { pq.err('R005', e); }\ntry { Object r; Object boxed = 'oak'; String text = 'oak'; r = text === boxed; pq.out('R006', r); } catch (Exception e) { pq.err('R006', e); }\ntry { Object r; Object left = new List<Integer>(); Object right = left; r = left === right; pq.out('R007', r); } catch (Exception e) { pq.err('R007', e); }\n"
+      }
+    },
+    "isTest": {
+      "62.0": {
+        "orgTSV": "R001\ttrue\nR002\ttrue\nR003\tGET\nR004\ttrue\nR005\ttrue\nR006\ttrue\nR007\ttrue\n",
+        "compileTSV": "R001\tcompiled\nR002\tcompiled\nR003\tcompiled\nR004\tcompiled\nR005\tcompiled\nR006\tcompiled\nR007\tcompiled\nC001\tCOMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'\nC002\tCOMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'\nC003\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getMethod() from the type HttpRequest\nC004\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getErrors() from the type SaveResult\nC005\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\nC006\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\nC007\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\n",
+        "companions": {
+          "User": "public class User {}\n",
+          "HttpRequest": "public class HttpRequest {}\n",
+          "SaveResult": "public class SaveResult {}\n"
+        }
+      },
+      "67.0": {
+        "orgTSV": "R001\ttrue\nR002\ttrue\nR003\tGET\nR004\ttrue\nR005\ttrue\nR006\ttrue\nR007\ttrue\n",
+        "compileTSV": "R001\tcompiled\nR002\tcompiled\nR003\tcompiled\nR004\tcompiled\nR005\tcompiled\nR006\tcompiled\nR007\tcompiled\nC001\tCOMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'\nC002\tCOMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'\nC003\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getMethod() from the type HttpRequest\nC004\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getErrors() from the type SaveResult\nC005\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\nC006\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\nC007\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\n",
+        "companions": {
+          "User": "public class User {}\n",
+          "HttpRequest": "public class HttpRequest {}\n",
+          "SaveResult": "public class SaveResult {}\n"
+        }
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "R001",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "Schema.User acting = [SELECT Id FROM User WHERE Id = :System.UserInfo.getUserId()]; System.runAs(acting) { r = System.UserInfo.getUserId() == acting.Id; }",
+      "description": "Qualified queried platform User under User shadow; named test-only runAs",
+      "expected": "EXC|System.TypeException|System.runAs can only be used within a test method: "
+    },
+    {
+      "id": "R002",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "System.runAs(new Schema.User(Id=System.UserInfo.getUserId())) { r = true; }",
+      "description": "Qualified constructor platform User under User shadow; named test-only runAs",
+      "expected": "EXC|System.TypeException|System.runAs can only be used within a test method: "
+    },
+    {
+      "id": "R003",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "System.HttpRequest req = new System.HttpRequest(); req.setMethod('GET'); r = req.getMethod();",
+      "description": "System-qualified platform member under HttpRequest shadow",
+      "expected": "GET"
+    },
+    {
+      "id": "R004",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "Database.SaveResult value = null; r = value == null;",
+      "description": "Database-qualified platform type under SaveResult shadow",
+      "expected": "true"
+    },
+    {
+      "id": "R005",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "Object boxed = 'oak'; String text = 'oak'; r = boxed === text;",
+      "description": "Mixed Object/String exact identity; compilation and Boolean unobserved",
+      "expected": "true"
+    },
+    {
+      "id": "R006",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "Object boxed = 'oak'; String text = 'oak'; r = text === boxed;",
+      "description": "Reversed mixed String/Object exact identity; compilation and Boolean unobserved",
+      "expected": "true"
+    },
+    {
+      "id": "R007",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "Object left = new List<Integer>(); Object right = left; r = left === right;",
+      "description": "Object/Object exact reference identity control",
+      "expected": "true"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nUser acting = new User(); System.runAs(acting) {}",
+      "description": "User project class is not Schema.User",
+      "expected": "COMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nUser acting = new User(); System.runAs(acting) {}\n"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nSystem.runAs(new User()) {}",
+      "description": "User project constructor is not Schema.User",
+      "expected": "COMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nSystem.runAs(new User()) {}\n"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nHttpRequest req = new HttpRequest(); Object r = req.getMethod();",
+      "description": "Unrelated project HttpRequest has no platform member",
+      "expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getMethod() from the type HttpRequest",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nHttpRequest req = new HttpRequest(); Object r = req.getMethod();\n"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nSaveResult value = new SaveResult(); Object r = value.getErrors();",
+      "description": "Unrelated project SaveResult has no platform member",
+      "expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getErrors() from the type SaveResult",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nSaveResult value = new SaveResult(); Object r = value.getErrors();\n"
+    },
+    {
+      "id": "C005",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = boxed === text;",
+      "description": "Homogeneous String/String identity must remain rejected",
+      "expected": "COMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = boxed === text;\n"
+    },
+    {
+      "id": "C006",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = text === boxed;",
+      "description": "Reversed homogeneous String/String identity must remain rejected",
+      "expected": "COMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = text === boxed;\n"
+    },
+    {
+      "id": "C007",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString left = 'oak'; String right = left; Boolean same = left === right;",
+      "description": "Homogeneous String/String reference-looking control must remain rejected",
+      "expected": "COMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nString left = 'oak'; String right = left; Boolean same = left === right;\n"
+    },
+    {
+      "id": "R001",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "Schema.User acting = [SELECT Id FROM User WHERE Id = :System.UserInfo.getUserId()]; System.runAs(acting) { r = System.UserInfo.getUserId() == acting.Id; }",
+      "description": "Qualified queried platform User under User shadow; named test-only runAs",
+      "expected": "EXC|System.TypeException|System.runAs can only be used within a test method: "
+    },
+    {
+      "id": "R002",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "System.runAs(new Schema.User(Id=System.UserInfo.getUserId())) { r = true; }",
+      "description": "Qualified constructor platform User under User shadow; named test-only runAs",
+      "expected": "EXC|System.TypeException|System.runAs can only be used within a test method: "
+    },
+    {
+      "id": "R003",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "System.HttpRequest req = new System.HttpRequest(); req.setMethod('GET'); r = req.getMethod();",
+      "description": "System-qualified platform member under HttpRequest shadow",
+      "expected": "GET"
+    },
+    {
+      "id": "R004",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "Database.SaveResult value = null; r = value == null;",
+      "description": "Database-qualified platform type under SaveResult shadow",
+      "expected": "true"
+    },
+    {
+      "id": "R005",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "Object boxed = 'oak'; String text = 'oak'; r = boxed === text;",
+      "description": "Mixed Object/String exact identity; compilation and Boolean unobserved",
+      "expected": "true"
+    },
+    {
+      "id": "R006",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "Object boxed = 'oak'; String text = 'oak'; r = text === boxed;",
+      "description": "Reversed mixed String/Object exact identity; compilation and Boolean unobserved",
+      "expected": "true"
+    },
+    {
+      "id": "R007",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": false,
+      "code": "Object left = new List<Integer>(); Object right = left; r = left === right;",
+      "description": "Object/Object exact reference identity control",
+      "expected": "true"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nUser acting = new User(); System.runAs(acting) {}",
+      "description": "User project class is not Schema.User",
+      "expected": "COMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nUser acting = new User(); System.runAs(acting) {}\n"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nSystem.runAs(new User()) {}",
+      "description": "User project constructor is not Schema.User",
+      "expected": "COMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nSystem.runAs(new User()) {}\n"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nHttpRequest req = new HttpRequest(); Object r = req.getMethod();",
+      "description": "Unrelated project HttpRequest has no platform member",
+      "expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getMethod() from the type HttpRequest",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nHttpRequest req = new HttpRequest(); Object r = req.getMethod();\n"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nSaveResult value = new SaveResult(); Object r = value.getErrors();",
+      "description": "Unrelated project SaveResult has no platform member",
+      "expected": "COMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getErrors() from the type SaveResult",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nSaveResult value = new SaveResult(); Object r = value.getErrors();\n"
+    },
+    {
+      "id": "C005",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = boxed === text;",
+      "description": "Homogeneous String/String identity must remain rejected",
+      "expected": "COMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = boxed === text;\n"
+    },
+    {
+      "id": "C006",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = text === boxed;",
+      "description": "Reversed homogeneous String/String identity must remain rejected",
+      "expected": "COMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = text === boxed;\n"
+    },
+    {
+      "id": "C007",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString left = 'oak'; String right = left; Boolean same = left === right;",
+      "description": "Homogeneous String/String reference-looking control must remain rejected",
+      "expected": "COMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String",
+      "source": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass User {}\nclass HttpRequest {}\nclass SaveResult {}\nString left = 'oak'; String right = left; Boolean same = left === right;\n"
+    },
+    {
+      "id": "R001",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "Schema.User acting = [SELECT Id FROM User WHERE Id = :System.UserInfo.getUserId()]; System.runAs(acting) { r = System.UserInfo.getUserId() == acting.Id; }",
+      "description": "Qualified queried platform User under User shadow; named test-only runAs",
+      "expected": "true",
+      "name": "CRT62d08dc549eb55R001",
+      "source": "@IsTest private class CRT62d08dc549eb55R001 {\n@IsTest static void R001() {\nString corpusObserved;\ntry {\nObject r;\nSchema.User acting = [SELECT Id FROM User WHERE Id = :System.UserInfo.getUserId()]; System.runAs(acting) { r = System.UserInfo.getUserId() == acting.Id; }\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R001|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R002",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "System.runAs(new Schema.User(Id=System.UserInfo.getUserId())) { r = true; }",
+      "description": "Qualified constructor platform User under User shadow; named test-only runAs",
+      "expected": "true",
+      "name": "CRT62d08dc549eb55R002",
+      "source": "@IsTest private class CRT62d08dc549eb55R002 {\n@IsTest static void R002() {\nString corpusObserved;\ntry {\nObject r;\nSystem.runAs(new Schema.User(Id=System.UserInfo.getUserId())) { r = true; }\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R002|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R003",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "System.HttpRequest req = new System.HttpRequest(); req.setMethod('GET'); r = req.getMethod();",
+      "description": "System-qualified platform member under HttpRequest shadow",
+      "expected": "GET",
+      "name": "CRT62d08dc549eb55R003",
+      "source": "@IsTest private class CRT62d08dc549eb55R003 {\n@IsTest static void R003() {\nString corpusObserved;\ntry {\nObject r;\nSystem.HttpRequest req = new System.HttpRequest(); req.setMethod('GET'); r = req.getMethod();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R003|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R004",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "Database.SaveResult value = null; r = value == null;",
+      "description": "Database-qualified platform type under SaveResult shadow",
+      "expected": "true",
+      "name": "CRT62d08dc549eb55R004",
+      "source": "@IsTest private class CRT62d08dc549eb55R004 {\n@IsTest static void R004() {\nString corpusObserved;\ntry {\nObject r;\nDatabase.SaveResult value = null; r = value == null;\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R004|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R005",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "Object boxed = 'oak'; String text = 'oak'; r = boxed === text;",
+      "description": "Mixed Object/String exact identity; compilation and Boolean unobserved",
+      "expected": "true",
+      "name": "CRT62d08dc549eb55R005",
+      "source": "@IsTest private class CRT62d08dc549eb55R005 {\n@IsTest static void R005() {\nString corpusObserved;\ntry {\nObject r;\nObject boxed = 'oak'; String text = 'oak'; r = boxed === text;\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R005|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R006",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "Object boxed = 'oak'; String text = 'oak'; r = text === boxed;",
+      "description": "Reversed mixed String/Object exact identity; compilation and Boolean unobserved",
+      "expected": "true",
+      "name": "CRT62d08dc549eb55R006",
+      "source": "@IsTest private class CRT62d08dc549eb55R006 {\n@IsTest static void R006() {\nString corpusObserved;\ntry {\nObject r;\nObject boxed = 'oak'; String text = 'oak'; r = text === boxed;\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R006|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R007",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "Object left = new List<Integer>(); Object right = left; r = left === right;",
+      "description": "Object/Object exact reference identity control",
+      "expected": "true",
+      "name": "CRT62d08dc549eb55R007",
+      "source": "@IsTest private class CRT62d08dc549eb55R007 {\n@IsTest static void R007() {\nString corpusObserved;\ntry {\nObject r;\nObject left = new List<Integer>(); Object right = left; r = left === right;\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R007|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nUser acting = new User(); System.runAs(acting) {}",
+      "description": "User project class is not Schema.User",
+      "expected": "COMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'",
+      "name": "CRT62d08dc549eb55C001",
+      "source": "@IsTest private class CRT62d08dc549eb55C001 {\n@IsTest static void C001() {\nUser acting = new User(); System.runAs(acting) {}\n}\n}\n"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nSystem.runAs(new User()) {}",
+      "description": "User project constructor is not Schema.User",
+      "expected": "COMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'",
+      "name": "CRT62d08dc549eb55C002",
+      "source": "@IsTest private class CRT62d08dc549eb55C002 {\n@IsTest static void C002() {\nSystem.runAs(new User()) {}\n}\n}\n"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nHttpRequest req = new HttpRequest(); Object r = req.getMethod();",
+      "description": "Unrelated project HttpRequest has no platform member",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getMethod() from the type HttpRequest",
+      "name": "CRT62d08dc549eb55C003",
+      "source": "@IsTest private class CRT62d08dc549eb55C003 {\n@IsTest static void C003() {\nHttpRequest req = new HttpRequest(); Object r = req.getMethod();\n}\n}\n"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nSaveResult value = new SaveResult(); Object r = value.getErrors();",
+      "description": "Unrelated project SaveResult has no platform member",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getErrors() from the type SaveResult",
+      "name": "CRT62d08dc549eb55C004",
+      "source": "@IsTest private class CRT62d08dc549eb55C004 {\n@IsTest static void C004() {\nSaveResult value = new SaveResult(); Object r = value.getErrors();\n}\n}\n"
+    },
+    {
+      "id": "C005",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = boxed === text;",
+      "description": "Homogeneous String/String identity must remain rejected",
+      "expected": "COMPILE_ERROR\tExact equality operator only allowed for reference types: String",
+      "name": "CRT62d08dc549eb55C005",
+      "source": "@IsTest private class CRT62d08dc549eb55C005 {\n@IsTest static void C005() {\nString boxed = 'oak'; String text = 'oak'; Boolean same = boxed === text;\n}\n}\n"
+    },
+    {
+      "id": "C006",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = text === boxed;",
+      "description": "Reversed homogeneous String/String identity must remain rejected",
+      "expected": "COMPILE_ERROR\tExact equality operator only allowed for reference types: String",
+      "name": "CRT62d08dc549eb55C006",
+      "source": "@IsTest private class CRT62d08dc549eb55C006 {\n@IsTest static void C006() {\nString boxed = 'oak'; String text = 'oak'; Boolean same = text === boxed;\n}\n}\n"
+    },
+    {
+      "id": "C007",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString left = 'oak'; String right = left; Boolean same = left === right;",
+      "description": "Homogeneous String/String reference-looking control must remain rejected",
+      "expected": "COMPILE_ERROR\tExact equality operator only allowed for reference types: String",
+      "name": "CRT62d08dc549eb55C007",
+      "source": "@IsTest private class CRT62d08dc549eb55C007 {\n@IsTest static void C007() {\nString left = 'oak'; String right = left; Boolean same = left === right;\n}\n}\n"
+    },
+    {
+      "id": "R001",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "Schema.User acting = [SELECT Id FROM User WHERE Id = :System.UserInfo.getUserId()]; System.runAs(acting) { r = System.UserInfo.getUserId() == acting.Id; }",
+      "description": "Qualified queried platform User under User shadow; named test-only runAs",
+      "expected": "true",
+      "name": "CRT6762388ad39485R001",
+      "source": "@IsTest private class CRT6762388ad39485R001 {\n@IsTest static void R001() {\nString corpusObserved;\ntry {\nObject r;\nSchema.User acting = [SELECT Id FROM User WHERE Id = :System.UserInfo.getUserId()]; System.runAs(acting) { r = System.UserInfo.getUserId() == acting.Id; }\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R001|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R002",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "System.runAs(new Schema.User(Id=System.UserInfo.getUserId())) { r = true; }",
+      "description": "Qualified constructor platform User under User shadow; named test-only runAs",
+      "expected": "true",
+      "name": "CRT6762388ad39485R002",
+      "source": "@IsTest private class CRT6762388ad39485R002 {\n@IsTest static void R002() {\nString corpusObserved;\ntry {\nObject r;\nSystem.runAs(new Schema.User(Id=System.UserInfo.getUserId())) { r = true; }\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R002|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R003",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "System.HttpRequest req = new System.HttpRequest(); req.setMethod('GET'); r = req.getMethod();",
+      "description": "System-qualified platform member under HttpRequest shadow",
+      "expected": "GET",
+      "name": "CRT6762388ad39485R003",
+      "source": "@IsTest private class CRT6762388ad39485R003 {\n@IsTest static void R003() {\nString corpusObserved;\ntry {\nObject r;\nSystem.HttpRequest req = new System.HttpRequest(); req.setMethod('GET'); r = req.getMethod();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R003|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R004",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "Database.SaveResult value = null; r = value == null;",
+      "description": "Database-qualified platform type under SaveResult shadow",
+      "expected": "true",
+      "name": "CRT6762388ad39485R004",
+      "source": "@IsTest private class CRT6762388ad39485R004 {\n@IsTest static void R004() {\nString corpusObserved;\ntry {\nObject r;\nDatabase.SaveResult value = null; r = value == null;\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R004|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R005",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "Object boxed = 'oak'; String text = 'oak'; r = boxed === text;",
+      "description": "Mixed Object/String exact identity; compilation and Boolean unobserved",
+      "expected": "true",
+      "name": "CRT6762388ad39485R005",
+      "source": "@IsTest private class CRT6762388ad39485R005 {\n@IsTest static void R005() {\nString corpusObserved;\ntry {\nObject r;\nObject boxed = 'oak'; String text = 'oak'; r = boxed === text;\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R005|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R006",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "Object boxed = 'oak'; String text = 'oak'; r = text === boxed;",
+      "description": "Reversed mixed String/Object exact identity; compilation and Boolean unobserved",
+      "expected": "true",
+      "name": "CRT6762388ad39485R006",
+      "source": "@IsTest private class CRT6762388ad39485R006 {\n@IsTest static void R006() {\nString corpusObserved;\ntry {\nObject r;\nObject boxed = 'oak'; String text = 'oak'; r = text === boxed;\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R006|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "R007",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": false,
+      "code": "Object left = new List<Integer>(); Object right = left; r = left === right;",
+      "description": "Object/Object exact reference identity control",
+      "expected": "true",
+      "name": "CRT6762388ad39485R007",
+      "source": "@IsTest private class CRT6762388ad39485R007 {\n@IsTest static void R007() {\nString corpusObserved;\ntry {\nObject r;\nObject left = new List<Integer>(); Object right = left; r = left === right;\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R007|' + corpusObserved);\n}\n}\n"
+    },
+    {
+      "id": "C001",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nUser acting = new User(); System.runAs(acting) {}",
+      "description": "User project class is not Schema.User",
+      "expected": "COMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'",
+      "name": "CRT6762388ad39485C001",
+      "source": "@IsTest private class CRT6762388ad39485C001 {\n@IsTest static void C001() {\nUser acting = new User(); System.runAs(acting) {}\n}\n}\n"
+    },
+    {
+      "id": "C002",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nSystem.runAs(new User()) {}",
+      "description": "User project constructor is not Schema.User",
+      "expected": "COMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'",
+      "name": "CRT6762388ad39485C002",
+      "source": "@IsTest private class CRT6762388ad39485C002 {\n@IsTest static void C002() {\nSystem.runAs(new User()) {}\n}\n}\n"
+    },
+    {
+      "id": "C003",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nHttpRequest req = new HttpRequest(); Object r = req.getMethod();",
+      "description": "Unrelated project HttpRequest has no platform member",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getMethod() from the type HttpRequest",
+      "name": "CRT6762388ad39485C003",
+      "source": "@IsTest private class CRT6762388ad39485C003 {\n@IsTest static void C003() {\nHttpRequest req = new HttpRequest(); Object r = req.getMethod();\n}\n}\n"
+    },
+    {
+      "id": "C004",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nSaveResult value = new SaveResult(); Object r = value.getErrors();",
+      "description": "Unrelated project SaveResult has no platform member",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getErrors() from the type SaveResult",
+      "name": "CRT6762388ad39485C004",
+      "source": "@IsTest private class CRT6762388ad39485C004 {\n@IsTest static void C004() {\nSaveResult value = new SaveResult(); Object r = value.getErrors();\n}\n}\n"
+    },
+    {
+      "id": "C005",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = boxed === text;",
+      "description": "Homogeneous String/String identity must remain rejected",
+      "expected": "COMPILE_ERROR\tExact equality operator only allowed for reference types: String",
+      "name": "CRT6762388ad39485C005",
+      "source": "@IsTest private class CRT6762388ad39485C005 {\n@IsTest static void C005() {\nString boxed = 'oak'; String text = 'oak'; Boolean same = boxed === text;\n}\n}\n"
+    },
+    {
+      "id": "C006",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString boxed = 'oak'; String text = 'oak'; Boolean same = text === boxed;",
+      "description": "Reversed homogeneous String/String identity must remain rejected",
+      "expected": "COMPILE_ERROR\tExact equality operator only allowed for reference types: String",
+      "name": "CRT6762388ad39485C006",
+      "source": "@IsTest private class CRT6762388ad39485C006 {\n@IsTest static void C006() {\nString boxed = 'oak'; String text = 'oak'; Boolean same = text === boxed;\n}\n}\n"
+    },
+    {
+      "id": "C007",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "compile": true,
+      "code": "class User {}\nclass HttpRequest {}\nclass SaveResult {}\nString left = 'oak'; String right = left; Boolean same = left === right;",
+      "description": "Homogeneous String/String reference-looking control must remain rejected",
+      "expected": "COMPILE_ERROR\tExact equality operator only allowed for reference types: String",
+      "name": "CRT6762388ad39485C007",
+      "source": "@IsTest private class CRT6762388ad39485C007 {\n@IsTest static void C007() {\nString left = 'oak'; String right = left; Boolean same = left === right;\n}\n}\n"
+    },
+    {
+      "id": "R008",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = HttpRequest.class.getName();",
+      "description": "HttpRequest class-literal getName under source HttpRequest shadow",
+      "expected": "HttpRequest",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\ntry{Object r;r = HttpRequest.class.getName(); pq.out('R008',r);}catch(Exception e){pq.err('R008',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R009",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "Type t = HttpRequest.class; r = t.getName();",
+      "description": "Unqualified Type value of source HttpRequest class literal",
+      "expected": "HttpRequest",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\ntry{Object r;Type t = HttpRequest.class; r = t.getName(); pq.out('R009',r);}catch(Exception e){pq.err('R009',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R010",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "Object o = HttpRequest.class.newInstance(); r = o instanceof HttpRequest;",
+      "description": "Source HttpRequest class-literal newInstance and instanceof",
+      "expected": "true",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\ntry{Object r;Object o = HttpRequest.class.newInstance(); r = o instanceof HttpRequest; pq.out('R010',r);}catch(Exception e){pq.err('R010',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R011",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = Foo.class.getName();",
+      "description": "Ordinary Foo class-literal getName under source Type shadow",
+      "expected": "Foo",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass Type {}\nclass Foo {}\ntry{Object r;r = Foo.class.getName(); pq.out('R011',r);}catch(Exception e){pq.err('R011',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R012",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.Type t = Foo.class; r = t.getName();",
+      "description": "System.Type value of ordinary Foo under source Type shadow",
+      "expected": "Foo",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass Type {}\nclass Foo {}\ntry{Object r;System.Type t = Foo.class; r = t.getName(); pq.out('R012',r);}catch(Exception e){pq.err('R012',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R013",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.name();",
+      "description": "Qualified platform enum name under source LoggingLevel class shadow",
+      "expected": "DEBUG",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\ntry{Object r;System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.name(); pq.out('R013',r);}catch(Exception e){pq.err('R013',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R014",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.ordinal();",
+      "description": "Qualified platform enum ordinal under source LoggingLevel class shadow",
+      "expected": "5",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\ntry{Object r;System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.ordinal(); pq.out('R014',r);}catch(Exception e){pq.err('R014',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R015",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = System.LoggingLevel.values().size();",
+      "description": "Qualified platform enum values size under source LoggingLevel class shadow",
+      "expected": "9",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\ntry{Object r;r = System.LoggingLevel.values().size(); pq.out('R015',r);}catch(Exception e){pq.err('R015',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R016",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = (true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).name();",
+      "description": "Conditional qualified platform enum receiver under source LoggingLevel class shadow",
+      "expected": "DEBUG",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\ntry{Object r;r = (true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).name(); pq.out('R016',r);}catch(Exception e){pq.err('R016',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R017",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.A.name();",
+      "description": "Source enum named DisplayType value name",
+      "expected": "A",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\ntry{Object r;r = DisplayType.A.name(); pq.out('R017',r);}catch(Exception e){pq.err('R017',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R018",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.values();",
+      "description": "Source enum named DisplayType values list",
+      "expected": "(A, B)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\ntry{Object r;r = DisplayType.values(); pq.out('R018',r);}catch(Exception e){pq.err('R018',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R019",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.A.ordinal();",
+      "description": "Source enum named DisplayType value ordinal",
+      "expected": "0",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\ntry{Object r;r = DisplayType.A.ordinal(); pq.out('R019',r);}catch(Exception e){pq.err('R019',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C008",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\nHttpRequest.class.getNameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C009",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\nHttpRequest.class.getNameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C010",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.newInstanceX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void newInstanceX() from the type System.Type",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\nHttpRequest.class.newInstanceX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C011",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class Type {}\nclass Foo {}\nFoo.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass Type {}\nclass Foo {}\nFoo.class.getNameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C012",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class Type {}\nclass Foo {}\nFoo.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass Type {}\nclass Foo {}\nFoo.class.getNameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C013",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.nameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C014",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.ordinalX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type System.LoggingLevel",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.ordinalX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C015",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel.DEBUG.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\nSystem.LoggingLevel.DEBUG.nameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C016",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\n(true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\n(true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).nameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C017",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\nDisplayType.A.nameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C018",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\nDisplayType.A.nameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C019",
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.ordinalX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type DisplayType",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\nDisplayType.A.ordinalX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R008",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = HttpRequest.class.getName();",
+      "description": "HttpRequest class-literal getName under source HttpRequest shadow",
+      "expected": "HttpRequest",
+      "name": "CRT62cdbec900a839R008",
+      "source": "@IsTest private class CRT62cdbec900a839R008 {\n@IsTest static void R008() {\nString corpusObserved;\ntry {\nObject r;\nr = HttpRequest.class.getName();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R008|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "R009",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "Type t = HttpRequest.class; r = t.getName();",
+      "description": "Unqualified Type value of source HttpRequest class literal",
+      "expected": "HttpRequest",
+      "name": "CRT62cdbec900a839R009",
+      "source": "@IsTest private class CRT62cdbec900a839R009 {\n@IsTest static void R009() {\nString corpusObserved;\ntry {\nObject r;\nType t = HttpRequest.class; r = t.getName();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R009|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "R010",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "Object o = HttpRequest.class.newInstance(); r = o instanceof HttpRequest;",
+      "description": "Source HttpRequest class-literal newInstance and instanceof",
+      "expected": "true",
+      "name": "CRT62cdbec900a839R010",
+      "source": "@IsTest private class CRT62cdbec900a839R010 {\n@IsTest static void R010() {\nString corpusObserved;\ntry {\nObject r;\nObject o = HttpRequest.class.newInstance(); r = o instanceof HttpRequest;\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R010|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "R011",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = Foo.class.getName();",
+      "description": "Ordinary Foo class-literal getName under source Type shadow",
+      "expected": "Foo",
+      "name": "CRT62cdbec900a839R011",
+      "source": "@IsTest private class CRT62cdbec900a839R011 {\n@IsTest static void R011() {\nString corpusObserved;\ntry {\nObject r;\nr = Foo.class.getName();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R011|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "Foo": "public class Foo {}\n",
+        "Type": "public class Type {}\n"
+      }
+    },
+    {
+      "id": "R012",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.Type t = Foo.class; r = t.getName();",
+      "description": "System.Type value of ordinary Foo under source Type shadow",
+      "expected": "Foo",
+      "name": "CRT62cdbec900a839R012",
+      "source": "@IsTest private class CRT62cdbec900a839R012 {\n@IsTest static void R012() {\nString corpusObserved;\ntry {\nObject r;\nSystem.Type t = Foo.class; r = t.getName();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R012|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "Foo": "public class Foo {}\n",
+        "Type": "public class Type {}\n"
+      }
+    },
+    {
+      "id": "R013",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.name();",
+      "description": "Qualified platform enum name under source LoggingLevel class shadow",
+      "expected": "DEBUG",
+      "name": "CRT62cdbec900a839R013",
+      "source": "@IsTest private class CRT62cdbec900a839R013 {\n@IsTest static void R013() {\nString corpusObserved;\ntry {\nObject r;\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.name();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R013|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "R014",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.ordinal();",
+      "description": "Qualified platform enum ordinal under source LoggingLevel class shadow",
+      "expected": "5",
+      "name": "CRT62cdbec900a839R014",
+      "source": "@IsTest private class CRT62cdbec900a839R014 {\n@IsTest static void R014() {\nString corpusObserved;\ntry {\nObject r;\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.ordinal();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R014|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "R015",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = System.LoggingLevel.values().size();",
+      "description": "Qualified platform enum values size under source LoggingLevel class shadow",
+      "expected": "9",
+      "name": "CRT62cdbec900a839R015",
+      "source": "@IsTest private class CRT62cdbec900a839R015 {\n@IsTest static void R015() {\nString corpusObserved;\ntry {\nObject r;\nr = System.LoggingLevel.values().size();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R015|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "R016",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = (true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).name();",
+      "description": "Conditional qualified platform enum receiver under source LoggingLevel class shadow",
+      "expected": "DEBUG",
+      "name": "CRT62cdbec900a839R016",
+      "source": "@IsTest private class CRT62cdbec900a839R016 {\n@IsTest static void R016() {\nString corpusObserved;\ntry {\nObject r;\nr = (true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).name();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R016|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "R017",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.A.name();",
+      "description": "Source enum named DisplayType value name",
+      "expected": "A",
+      "name": "CRT62cdbec900a839R017",
+      "source": "@IsTest private class CRT62cdbec900a839R017 {\n@IsTest static void R017() {\nString corpusObserved;\ntry {\nObject r;\nr = DisplayType.A.name();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R017|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    },
+    {
+      "id": "R018",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.values();",
+      "description": "Source enum named DisplayType values list",
+      "expected": "(A, B)",
+      "name": "CRT62cdbec900a839R018",
+      "source": "@IsTest private class CRT62cdbec900a839R018 {\n@IsTest static void R018() {\nString corpusObserved;\ntry {\nObject r;\nr = DisplayType.values();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R018|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    },
+    {
+      "id": "R019",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.A.ordinal();",
+      "description": "Source enum named DisplayType value ordinal",
+      "expected": "0",
+      "name": "CRT62cdbec900a839R019",
+      "source": "@IsTest private class CRT62cdbec900a839R019 {\n@IsTest static void R019() {\nString corpusObserved;\ntry {\nObject r;\nr = DisplayType.A.ordinal();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R019|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    },
+    {
+      "id": "C008",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "name": "CRT62cdbec900a839C008",
+      "source": "@IsTest private class CRT62cdbec900a839C008 {\n@IsTest static void C008() {\nHttpRequest.class.getNameX();\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "C009",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "name": "CRT62cdbec900a839C009",
+      "source": "@IsTest private class CRT62cdbec900a839C009 {\n@IsTest static void C009() {\nHttpRequest.class.getNameX();\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "C010",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.newInstanceX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void newInstanceX() from the type System.Type",
+      "name": "CRT62cdbec900a839C010",
+      "source": "@IsTest private class CRT62cdbec900a839C010 {\n@IsTest static void C010() {\nHttpRequest.class.newInstanceX();\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "C011",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class Type {}\nclass Foo {}\nFoo.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "name": "CRT62cdbec900a839C011",
+      "source": "@IsTest private class CRT62cdbec900a839C011 {\n@IsTest static void C011() {\nFoo.class.getNameX();\n}\n}\n",
+      "companions": {
+        "Foo": "public class Foo {}\n",
+        "Type": "public class Type {}\n"
+      }
+    },
+    {
+      "id": "C012",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class Type {}\nclass Foo {}\nFoo.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "name": "CRT62cdbec900a839C012",
+      "source": "@IsTest private class CRT62cdbec900a839C012 {\n@IsTest static void C012() {\nFoo.class.getNameX();\n}\n}\n",
+      "companions": {
+        "Foo": "public class Foo {}\n",
+        "Type": "public class Type {}\n"
+      }
+    },
+    {
+      "id": "C013",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "name": "CRT62cdbec900a839C013",
+      "source": "@IsTest private class CRT62cdbec900a839C013 {\n@IsTest static void C013() {\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.nameX();\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "C014",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.ordinalX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void ordinalX() from the type System.LoggingLevel",
+      "name": "CRT62cdbec900a839C014",
+      "source": "@IsTest private class CRT62cdbec900a839C014 {\n@IsTest static void C014() {\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.ordinalX();\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "C015",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel.DEBUG.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "name": "CRT62cdbec900a839C015",
+      "source": "@IsTest private class CRT62cdbec900a839C015 {\n@IsTest static void C015() {\nSystem.LoggingLevel.DEBUG.nameX();\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "C016",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\n(true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "name": "CRT62cdbec900a839C016",
+      "source": "@IsTest private class CRT62cdbec900a839C016 {\n@IsTest static void C016() {\n(true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).nameX();\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "C017",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type DisplayType",
+      "name": "CRT62cdbec900a839C017",
+      "source": "@IsTest private class CRT62cdbec900a839C017 {\n@IsTest static void C017() {\nDisplayType.A.nameX();\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    },
+    {
+      "id": "C018",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type DisplayType",
+      "name": "CRT62cdbec900a839C018",
+      "source": "@IsTest private class CRT62cdbec900a839C018 {\n@IsTest static void C018() {\nDisplayType.A.nameX();\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    },
+    {
+      "id": "C019",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.ordinalX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void ordinalX() from the type DisplayType",
+      "name": "CRT62cdbec900a839C019",
+      "source": "@IsTest private class CRT62cdbec900a839C019 {\n@IsTest static void C019() {\nDisplayType.A.ordinalX();\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    },
+    {
+      "id": "R008",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = HttpRequest.class.getName();",
+      "description": "HttpRequest class-literal getName under source HttpRequest shadow",
+      "expected": "HttpRequest",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\ntry{Object r;r = HttpRequest.class.getName(); pq.out('R008',r);}catch(Exception e){pq.err('R008',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R009",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "Type t = HttpRequest.class; r = t.getName();",
+      "description": "Unqualified Type value of source HttpRequest class literal",
+      "expected": "HttpRequest",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\ntry{Object r;Type t = HttpRequest.class; r = t.getName(); pq.out('R009',r);}catch(Exception e){pq.err('R009',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R010",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "Object o = HttpRequest.class.newInstance(); r = o instanceof HttpRequest;",
+      "description": "Source HttpRequest class-literal newInstance and instanceof",
+      "expected": "true",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\ntry{Object r;Object o = HttpRequest.class.newInstance(); r = o instanceof HttpRequest; pq.out('R010',r);}catch(Exception e){pq.err('R010',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R011",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = Foo.class.getName();",
+      "description": "Ordinary Foo class-literal getName under source Type shadow",
+      "expected": "Foo",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass Type {}\nclass Foo {}\ntry{Object r;r = Foo.class.getName(); pq.out('R011',r);}catch(Exception e){pq.err('R011',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R012",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.Type t = Foo.class; r = t.getName();",
+      "description": "System.Type value of ordinary Foo under source Type shadow",
+      "expected": "Foo",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass Type {}\nclass Foo {}\ntry{Object r;System.Type t = Foo.class; r = t.getName(); pq.out('R012',r);}catch(Exception e){pq.err('R012',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R013",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.name();",
+      "description": "Qualified platform enum name under source LoggingLevel class shadow",
+      "expected": "DEBUG",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\ntry{Object r;System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.name(); pq.out('R013',r);}catch(Exception e){pq.err('R013',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R014",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.ordinal();",
+      "description": "Qualified platform enum ordinal under source LoggingLevel class shadow",
+      "expected": "5",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\ntry{Object r;System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.ordinal(); pq.out('R014',r);}catch(Exception e){pq.err('R014',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R015",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = System.LoggingLevel.values().size();",
+      "description": "Qualified platform enum values size under source LoggingLevel class shadow",
+      "expected": "9",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\ntry{Object r;r = System.LoggingLevel.values().size(); pq.out('R015',r);}catch(Exception e){pq.err('R015',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R016",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = (true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).name();",
+      "description": "Conditional qualified platform enum receiver under source LoggingLevel class shadow",
+      "expected": "DEBUG",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\ntry{Object r;r = (true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).name(); pq.out('R016',r);}catch(Exception e){pq.err('R016',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R017",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.A.name();",
+      "description": "Source enum named DisplayType value name",
+      "expected": "A",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\ntry{Object r;r = DisplayType.A.name(); pq.out('R017',r);}catch(Exception e){pq.err('R017',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R018",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.values();",
+      "description": "Source enum named DisplayType values list",
+      "expected": "(A, B)",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\ntry{Object r;r = DisplayType.values(); pq.out('R018',r);}catch(Exception e){pq.err('R018',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R019",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.A.ordinal();",
+      "description": "Source enum named DisplayType value ordinal",
+      "expected": "0",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\ntry{Object r;r = DisplayType.A.ordinal(); pq.out('R019',r);}catch(Exception e){pq.err('R019',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C008",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\nHttpRequest.class.getNameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C009",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\nHttpRequest.class.getNameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C010",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.newInstanceX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void newInstanceX() from the type System.Type",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass HttpRequest {}\nHttpRequest.class.newInstanceX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C011",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class Type {}\nclass Foo {}\nFoo.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass Type {}\nclass Foo {}\nFoo.class.getNameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C012",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class Type {}\nclass Foo {}\nFoo.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass Type {}\nclass Foo {}\nFoo.class.getNameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C013",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.nameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C014",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.ordinalX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type System.LoggingLevel",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.ordinalX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C015",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel.DEBUG.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\nSystem.LoggingLevel.DEBUG.nameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C016",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\n(true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nclass LoggingLevel {}\n(true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).nameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C017",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\nDisplayType.A.nameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C018",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\nDisplayType.A.nameX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "C019",
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.ordinalX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type DisplayType",
+      "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nenum DisplayType { A, B }\nDisplayType.A.ordinalX();\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+    },
+    {
+      "id": "R008",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = HttpRequest.class.getName();",
+      "description": "HttpRequest class-literal getName under source HttpRequest shadow",
+      "expected": "HttpRequest",
+      "name": "CRT67d3de057ddaf3R008",
+      "source": "@IsTest private class CRT67d3de057ddaf3R008 {\n@IsTest static void R008() {\nString corpusObserved;\ntry {\nObject r;\nr = HttpRequest.class.getName();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R008|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "R009",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "Type t = HttpRequest.class; r = t.getName();",
+      "description": "Unqualified Type value of source HttpRequest class literal",
+      "expected": "HttpRequest",
+      "name": "CRT67d3de057ddaf3R009",
+      "source": "@IsTest private class CRT67d3de057ddaf3R009 {\n@IsTest static void R009() {\nString corpusObserved;\ntry {\nObject r;\nType t = HttpRequest.class; r = t.getName();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R009|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "R010",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "Object o = HttpRequest.class.newInstance(); r = o instanceof HttpRequest;",
+      "description": "Source HttpRequest class-literal newInstance and instanceof",
+      "expected": "true",
+      "name": "CRT67d3de057ddaf3R010",
+      "source": "@IsTest private class CRT67d3de057ddaf3R010 {\n@IsTest static void R010() {\nString corpusObserved;\ntry {\nObject r;\nObject o = HttpRequest.class.newInstance(); r = o instanceof HttpRequest;\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R010|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "R011",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = Foo.class.getName();",
+      "description": "Ordinary Foo class-literal getName under source Type shadow",
+      "expected": "Foo",
+      "name": "CRT67d3de057ddaf3R011",
+      "source": "@IsTest private class CRT67d3de057ddaf3R011 {\n@IsTest static void R011() {\nString corpusObserved;\ntry {\nObject r;\nr = Foo.class.getName();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R011|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "Foo": "public class Foo {}\n",
+        "Type": "public class Type {}\n"
+      }
+    },
+    {
+      "id": "R012",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.Type t = Foo.class; r = t.getName();",
+      "description": "System.Type value of ordinary Foo under source Type shadow",
+      "expected": "Foo",
+      "name": "CRT67d3de057ddaf3R012",
+      "source": "@IsTest private class CRT67d3de057ddaf3R012 {\n@IsTest static void R012() {\nString corpusObserved;\ntry {\nObject r;\nSystem.Type t = Foo.class; r = t.getName();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R012|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "Foo": "public class Foo {}\n",
+        "Type": "public class Type {}\n"
+      }
+    },
+    {
+      "id": "R013",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.name();",
+      "description": "Qualified platform enum name under source LoggingLevel class shadow",
+      "expected": "DEBUG",
+      "name": "CRT67d3de057ddaf3R013",
+      "source": "@IsTest private class CRT67d3de057ddaf3R013 {\n@IsTest static void R013() {\nString corpusObserved;\ntry {\nObject r;\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.name();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R013|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "R014",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "System.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.ordinal();",
+      "description": "Qualified platform enum ordinal under source LoggingLevel class shadow",
+      "expected": "5",
+      "name": "CRT67d3de057ddaf3R014",
+      "source": "@IsTest private class CRT67d3de057ddaf3R014 {\n@IsTest static void R014() {\nString corpusObserved;\ntry {\nObject r;\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; r = l.ordinal();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R014|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "R015",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = System.LoggingLevel.values().size();",
+      "description": "Qualified platform enum values size under source LoggingLevel class shadow",
+      "expected": "9",
+      "name": "CRT67d3de057ddaf3R015",
+      "source": "@IsTest private class CRT67d3de057ddaf3R015 {\n@IsTest static void R015() {\nString corpusObserved;\ntry {\nObject r;\nr = System.LoggingLevel.values().size();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R015|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "R016",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = (true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).name();",
+      "description": "Conditional qualified platform enum receiver under source LoggingLevel class shadow",
+      "expected": "DEBUG",
+      "name": "CRT67d3de057ddaf3R016",
+      "source": "@IsTest private class CRT67d3de057ddaf3R016 {\n@IsTest static void R016() {\nString corpusObserved;\ntry {\nObject r;\nr = (true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).name();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R016|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "R017",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.A.name();",
+      "description": "Source enum named DisplayType value name",
+      "expected": "A",
+      "name": "CRT67d3de057ddaf3R017",
+      "source": "@IsTest private class CRT67d3de057ddaf3R017 {\n@IsTest static void R017() {\nString corpusObserved;\ntry {\nObject r;\nr = DisplayType.A.name();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R017|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    },
+    {
+      "id": "R018",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.values();",
+      "description": "Source enum named DisplayType values list",
+      "expected": "(A, B)",
+      "name": "CRT67d3de057ddaf3R018",
+      "source": "@IsTest private class CRT67d3de057ddaf3R018 {\n@IsTest static void R018() {\nString corpusObserved;\ntry {\nObject r;\nr = DisplayType.values();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R018|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    },
+    {
+      "id": "R019",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": false,
+      "code": "r = DisplayType.A.ordinal();",
+      "description": "Source enum named DisplayType value ordinal",
+      "expected": "0",
+      "name": "CRT67d3de057ddaf3R019",
+      "source": "@IsTest private class CRT67d3de057ddaf3R019 {\n@IsTest static void R019() {\nString corpusObserved;\ntry {\nObject r;\nr = DisplayType.A.ordinal();\ncorpusObserved = System.String.valueOf(r);\n} catch (System.Exception e) {\ncorpusObserved = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n}\nSystem.assert(false, 'P|R019|' + corpusObserved);\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    },
+    {
+      "id": "C008",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "name": "CRT67d3de057ddaf3C008",
+      "source": "@IsTest private class CRT67d3de057ddaf3C008 {\n@IsTest static void C008() {\nHttpRequest.class.getNameX();\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "C009",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "name": "CRT67d3de057ddaf3C009",
+      "source": "@IsTest private class CRT67d3de057ddaf3C009 {\n@IsTest static void C009() {\nHttpRequest.class.getNameX();\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "C010",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class HttpRequest {}\nHttpRequest.class.newInstanceX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void newInstanceX() from the type System.Type",
+      "name": "CRT67d3de057ddaf3C010",
+      "source": "@IsTest private class CRT67d3de057ddaf3C010 {\n@IsTest static void C010() {\nHttpRequest.class.newInstanceX();\n}\n}\n",
+      "companions": {
+        "HttpRequest": "public class HttpRequest {}\n"
+      }
+    },
+    {
+      "id": "C011",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class Type {}\nclass Foo {}\nFoo.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "name": "CRT67d3de057ddaf3C011",
+      "source": "@IsTest private class CRT67d3de057ddaf3C011 {\n@IsTest static void C011() {\nFoo.class.getNameX();\n}\n}\n",
+      "companions": {
+        "Foo": "public class Foo {}\n",
+        "Type": "public class Type {}\n"
+      }
+    },
+    {
+      "id": "C012",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class Type {}\nclass Foo {}\nFoo.class.getNameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type",
+      "name": "CRT67d3de057ddaf3C012",
+      "source": "@IsTest private class CRT67d3de057ddaf3C012 {\n@IsTest static void C012() {\nFoo.class.getNameX();\n}\n}\n",
+      "companions": {
+        "Foo": "public class Foo {}\n",
+        "Type": "public class Type {}\n"
+      }
+    },
+    {
+      "id": "C013",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "name": "CRT67d3de057ddaf3C013",
+      "source": "@IsTest private class CRT67d3de057ddaf3C013 {\n@IsTest static void C013() {\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.nameX();\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "C014",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.ordinalX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void ordinalX() from the type System.LoggingLevel",
+      "name": "CRT67d3de057ddaf3C014",
+      "source": "@IsTest private class CRT67d3de057ddaf3C014 {\n@IsTest static void C014() {\nSystem.LoggingLevel l = System.LoggingLevel.DEBUG; l.ordinalX();\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "C015",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\nSystem.LoggingLevel.DEBUG.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "name": "CRT67d3de057ddaf3C015",
+      "source": "@IsTest private class CRT67d3de057ddaf3C015 {\n@IsTest static void C015() {\nSystem.LoggingLevel.DEBUG.nameX();\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "C016",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "class LoggingLevel {}\n(true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel",
+      "name": "CRT67d3de057ddaf3C016",
+      "source": "@IsTest private class CRT67d3de057ddaf3C016 {\n@IsTest static void C016() {\n(true ? System.LoggingLevel.DEBUG : System.LoggingLevel.ERROR).nameX();\n}\n}\n",
+      "companions": {
+        "LoggingLevel": "public class LoggingLevel {}\n"
+      }
+    },
+    {
+      "id": "C017",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type DisplayType",
+      "name": "CRT67d3de057ddaf3C017",
+      "source": "@IsTest private class CRT67d3de057ddaf3C017 {\n@IsTest static void C017() {\nDisplayType.A.nameX();\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    },
+    {
+      "id": "C018",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.nameX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type DisplayType",
+      "name": "CRT67d3de057ddaf3C018",
+      "source": "@IsTest private class CRT67d3de057ddaf3C018 {\n@IsTest static void C018() {\nDisplayType.A.nameX();\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    },
+    {
+      "id": "C019",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "revision": "r2",
+      "compile": true,
+      "code": "enum DisplayType { A, B }\nDisplayType.A.ordinalX();",
+      "description": "Missing method on the paired Type/enum receiver; exact compiler answer unobserved",
+      "expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void ordinalX() from the type DisplayType",
+      "name": "CRT67d3de057ddaf3C019",
+      "source": "@IsTest private class CRT67d3de057ddaf3C019 {\n@IsTest static void C019() {\nDisplayType.A.ordinalX();\n}\n}\n",
+      "companions": {
+        "DisplayType": "public enum DisplayType { A, B }\n"
+      }
+    }
+  ],
+  "revisions": {
+    "r2": {
+      "nativeEvidence": {
+        "anonymous": {
+          "62.0": {
+            "orgTSV": "R001\tEXC|System.TypeException|System.runAs can only be used within a test method: \nR002\tEXC|System.TypeException|System.runAs can only be used within a test method: \nR003\tGET\nR004\ttrue\nR005\ttrue\nR006\ttrue\nR007\ttrue\nR008\tHttpRequest\nR009\tHttpRequest\nR010\ttrue\nR011\tFoo\nR012\tFoo\nR013\tDEBUG\nR014\t5\nR015\t9\nR016\tDEBUG\nR017\tA\nR018\t(A, B)\nR019\t0\nC001\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC002\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC003\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getMethod() from the type HttpRequest\nC004\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getErrors() from the type SaveResult\nC005\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC006\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC007\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC008\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC009\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC010\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void newInstanceX() from the type System.Type\nC011\tCOMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC012\tCOMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC013\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC014\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type System.LoggingLevel\nC015\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC016\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC017\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType\nC018\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType\nC019\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type DisplayType\n",
+            "compileTSV": "R001\tcompiled\nR002\tcompiled\nR003\tcompiled\nR004\tcompiled\nR005\tcompiled\nR006\tcompiled\nR007\tcompiled\nR008\tcompiled\nR009\tcompiled\nR010\tcompiled\nR011\tcompiled\nR012\tcompiled\nR013\tcompiled\nR014\tcompiled\nR015\tcompiled\nR016\tcompiled\nR017\tcompiled\nR018\tcompiled\nR019\tcompiled\nC001\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC002\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC003\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getMethod() from the type HttpRequest\nC004\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getErrors() from the type SaveResult\nC005\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC006\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC007\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC008\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC009\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC010\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void newInstanceX() from the type System.Type\nC011\tCOMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC012\tCOMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC013\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC014\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type System.LoggingLevel\nC015\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC016\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC017\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType\nC018\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType\nC019\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type DisplayType\n"
+          },
+          "67.0": {
+            "orgTSV": "R001\tEXC|System.TypeException|System.runAs can only be used within a test method: \nR002\tEXC|System.TypeException|System.runAs can only be used within a test method: \nR003\tGET\nR004\ttrue\nR005\ttrue\nR006\ttrue\nR007\ttrue\nR008\tHttpRequest\nR009\tHttpRequest\nR010\ttrue\nR011\tFoo\nR012\tFoo\nR013\tDEBUG\nR014\t5\nR015\t9\nR016\tDEBUG\nR017\tA\nR018\t(A, B)\nR019\t0\nC001\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC002\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC003\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getMethod() from the type HttpRequest\nC004\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getErrors() from the type SaveResult\nC005\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC006\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC007\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC008\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC009\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC010\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void newInstanceX() from the type System.Type\nC011\tCOMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC012\tCOMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC013\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC014\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type System.LoggingLevel\nC015\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC016\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC017\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType\nC018\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType\nC019\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type DisplayType\n",
+            "compileTSV": "R001\tcompiled\nR002\tcompiled\nR003\tcompiled\nR004\tcompiled\nR005\tcompiled\nR006\tcompiled\nR007\tcompiled\nR008\tcompiled\nR009\tcompiled\nR010\tcompiled\nR011\tcompiled\nR012\tcompiled\nR013\tcompiled\nR014\tcompiled\nR015\tcompiled\nR016\tcompiled\nR017\tcompiled\nR018\tcompiled\nR019\tcompiled\nC001\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC002\tCOMPILE_ERROR\tline 9: runAs requires a single argument of type 'User' or 'Version'\nC003\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getMethod() from the type HttpRequest\nC004\tCOMPILE_ERROR\tline 9: Method does not exist or incorrect signature: void getErrors() from the type SaveResult\nC005\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC006\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC007\tCOMPILE_ERROR\tline 9: Exact equality operator only allowed for reference types: String\nC008\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC009\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC010\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void newInstanceX() from the type System.Type\nC011\tCOMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC012\tCOMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void getNameX() from the type System.Type\nC013\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC014\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type System.LoggingLevel\nC015\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC016\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC017\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType\nC018\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void nameX() from the type DisplayType\nC019\tCOMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void ordinalX() from the type DisplayType\n"
+          }
+        },
+        "isTest": {
+          "62.0": {
+            "orgTSV": "R001\ttrue\nR002\ttrue\nR003\tGET\nR004\ttrue\nR005\ttrue\nR006\ttrue\nR007\ttrue\nR008\tHttpRequest\nR009\tHttpRequest\nR010\ttrue\nR011\tFoo\nR012\tFoo\nR013\tDEBUG\nR014\t5\nR015\t9\nR016\tDEBUG\nR017\tA\nR018\t(A, B)\nR019\t0\n",
+            "compileTSV": "R001\tcompiled\nR002\tcompiled\nR003\tcompiled\nR004\tcompiled\nR005\tcompiled\nR006\tcompiled\nR007\tcompiled\nR008\tcompiled\nR009\tcompiled\nR010\tcompiled\nR011\tcompiled\nR012\tcompiled\nR013\tcompiled\nR014\tcompiled\nR015\tcompiled\nR016\tcompiled\nR017\tcompiled\nR018\tcompiled\nR019\tcompiled\nC001\tCOMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'\nC002\tCOMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'\nC003\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getMethod() from the type HttpRequest\nC004\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getErrors() from the type SaveResult\nC005\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\nC006\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\nC007\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\nC008\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type\nC009\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type\nC010\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void newInstanceX() from the type System.Type\nC011\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type\nC012\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type\nC013\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC014\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void ordinalX() from the type System.LoggingLevel\nC015\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC016\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC017\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type DisplayType\nC018\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type DisplayType\nC019\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void ordinalX() from the type DisplayType\n"
+          },
+          "67.0": {
+            "orgTSV": "R001\ttrue\nR002\ttrue\nR003\tGET\nR004\ttrue\nR005\ttrue\nR006\ttrue\nR007\ttrue\nR008\tHttpRequest\nR009\tHttpRequest\nR010\ttrue\nR011\tFoo\nR012\tFoo\nR013\tDEBUG\nR014\t5\nR015\t9\nR016\tDEBUG\nR017\tA\nR018\t(A, B)\nR019\t0\n",
+            "compileTSV": "R001\tcompiled\nR002\tcompiled\nR003\tcompiled\nR004\tcompiled\nR005\tcompiled\nR006\tcompiled\nR007\tcompiled\nR008\tcompiled\nR009\tcompiled\nR010\tcompiled\nR011\tcompiled\nR012\tcompiled\nR013\tcompiled\nR014\tcompiled\nR015\tcompiled\nR016\tcompiled\nR017\tcompiled\nR018\tcompiled\nR019\tcompiled\nC001\tCOMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'\nC002\tCOMPILE_ERROR\trunAs requires a single argument of type 'User' or 'Version'\nC003\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getMethod() from the type HttpRequest\nC004\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getErrors() from the type SaveResult\nC005\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\nC006\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\nC007\tCOMPILE_ERROR\tExact equality operator only allowed for reference types: String\nC008\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type\nC009\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type\nC010\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void newInstanceX() from the type System.Type\nC011\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type\nC012\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void getNameX() from the type System.Type\nC013\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC014\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void ordinalX() from the type System.LoggingLevel\nC015\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC016\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type System.LoggingLevel\nC017\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type DisplayType\nC018\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void nameX() from the type DisplayType\nC019\tCOMPILE_ERROR\tMethod does not exist or incorrect signature: void ordinalX() from the type DisplayType\n"
+          }
+        }
+      }
+    }
+  }
+}

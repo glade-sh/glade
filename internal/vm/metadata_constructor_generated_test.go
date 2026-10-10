@@ -22,22 +22,24 @@ func TestGeneratedMetadataDTOConstructorsUseCompatibilityDefaults(t *testing.T) 
 		{
 			name: "Metadata.DeployMessage",
 			check: func(t *testing.T, value Value) {
-				if got := value.Fields["success"]; got.Kind != ValueBool || got.Bool {
-					t.Fatalf("success = %#v, want false", got)
+				// A44 E001 captures the complete native constructor defaults.
+				if got := value.Fields["success"]; got.Kind != ValueNull {
+					t.Fatalf("success = %#v, want raw null", got)
 				}
-				if got := value.Fields["lineNumber"]; got.Kind != ValueInt || got.Int != 0 {
-					t.Fatalf("lineNumber = %#v, want 0", got)
+				if got := value.Fields["lineNumber"]; got.Kind != ValueNull {
+					t.Fatalf("lineNumber = %#v, want raw null", got)
 				}
 			},
 		},
 		{
 			name: "Metadata.DeployResult",
 			check: func(t *testing.T, value Value) {
-				if got := value.Fields["done"]; got.Kind != ValueBool || !got.Bool {
-					t.Fatalf("done = %#v, want true", got)
+				// A44 R141/R143 and E002: construction never synthesizes success.
+				if got := value.Fields["done"]; got.Kind != ValueNull {
+					t.Fatalf("done = %#v, want raw null", got)
 				}
-				if got := value.Fields["success"]; got.Kind != ValueBool || !got.Bool {
-					t.Fatalf("success = %#v, want true", got)
+				if got := value.Fields["success"]; got.Kind != ValueNull {
+					t.Fatalf("success = %#v, want raw null", got)
 				}
 				if got := value.Fields["messages"]; got.Kind != ValueList || len(got.List) != 0 {
 					t.Fatalf("messages = %#v, want empty list", got)

@@ -1,3 +1,3 @@
-import { createBaseComponent, renderSlotContainer } from "./base.mjs";
+import { createBaseComponent, renderVerticalNavigation } from "./base.mjs";
 
-export default createBaseComponent("lightning-vertical-navigation", renderSlotContainer("nav", "slds-nav-vertical"));
+export default createBaseComponent("lightning-vertical-navigation", renderVerticalNavigation);

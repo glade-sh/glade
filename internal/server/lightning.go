@@ -102,6 +102,9 @@ func (s *Server) handleLightning(w http.ResponseWriter, r *http.Request, parts [
 		return
 	}
 	switch parts[0] {
+	case "n":
+		// The native custom-tab path uses the same metadata and host as preview.
+		s.handleLWCShell(w, r, append([]string{"preview", "tab"}, parts[1:]...))
 	case "glade.out.js":
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w, http.MethodGet)
@@ -142,6 +145,14 @@ func (s *Server) handleLightningVendor(w http.ResponseWriter, r *http.Request, p
 	var rel string
 	switch parts[0] {
 	case "lwc.js":
+		content, err := readLightningStaticShim("lwc-engine.mjs")
+		if err != nil {
+			writeSalesforceError(w, errUnknownEndpoint, "lwc bootstrap missing")
+			return
+		}
+		writeJavaScript(w, content)
+		return
+	case "engine-dom.js":
 		rel = filepath.Join("@lwc", "engine-dom", "dist", "index.js")
 	case "synthetic-shadow.js":
 		rel = filepath.Join("@lwc", "synthetic-shadow", "dist", "index.js")

@@ -1,0 +1,3047 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "source": "Owned JSON observations at API 62.0 and 67.0; 299 version-stable rows, R303 has request-specific error IDs.",
+  "earlierRowGroups": {
+    "class-deserialize-strict": [
+      "R211",
+      "R212",
+      "R213",
+      "R214"
+    ],
+    "parser-get-text": [
+      "R248",
+      "R251",
+      "R253",
+      "R254",
+      "R255",
+      "R256",
+      "R257",
+      "R258",
+      "R259",
+      "R260",
+      "R261",
+      "R262",
+      "R263",
+      "R264",
+      "R265"
+    ],
+    "sobject-deserialize-strict": [
+      "R002",
+      "R004",
+      "R006",
+      "R008",
+      "R010",
+      "R032",
+      "R034",
+      "R036",
+      "R038"
+    ],
+    "custom-field-blank-values": [
+      "R242",
+      "R243",
+      "R244",
+      "R245",
+      "R246",
+      "R247"
+    ]
+  },
+  "caseGroups": {
+    "shared_strict_sobject": [
+      "R001",
+      "R002",
+      "R003",
+      "R004",
+      "R005",
+      "R006",
+      "R007",
+      "R008",
+      "R009",
+      "R010",
+      "R011",
+      "R012",
+      "R013",
+      "R014",
+      "R015",
+      "R016",
+      "R017",
+      "R018",
+      "R019",
+      "R020",
+      "R021",
+      "R022",
+      "R023",
+      "R024",
+      "R025",
+      "R026",
+      "R027",
+      "R028",
+      "R029",
+      "R030",
+      "R031",
+      "R032",
+      "R033",
+      "R034",
+      "R035",
+      "R036",
+      "R037",
+      "R038"
+    ],
+    "shared_conversions": [
+      "R039",
+      "R040",
+      "R041",
+      "R042",
+      "R043",
+      "R044",
+      "R045",
+      "R046",
+      "R047",
+      "R048",
+      "R049",
+      "R050",
+      "R051",
+      "R052",
+      "R053",
+      "R054",
+      "R055",
+      "R056",
+      "R057",
+      "R058",
+      "R059",
+      "R060",
+      "R061",
+      "R062",
+      "R063",
+      "R064",
+      "R065",
+      "R066",
+      "R067",
+      "R068",
+      "R069",
+      "R070",
+      "R071",
+      "R072",
+      "R073",
+      "R074",
+      "R075",
+      "R076",
+      "R077",
+      "R078",
+      "R079",
+      "R080",
+      "R081",
+      "R082",
+      "R083",
+      "R084",
+      "R085",
+      "R086",
+      "R087",
+      "R088",
+      "R089",
+      "R090",
+      "R091",
+      "R092",
+      "R093",
+      "R094",
+      "R095",
+      "R096",
+      "R097",
+      "R098",
+      "R099",
+      "R100",
+      "R101",
+      "R102",
+      "R103",
+      "R104",
+      "R105",
+      "R106",
+      "R107",
+      "R108",
+      "R109",
+      "R110",
+      "R111",
+      "R112",
+      "R113",
+      "R114",
+      "R115",
+      "R116",
+      "R117",
+      "R118",
+      "R119",
+      "R120"
+    ],
+    "shared_typed_roundtrips": [
+      "R121",
+      "R122",
+      "R123",
+      "R124",
+      "R125",
+      "R126",
+      "R127",
+      "R128",
+      "R129",
+      "R130",
+      "R131",
+      "R132",
+      "R133",
+      "R134",
+      "R135",
+      "R136",
+      "R137",
+      "R138",
+      "R139",
+      "R140",
+      "R141",
+      "R142",
+      "R143",
+      "R144",
+      "R145",
+      "R146",
+      "R147",
+      "R148",
+      "R149",
+      "R150",
+      "R151",
+      "R152",
+      "R153",
+      "R154",
+      "R155",
+      "R156",
+      "R157",
+      "R158",
+      "R159",
+      "R160",
+      "R161",
+      "R162",
+      "R163",
+      "R164",
+      "R165",
+      "R166"
+    ],
+    "shared_json_relationship_identity": [
+      "R172",
+      "R173",
+      "R174",
+      "R175",
+      "R176"
+    ],
+    "shared_json_equality": [
+      "R186",
+      "R187",
+      "R188",
+      "R189",
+      "R190",
+      "R191"
+    ],
+    "roundtrips_and_null_suppression": [
+      "R204",
+      "R205",
+      "R206",
+      "R207",
+      "R208",
+      "R209",
+      "R210",
+      "R211",
+      "R212",
+      "R213",
+      "R214",
+      "R215",
+      "R216",
+      "R217",
+      "R218",
+      "R219",
+      "R220",
+      "R221",
+      "R222",
+      "R223",
+      "R224",
+      "R225",
+      "R226",
+      "R227",
+      "R228",
+      "R229",
+      "R230",
+      "R231",
+      "R232",
+      "R233"
+    ],
+    "sobject_attributes_relationships_and_custom_decimal": [
+      "R234",
+      "R235",
+      "R236",
+      "R237",
+      "R238",
+      "R239",
+      "R240",
+      "R241",
+      "R242",
+      "R243",
+      "R244",
+      "R245",
+      "R246",
+      "R247"
+    ],
+    "parser_tokens_getters_navigation_and_errors": [
+      "R248",
+      "R249",
+      "R250",
+      "R251",
+      "R252",
+      "R253",
+      "R254",
+      "R255",
+      "R256",
+      "R257",
+      "R258",
+      "R259",
+      "R260",
+      "R261",
+      "R262",
+      "R263",
+      "R264",
+      "R265",
+      "R266",
+      "R267",
+      "R268",
+      "R269",
+      "R270",
+      "R271",
+      "R272",
+      "R273",
+      "R274",
+      "R275",
+      "R276",
+      "R277",
+      "R278",
+      "R279",
+      "R280",
+      "R281",
+      "R282",
+      "R283",
+      "R284",
+      "R285",
+      "R286",
+      "R287"
+    ],
+    "generator_output_state_and_errors": [
+      "R288",
+      "R289",
+      "R290",
+      "R291",
+      "R292",
+      "R293",
+      "R294",
+      "R295",
+      "R296",
+      "R297",
+      "R298",
+      "R299",
+      "R300",
+      "R301",
+      "R302",
+      "R303",
+      "R304",
+      "R305",
+      "R306",
+      "R307",
+      "R308",
+      "R309",
+      "R310",
+      "R311",
+      "R312",
+      "R313",
+      "R314",
+      "R315",
+      "R316",
+      "R317",
+      "R318",
+      "R319"
+    ],
+    "compile_signatures": [
+      "C001",
+      "C002",
+      "C005",
+      "C007",
+      "C008",
+      "C009",
+      "C010"
+    ],
+    "serialization_order_controls": [
+      "R356",
+      "R357",
+      "R358",
+      "R359",
+      "R360",
+      "R361",
+      "R362",
+      "R363",
+      "R364",
+      "R365",
+      "R366",
+      "R367",
+      "R368",
+      "R369",
+      "R370",
+      "R371",
+      "R372",
+      "R373",
+      "R374",
+      "R375",
+      "R376",
+      "R377",
+      "R378",
+      "R379",
+      "R380",
+      "R381",
+      "R382",
+      "R383",
+      "R384",
+      "R385",
+      "R386",
+      "R387",
+      "R388",
+      "R389"
+    ]
+  },
+  "declarations": {
+    "FamilyDTO": "public class FamilyDTO { public String text; public Boolean flag; public Date day; public Decimal amount; public Account row; public List<Account> rows; public Map<String,Account> byName; }",
+    "Car": "public class Car { public String make; public String year; }",
+    "JsonA18DTO": "public class JsonA18DTO { public String text; public Integer count; public JsonA18DTO child; public List<String> values; }"
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\"}',Account.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R002",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Name\":\"Family\"}',Account.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R003",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\",\"NoSuchField__c\":\"x\"}',Account.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R004",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Name\":\"Family\",\"NoSuchField__c\":\"x\"}',Account.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account",
+      "compile": false
+    },
+    {
+      "id": "R005",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\",\"NoSuchField__c\":null}',Account.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R006",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Name\":\"Family\",\"NoSuchField__c\":null}',Account.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account",
+      "compile": false
+    },
+    {
+      "id": "R007",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\",\"NoSuchField__c\":{\"x\":[1]}}',Account.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "compile": false
+    },
+    {
+      "id": "R008",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Name\":\"Family\",\"NoSuchField__c\":{\"x\":[1]}}',Account.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account",
+      "compile": false
+    },
+    {
+      "id": "R009",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\",\"attributes\":{\"type\":\"Account\",\"extra\":\"x\"}}',Account.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R010",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Name\":\"Family\",\"attributes\":{\"type\":\"Account\",\"extra\":\"x\"}}',Account.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R011",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"LastName\":\"Family\"}',Contact.class); r=x.LastName;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R012",
+      "code": "Contact x=(Contact)JSON.deserializeStrict('{\"LastName\":\"Family\"}',Contact.class); r=x.LastName;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R013",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"LastName\":\"Family\",\"NoSuchField__c\":\"x\"}',Contact.class); r=x.LastName;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R014",
+      "code": "Contact x=(Contact)JSON.deserializeStrict('{\"LastName\":\"Family\",\"NoSuchField__c\":\"x\"}',Contact.class); r=x.LastName;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Contact",
+      "floorExpected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Contact",
+      "compile": false
+    },
+    {
+      "id": "R015",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"LastName\":\"Family\",\"NoSuchField__c\":null}',Contact.class); r=x.LastName;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R016",
+      "code": "Contact x=(Contact)JSON.deserializeStrict('{\"LastName\":\"Family\",\"NoSuchField__c\":null}',Contact.class); r=x.LastName;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Contact",
+      "floorExpected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Contact",
+      "compile": false
+    },
+    {
+      "id": "R017",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"LastName\":\"Family\",\"NoSuchField__c\":{\"x\":[1]}}',Contact.class); r=x.LastName;",
+      "expected": "EXC|System.JSONException|No field name specified on column for sobject of type Contact",
+      "floorExpected": "EXC|System.JSONException|No field name specified on column for sobject of type Contact",
+      "compile": false
+    },
+    {
+      "id": "R018",
+      "code": "Contact x=(Contact)JSON.deserializeStrict('{\"LastName\":\"Family\",\"NoSuchField__c\":{\"x\":[1]}}',Contact.class); r=x.LastName;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Contact",
+      "floorExpected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Contact",
+      "compile": false
+    },
+    {
+      "id": "R019",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"LastName\":\"Family\",\"attributes\":{\"type\":\"Contact\",\"extra\":\"x\"}}',Contact.class); r=x.LastName;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R020",
+      "code": "Contact x=(Contact)JSON.deserializeStrict('{\"LastName\":\"Family\",\"attributes\":{\"type\":\"Contact\",\"extra\":\"x\"}}',Contact.class); r=x.LastName;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R021",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Name\":\"Family\"}',Opportunity.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R022",
+      "code": "Opportunity x=(Opportunity)JSON.deserializeStrict('{\"Name\":\"Family\"}',Opportunity.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R023",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Name\":\"Family\",\"NoSuchField__c\":\"x\"}',Opportunity.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R024",
+      "code": "Opportunity x=(Opportunity)JSON.deserializeStrict('{\"Name\":\"Family\",\"NoSuchField__c\":\"x\"}',Opportunity.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Opportunity",
+      "floorExpected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Opportunity",
+      "compile": false
+    },
+    {
+      "id": "R025",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Name\":\"Family\",\"NoSuchField__c\":null}',Opportunity.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R026",
+      "code": "Opportunity x=(Opportunity)JSON.deserializeStrict('{\"Name\":\"Family\",\"NoSuchField__c\":null}',Opportunity.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Opportunity",
+      "floorExpected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Opportunity",
+      "compile": false
+    },
+    {
+      "id": "R027",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Name\":\"Family\",\"NoSuchField__c\":{\"x\":[1]}}',Opportunity.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No field name specified on column for sobject of type Opportunity",
+      "floorExpected": "EXC|System.JSONException|No field name specified on column for sobject of type Opportunity",
+      "compile": false
+    },
+    {
+      "id": "R028",
+      "code": "Opportunity x=(Opportunity)JSON.deserializeStrict('{\"Name\":\"Family\",\"NoSuchField__c\":{\"x\":[1]}}',Opportunity.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Opportunity",
+      "floorExpected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Opportunity",
+      "compile": false
+    },
+    {
+      "id": "R029",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Name\":\"Family\",\"attributes\":{\"type\":\"Opportunity\",\"extra\":\"x\"}}',Opportunity.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R030",
+      "code": "Opportunity x=(Opportunity)JSON.deserializeStrict('{\"Name\":\"Family\",\"attributes\":{\"type\":\"Opportunity\",\"extra\":\"x\"}}',Opportunity.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R031",
+      "code": "JSONParser p=JSON.createParser('{\"Name\":\"Family\",\"NoSuchField__c\":\"x\"}'); p.nextToken(); Account x=(Account)p.readValueAs(Account.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R032",
+      "code": "JSONParser p=JSON.createParser('{\"Name\":\"Family\",\"NoSuchField__c\":\"x\"}'); p.nextToken(); Account x=(Account)p.readValueAsStrict(Account.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No such column 'NoSuchField__c' on sobject of type Account",
+      "compile": false
+    },
+    {
+      "id": "R033",
+      "code": "JSONParser p=JSON.createParser('{\"Name\":\"Family\"}'); p.nextToken(); Account x=(Account)p.readValueAs(Account.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R034",
+      "code": "JSONParser p=JSON.createParser('{\"Name\":\"Family\"}'); p.nextToken(); Account x=(Account)p.readValueAsStrict(Account.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R035",
+      "code": "JSONParser p=JSON.createParser('{\"Parent\":{\"Name\":\"Parent\",\"NoSuchField__c\":\"x\"}}'); p.nextToken(); Account x=(Account)p.readValueAs(Account.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value x or request may be missing a required field",
+      "floorExpected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value x or request may be missing a required field",
+      "compile": false
+    },
+    {
+      "id": "R036",
+      "code": "JSONParser p=JSON.createParser('{\"Parent\":{\"Name\":\"Parent\",\"NoSuchField__c\":\"x\"}}'); p.nextToken(); Account x=(Account)p.readValueAsStrict(Account.class); r=x.Name;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value x or request may be missing a required field",
+      "floorExpected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value x or request may be missing a required field",
+      "compile": false
+    },
+    {
+      "id": "R037",
+      "code": "JSONParser p=JSON.createParser('{\"attributes\":{\"type\":\"Account\"},\"Name\":null}'); p.nextToken(); Account x=(Account)p.readValueAs(Account.class); r=x.Name;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R038",
+      "code": "JSONParser p=JSON.createParser('{\"attributes\":{\"type\":\"Account\"},\"Name\":null}'); p.nextToken(); Account x=(Account)p.readValueAsStrict(Account.class); r=x.Name;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R039",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Amount\":\"\"}',Opportunity.class); r=x.Amount;",
+      "expected": "0.0",
+      "floorExpected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R040",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Amount\":\" \"}',Opportunity.class); r=x.Amount;",
+      "expected": "0.0",
+      "floorExpected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R041",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Amount\":null}',Opportunity.class); r=x.Amount;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R042",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Amount\":0}',Opportunity.class); r=x.Amount;",
+      "expected": "0.0",
+      "floorExpected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R043",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Amount\":\"0\"}',Opportunity.class); r=x.Amount;",
+      "expected": "0.0",
+      "floorExpected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R044",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Amount\":\"12.5\"}',Opportunity.class); r=x.Amount;",
+      "expected": "12.5",
+      "floorExpected": "12.5",
+      "compile": false
+    },
+    {
+      "id": "R045",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Amount\":\"-2.50\"}',Opportunity.class); r=x.Amount;",
+      "expected": "-2.5",
+      "floorExpected": "-2.5",
+      "compile": false
+    },
+    {
+      "id": "R046",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{\"Amount\":12.5}',Opportunity.class); r=x.Amount;",
+      "expected": "12.5",
+      "floorExpected": "12.5",
+      "compile": false
+    },
+    {
+      "id": "R047",
+      "code": "Opportunity x=(Opportunity)JSON.deserialize('{}',Opportunity.class); r=x.Amount;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R048",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":\"\"}',Account.class); r=x.AnnualRevenue;",
+      "expected": "0.0",
+      "floorExpected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R049",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":\" \"}',Account.class); r=x.AnnualRevenue;",
+      "expected": "0.0",
+      "floorExpected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R050",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":null}',Account.class); r=x.AnnualRevenue;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R051",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":0}',Account.class); r=x.AnnualRevenue;",
+      "expected": "0.0",
+      "floorExpected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R052",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":\"0\"}',Account.class); r=x.AnnualRevenue;",
+      "expected": "0.0",
+      "floorExpected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R053",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":\"12.5\"}',Account.class); r=x.AnnualRevenue;",
+      "expected": "12.5",
+      "floorExpected": "12.5",
+      "compile": false
+    },
+    {
+      "id": "R054",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":\"-2.50\"}',Account.class); r=x.AnnualRevenue;",
+      "expected": "-2.5",
+      "floorExpected": "-2.5",
+      "compile": false
+    },
+    {
+      "id": "R055",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":12.5}',Account.class); r=x.AnnualRevenue;",
+      "expected": "12.5",
+      "floorExpected": "12.5",
+      "compile": false
+    },
+    {
+      "id": "R056",
+      "code": "Account x=(Account)JSON.deserialize('{}',Account.class); r=x.AnnualRevenue;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R057",
+      "code": "Account x=(Account)JSON.deserialize('{\"NumberOfEmployees\":\"\"}',Account.class); r=x.NumberOfEmployees;",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": false
+    },
+    {
+      "id": "R058",
+      "code": "Account x=(Account)JSON.deserialize('{\"NumberOfEmployees\":\" \"}',Account.class); r=x.NumberOfEmployees;",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": false
+    },
+    {
+      "id": "R059",
+      "code": "Account x=(Account)JSON.deserialize('{\"NumberOfEmployees\":null}',Account.class); r=x.NumberOfEmployees;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R060",
+      "code": "Account x=(Account)JSON.deserialize('{\"NumberOfEmployees\":0}',Account.class); r=x.NumberOfEmployees;",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": false
+    },
+    {
+      "id": "R061",
+      "code": "Account x=(Account)JSON.deserialize('{\"NumberOfEmployees\":\"0\"}',Account.class); r=x.NumberOfEmployees;",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": false
+    },
+    {
+      "id": "R062",
+      "code": "Account x=(Account)JSON.deserialize('{\"NumberOfEmployees\":\"12\"}',Account.class); r=x.NumberOfEmployees;",
+      "expected": "12",
+      "floorExpected": "12",
+      "compile": false
+    },
+    {
+      "id": "R063",
+      "code": "Account x=(Account)JSON.deserialize('{\"NumberOfEmployees\":-2}',Account.class); r=x.NumberOfEmployees;",
+      "expected": "-2",
+      "floorExpected": "-2",
+      "compile": false
+    },
+    {
+      "id": "R064",
+      "code": "Account x=(Account)JSON.deserialize('{\"NumberOfEmployees\":12}',Account.class); r=x.NumberOfEmployees;",
+      "expected": "12",
+      "floorExpected": "12",
+      "compile": false
+    },
+    {
+      "id": "R065",
+      "code": "Account x=(Account)JSON.deserialize('{}',Account.class); r=x.NumberOfEmployees;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R066",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"HasOptedOutOfEmail\":\"\"}',Contact.class); r=x.HasOptedOutOfEmail;",
+      "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "compile": false,
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+    },
+    {
+      "id": "R067",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"HasOptedOutOfEmail\":\" \"}',Contact.class); r=x.HasOptedOutOfEmail;",
+      "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "compile": false,
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+    },
+    {
+      "id": "R068",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"HasOptedOutOfEmail\":null}',Contact.class); r=x.HasOptedOutOfEmail;",
+      "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "compile": false,
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+    },
+    {
+      "id": "R069",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"HasOptedOutOfEmail\":false}',Contact.class); r=x.HasOptedOutOfEmail;",
+      "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "compile": false,
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+    },
+    {
+      "id": "R070",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"HasOptedOutOfEmail\":true}',Contact.class); r=x.HasOptedOutOfEmail;",
+      "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "compile": false,
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+    },
+    {
+      "id": "R071",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"HasOptedOutOfEmail\":\"false\"}',Contact.class); r=x.HasOptedOutOfEmail;",
+      "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "compile": false,
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+    },
+    {
+      "id": "R072",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"HasOptedOutOfEmail\":\"true\"}',Contact.class); r=x.HasOptedOutOfEmail;",
+      "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "compile": false,
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+    },
+    {
+      "id": "R073",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"HasOptedOutOfEmail\":\"bogus\"}',Contact.class); r=x.HasOptedOutOfEmail;",
+      "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "compile": false,
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+    },
+    {
+      "id": "R074",
+      "code": "Contact x=(Contact)JSON.deserialize('{}',Contact.class); r=x.HasOptedOutOfEmail;",
+      "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
+      "compile": false,
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+    },
+    {
+      "id": "R075",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"Birthdate\":\"\"}',Contact.class); r=x.Birthdate;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of date from VALUE_STRING value  or request may be missing a required field",
+      "floorExpected": "EXC|System.JSONException|Cannot deserialize instance of date from VALUE_STRING value  or request may be missing a required field",
+      "compile": false
+    },
+    {
+      "id": "R076",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"Birthdate\":\" \"}',Contact.class); r=x.Birthdate;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of date from VALUE_STRING value   or request may be missing a required field",
+      "floorExpected": "EXC|System.JSONException|Cannot deserialize instance of date from VALUE_STRING value   or request may be missing a required field",
+      "compile": false
+    },
+    {
+      "id": "R077",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"Birthdate\":null}',Contact.class); r=x.Birthdate;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R078",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"Birthdate\":\"2024-02-29\"}',Contact.class); r=x.Birthdate;",
+      "expected": "2024-02-29 00:00:00",
+      "floorExpected": "2024-02-29 00:00:00",
+      "compile": false
+    },
+    {
+      "id": "R079",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"Birthdate\":\"2024-02-30\"}',Contact.class); r=x.Birthdate;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of date from VALUE_STRING value 2024-02-30 or request may be missing a required field",
+      "floorExpected": "EXC|System.JSONException|Cannot deserialize instance of date from VALUE_STRING value 2024-02-30 or request may be missing a required field",
+      "compile": false
+    },
+    {
+      "id": "R080",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"Birthdate\":\"2024-01-01\"}',Contact.class); r=x.Birthdate;",
+      "expected": "2024-01-01 00:00:00",
+      "floorExpected": "2024-01-01 00:00:00",
+      "compile": false
+    },
+    {
+      "id": "R081",
+      "code": "Contact x=(Contact)JSON.deserialize('{}',Contact.class); r=x.Birthdate;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R082",
+      "code": "Account x=(Account)JSON.deserialize('{\"CreatedDate\":\"\"}',Account.class); r=x.CreatedDate;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R083",
+      "code": "Account x=(Account)JSON.deserialize('{\"CreatedDate\":\" \"}',Account.class); r=x.CreatedDate;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R084",
+      "code": "Account x=(Account)JSON.deserialize('{\"CreatedDate\":null}',Account.class); r=x.CreatedDate;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R085",
+      "code": "Account x=(Account)JSON.deserialize('{\"CreatedDate\":\"2024-02-29T12:34:56Z\"}',Account.class); r=x.CreatedDate;",
+      "expected": "2024-02-29 12:34:56",
+      "floorExpected": "2024-02-29 12:34:56",
+      "compile": false
+    },
+    {
+      "id": "R086",
+      "code": "Account x=(Account)JSON.deserialize('{\"CreatedDate\":\"2024-01-01T00:00:00.000Z\"}',Account.class); r=x.CreatedDate;",
+      "expected": "2024-01-01 00:00:00",
+      "floorExpected": "2024-01-01 00:00:00",
+      "compile": false
+    },
+    {
+      "id": "R087",
+      "code": "Account x=(Account)JSON.deserialize('{}',Account.class); r=x.CreatedDate;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R088",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"\"}',Account.class); r=x.Name;",
+      "expected": "",
+      "floorExpected": "",
+      "compile": false
+    },
+    {
+      "id": "R089",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\" \"}',Account.class); r=x.Name;",
+      "expected": " ",
+      "floorExpected": " ",
+      "compile": false
+    },
+    {
+      "id": "R090",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":null}',Account.class); r=x.Name;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R091",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\"}',Account.class); r=x.Name;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R092",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":123}',Account.class); r=x.Name;",
+      "expected": "123",
+      "floorExpected": "123",
+      "compile": false
+    },
+    {
+      "id": "R093",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":true}',Account.class); r=x.Name;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R094",
+      "code": "Account x=(Account)JSON.deserialize('{}',Account.class); r=x.Name;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R095",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"AccountId\":\"\"}',Contact.class); r=x.AccountId;",
+      "expected": "",
+      "floorExpected": "",
+      "compile": false
+    },
+    {
+      "id": "R096",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"AccountId\":\" \"}',Contact.class); r=x.AccountId;",
+      "expected": " ",
+      "floorExpected": " ",
+      "compile": false
+    },
+    {
+      "id": "R097",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"AccountId\":null}',Contact.class); r=x.AccountId;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R098",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"AccountId\":\"001000000000001AAA\"}',Contact.class); r=x.AccountId;",
+      "expected": "001000000000001AAA",
+      "floorExpected": "001000000000001AAA",
+      "compile": false
+    },
+    {
+      "id": "R099",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"AccountId\":\"Manual\"}',Contact.class); r=x.AccountId;",
+      "expected": "Manual",
+      "floorExpected": "Manual",
+      "compile": false
+    },
+    {
+      "id": "R100",
+      "code": "Contact x=(Contact)JSON.deserialize('{}',Contact.class); r=x.AccountId;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R101",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"text\":\"\"}',FamilyDTO.class); r=x.text;",
+      "expected": "",
+      "floorExpected": "",
+      "compile": false
+    },
+    {
+      "id": "R102",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"text\":\" \"}',FamilyDTO.class); r=x.text;",
+      "expected": " ",
+      "floorExpected": " ",
+      "compile": false
+    },
+    {
+      "id": "R103",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"text\":null}',FamilyDTO.class); r=x.text;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R104",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"text\":\"Family\"}',FamilyDTO.class); r=x.text;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R105",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"text\":123}',FamilyDTO.class); r=x.text;",
+      "expected": "123",
+      "floorExpected": "123",
+      "compile": false
+    },
+    {
+      "id": "R106",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"flag\":\"\"}',FamilyDTO.class); r=x.flag;",
+      "expected": "EXC|System.JSONException|Illegal value for boolean:  at [line:1, column:11]",
+      "floorExpected": "EXC|System.JSONException|Illegal value for boolean:  at [line:1, column:11]",
+      "compile": false
+    },
+    {
+      "id": "R107",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"flag\":\" \"}',FamilyDTO.class); r=x.flag;",
+      "expected": "EXC|System.JSONException|Illegal value for boolean:   at [line:1, column:12]",
+      "floorExpected": "EXC|System.JSONException|Illegal value for boolean:   at [line:1, column:12]",
+      "compile": false
+    },
+    {
+      "id": "R108",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"flag\":null}',FamilyDTO.class); r=x.flag;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R109",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"flag\":true}',FamilyDTO.class); r=x.flag;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R110",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"flag\":false}',FamilyDTO.class); r=x.flag;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R111",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"flag\":\"true\"}',FamilyDTO.class); r=x.flag;",
+      "expected": "EXC|System.JSONException|Illegal value for boolean: true at [line:1, column:15]",
+      "floorExpected": "EXC|System.JSONException|Illegal value for boolean: true at [line:1, column:15]",
+      "compile": false
+    },
+    {
+      "id": "R112",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"flag\":\"false\"}',FamilyDTO.class); r=x.flag;",
+      "expected": "EXC|System.JSONException|Illegal value for boolean: false at [line:1, column:16]",
+      "floorExpected": "EXC|System.JSONException|Illegal value for boolean: false at [line:1, column:16]",
+      "compile": false
+    },
+    {
+      "id": "R113",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"day\":\"\"}',FamilyDTO.class); r=x.day;",
+      "expected": "EXC|System.JSONException|Invalid format: \"\" at [line:1, column:2]",
+      "floorExpected": "EXC|System.JSONException|Invalid format: \"\" at [line:1, column:2]",
+      "compile": false
+    },
+    {
+      "id": "R114",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"day\":null}',FamilyDTO.class); r=x.day;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R115",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"day\":\"2024-02-29\"}',FamilyDTO.class); r=x.day;",
+      "expected": "2024-02-29 00:00:00",
+      "floorExpected": "2024-02-29 00:00:00",
+      "compile": false
+    },
+    {
+      "id": "R116",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"amount\":\"\"}',FamilyDTO.class); r=x.amount;",
+      "expected": "EXC|System.JSONException|N/A at [line:1, column:2]",
+      "floorExpected": "EXC|System.JSONException|N/A at [line:1, column:2]",
+      "compile": false
+    },
+    {
+      "id": "R117",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"amount\":\" \"}',FamilyDTO.class); r=x.amount;",
+      "expected": "EXC|System.JSONException|Character   is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark. at [line:1, column:2]",
+      "floorExpected": "EXC|System.JSONException|Character   is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark. at [line:1, column:2]",
+      "compile": false
+    },
+    {
+      "id": "R118",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"amount\":null}',FamilyDTO.class); r=x.amount;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R119",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"amount\":0}',FamilyDTO.class); r=x.amount;",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": false
+    },
+    {
+      "id": "R120",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"amount\":\"12.5\"}',FamilyDTO.class); r=x.amount;",
+      "expected": "12.5",
+      "floorExpected": "12.5",
+      "compile": false
+    },
+    {
+      "id": "R121",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{}',FamilyDTO.class); r=x.text;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R122",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserializeStrict('{}',FamilyDTO.class); r=x.text;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R123",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"text\":\"Family\"}',FamilyDTO.class); r=x.text;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R124",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserializeStrict('{\"text\":\"Family\"}',FamilyDTO.class); r=x.text;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R125",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"text\":\"Family\",\"unknown\":0}',FamilyDTO.class); r=x.text;",
+      "expected": "Family",
+      "floorExpected": "Family",
+      "compile": false
+    },
+    {
+      "id": "R126",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserializeStrict('{\"text\":\"Family\",\"unknown\":0}',FamilyDTO.class); r=x.text;",
+      "expected": "EXC|System.JSONException|Unknown field: FamilyDTO.unknown",
+      "floorExpected": "EXC|System.JSONException|Unknown field: FamilyDTO.unknown",
+      "compile": false
+    },
+    {
+      "id": "R127",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"row\":{\"Name\":\"Family\"}}',FamilyDTO.class); r=x.text;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R128",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserializeStrict('{\"row\":{\"Name\":\"Family\"}}',FamilyDTO.class); r=x.text;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R129",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"rows\":[{\"Name\":\"Family\"},null]}',FamilyDTO.class); r=x.text;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R130",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserializeStrict('{\"rows\":[{\"Name\":\"Family\"},null]}',FamilyDTO.class); r=x.text;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R131",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserialize('{\"byName\":{\"a\":{\"Name\":\"Family\"}}}',FamilyDTO.class); r=x.text;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R132",
+      "code": "FamilyDTO x=(FamilyDTO)JSON.deserializeStrict('{\"byName\":{\"a\":{\"Name\":\"Family\"}}}',FamilyDTO.class); r=x.text;",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R133",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[]',List<Account>.class); List<Account> y=(List<Account>)JSON.deserialize(JSON.serialize(x),List<Account>.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R134",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[]',List<Account>.class); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": false
+    },
+    {
+      "id": "R135",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[null]',List<Account>.class); List<Account> y=(List<Account>)JSON.deserialize(JSON.serialize(x),List<Account>.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R136",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[null]',List<Account>.class); r=x.size();",
+      "expected": "1",
+      "floorExpected": "1",
+      "compile": false
+    },
+    {
+      "id": "R137",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[{\"Name\":\"A\"}]',List<Account>.class); List<Account> y=(List<Account>)JSON.deserialize(JSON.serialize(x),List<Account>.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R138",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[{\"Name\":\"A\"}]',List<Account>.class); r=x.size();",
+      "expected": "1",
+      "floorExpected": "1",
+      "compile": false
+    },
+    {
+      "id": "R139",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[{\"Name\":\"A\"},{\"Name\":\"B\"}]',List<Account>.class); List<Account> y=(List<Account>)JSON.deserialize(JSON.serialize(x),List<Account>.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R140",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[{\"Name\":\"A\"},{\"Name\":\"B\"}]',List<Account>.class); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2",
+      "compile": false
+    },
+    {
+      "id": "R141",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[{\"Name\":null}]',List<Account>.class); List<Account> y=(List<Account>)JSON.deserialize(JSON.serialize(x),List<Account>.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R142",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[{\"Name\":null}]',List<Account>.class); r=x.size();",
+      "expected": "1",
+      "floorExpected": "1",
+      "compile": false
+    },
+    {
+      "id": "R143",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[{\"attributes\":{\"type\":\"Account\"},\"Name\":\"A\"}]',List<Account>.class); List<Account> y=(List<Account>)JSON.deserialize(JSON.serialize(x),List<Account>.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R144",
+      "code": "List<Account> x=(List<Account>)JSON.deserialize('[{\"attributes\":{\"type\":\"Account\"},\"Name\":\"A\"}]',List<Account>.class); r=x.size();",
+      "expected": "1",
+      "floorExpected": "1",
+      "compile": false
+    },
+    {
+      "id": "R145",
+      "code": "Map<String,Account> x=(Map<String,Account>)JSON.deserialize('{}',Map<String,Account>.class); Map<String,Account> y=(Map<String,Account>)JSON.deserialize(JSON.serialize(x),Map<String,Account>.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R146",
+      "code": "Map<String,Account> x=(Map<String,Account>)JSON.deserialize('{}',Map<String,Account>.class); r=x.size();",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": false
+    },
+    {
+      "id": "R147",
+      "code": "Map<String,Account> x=(Map<String,Account>)JSON.deserialize('{\"a\":null}',Map<String,Account>.class); Map<String,Account> y=(Map<String,Account>)JSON.deserialize(JSON.serialize(x),Map<String,Account>.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R148",
+      "code": "Map<String,Account> x=(Map<String,Account>)JSON.deserialize('{\"a\":null}',Map<String,Account>.class); r=x.size();",
+      "expected": "1",
+      "floorExpected": "1",
+      "compile": false
+    },
+    {
+      "id": "R149",
+      "code": "Map<String,Account> x=(Map<String,Account>)JSON.deserialize('{\"a\":{\"Name\":\"A\"}}',Map<String,Account>.class); Map<String,Account> y=(Map<String,Account>)JSON.deserialize(JSON.serialize(x),Map<String,Account>.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R150",
+      "code": "Map<String,Account> x=(Map<String,Account>)JSON.deserialize('{\"a\":{\"Name\":\"A\"}}',Map<String,Account>.class); r=x.size();",
+      "expected": "1",
+      "floorExpected": "1",
+      "compile": false
+    },
+    {
+      "id": "R151",
+      "code": "Map<String,Account> x=(Map<String,Account>)JSON.deserialize('{\"a\":{\"Name\":\"A\"},\"b\":{\"Name\":\"B\"}}',Map<String,Account>.class); Map<String,Account> y=(Map<String,Account>)JSON.deserialize(JSON.serialize(x),Map<String,Account>.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R152",
+      "code": "Map<String,Account> x=(Map<String,Account>)JSON.deserialize('{\"a\":{\"Name\":\"A\"},\"b\":{\"Name\":\"B\"}}',Map<String,Account>.class); r=x.size();",
+      "expected": "2",
+      "floorExpected": "2",
+      "compile": false
+    },
+    {
+      "id": "R153",
+      "code": "Map<String,Account> x=(Map<String,Account>)JSON.deserialize('{\"a\":{\"Name\":null}}',Map<String,Account>.class); Map<String,Account> y=(Map<String,Account>)JSON.deserialize(JSON.serialize(x),Map<String,Account>.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R154",
+      "code": "Map<String,Account> x=(Map<String,Account>)JSON.deserialize('{\"a\":{\"Name\":null}}',Map<String,Account>.class); r=x.size();",
+      "expected": "1",
+      "floorExpected": "1",
+      "compile": false
+    },
+    {
+      "id": "R155",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"A\"}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R156",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"A\"}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x===y;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R157",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":null}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R158",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":null}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x===y;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R159",
+      "code": "Account x=(Account)JSON.deserialize('{}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R160",
+      "code": "Account x=(Account)JSON.deserialize('{}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x===y;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R161",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"A\",\"Parent\":{\"Name\":\"P\"}}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R162",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"A\",\"Parent\":{\"Name\":\"P\"}}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x===y;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R163",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"A\",\"AnnualRevenue\":null}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R164",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"A\",\"AnnualRevenue\":null}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x===y;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R165",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"A\",\"NumberOfEmployees\":2}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x==y;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R166",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"A\",\"NumberOfEmployees\":2}',Account.class); Account y=(Account)JSON.deserialize(JSON.serialize(x),Account.class); r=x===y;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R172",
+      "code": "Account p=(Account)JSON.deserialize('{\"Name\":\"Parent\"}',Account.class); Contact c=new Contact(LastName='Child'); c.Account=p; r=c.Account===p;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R173",
+      "code": "Account p=(Account)JSON.deserialize('{\"Name\":\"Parent\"}',Account.class); Contact c=new Contact(LastName='Child'); c.Account=p; p.Name='Changed'; r=c.Account.Name;",
+      "expected": "Changed",
+      "floorExpected": "Changed",
+      "compile": false
+    },
+    {
+      "id": "R174",
+      "code": "Account p=(Account)JSON.deserialize('{\"Name\":\"Parent\"}',Account.class); Contact c=new Contact(LastName='Child'); c.Account=p; c.Account.Name='Changed'; r=p.Name;",
+      "expected": "Changed",
+      "floorExpected": "Changed",
+      "compile": false
+    },
+    {
+      "id": "R175",
+      "code": "Account p=(Account)JSON.deserialize('{\"Name\":\"Parent\"}',Account.class); Contact c=new Contact(LastName='Child'); c.Account=p; r=c.getSObject('Account')===p;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R176",
+      "code": "Account p=(Account)JSON.deserialize('{\"Name\":\"Parent\"}',Account.class); Contact c=new Contact(LastName='Child'); c.Account=p; r=c.clone(false,true).Account===p;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R186",
+      "code": "Account a=new Account(Name='A'); Account b=(Account)JSON.deserialize('{\"Name\":\"A\"}',Account.class); r=a == b;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R187",
+      "code": "Account a=new Account(Name='A'); Account b=(Account)JSON.deserialize('{\"Name\":\"A\"}',Account.class); r=a === b;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R188",
+      "code": "Account a=new Account(Name='A'); Account b=(Account)JSON.deserialize('{\"Name\":\"A\"}',Account.class); r=a != b;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R189",
+      "code": "Account a=new Account(Name=null); Account b=(Account)JSON.deserialize('{}',Account.class); r=a == b;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R190",
+      "code": "Account a=new Account(Name=null); Account b=(Account)JSON.deserialize('{}',Account.class); r=a === b;",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R191",
+      "code": "Account a=new Account(Name=null); Account b=(Account)JSON.deserialize('{}',Account.class); r=a != b;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R204",
+      "code": "JSON.serialize((Object)null)",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false
+    },
+    {
+      "id": "R205",
+      "code": "JSON.serializePretty((Object)null)",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false
+    },
+    {
+      "id": "R206",
+      "code": "JSON.serialize('quote\" slash\\\\ newline\\n tab\\t')",
+      "expected": "\"quote\\\" slash\\\\ newline\\n tab\\t\"",
+      "floorExpected": "\"quote\\\" slash\\\\ newline\\n tab\\t\"",
+      "compile": false
+    },
+    {
+      "id": "R207",
+      "code": "List<Integer> x=new List<Integer>{1,0,-1,null}; r=JSON.serialize(JSON.deserialize(JSON.serialize(x),List<Integer>.class));",
+      "expected": "[1,0,-1,null]",
+      "floorExpected": "[1,0,-1,null]",
+      "compile": false
+    },
+    {
+      "id": "R208",
+      "code": "Decimal x=12.50; r=JSON.deserialize(JSON.serialize(x),Decimal.class);",
+      "expected": "12.50",
+      "floorExpected": "12.50",
+      "compile": false
+    },
+    {
+      "id": "R209",
+      "code": "Date x=Date.newInstance(2024,2,29); r=JSON.deserialize(JSON.serialize(x),Date.class);",
+      "expected": "2024-02-29 00:00:00",
+      "floorExpected": "2024-02-29 00:00:00",
+      "compile": false
+    },
+    {
+      "id": "R210",
+      "code": "Datetime x=Datetime.newInstanceGMT(2024,2,29,12,34,56); r=JSON.deserialize(JSON.serialize(x),Datetime.class);",
+      "expected": "2024-02-29 12:34:56",
+      "floorExpected": "2024-02-29 12:34:56",
+      "compile": false
+    },
+    {
+      "id": "R211",
+      "code": "Car x=(Car)JSON.deserialize('{\"make\":\"Family\",\"year\":\"2020\"}',Car.class); r=JSON.serialize(x);",
+      "expected": "{\"year\":\"2020\",\"make\":\"Family\"}",
+      "floorExpected": "{\"year\":\"2020\",\"make\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R212",
+      "code": "Car x=(Car)JSON.deserialize('{\"make\":\"Family\",\"year\":\"2020\",\"extra\":\"ignored\"}',Car.class); Map<String,Object> y=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(x)); r=x.make+'|'+x.year+'|'+y.containsKey('extra');",
+      "expected": "Family|2020|false",
+      "floorExpected": "Family|2020|false",
+      "compile": false
+    },
+    {
+      "id": "R213",
+      "code": "Car x=(Car)JSON.deserializeStrict('{\"make\":\"Family\",\"year\":\"2020\",\"extra\":\"ignored\"}',Car.class); r=JSON.serialize(x);",
+      "expected": "EXC|System.JSONException|Unknown field: Car.extra",
+      "floorExpected": "EXC|System.JSONException|Unknown field: Car.extra",
+      "compile": false
+    },
+    {
+      "id": "R214",
+      "code": "Car x=(Car)JSON.deserializeStrict('{\"make\":\"Family\",\"year\":\"2020\"}',Car.class); r=JSON.serialize(x);",
+      "expected": "{\"year\":\"2020\",\"make\":\"Family\"}",
+      "floorExpected": "{\"year\":\"2020\",\"make\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R215",
+      "code": "Car x=(Car)JSON.deserialize('null',Car.class); r=x==null;",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R216",
+      "code": "JsonA18DTO x=new JsonA18DTO(); r=JSON.serialize(x,false);",
+      "expected": "{\"values\":null,\"text\":null,\"count\":null,\"child\":null}",
+      "floorExpected": "{\"values\":null,\"text\":null,\"count\":null,\"child\":null}",
+      "compile": false
+    },
+    {
+      "id": "R217",
+      "code": "JsonA18DTO x=new JsonA18DTO(); r=JSON.serialize(x,true);",
+      "expected": "{}",
+      "floorExpected": "{}",
+      "compile": false
+    },
+    {
+      "id": "R218",
+      "code": "JsonA18DTO x=new JsonA18DTO(); x.text='Family'; r=JSON.serializePretty(x,true).replace('\\n','\\\\n').replace('\\r','\\\\r');",
+      "expected": "{\\n  \"text\" : \"Family\"\\n}",
+      "floorExpected": "{\\n  \"text\" : \"Family\"\\n}",
+      "compile": false
+    },
+    {
+      "id": "R219",
+      "code": "JsonA18DTO x=new JsonA18DTO(); x.child=new JsonA18DTO(); x.child.count=0; r=JSON.serialize(x,true);",
+      "expected": "{\"child\":{\"count\":0}}",
+      "floorExpected": "{\"child\":{\"count\":0}}",
+      "compile": false
+    },
+    {
+      "id": "R220",
+      "code": "Map<String,Object> x=new Map<String,Object>{'a'=>null,'b'=>1}; r=JSON.serialize(x,true);",
+      "expected": "{\"b\":1,\"a\":null}",
+      "floorExpected": "{\"b\":1,\"a\":null}",
+      "compile": false
+    },
+    {
+      "id": "R221",
+      "code": "List<Object> x=new List<Object>{null,'Family'}; r=JSON.serialize(x,true);",
+      "expected": "[null,\"Family\"]",
+      "floorExpected": "[null,\"Family\"]",
+      "compile": false
+    },
+    {
+      "id": "R222",
+      "code": "Account x=new Account(Name='Family',AnnualRevenue=null); r=JSON.serialize(x,false);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":null}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":null}",
+      "compile": false
+    },
+    {
+      "id": "R223",
+      "code": "Account x=new Account(Name='Family',AnnualRevenue=null); r=JSON.serialize(x,true);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":null}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":null}",
+      "compile": false
+    },
+    {
+      "id": "R224",
+      "code": "Object x=JSON.deserializeUntyped('{\"text\":\"Family\",\"a\":[1,true,null],\"empty\":{}}'); r=JSON.serialize(JSON.deserializeUntyped(JSON.serialize(x)));",
+      "expected": "{\"text\":\"Family\",\"a\":[1,true,null],\"empty\":{}}",
+      "floorExpected": "{\"text\":\"Family\",\"a\":[1,true,null],\"empty\":{}}",
+      "compile": false
+    },
+    {
+      "id": "R225",
+      "code": "JSON.deserializeUntyped('null')",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R226",
+      "code": "Object x=JSON.deserializeUntyped('1'); r=String.valueOf(x)+'|'+(x instanceof Integer);",
+      "expected": "1|true",
+      "floorExpected": "1|true",
+      "compile": false
+    },
+    {
+      "id": "R227",
+      "code": "Object x=JSON.deserializeUntyped('2147483648'); r=String.valueOf(x)+'|'+(x instanceof Long);",
+      "expected": "2147483648|true",
+      "floorExpected": "2147483648|true",
+      "compile": false
+    },
+    {
+      "id": "R228",
+      "code": "Object x=JSON.deserializeUntyped('1.25'); r=String.valueOf(x)+'|'+(x instanceof Decimal);",
+      "expected": "1.25|true",
+      "floorExpected": "1.25|true",
+      "compile": false
+    },
+    {
+      "id": "R229",
+      "code": "Map<String,Object> x=(Map<String,Object>)JSON.deserializeUntyped('{\"a\":1,\"a\":2}'); r=x.get('a');",
+      "expected": "2",
+      "floorExpected": "2",
+      "compile": false
+    },
+    {
+      "id": "R230",
+      "code": "JSON.deserializeUntyped('{\"a\":}')",
+      "expected": "EXC|System.JSONException|Unexpected character ('}' (code 125)): expected a value at [line:1, column:7]",
+      "floorExpected": "EXC|System.JSONException|Unexpected character ('}' (code 125)): expected a value at [line:1, column:7]",
+      "compile": false
+    },
+    {
+      "id": "R231",
+      "code": "JSON.deserialize('2147483648',Integer.class)",
+      "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:1, column:21]",
+      "floorExpected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at [line:1, column:21]",
+      "compile": false
+    },
+    {
+      "id": "R232",
+      "code": "JSON.deserialize('null',List<Integer>.class)",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R233",
+      "code": "JSON.deserialize('\"x\"',Integer.class)",
+      "expected": "EXC|System.JSONException|Value does not match expected type at [line:1, column:1]",
+      "floorExpected": "EXC|System.JSONException|Value does not match expected type at [line:1, column:1]",
+      "compile": false
+    },
+    {
+      "id": "R234",
+      "code": "SObject x=(SObject)JSON.deserialize('{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\"}',SObject.class); r=x.getSObjectType()+'|'+x.get('Name');",
+      "expected": "Account|Family",
+      "floorExpected": "Account|Family",
+      "compile": false
+    },
+    {
+      "id": "R235",
+      "code": "JSON.deserialize('{\"Name\":\"Family\"}',SObject.class)",
+      "expected": "EXC|System.JSONException|Nested object for polymorphic foreign key must have an attributes field before any other fields.",
+      "floorExpected": "EXC|System.JSONException|Nested object for polymorphic foreign key must have an attributes field before any other fields.",
+      "compile": false
+    },
+    {
+      "id": "R236",
+      "code": "JSON.deserialize('{\"attributes\":{\"type\":\"NoSuchObject__c\"},\"Name\":\"Family\"}',SObject.class)",
+      "expected": "EXC|System.JSONException|",
+      "floorExpected": "EXC|System.JSONException|",
+      "compile": false
+    },
+    {
+      "id": "R237",
+      "code": "JSON.deserialize('{\"Name\":\"Family\",\"attributes\":{\"type\":\"Account\"}}',SObject.class)",
+      "expected": "Account:{Name=Family}",
+      "floorExpected": "Account:{Name=Family}",
+      "compile": false,
+      "carry": "A17 SObject values: generic SObject text exposes internal field markers."
+    },
+    {
+      "id": "R238",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Child\",\"Parent\":{\"Name\":\"Parent\"}}',Account.class); r=x.Parent.Name;",
+      "expected": "Parent",
+      "floorExpected": "Parent",
+      "compile": false
+    },
+    {
+      "id": "R239",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Parent\",\"Contacts\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Child\"}]}}',Account.class); r=x.Contacts.size()+'|'+x.Contacts[0].LastName;",
+      "expected": "1|Child",
+      "floorExpected": "1|Child",
+      "compile": false
+    },
+    {
+      "id": "R240",
+      "code": "Account x=(Account)JSON.deserialize('{\"Contacts\":[{\"LastName\":\"Child\"}]}',Account.class); r=x.Contacts.size();",
+      "expected": "EXC|System.JSONException|QueryResult must start with '{'",
+      "floorExpected": "EXC|System.JSONException|QueryResult must start with '{'",
+      "compile": false
+    },
+    {
+      "id": "R241",
+      "code": "JSON.deserialize('{\"Parent\":\"wrong\"}',Account.class)",
+      "expected": "EXC|System.JSONException|The value provided for foreign key reference Parent is not a nested SObject",
+      "floorExpected": "EXC|System.JSONException|The value provided for foreign key reference Parent is not a nested SObject",
+      "compile": false
+    },
+    {
+      "id": "R242",
+      "code": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('CartItem__c').getDescribe().fields.getMap().get('Total__c').getDescribe(); r=String.valueOf(d.getType())+'|'+d.getPrecision()+'|'+d.getScale();",
+      "expected": "DOUBLE|18|2",
+      "floorExpected": "DOUBLE|18|2",
+      "compile": false
+    },
+    {
+      "id": "R243",
+      "code": "SObject x=(SObject)JSON.deserialize('{\"Total__c\":\"\"}',Type.forName('CartItem__c')); r=x.get('Total__c');",
+      "expected": "0.0",
+      "floorExpected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R244",
+      "code": "SObject x=(SObject)JSON.deserialize('{\"Total__c\":\" \"}',Type.forName('CartItem__c')); r=x.get('Total__c');",
+      "expected": "0.0",
+      "floorExpected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R245",
+      "code": "SObject x=(SObject)JSON.deserialize('{\"Total__c\":null}',Type.forName('CartItem__c')); r=x.get('Total__c');",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R246",
+      "code": "SObject x=(SObject)JSON.deserialize('{\"Total__c\":0}',Type.forName('CartItem__c')); r=x.get('Total__c');",
+      "expected": "0.0",
+      "floorExpected": "0.0",
+      "compile": false
+    },
+    {
+      "id": "R247",
+      "code": "SObject x=(SObject)JSON.deserialize('{\"Total__c\":\"12.50\"}',Type.forName('CartItem__c')); r=x.get('Total__c');",
+      "expected": "12.5",
+      "floorExpected": "12.5",
+      "compile": false
+    },
+    {
+      "id": "R248",
+      "code": "JSONParser p=JSON.createParser('1'); r=p.getText();",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R249",
+      "code": "JSONParser p=JSON.createParser('1'); r=p.getCurrentToken();",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R250",
+      "code": "JSONParser p=JSON.createParser('1'); r=p.hasCurrentToken();",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R251",
+      "code": "JSONParser p=JSON.createParser('1'); p.nextToken(); p.clearCurrentToken(); r=p.getText();",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R252",
+      "code": "JSONParser p=JSON.createParser('1'); p.nextToken(); p.clearCurrentToken(); r=p.getLastClearedToken();",
+      "expected": "VALUE_NUMBER_INT",
+      "floorExpected": "VALUE_NUMBER_INT",
+      "compile": false
+    },
+    {
+      "id": "R253",
+      "code": "JSONParser p=JSON.createParser('1'); p.nextToken(); p.nextToken(); r=p.getText();",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "R254",
+      "code": "JSONParser p=JSON.createParser('\"hello\"'); p.nextToken(); r=p.getText();",
+      "expected": "hello",
+      "floorExpected": "hello",
+      "compile": false
+    },
+    {
+      "id": "R255",
+      "code": "JSONParser p=JSON.createParser('2147483647'); p.nextToken(); r=p.getIntegerValue();",
+      "expected": "2147483647",
+      "floorExpected": "2147483647",
+      "compile": false
+    },
+    {
+      "id": "R256",
+      "code": "JSONParser p=JSON.createParser('-2147483648'); p.nextToken(); r=p.getIntegerValue();",
+      "expected": "-2147483648",
+      "floorExpected": "-2147483648",
+      "compile": false
+    },
+    {
+      "id": "R257",
+      "code": "JSONParser p=JSON.createParser('2147483648'); p.nextToken(); r=p.getIntegerValue();",
+      "expected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [1,21]",
+      "floorExpected": "EXC|System.JSONException|Numeric value (2147483648) out of range of int at input location [1,21]",
+      "compile": false
+    },
+    {
+      "id": "R258",
+      "code": "JSONParser p=JSON.createParser('-2147483649'); p.nextToken(); r=p.getIntegerValue();",
+      "expected": "EXC|System.JSONException|Numeric value (-2147483649) out of range of int at input location [1,23]",
+      "floorExpected": "EXC|System.JSONException|Numeric value (-2147483649) out of range of int at input location [1,23]",
+      "compile": false
+    },
+    {
+      "id": "R259",
+      "code": "JSONParser p=JSON.createParser('2147483647'); p.nextToken(); r=p.getLongValue();",
+      "expected": "2147483647",
+      "floorExpected": "2147483647",
+      "compile": false
+    },
+    {
+      "id": "R260",
+      "code": "JSONParser p=JSON.createParser('-2147483648'); p.nextToken(); r=p.getLongValue();",
+      "expected": "-2147483648",
+      "floorExpected": "-2147483648",
+      "compile": false
+    },
+    {
+      "id": "R261",
+      "code": "JSONParser p=JSON.createParser('2147483648'); p.nextToken(); r=p.getLongValue();",
+      "expected": "2147483648",
+      "floorExpected": "2147483648",
+      "compile": false
+    },
+    {
+      "id": "R262",
+      "code": "JSONParser p=JSON.createParser('-2147483649'); p.nextToken(); r=p.getLongValue();",
+      "expected": "-2147483649",
+      "floorExpected": "-2147483649",
+      "compile": false
+    },
+    {
+      "id": "R263",
+      "code": "JSONParser p=JSON.createParser('\"1\"'); p.nextToken(); r=p.getIntegerValue();",
+      "expected": "EXC|System.JSONException|Current token (VALUE_STRING) not numeric, can not use numeric value accessors at input location [1,2]",
+      "floorExpected": "EXC|System.JSONException|Current token (VALUE_STRING) not numeric, can not use numeric value accessors at input location [1,2]",
+      "compile": false
+    },
+    {
+      "id": "R264",
+      "code": "JSONParser p=JSON.createParser('1'); r=p.getIntegerValue();",
+      "expected": "EXC|System.JSONException|Current token (null) not numeric, can not use numeric value accessors at input location [1,1]",
+      "floorExpected": "EXC|System.JSONException|Current token (null) not numeric, can not use numeric value accessors at input location [1,1]",
+      "compile": false
+    },
+    {
+      "id": "R265",
+      "code": "JSONParser p=JSON.createParser('1.5'); p.nextToken(); r=p.getIntegerValue();",
+      "expected": "1",
+      "floorExpected": "1",
+      "compile": false
+    },
+    {
+      "id": "R266",
+      "code": "JSONParser p=JSON.createParser('1.25'); p.nextToken(); r=p.getDecimalValue();",
+      "expected": "1.25",
+      "floorExpected": "1.25",
+      "compile": false
+    },
+    {
+      "id": "R267",
+      "code": "JSONParser p=JSON.createParser('1e2'); p.nextToken(); r=p.getDoubleValue();",
+      "expected": "100.0",
+      "floorExpected": "100.0",
+      "compile": false
+    },
+    {
+      "id": "R268",
+      "code": "JSONParser p=JSON.createParser('true'); p.nextToken(); r=p.getBooleanValue();",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R269",
+      "code": "JSONParser p=JSON.createParser('null'); p.nextToken(); r=p.getBooleanValue();",
+      "expected": "EXC|System.JSONException|Current token (VALUE_NULL) not of boolean type at input location [1,9]",
+      "floorExpected": "EXC|System.JSONException|Current token (VALUE_NULL) not of boolean type at input location [1,9]",
+      "compile": false
+    },
+    {
+      "id": "R270",
+      "code": "JSONParser p=JSON.createParser('\"2024-02-29\"'); p.nextToken(); r=p.getDateValue();",
+      "expected": "2024-02-29 00:00:00",
+      "floorExpected": "2024-02-29 00:00:00",
+      "compile": false
+    },
+    {
+      "id": "R271",
+      "code": "JSONParser p=JSON.createParser('\"2024-02-29T12:34:56.000Z\"'); p.nextToken(); r=p.getDatetimeValue();",
+      "expected": "2024-02-29 12:34:56",
+      "floorExpected": "2024-02-29 12:34:56",
+      "compile": false
+    },
+    {
+      "id": "R272",
+      "code": "JSONParser p=JSON.createParser('\"12:34:56.789Z\"'); p.nextToken(); r=p.getTimeValue();",
+      "expected": "12:34:56.789Z",
+      "floorExpected": "12:34:56.789Z",
+      "compile": false
+    },
+    {
+      "id": "R273",
+      "code": "JSONParser p=JSON.createParser('\"001000000000001AAA\"'); p.nextToken(); r=p.getIdValue();",
+      "expected": "001000000000001AAA",
+      "floorExpected": "001000000000001AAA",
+      "compile": false
+    },
+    {
+      "id": "R274",
+      "code": "JSONParser p=JSON.createParser('\"aGVsbG8=\"'); p.nextToken(); r=p.getBlobValue().toString();",
+      "expected": "hello",
+      "floorExpected": "hello",
+      "compile": false
+    },
+    {
+      "id": "R275",
+      "code": "JSONParser p=JSON.createParser('{\"a\":[\"x\",1,1.5,true,false,null],\"b\":{}}'); List<String> x=new List<String>(); while(p.nextToken()!=null){x.add(String.valueOf(p.getCurrentToken()));} r=String.join(x,',');",
+      "expected": "START_OBJECT,FIELD_NAME,START_ARRAY,VALUE_STRING,VALUE_NUMBER_INT,VALUE_NUMBER_FLOAT,VALUE_TRUE,VALUE_FALSE,VALUE_NULL,END_ARRAY,FIELD_NAME,START_OBJECT,END_OBJECT,END_OBJECT",
+      "floorExpected": "START_OBJECT,FIELD_NAME,START_ARRAY,VALUE_STRING,VALUE_NUMBER_INT,VALUE_NUMBER_FLOAT,VALUE_TRUE,VALUE_FALSE,VALUE_NULL,END_ARRAY,FIELD_NAME,START_OBJECT,END_OBJECT,END_OBJECT",
+      "compile": false
+    },
+    {
+      "id": "R276",
+      "code": "JSONParser p=JSON.createParser('{\"a\":{\"b\":1},\"c\":2}'); p.nextToken(); p.nextToken(); p.nextValue(); r=String.valueOf(p.getCurrentToken())+'|'+p.getCurrentName();",
+      "expected": "START_OBJECT|a",
+      "floorExpected": "START_OBJECT|a",
+      "compile": false
+    },
+    {
+      "id": "R277",
+      "code": "JSONParser p=JSON.createParser('{\"a\":[1,{\"b\":2}],\"c\":3}'); p.nextToken(); p.nextToken(); p.nextToken(); p.skipChildren(); p.nextValue(); r=p.getCurrentName()+'|'+p.getIntegerValue();",
+      "expected": "c|3",
+      "floorExpected": "c|3",
+      "compile": false
+    },
+    {
+      "id": "R278",
+      "code": "JSONParser p=JSON.createParser('[{\"make\":\"Family\",\"year\":\"2020\"},null]'); p.nextToken(); p.nextToken(); Car x=(Car)p.readValueAs(Car.class); r=x.year+'|'+p.getCurrentToken()+'|'+p.nextToken();",
+      "expected": "2020|null|VALUE_NULL",
+      "floorExpected": "2020|null|VALUE_NULL",
+      "compile": false
+    },
+    {
+      "id": "R279",
+      "code": "JSONParser p=JSON.createParser('{\"make\":\"Family\",\"year\":\"2020\",\"extra\":null}'); p.nextToken(); r=p.readValueAsStrict(Car.class);",
+      "expected": "EXC|System.JSONException|Unknown field: Car.extra",
+      "floorExpected": "EXC|System.JSONException|Unknown field: Car.extra",
+      "compile": false
+    },
+    {
+      "id": "R280",
+      "code": "JSONParser p=JSON.createParser('\"2024-02-30\"'); p.nextToken(); r=p.getDateValue();",
+      "expected": "EXC|System.JSONException|Cannot parse \"2024-02-30\": Value 30 for dayOfMonth must be in the range [1,29]",
+      "floorExpected": "EXC|System.JSONException|Cannot parse \"2024-02-30\": Value 30 for dayOfMonth must be in the range [1,29]",
+      "compile": false
+    },
+    {
+      "id": "R281",
+      "code": "JSONParser p=JSON.createParser('\"bad-id\"'); p.nextToken(); r=p.getIdValue();",
+      "expected": "EXC|System.StringException|Invalid id: bad-id",
+      "floorExpected": "EXC|System.StringException|Invalid id: bad-id",
+      "compile": false
+    },
+    {
+      "id": "R282",
+      "code": "JSONParser p=JSON.createParser('{\"a\":}'); while(p.nextToken()!=null){} r=p.getCurrentToken();",
+      "expected": "EXC|System.JSONException|Unexpected character ('}' (code 125)): expected a value at input location [1,7]",
+      "floorExpected": "EXC|System.JSONException|Unexpected character ('}' (code 125)): expected a value at input location [1,7]",
+      "compile": false
+    },
+    {
+      "id": "R283",
+      "code": "JSONParser p=JSON.createParser('[1,]'); while(p.nextToken()!=null){} r=p.getCurrentToken();",
+      "expected": "EXC|System.JSONException|Unexpected character (']' (code 93)): expected a value at input location [1,5]",
+      "floorExpected": "EXC|System.JSONException|Unexpected character (']' (code 93)): expected a value at input location [1,5]",
+      "compile": false
+    },
+    {
+      "id": "R284",
+      "code": "JSONParser p=JSON.createParser('01'); while(p.nextToken()!=null){} r=p.getCurrentToken();",
+      "expected": "EXC|System.JSONException|Invalid numeric value: Leading zeroes not allowed at input location [1,2]",
+      "floorExpected": "EXC|System.JSONException|Invalid numeric value: Leading zeroes not allowed at input location [1,2]",
+      "compile": false
+    },
+    {
+      "id": "R285",
+      "code": "JSONParser p=JSON.createParser('\"unterminated'); while(p.nextToken()!=null){} r=p.getCurrentToken();",
+      "expected": "EXC|System.JSONException|Unexpected end-of-input: was expecting closing quote for a string value at input location [1,27]",
+      "floorExpected": "EXC|System.JSONException|Unexpected end-of-input: was expecting closing quote for a string value at input location [1,27]",
+      "compile": false
+    },
+    {
+      "id": "R286",
+      "code": "try { JSONParser p=JSON.createParser('{'); while(p.nextToken()!=null){} r=p.getCurrentToken(); } catch (Exception e) { r='EXC|'+e.getTypeName()+'|'+e.getMessage().replaceAll('java.io.StringReader@[0-9a-fA-F]+','java.io.StringReader@<identity>'); }",
+      "expected": "EXC|System.JSONException|Unexpected end-of-input: expected close marker for OBJECT (from [Source: java.io.StringReader@<identity>; line: 1, column: 0]) at input location [1,3]",
+      "floorExpected": "EXC|System.JSONException|Unexpected end-of-input: expected close marker for OBJECT (from [Source: java.io.StringReader@<identity>; line: 1, column: 0]) at input location [1,3]",
+      "compile": false
+    },
+    {
+      "id": "R287",
+      "code": "JSON.createParser((String)null)",
+      "expected": "EXC|System.NullPointerException|null input to JSON parser",
+      "floorExpected": "EXC|System.NullPointerException|null input to JSON parser",
+      "compile": false
+    },
+    {
+      "id": "R288",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.writeEndObject(); r=g.getAsString();",
+      "expected": "{}",
+      "floorExpected": "{}",
+      "compile": false
+    },
+    {
+      "id": "R289",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartArray(); g.writeEndArray(); r=g.getAsString();",
+      "expected": "[]",
+      "floorExpected": "[]",
+      "compile": false
+    },
+    {
+      "id": "R290",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.writeStringField('text','quote\" slash\\\\ newline\\n tab\\t'); g.writeNumberField('n',12.50); g.writeBooleanField('b',true); g.writeNullField('z'); g.writeEndObject(); r=g.getAsString();",
+      "expected": "{\"text\":\"quote\\\" slash\\\\ newline\\n tab\\t\",\"n\":12.50,\"b\":true,\"z\":null}",
+      "floorExpected": "{\"text\":\"quote\\\" slash\\\\ newline\\n tab\\t\",\"n\":12.50,\"b\":true,\"z\":null}",
+      "compile": false
+    },
+    {
+      "id": "R291",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartArray(); g.writeString('Family'); g.writeNumber(Integer.valueOf('-2147483648')); g.writeNumber(Long.valueOf('2147483648')); g.writeBoolean(false); g.writeNull(); g.writeEndArray(); r=g.getAsString();",
+      "expected": "[\"Family\",-2147483648,2147483648,false,null]",
+      "floorExpected": "[\"Family\",-2147483648,2147483648,false,null]",
+      "compile": false
+    },
+    {
+      "id": "R292",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.writeDateField('d',Date.newInstance(2024,2,29)); g.writeDateTimeField('dt',Datetime.newInstanceGMT(2024,2,29,12,34,56)); g.writeTimeField('t',Time.newInstance(12,34,56,789)); g.writeEndObject(); r=g.getAsString();",
+      "expected": "{\"d\":\"2024-02-29\",\"dt\":\"2024-02-29T12:34:56.000Z\",\"t\":\"12:34:56.789Z\"}",
+      "floorExpected": "{\"d\":\"2024-02-29\",\"dt\":\"2024-02-29T12:34:56.000Z\",\"t\":\"12:34:56.789Z\"}",
+      "compile": false
+    },
+    {
+      "id": "R293",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.writeIdField('id',(Id)'001000000000001AAA'); g.writeBlobField('blob',Blob.valueOf('hello')); g.writeEndObject(); r=g.getAsString();",
+      "expected": "{\"id\":\"001000000000001AAA\",\"blob\":\"aGVsbG8=\"}",
+      "floorExpected": "{\"id\":\"001000000000001AAA\",\"blob\":\"aGVsbG8=\"}",
+      "compile": false
+    },
+    {
+      "id": "R294",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.writeObjectField('row',new Account(Name='Family')); g.writeEndObject(); r=g.getAsString();",
+      "expected": "{\"row\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\"}}",
+      "floorExpected": "{\"row\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\"}}",
+      "compile": false
+    },
+    {
+      "id": "R295",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeObject(new List<String>{'a',null}); r=g.getAsString();",
+      "expected": "[\"a\",null]",
+      "floorExpected": "[\"a\",null]",
+      "compile": false
+    },
+    {
+      "id": "R296",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartArray(); g.writeStartObject(); g.writeFieldName('a'); g.writeStartArray(); g.writeNull(); g.writeEndArray(); g.writeEndObject(); g.writeEndArray(); r=g.getAsString();",
+      "expected": "[{\"a\":[null]}]",
+      "floorExpected": "[{\"a\":[null]}]",
+      "compile": false
+    },
+    {
+      "id": "R297",
+      "code": "JSONGenerator g=JSON.createGenerator(true); g.writeStartObject(); g.writeNumberField('n',1); g.writeEndObject(); r=g.getAsString().replace('\\n','\\\\n').replace('\\r','\\\\r');",
+      "expected": "{\\n  \"n\" : 1\\n}",
+      "floorExpected": "{\\n  \"n\" : 1\\n}",
+      "compile": false
+    },
+    {
+      "id": "R298",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeNumber(0); r=g.getAsString();",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": false
+    },
+    {
+      "id": "R299",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeNull(); r=g.getAsString();",
+      "expected": "null",
+      "floorExpected": "null",
+      "compile": false
+    },
+    {
+      "id": "R300",
+      "code": "JSONGenerator g=JSON.createGenerator(false);  r=g.isClosed();",
+      "expected": "false",
+      "floorExpected": "false",
+      "compile": false
+    },
+    {
+      "id": "R301",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartArray(); g.writeEndArray(); g.close(); r=g.isClosed();",
+      "expected": "true",
+      "floorExpected": "true",
+      "compile": false
+    },
+    {
+      "id": "R302",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartArray(); g.writeEndArray(); g.close(); r=g.getAsString();",
+      "expected": "[]",
+      "floorExpected": "[]",
+      "compile": false
+    },
+    {
+      "id": "R303",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.close(); g.writeNull(); r=g.getAsString();",
+      "expected": "UNCAUGHT|System.UnexpectedException: Salesforce System Error: 614048281-4552867 (308432432) (308432432)",
+      "floorExpected": "UNCAUGHT|System.UnexpectedException: Salesforce System Error: 1016898172-3658830 (308432432) (308432432)",
+      "compile": false,
+      "carry": "A18 JSON: Salesforce aborts with a volatile internal error ID; local closed-generator JSONException remains explicit."
+    },
+    {
+      "id": "R304",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); r=g.getAsString();",
+      "expected": "{}",
+      "floorExpected": "{}",
+      "compile": false
+    },
+    {
+      "id": "R305",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.writeFieldName('pending'); r=g.getAsString();",
+      "expected": "{\"pending\"}",
+      "floorExpected": "{\"pending\"}",
+      "compile": false
+    },
+    {
+      "id": "R306",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeEndObject(); r=g.getAsString();",
+      "expected": "EXC|System.JSONException|Current context not an object but ROOT",
+      "floorExpected": "EXC|System.JSONException|Current context not an object but ROOT",
+      "compile": false
+    },
+    {
+      "id": "R307",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartArray(); g.writeEndObject(); r=g.getAsString();",
+      "expected": "EXC|System.JSONException|Current context not an object but ARRAY",
+      "floorExpected": "EXC|System.JSONException|Current context not an object but ARRAY",
+      "compile": false
+    },
+    {
+      "id": "R308",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.writeEndArray(); r=g.getAsString();",
+      "expected": "EXC|System.JSONException|Current context not an ARRAY but OBJECT",
+      "floorExpected": "EXC|System.JSONException|Current context not an ARRAY but OBJECT",
+      "compile": false
+    },
+    {
+      "id": "R309",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartArray(); g.writeFieldName('x'); r=g.getAsString();",
+      "expected": "EXC|System.JSONException|Can not write a field name, expecting a value",
+      "floorExpected": "EXC|System.JSONException|Can not write a field name, expecting a value",
+      "compile": false
+    },
+    {
+      "id": "R310",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.writeString('value'); r=g.getAsString();",
+      "expected": "EXC|System.JSONException|Can not write text value, expecting field name",
+      "floorExpected": "EXC|System.JSONException|Can not write text value, expecting field name",
+      "compile": false
+    },
+    {
+      "id": "R311",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeFieldName('x'); r=g.getAsString();",
+      "expected": "EXC|System.JSONException|Can not write a field name, expecting a value",
+      "floorExpected": "EXC|System.JSONException|Can not write a field name, expecting a value",
+      "compile": false
+    },
+    {
+      "id": "R312",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.writeFieldName('a'); g.writeFieldName('b'); r=g.getAsString();",
+      "expected": "EXC|System.JSONException|Can not write a field name, expecting a value",
+      "floorExpected": "EXC|System.JSONException|Can not write a field name, expecting a value",
+      "compile": false
+    },
+    {
+      "id": "R313",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeString('a'); g.writeString('b'); r=g.getAsString();",
+      "expected": "\"a\" \"b\"",
+      "floorExpected": "\"a\" \"b\"",
+      "compile": false
+    },
+    {
+      "id": "R314",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeString((String)null); r=g.getAsString();",
+      "expected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeString()",
+      "floorExpected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeString()",
+      "compile": false
+    },
+    {
+      "id": "R315",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.writeStringField('a',(String)null); g.writeEndObject(); r=g.getAsString();",
+      "expected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeStringField()",
+      "floorExpected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeStringField()",
+      "compile": false
+    },
+    {
+      "id": "R316",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeDate((Date)null); r=g.getAsString();",
+      "expected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeDate()",
+      "floorExpected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeDate()",
+      "compile": false
+    },
+    {
+      "id": "R317",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeStartObject(); g.writeNumberField((String)null,1); g.writeEndObject(); r=g.getAsString();",
+      "expected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeNumberField()",
+      "floorExpected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeNumberField()",
+      "compile": false
+    },
+    {
+      "id": "R318",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeBlob((Blob)null); r=g.getAsString();",
+      "expected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeBlob()",
+      "floorExpected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeBlob()",
+      "compile": false
+    },
+    {
+      "id": "R319",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeObject((Object)null); r=g.getAsString();",
+      "expected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeObject()",
+      "floorExpected": "EXC|System.NullPointerException|null argument for JSONGenerator.writeObject()",
+      "compile": false
+    },
+    {
+      "id": "C001",
+      "code": "Account a=JSON.deserialize('{}',Account.class); pq.out('C001',a.Name);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Object to Account",
+      "floorExpected": "COMPILE_ERROR\tline 6: Illegal assignment from Object to Account",
+      "compile": true
+    },
+    {
+      "id": "C002",
+      "code": "List<Account> a=(List<Account>)JSON.deserialize('[]',List<Account>.class); pq.out('C002',a.size());",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": true
+    },
+    {
+      "id": "C005",
+      "code": "Map<String,Account> a=(Map<String,Account>)JSON.deserialize('{}',Map<String,Account>.class); pq.out('C005',a.size());",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": true
+    },
+    {
+      "id": "C007",
+      "code": "JSON.createParser(1); pq.out('C007','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void createParser(Integer) from the type System.JSON",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void createParser(Integer) from the type System.JSON",
+      "compile": true
+    },
+    {
+      "id": "C008",
+      "code": "JSONParser p=JSON.createParser('1'); Integer x=p.getIntegerValue(1); pq.out('C008','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getIntegerValue(Integer) from the type System.JSONParser",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getIntegerValue(Integer) from the type System.JSONParser",
+      "compile": true
+    },
+    {
+      "id": "C009",
+      "code": "JSONGenerator g=JSON.createGenerator(false); g.writeNumber(true); pq.out('C009','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void writeNumber(Boolean) from the type System.JSONGenerator",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void writeNumber(Boolean) from the type System.JSONGenerator",
+      "compile": true
+    },
+    {
+      "id": "C010",
+      "code": "JSON.deserializeStrict('{}'); pq.out('C010','compiled');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void deserializeStrict(String) from the type System.JSON",
+      "floorExpected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void deserializeStrict(String) from the type System.JSON",
+      "compile": true
+    }
+  ],
+  "reviewControlSource": "Owned JSON review controls using exception transport at API 62.0 and 67.0; 26 exact floor/ceiling matches observed before mapping fixes.",
+  "reviewControls": [
+    {
+      "id": "R330",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"UnmodeledLines__r\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',Account.class); r=JSON.serialize(x);",
+      "expected": "EXC|System.JSONException|No such column 'UnmodeledLines__r' on sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No such column 'UnmodeledLines__r' on sobject of type Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R331",
+      "code": "Account x=(Account)JSON.deserialize('{\"UnmodeledLines__r\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R332",
+      "code": "SObject x=(SObject)JSON.deserializeStrict('{\"attributes\":{\"type\":\"Account\"},\"UnmodeledLines__r\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',SObject.class); r=JSON.serialize(x);",
+      "expected": "EXC|System.JSONException|No such column 'UnmodeledLines__r' on sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No such column 'UnmodeledLines__r' on sobject of type Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R333",
+      "code": "SObject x=(SObject)JSON.deserialize('{\"attributes\":{\"type\":\"Account\"},\"UnmodeledLines__r\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',SObject.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R334",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"UnmodeledLines__r\":{\"Name\":\"Parent\"}}',Account.class); r=JSON.serialize(x);",
+      "expected": "EXC|System.JSONException|No such column 'UnmodeledLines__r' on sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No such column 'UnmodeledLines__r' on sobject of type Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R335",
+      "code": "Contact x=(Contact)JSON.deserialize('{\"LastName\":\"Guard\",\"__glade_loaded_references\":{\"Id\":\"003000000000001\",\"ParentId\":\"001000000000001\"},\"__glade_queried_fields\":{\"id\":true,\"parentid\":true}}',Contact.class); r=x.LastName;",
+      "expected": "Guard",
+      "floorExpected": "Guard",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R336",
+      "code": "SObject x=(SObject)JSON.deserialize('{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Guard\",\"__glade_loaded_references\":{\"Id\":\"003000000000001\",\"ParentId\":\"001000000000001\"},\"__glade_queried_fields\":{\"id\":true,\"parentid\":true}}',SObject.class); r=x.get('LastName');",
+      "expected": "Guard",
+      "floorExpected": "Guard",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R337",
+      "code": "Account x=(Account)JSON.deserialize('{\"Parent\":{\"Name\":\"First\"}}',Account.class); r=x.Parent.Name;",
+      "expected": "First",
+      "floorExpected": "First",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R338",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Parent\":{\"Name\":\"First\"}}',Account.class); r=x.Parent.Name;",
+      "expected": "First",
+      "floorExpected": "First",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R339",
+      "code": "Account x=(Account)JSON.deserialize('{\"Parent\":{\"NoSuchField__c\":\"x\"}}',Account.class); r=x.Parent.Name;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value x or request may be missing a required field",
+      "floorExpected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value x or request may be missing a required field",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R340",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Parent\":{\"NoSuchField__c\":\"x\"}}',Account.class); r=x.Parent.Name;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value x or request may be missing a required field",
+      "floorExpected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value x or request may be missing a required field",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R341",
+      "code": "Account x=(Account)JSON.deserialize('{\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',Account.class); r=x.Contacts.size();",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R342",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Contacts\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',Account.class); r=x.Contacts.size();",
+      "expected": "0",
+      "floorExpected": "0",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R343",
+      "code": "Account x=(Account)JSON.deserialize('{\"NoSuchField__c\":{\"totalSize\":0,\"done\":true,\"records\":[]}}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R344",
+      "code": "Account x=(Account)JSON.deserialize('{\"NoSuchField__c\":{\"x\":1}}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R345",
+      "code": "Account x=(Account)JSON.deserialize('{\"NoSuchField__c\":{\"x\":[]}}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R346",
+      "code": "Account x=(Account)JSON.deserialize('{\"NoSuchField__c\":{\"x\":[1]}}',Account.class); r=JSON.serialize(x);",
+      "expected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R347",
+      "code": "Account x=(Account)JSON.deserialize('{\"NoSuchField__c\":{\"x\":[{\"Name\":\"Ignored\"}]}}',Account.class); r=JSON.serialize(x);",
+      "expected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R348",
+      "code": "Account x=(Account)JSON.deserialize('{\"NoSuchField__c\":{\"x\":{\"y\":[1]}}}',Account.class); r=JSON.serialize(x);",
+      "expected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R349",
+      "code": "Account x=(Account)JSON.deserialize('{\"NoSuchField__c\":\"x\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R350",
+      "code": "Account x=(Account)JSON.deserialize('{\"UnmodeledLines__r\":{\"totalSize\":1,\"done\":true,\"records\":[{\"attributes\":{\"type\":\"Contact\"},\"LastName\":\"Ignored\"}]}}',Account.class); r=JSON.serialize(x);",
+      "expected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R351",
+      "code": "SObject x=(SObject)JSON.deserialize('{\"attributes\":{\"type\":\"Account\"},\"NoSuchField__c\":{\"x\":[1]}}',SObject.class); r=JSON.serialize(x);",
+      "expected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R352",
+      "code": "Account x=(Account)JSON.deserialize('{\"NoSuchField__c\":{\"x\":[null]}}',Account.class); r=JSON.serialize(x);",
+      "expected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R353",
+      "code": "Account x=(Account)JSON.deserialize('{\"NoSuchField__c\":{\"x\":{\"y\":1}}}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R354",
+      "code": "Account x=(Account)JSON.deserialize('{\"NoSuchField__c\":[1]}',Account.class); r=JSON.serialize(x);",
+      "expected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "floorExpected": "EXC|System.JSONException|No field name specified on column for sobject of type Account",
+      "compile": false,
+      "nativeNull": false
+    },
+    {
+      "id": "R355",
+      "code": "Account x=(Account)JSON.deserialize('{\"NoSuchField__c\":[]}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"}}",
+      "compile": false,
+      "nativeNull": false
+    }
+  ],
+  "orderingControlSource": "Owned JSON serialization-order controls using exception transport at API 62.0 and 67.0; source order, deserialized canonical-name buckets, stable collisions/resizing and assignment updates.",
+  "orderingControls": [
+    {
+      "id": "R356",
+      "code": "Account x=new Account(Name='Family',AnnualRevenue=null); r=JSON.serialize(x,false);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":null}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":null}",
+      "compile": false
+    },
+    {
+      "id": "R357",
+      "code": "Account x=new Account(AnnualRevenue=null,Name='Family'); r=JSON.serialize(x,false);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R358",
+      "code": "Account x=new Account(Name='Family',AnnualRevenue=1); r=JSON.serialize(x,false);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":1}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":1}",
+      "compile": false
+    },
+    {
+      "id": "R359",
+      "code": "Account x=new Account(AnnualRevenue=1,Name='Family'); r=JSON.serialize(x,false);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":1,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":1,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R360",
+      "code": "Account x=new Account(); x.Name='Family'; x.AnnualRevenue=null; r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":null}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":null}",
+      "compile": false
+    },
+    {
+      "id": "R361",
+      "code": "Account x=new Account(); x.AnnualRevenue=null; x.Name='Family'; r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R362",
+      "code": "Account x=new Account(Name='Family',Phone='123',Website='example.test'); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"Phone\":\"123\",\"Website\":\"example.test\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"Phone\":\"123\",\"Website\":\"example.test\"}",
+      "compile": false
+    },
+    {
+      "id": "R363",
+      "code": "Account x=new Account(Website='example.test',Phone='123',Name='Family'); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Website\":\"example.test\",\"Phone\":\"123\",\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Website\":\"example.test\",\"Phone\":\"123\",\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R364",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\",\"AnnualRevenue\":null}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R365",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":null,\"Name\":\"Family\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R366",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\",\"AnnualRevenue\":1}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":1.0,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":1.0,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R367",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":1,\"Name\":\"Family\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":1.0,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":1.0,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R368",
+      "code": "Account x=new Account(); x.Name='Family'; x.Phone='123'; x.Name='Again'; r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Again\",\"Phone\":\"123\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Again\",\"Phone\":\"123\"}",
+      "compile": false
+    },
+    {
+      "id": "R369",
+      "code": "Account x=new Account(Name=null,AnnualRevenue=null); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":null,\"AnnualRevenue\":null}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":null,\"AnnualRevenue\":null}",
+      "compile": false
+    },
+    {
+      "id": "R370",
+      "code": "Account x=new Account(Phone=null,Name='Family',Website='example.test'); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":null,\"Name\":\"Family\",\"Website\":\"example.test\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":null,\"Name\":\"Family\",\"Website\":\"example.test\"}",
+      "compile": false
+    },
+    {
+      "id": "R371",
+      "code": "Account x=new Account(Phone=null,Name=null,Website=null); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":null,\"Name\":null,\"Website\":null}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":null,\"Name\":null,\"Website\":null}",
+      "compile": false
+    },
+    {
+      "id": "R372",
+      "code": "Account x=(Account)JSON.deserialize('{\"Website\":\"example.test\",\"Name\":\"Family\",\"Phone\":\"123\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R373",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Phone\":\"123\",\"Website\":\"example.test\",\"Name\":\"Family\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R374",
+      "code": "SObject x=(SObject)JSON.deserialize('{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":null}',SObject.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R375",
+      "code": "SObject x=(SObject)JSON.deserializeStrict('{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"AnnualRevenue\":1}',SObject.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":1.0,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":1.0,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R376",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\",\"Phone\":\"123\",\"Website\":\"example.test\",\"AnnualRevenue\":null}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R377",
+      "code": "Account x=(Account)JSON.deserialize('{\"AnnualRevenue\":null,\"Website\":\"example.test\",\"Phone\":\"123\",\"Name\":\"Family\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R378",
+      "code": "Account x=(Account)JSON.deserialize('{\"name\":\"Family\",\"annualrevenue\":null}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R379",
+      "code": "Account x=(Account)JSON.deserialize('{\"NAME\":\"Family\",\"ANNUALREVENUE\":null}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"AnnualRevenue\":null,\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R380",
+      "code": "Account x=(Account)JSON.deserialize('{\"website\":\"example.test\",\"name\":\"Family\",\"phone\":\"123\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R381",
+      "code": "Account x=(Account)JSON.deserialize('{\"Phone\":\"123\",\"website\":\"example.test\",\"NAME\":\"Family\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"Name\":\"Family\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Website\":\"example.test\",\"Name\":\"Family\"}",
+      "compile": false
+    },
+    {
+      "id": "R382",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\",\"Phone\":\"123\",\"Fax\":\"456\",\"Website\":\"example.test\",\"Site\":\"HQ\",\"Description\":\"desc\",\"Industry\":\"Other\",\"Type\":\"Other\",\"Rating\":\"Warm\",\"AccountNumber\":\"123\",\"TickerSymbol\":\"SYM\",\"ShippingCity\":\"City\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Site\":\"HQ\",\"Industry\":\"Other\",\"Type\":\"Other\",\"Description\":\"desc\",\"Phone\":\"123\",\"TickerSymbol\":\"SYM\",\"Rating\":\"Warm\",\"Website\":\"example.test\",\"ShippingCity\":\"City\",\"Fax\":\"456\",\"Name\":\"Family\",\"AccountNumber\":\"123\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Site\":\"HQ\",\"Industry\":\"Other\",\"Type\":\"Other\",\"Description\":\"desc\",\"Phone\":\"123\",\"TickerSymbol\":\"SYM\",\"Rating\":\"Warm\",\"Website\":\"example.test\",\"ShippingCity\":\"City\",\"Fax\":\"456\",\"Name\":\"Family\",\"AccountNumber\":\"123\"}",
+      "compile": false
+    },
+    {
+      "id": "R383",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\",\"Phone\":\"123\",\"Fax\":\"456\",\"Website\":\"example.test\",\"Site\":\"HQ\",\"Description\":\"desc\",\"Industry\":\"Other\",\"Type\":\"Other\",\"Rating\":\"Warm\",\"AccountNumber\":\"123\",\"TickerSymbol\":\"SYM\",\"ShippingCity\":\"City\",\"BillingCity\":\"City\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Site\":\"HQ\",\"Description\":\"desc\",\"BillingCity\":\"City\",\"Rating\":\"Warm\",\"Website\":\"example.test\",\"Name\":\"Family\",\"AccountNumber\":\"123\",\"Industry\":\"Other\",\"Type\":\"Other\",\"Phone\":\"123\",\"TickerSymbol\":\"SYM\",\"ShippingCity\":\"City\",\"Fax\":\"456\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Site\":\"HQ\",\"Description\":\"desc\",\"BillingCity\":\"City\",\"Rating\":\"Warm\",\"Website\":\"example.test\",\"Name\":\"Family\",\"AccountNumber\":\"123\",\"Industry\":\"Other\",\"Type\":\"Other\",\"Phone\":\"123\",\"TickerSymbol\":\"SYM\",\"ShippingCity\":\"City\",\"Fax\":\"456\"}",
+      "compile": false
+    },
+    {
+      "id": "R384",
+      "code": "Account x=(Account)JSON.deserialize('{\"BillingCity\":\"City\",\"ShippingCity\":\"City\",\"TickerSymbol\":\"SYM\",\"AccountNumber\":\"123\",\"Rating\":\"Warm\",\"Type\":\"Other\",\"Industry\":\"Other\",\"Description\":\"desc\",\"Site\":\"HQ\",\"Website\":\"example.test\",\"Fax\":\"456\",\"Phone\":\"123\",\"Name\":\"Family\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Site\":\"HQ\",\"Description\":\"desc\",\"BillingCity\":\"City\",\"Rating\":\"Warm\",\"Website\":\"example.test\",\"AccountNumber\":\"123\",\"Name\":\"Family\",\"Industry\":\"Other\",\"Type\":\"Other\",\"TickerSymbol\":\"SYM\",\"Phone\":\"123\",\"ShippingCity\":\"City\",\"Fax\":\"456\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Site\":\"HQ\",\"Description\":\"desc\",\"BillingCity\":\"City\",\"Rating\":\"Warm\",\"Website\":\"example.test\",\"AccountNumber\":\"123\",\"Name\":\"Family\",\"Industry\":\"Other\",\"Type\":\"Other\",\"TickerSymbol\":\"SYM\",\"Phone\":\"123\",\"ShippingCity\":\"City\",\"Fax\":\"456\"}",
+      "compile": false
+    },
+    {
+      "id": "R385",
+      "code": "SObject x=(SObject)JSON.deserialize('{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Family\",\"Phone\":\"123\",\"Fax\":\"456\",\"Website\":\"example.test\",\"Site\":\"HQ\",\"Description\":\"desc\",\"Industry\":\"Other\",\"Type\":\"Other\",\"Rating\":\"Warm\",\"AccountNumber\":\"123\",\"TickerSymbol\":\"SYM\",\"ShippingCity\":\"City\",\"BillingCity\":\"City\"}',SObject.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Site\":\"HQ\",\"Description\":\"desc\",\"BillingCity\":\"City\",\"Rating\":\"Warm\",\"Website\":\"example.test\",\"Name\":\"Family\",\"AccountNumber\":\"123\",\"Industry\":\"Other\",\"Type\":\"Other\",\"Phone\":\"123\",\"TickerSymbol\":\"SYM\",\"ShippingCity\":\"City\",\"Fax\":\"456\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Site\":\"HQ\",\"Description\":\"desc\",\"BillingCity\":\"City\",\"Rating\":\"Warm\",\"Website\":\"example.test\",\"Name\":\"Family\",\"AccountNumber\":\"123\",\"Industry\":\"Other\",\"Type\":\"Other\",\"Phone\":\"123\",\"TickerSymbol\":\"SYM\",\"ShippingCity\":\"City\",\"Fax\":\"456\"}",
+      "compile": false
+    },
+    {
+      "id": "R386",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\",\"Phone\":\"123\",\"Website\":\"example.test\",\"AnnualRevenue\":null}',Account.class); x.Name='Again'; x.Phone='456'; r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"456\",\"Website\":\"example.test\",\"AnnualRevenue\":null,\"Name\":\"Again\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"456\",\"Website\":\"example.test\",\"AnnualRevenue\":null,\"Name\":\"Again\"}",
+      "compile": false
+    },
+    {
+      "id": "R387",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\"}',Account.class); x.Phone='123'; x.Name='Again'; r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Name\":\"Again\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Name\":\"Again\"}",
+      "compile": false
+    },
+    {
+      "id": "R388",
+      "code": "Account x=new Account(); x.put('Name','Family'); x.put('Phone','123'); x.put('Name','Again'); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Again\",\"Phone\":\"123\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Again\",\"Phone\":\"123\"}",
+      "compile": false
+    },
+    {
+      "id": "R389",
+      "code": "Account x=(Account)JSON.deserialize('{\"Name\":\"Family\",\"Phone\":\"123\",\"name\":\"Again\"}',Account.class); r=JSON.serialize(x);",
+      "expected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Name\":\"Again\"}",
+      "floorExpected": "{\"attributes\":{\"type\":\"Account\"},\"Phone\":\"123\",\"Name\":\"Again\"}",
+      "compile": false
+    }
+  ],
+  "diagnosticControlSource": "Owned JSON parent-diagnostic-order controls using exception transport at API 62.0 and 67.0; first unknown parent string field in input order, regular and strict, observed before the fix.",
+  "diagnosticControls": [
+    {
+      "id": "R390",
+      "code": "Account x=(Account)JSON.deserialize('{\"Parent\":{\"ZUnknown__c\":\"z-first\",\"AUnknown__c\":\"a-second\"}}',Account.class); r=x.Parent.Name;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value z-first or request may be missing a required field",
+      "floorExpected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value z-first or request may be missing a required field",
+      "compile": false
+    },
+    {
+      "id": "R391",
+      "code": "Account x=(Account)JSON.deserialize('{\"Parent\":{\"AUnknown__c\":\"a-first\",\"ZUnknown__c\":\"z-second\"}}',Account.class); r=x.Parent.Name;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value a-first or request may be missing a required field",
+      "floorExpected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value a-first or request may be missing a required field",
+      "compile": false
+    },
+    {
+      "id": "R392",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Parent\":{\"ZUnknown__c\":\"z-first\",\"AUnknown__c\":\"a-second\"}}',Account.class); r=x.Parent.Name;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value z-first or request may be missing a required field",
+      "floorExpected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value z-first or request may be missing a required field",
+      "compile": false
+    },
+    {
+      "id": "R393",
+      "code": "Account x=(Account)JSON.deserializeStrict('{\"Parent\":{\"AUnknown__c\":\"a-first\",\"ZUnknown__c\":\"z-second\"}}',Account.class); r=x.Parent.Name;",
+      "expected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value a-first or request may be missing a required field",
+      "floorExpected": "EXC|System.JSONException|Cannot deserialize instance of <unknown> from VALUE_STRING value a-first or request may be missing a required field",
+      "compile": false
+    }
+  ]
+}

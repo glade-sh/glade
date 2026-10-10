@@ -168,12 +168,13 @@ System.assertEquals(null, parser.GetCurrentToken());
 
 func TestExecJSONAliasSupportsDeserializeStrict(t *testing.T) {
 	program, err := CompileAnonymous(`
-Map<String,Object> parsed = (Map<String,Object>)Json.deserializeStrict('{"Name":"Acme"}', Map<String,Object>.class);
-System.assertEquals('Acme', (String)parsed.get('Name'));
-Map<String,Object> parsedSystem = (Map<String,Object>)System.JSON.deserialize('{"Name":"Trail"}', Map<String,Object>.class);
-System.assertEquals('Trail', (String)parsedSystem.get('Name'));
-Map<String,Object> parsedLower = (Map<String,Object>)json.deserialize('{"Name":"Lower"}', Map<String,Object>.class);
-System.assertEquals('Lower', (String)parsedLower.get('Name'));
+// A45 K085-K091: aliases share typed Object rejection; String values work.
+Map<String,String> parsed = (Map<String,String>)Json.deserializeStrict('{"Name":"Acme"}', Map<String,String>.class);
+System.assert('Acme'.equals(parsed.get('Name')));
+Map<String,String> parsedSystem = (Map<String,String>)System.JSON.deserialize('{"Name":"Trail"}', Map<String,String>.class);
+System.assert('Trail'.equals(parsedSystem.get('Name')));
+Map<String,String> parsedLower = (Map<String,String>)json.deserialize('{"Name":"Lower"}', Map<String,String>.class);
+System.assert('Lower'.equals(parsedLower.get('Name')));
 Map<String,List<String>> parsedNested = (Map<String,List<String>>)JSON.deserialize('{"Account":["Id","Name"]}', Map<String,List<String>>.Class);
 System.assertEquals('Name', parsedNested.get('Account')[1]);
 `)
@@ -203,6 +204,24 @@ System.assertEquals('New', loaded.Name);
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeDatabaseResultsPreservesOpaqueIDs(t *testing.T) {
+	program, err := CompileAnonymous(`
+String payload = '{"id":"001000000000000001","success":true}';
+System.assertEquals('001000000000000001', ((Database.SaveResult)JSON.deserialize(payload, Database.SaveResult.class)).getId());
+System.assertEquals('001000000000000001', ((Database.DeleteResult)JSON.deserialize(payload, Database.DeleteResult.class)).getId());
+System.assertEquals('001000000000000001', ((Database.EmptyRecycleBinResult)JSON.deserialize(payload, Database.EmptyRecycleBinResult.class)).getId());
+System.assertEquals('001000000000000001', ((Database.MergeResult)JSON.deserialize(payload, Database.MergeResult.class)).getId());
+System.assertEquals('001000000000000001', ((Database.UndeleteResult)JSON.deserialize(payload, Database.UndeleteResult.class)).getId());
+System.assertEquals('001000000000000001', ((Database.UpsertResult)JSON.deserialize('{"id":"001000000000000001","success":true,"created":true}', Database.UpsertResult.class)).getId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -342,7 +361,13 @@ System.assertEquals(Date.newInstance(2026, 5, 13), widget.CreatedDate.date());
 System.assertEquals(false, widget.IsDeleted);
 Widget__c withParent = (Widget__c)JSON.deserializeStrict('{"Account__r":{"attributes":{"type":"Account"},"Name":"Parent"}}', Widget__c.class);
 System.assertEquals('Parent', withParent.Account__r.Name);
-JSON.deserializeStrict('{"UnmodeledLines__r":{"totalSize":0,"done":true,"records":[]}}', Widget__c.class);
+// A18 review control R330/R332: strict JSON rejects an unknown relationship.
+try {
+    JSON.deserializeStrict('{"UnmodeledLines__r":{"totalSize":0,"done":true,"records":[]}}', Widget__c.class);
+    System.assert(false, 'Expected an unknown relationship rejection');
+} catch (System.JSONException e) {
+    System.assert(e.getMessage().equals('No such column \'UnmodeledLines__r\' on sobject of type Widget__c'));
+}
 		`)
 	if err != nil {
 		t.Fatal(err)
@@ -382,9 +407,7 @@ gen.writeNumber(2);
 gen.writeEndArray();
 gen.writeEndObject();
 String text = gen.getAsString();
-System.assert(text.contains('  "name" : "Acme"'));
-System.assert(text.contains('  "items" : ['));
-System.assert(text.contains('    "x"'));
+System.assertEquals('{\n  "name" : "Acme",\n  "items" : [ "x", 2 ]\n}', text);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -395,21 +418,24 @@ System.assert(text.contains('    "x"'));
 	}
 }
 
-func TestExecJSONGeneratorRejectsInvalidOrder(t *testing.T) {
+// A18 R313: multiple root values are separated by a space.
+func TestExecJSONGeneratorSeparatesRootValues(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
 gen.writeString('first');
 gen.writeNumber(2);
+System.assert(gen.getAsString().equals('"first" 2'));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "root value already written") {
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatalf("err = %v", err)
 	}
 }
 
+// A18 R312: native JSON contract.
 func TestExecJSONGeneratorReportsPendingFieldName(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
@@ -425,11 +451,12 @@ gen.writeFieldName('lastName');
 		_, execErr := machine.Execute(program)
 		return execErr
 	}()
-	if err == nil || !strings.Contains(err.Error(), `field "firstName" is missing a value`) {
+	if err == nil || !strings.Contains(err.Error(), `Can not write a field name, expecting a value`) {
 		t.Fatalf("err = %v", err)
 	}
 }
 
+// A18 R309: native JSON contract.
 func TestExecJSONGeneratorRejectsFieldNameInArrayAsJSONException(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
@@ -440,7 +467,7 @@ try {
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSONGenerator.writeFieldName cannot be called inside an array'));
+System.assert(caught.contains('JSONException:Can not write a field name, expecting a value'));
 gen.writeString('ok');
 gen.writeEndArray();
 System.assertEquals('["ok"]', gen.getAsString());
@@ -454,6 +481,7 @@ System.assertEquals('["ok"]', gen.getAsString());
 	}
 }
 
+// A18 R307: native JSON contract.
 func TestExecJSONGeneratorRejectsEndObjectInArrayAsJSONException(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
@@ -464,7 +492,7 @@ try {
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSONGenerator.writeEndObject cannot be called inside an array'));
+System.assert(caught.contains('JSONException:Current context not an object but ARRAY'));
 gen.writeString('ok');
 gen.writeEndArray();
 System.assertEquals('["ok"]', gen.getAsString());
@@ -478,6 +506,7 @@ System.assertEquals('["ok"]', gen.getAsString());
 	}
 }
 
+// A18 R308: native JSON contract.
 func TestExecJSONGeneratorRejectsEndArrayInObjectAsJSONException(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
@@ -488,7 +517,7 @@ try {
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSONGenerator.writeEndArray cannot be called inside an object'));
+System.assert(caught.contains('JSONException:Current context not an ARRAY but OBJECT'));
 gen.writeStringField('ok', 'yes');
 gen.writeEndObject();
 System.assertEquals('{"ok":"yes"}', gen.getAsString());
@@ -502,6 +531,7 @@ System.assertEquals('{"ok":"yes"}', gen.getAsString());
 	}
 }
 
+// A18 R307: native JSON contract.
 func TestExecJSONGeneratorUnhandledEndObjectInArrayHasJSONExceptionType(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
@@ -520,11 +550,12 @@ gen.writeEndObject();
 	if runtimeErr.Type != "JSONException" {
 		t.Fatalf("type = %q, want JSONException", runtimeErr.Type)
 	}
-	if !strings.Contains(runtimeErr.Message, "JSONGenerator.writeEndObject cannot be called inside an array") {
+	if !strings.Contains(runtimeErr.Message, "Current context not an object but ARRAY") {
 		t.Fatalf("message = %q", runtimeErr.Message)
 	}
 }
 
+// A18 R308: native JSON contract.
 func TestExecJSONGeneratorUnhandledEndArrayInObjectHasJSONExceptionType(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
@@ -543,11 +574,12 @@ gen.writeEndArray();
 	if runtimeErr.Type != "JSONException" {
 		t.Fatalf("type = %q, want JSONException", runtimeErr.Type)
 	}
-	if !strings.Contains(runtimeErr.Message, "JSONGenerator.writeEndArray cannot be called inside an object") {
+	if !strings.Contains(runtimeErr.Message, "Current context not an ARRAY but OBJECT") {
 		t.Fatalf("message = %q", runtimeErr.Message)
 	}
 }
 
+// A18 R309: native JSON contract.
 func TestExecJSONGeneratorUnhandledFieldNameInArrayHasJSONExceptionType(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
@@ -566,12 +598,12 @@ gen.writeFieldName('bad');
 	if runtimeErr.Type != "JSONException" {
 		t.Fatalf("type = %q, want JSONException", runtimeErr.Type)
 	}
-	if !strings.Contains(runtimeErr.Message, "JSONGenerator.writeFieldName cannot be called inside an array") {
+	if !strings.Contains(runtimeErr.Message, "Can not write a field name, expecting a value") {
 		t.Fatalf("message = %q", runtimeErr.Message)
 	}
 }
 
-func TestExecJSONGeneratorCloseWithOpenOutputDoesNotForceFinish(t *testing.T) {
+func TestExecJSONGeneratorCloseFinishesOpenOutput(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator emptyGen = JSON.createGenerator(false);
 emptyGen.close();
@@ -591,23 +623,21 @@ try {
 	System.assert(e.getMessage().contains('JSONGenerator is closed'));
 }
 System.assert(caught);
-caught = false;
-try {
-	objectGen.getAsString();
-} catch (JSONException e) {
-	caught = true;
-	System.assertEquals('System.JSONException', e.getTypeName());
-	System.assert(e.getMessage().contains('JSONGenerator cannot close with open JSON containers'));
-}
-System.assert(caught);
+System.assertEquals('{}', objectGen.getAsString());
+System.assert(objectGen.isClosed());
 
 JSONGenerator pendingGen = JSON.createGenerator(false);
-	pendingGen.writeStartObject();
-	pendingGen.writeFieldName('x');
-	System.assertEquals('{"x":', pendingGen.getAsString());
-	pendingGen.writeString('ok');
-pendingGen.writeEndObject();
-System.assertEquals('{"x":"ok"}', pendingGen.getAsString());
+pendingGen.writeStartObject();
+pendingGen.writeFieldName('x');
+System.assertEquals('{"x"}', pendingGen.getAsString());
+System.assert(pendingGen.isClosed());
+
+JSONGenerator completeGen = JSON.createGenerator(false);
+completeGen.writeStartObject();
+completeGen.writeFieldName('x');
+completeGen.writeString('ok');
+completeGen.writeEndObject();
+System.assertEquals('{"x":"ok"}', completeGen.getAsString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -705,6 +735,7 @@ System.assert(gen.isClosed());
 	}
 }
 
+// A18 R312/R313/R319: native JSON contract.
 func TestExecJSONGeneratorStateErrorsAreCatchableAndRecoverable(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator objectGen = JSON.createGenerator(false);
@@ -729,21 +760,24 @@ try {
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSONGenerator field "first" is missing a value'));
+System.assert(caught.contains('JSONException:Can not write a field name, expecting a value'));
 pendingGen.writeString('fixed');
 pendingGen.writeEndObject();
 System.assertEquals('{"first":"fixed"}', pendingGen.getAsString());
 
 JSONGenerator rootGen = JSON.createGenerator(false);
-rootGen.writeObject(null);
+rootGen.writeString('a');
+rootGen.writeString('b');
+System.assert(rootGen.getAsString().equals('"a" "b"'));
+
+JSONGenerator nullGen = JSON.createGenerator(false);
 caught = '';
 try {
-	rootGen.writeObject('bad');
-} catch (JSONException e) {
+	nullGen.writeObject((Object)null);
+} catch (System.NullPointerException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSONGenerator root value already written'));
-System.assertEquals('null', rootGen.getAsString());
+System.assert(caught.equals('System.NullPointerException:null argument for JSONGenerator.writeObject()'));
 
 JSONGenerator endGen = JSON.createGenerator(false);
 caught = '';
@@ -826,6 +860,7 @@ System.assertEquals(null, parser.nextToken());
 }
 
 func TestExecJSONParserPlatformAccessors(t *testing.T) {
+	// A30 native J005/J054 record the native assertion expectations.
 	program, err := CompileAnonymous(`
 JSONParser parser = JSON.createParser('{"date":"2024-02-29","when":"2024-02-29T12:34:56Z","clock":"05:06:07","id":"001B000001DVM9t","blob":"YWJj"}');
 parser.nextToken();
@@ -844,7 +879,7 @@ System.assertEquals(Time.newInstance(5, 6, 7, 0), clockValue);
 parser.nextToken();
 parser.nextValue();
 Id idValue = parser.getIdValue();
-System.assertEquals('001B000001DVM9t', idValue.toString());
+System.assertEquals('001B000001DVM9tIAH', idValue.toString());
 System.assertEquals('001B000001DVM9t', idValue.to15());
 parser.nextToken();
 parser.nextValue();
@@ -860,6 +895,7 @@ System.assertEquals('abc', blobValue.toString());
 	}
 }
 
+// A18 R263: nonnumeric tokens reject numeric accessors.
 func TestExecJSONParserRejectsWrongAccessorState(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONParser parser = JSON.createParser('{"n":"not-number"}');
@@ -872,11 +908,12 @@ Integer n = parser.getIntegerValue();
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "requires VALUE_NUMBER_INT") {
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "not numeric") {
 		t.Fatalf("err = %v", err)
 	}
 }
 
+// A18 R269/R286: native JSON contract.
 func TestExecJSONParserErrorsAreCatchableAndStatePreserving(t *testing.T) {
 	program, err := CompileAnonymous(`
 String caught = '';
@@ -885,16 +922,10 @@ try {
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSONParser invalid JSON input'));
+System.assert(caught.contains('JSONException:Unexpected end-of-input'));
 
 JSONParser parser = JSON.createParser('[null,true,"not-a-date"]');
-caught = '';
-try {
-	parser.getText();
-} catch (JSONException e) {
-	caught = e.getTypeName() + ':' + e.getMessage();
-}
-System.assert(caught.contains('JSONException:JSONParser.getText requires a current token'));
+System.assertEquals(null, parser.getText());
 System.assertEquals(JSONToken.START_ARRAY, parser.nextToken());
 System.assertEquals(JSONToken.VALUE_NULL, parser.nextToken());
 caught = '';
@@ -903,7 +934,7 @@ try {
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSONParser.getBooleanValue requires VALUE_TRUE or VALUE_FALSE'));
+System.assert(caught.contains('JSONException:Current token (VALUE_NULL) not of boolean type'));
 System.assertEquals(JSONToken.VALUE_TRUE, parser.nextToken());
 System.assertEquals(true, parser.getBooleanValue());
 System.assertEquals(JSONToken.VALUE_STRING, parser.nextToken());
@@ -1020,11 +1051,12 @@ System.assertEquals('tail', parser.getCurrentName());
 }
 
 func TestExecJSONDeserializeTypedPrimitiveCollectionAndPlatformScalars(t *testing.T) {
+	// A30 native J005/J054 record the native assertion expectations.
 	program, err := CompileAnonymous(`
 Integer n = JSON.deserialize('7', Integer.class);
 System.assertEquals(7, n);
 Long big = JSON.deserialize('9223372036854775807', Long.class);
-System.assertEquals(9223372036854775807, big);
+System.assertEquals(9223372036854775807L, big);
 Decimal ratio = JSON.deserialize('1.25', Decimal.class);
 System.assertEquals(1.25, ratio);
 Boolean ok = JSON.deserialize('true', Boolean.class);
@@ -1044,9 +1076,13 @@ System.assertEquals(Datetime.newInstance(2024, 2, 29, 12, 34, 56), whenValue);
 Time timeValue = JSON.deserialize('"05:06:07"', Time.class);
 System.assertEquals(Time.newInstance(5, 6, 7, 0), timeValue);
 Id idValue = JSON.deserialize('"001B000001DVM9t"', Id.class);
-System.assertEquals('001B000001DVM9t', idValue.toString());
+System.assertEquals('001B000001DVM9tIAH', idValue.toString());
 UUID uuidValue = JSON.deserialize('"00112233-4455-6677-8899-aabbccddeeff"', UUID.class);
 System.assertEquals('00112233-4455-6677-8899-aabbccddeeff', uuidValue.toString());
+System.assertEquals('"00112233-4455-6677-8899-aabbccddeeff"', JSON.serialize(uuidValue));
+Map<String, Object> uuidFieldPayload = new Map<String, Object>{ 'Name' => uuidValue };
+Account uuidFieldRoundTrip = (Account) JSON.deserialize(JSON.serialize(uuidFieldPayload), Account.class);
+System.assertEquals(uuidValue.toString(), uuidFieldRoundTrip.Name);
 Blob blobValue = JSON.deserialize('"YWJj"', Blob.class);
 System.assertEquals('abc', blobValue.toString());
 Type listType = Type.forName('List<Integer>');
@@ -1244,7 +1280,7 @@ System.assertEquals(0, nested.get('empty').size());
 	}
 }
 
-func TestExecJSONSerializeApexClassUsesFieldDeclarationOrder(t *testing.T) {
+func TestExecJSONSerializeApexClassUsesSalesforceFieldOrder(t *testing.T) {
 	program, err := CompileAnonymous(`
 OrderedPayload payload = new OrderedPayload();
 payload.parameters = new List<String>{'one'};
@@ -1257,7 +1293,7 @@ payload.started = 'start';
 payload.source = 'Caqh';
 payload.providerId = 'provider';
 payload.id = 'id';
-System.assertEquals('{"parameters":["one"],"failureReason":"bad","failureCode":"Unauthorized","trigger":"Manual","status":"Failed","completed":"done","started":"start","source":"Caqh","providerId":"provider","id":"id"}', JSON.serialize(payload));
+System.assertEquals('{"trigger":"Manual","status":"Failed","started":"start","source":"Caqh","providerId":"provider","parameters":["one"],"id":"id","failureReason":"bad","failureCode":"Unauthorized","completed":"done"}', JSON.serialize(payload));
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -1286,6 +1322,7 @@ System.assertEquals('{"parameters":["one"],"failureReason":"bad","failureCode":"
 	}
 }
 
+// A18 R126/R213: strict unknown-field diagnostics use Type.field.
 func TestExecJSONDeserializeTypedApexClassNestedFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 JsonPerson person = JSON.deserialize('{"ExternalId":"E-7","Name":"Ada","Primary":{"City":"Delta","Zip":99501},"Addresses":[{"City":"Port","Zip":1},{"City":"Lake","Zip":2}],"AddressBook":{"home":{"City":"Cabin","Zip":3}},"Tags":["north","north","south"],"Scores":{"math":9,"trail":10},"OptionalAddress":null}', JsonPerson.class);
@@ -1333,7 +1370,7 @@ try {
 	JsonPerson bad = JSON.deserializeStrict('{"ExternalId":"E-8","Nope":"x"}', JsonPerson.class);
 } catch (JSONException e) {
 	strictCaught = true;
-	System.assert(e.getMessage().contains('unknown field "Nope"'));
+	System.assert(e.getMessage().contains('Unknown field: JsonPerson.Nope'));
 }
 System.assert(strictCaught);
 `)
@@ -1381,15 +1418,27 @@ System.assert(strictCaught);
 
 func TestExecJSONDeserializeLwcControllerDTOs(t *testing.T) {
 	program, err := CompileAnonymous(`
+// A45 K092: a nonempty Object map in the DTO is unsupported.
+String caught='';
+try {
+    JSON.deserialize(
+        '{"name":"Widget","status":"Ready","rows":[{"label":"A","count":2}],"extra":{"ok":true},"statusLabels":{"Ready":"go"}}',
+        LwcDTO.class
+    );
+} catch(JSONException e) {
+    caught=e.getMessage();
+}
+System.assert('Apex Type unsupported in JSON: Object'.equals(caught),caught);
+// A45 K093: the remaining DTO and enum-keyed map work with an empty Object map.
 LwcDTO dto = (LwcDTO)JSON.deserialize(
-    '{"name":"Widget","status":"Ready","rows":[{"label":"A","count":2}],"extra":{"ok":true},"statusLabels":{"Ready":"go"}}',
+    '{"name":"Widget","status":"Ready","rows":[{"label":"A","count":2}],"extra":{},"statusLabels":{"Ready":"go"}}',
     LwcDTO.class
 );
 System.assertEquals('Widget', dto.name);
 System.assertEquals(LwcDTO.Status.Ready, dto.status);
 System.assertEquals('A', dto.rows[0].label);
 System.assertEquals(2, dto.rows[0].count);
-System.assertEquals(true, dto.extra.get('ok'));
+System.assert(dto.extra.isEmpty());
 System.assertEquals('go', dto.statusLabels.get(LwcDTO.Status.Ready));
 System.assert(JSON.serialize(dto).contains('"status":"Ready"'));
 `)
@@ -1580,8 +1629,16 @@ func TestTypedValueFromJSONResolvesNamespacedInnerSObjectWrapperFields(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := blank.Fields["Total__c"]; got.Kind != ValueNull {
-		t.Fatalf("blank Total__c = %#v, want null", got)
+	// API67 native rows R039/R048: blank SObject Decimal fields become zero.
+	if got := blank.Fields["Total__c"]; got.Kind != ValueDecimal || got.Decimal != 0 {
+		t.Fatalf("blank Total__c = %#v, want Decimal zero", got)
+	}
+	explicitNull, err := machine.typedValueFromJSON("CartItem__c", map[string]any{"Total__c": nil}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := explicitNull.Fields["Total__c"]; got.Kind != ValueNull {
+		t.Fatalf("explicit null Total__c = %#v, want null", got)
 	}
 }
 
@@ -1599,6 +1656,56 @@ Database.DeleteResult deleted = JSON.deserialize('{"success":true,"id":"001B0000
 System.assert(deleted.isSuccess());
 System.assertEquals('001B000001DVM9t', deleted.getId());
 System.assertEquals(0, deleted.getErrors().size());
+
+Database.LeadConvertResult converted = JSON.deserialize('{"success":true,"leadid":"00Q000000000001","accountid":"001000000000001","contactid":"003000000000001","opportunityid":null,"relatedpersonaccountid":"001000000000002","errors":[]}', Database.LeadConvertResult.class);
+System.assert(converted.isSuccess());
+System.assertEquals('00Q000000000001', converted.getLeadId());
+System.assertEquals('001000000000001', converted.getAccountId());
+System.assertEquals('003000000000001', converted.getContactId());
+System.assertEquals(null, converted.getOpportunityId());
+System.assertEquals('001000000000002', converted.getRelatedPersonAccountId());
+System.assertEquals(0, converted.getErrors().size());
+
+Database.LeadConvertResult failedConversion = JSON.deserialize('{"success":false,"leadid":"00Q000000000001","errors":[{"message":"convertedStatus is required","statusCode":"REQUIRED_FIELD_MISSING"}]}', Database.LeadConvertResult.class);
+System.assert(!failedConversion.isSuccess());
+System.assertEquals(1, failedConversion.getErrors().size());
+System.assertEquals('convertedStatus is required', failedConversion.getErrors()[0].getMessage());
+System.assertEquals('REQUIRED_FIELD_MISSING', String.valueOf(failedConversion.getErrors()[0].getStatusCode()));
+
+Database.LeadConvertResult opaqueIds = JSON.deserialize('{"success":true,"leadid":"00Q000000000000001","accountid":"001000000000000001"}', Database.LeadConvertResult.class);
+System.assertEquals('00Q000000000000001', opaqueIds.getLeadId());
+System.assertEquals('001000000000000001', opaqueIds.getAccountId());
+
+Approval.LockResult approvalLocked = JSON.deserialize('{"success":true,"id":"001000000000000001"}', Approval.LockResult.class);
+System.assert(approvalLocked.isSuccess());
+System.assertEquals('001000000000000001', approvalLocked.getId());
+Approval.UnlockResult approvalUnlocked = JSON.deserialize('{"success":true,"id":"001000000000000001"}', Approval.UnlockResult.class);
+System.assertEquals('001000000000000001', approvalUnlocked.getId());
+
+Approval.ProcessResult approvalProcessed = JSON.deserialize('{"success":true,"entityId":"001000000000000001","instanceStatus":"Pending","actorIds":["005000000000001AAA"],"newWorkitemIds":["04i000000000001AAA"],"errors":[]}', Approval.ProcessResult.class);
+System.assert(approvalProcessed.isSuccess());
+System.assertEquals('001000000000000001', approvalProcessed.getEntityId());
+System.assertEquals('Pending', approvalProcessed.getInstanceStatus());
+System.assertEquals(1, approvalProcessed.getActorIds().size());
+System.assertEquals(1, approvalProcessed.getNewWorkitemIds().size());
+System.assertEquals(0, approvalProcessed.getErrors().size());
+
+List<Approval.ProcessResult> failedApproval = JSON.deserialize('[{"success":false,"entityId":"001000000000000001","errors":[{"message":"No applicable approval process was found.","statusCode":"NO_APPLICABLE_PROCESS"}]}]', List<Approval.ProcessResult>.class);
+System.assertEquals(1, failedApproval.size());
+System.assert(!failedApproval[0].isSuccess());
+System.assertEquals('No applicable approval process was found.', failedApproval[0].getErrors()[0].getMessage());
+System.assertEquals('NO_APPLICABLE_PROCESS', String.valueOf(failedApproval[0].getErrors()[0].getStatusCode()));
+
+Database.SaveResult quotedNull = JSON.deserialize('{"success":true,"id":"null"}', Database.SaveResult.class);
+System.assert(quotedNull.isSuccess());
+Boolean quotedNullIdRejected = false;
+try {
+  quotedNull.getId();
+} catch (System.StringException ex) {
+  quotedNullIdRejected = true;
+  System.assertEquals('Invalid id: null', ex.getMessage());
+}
+System.assert(quotedNullIdRejected);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1627,7 +1734,8 @@ try {
 } catch (JSONException e) {
 	keyCaught = e.getMessage();
 }
-System.assert(keyCaught.contains('Map keys only for scalar/String/Object targets'));
+// A45 K095: unsupported key mappings retain the exact native exception message.
+System.assert('No mapping for apex type: List<String>'.equals(keyCaught), 'K095 expected <No mapping for apex type: List<String>> actual <' + keyCaught + '>');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1656,6 +1764,7 @@ System.assertEquals('Acme', decoded.Name);
 }
 
 func TestExecJSONDeserializeSObjectUsesSchemaFieldTypes(t *testing.T) {
+	// A30 native J005/J054 record the native assertion expectations.
 	program, err := CompileAnonymous(`
 Account decoded = JSON.deserialize('{"Name":"Acme","RenewalDate__c":"2024-02-29","AnnualRevenue":12.5,"LastSeen__c":"2024-02-29T12:34:56Z","Score__c":7,"Active__c":true,"ParentId":"001B000001DVM9t"}', Account.class);
 Date renewal = decoded.RenewalDate__c;
@@ -1669,7 +1778,7 @@ System.assertEquals(7, score);
 Boolean active = decoded.Active__c;
 System.assertEquals(true, active);
 Id parent = decoded.ParentId;
-System.assertEquals('001B000001DVM9t', parent.toString());
+System.assertEquals('001B000001DVM9tIAH', parent.toString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1878,6 +1987,7 @@ System.assertEquals(Blob.valueOf('abc'), plain.Body);
 	}
 }
 
+// A18 R239/R240: native JSON contract.
 func TestExecJSONDeserializeSObjectChildRelationshipRecords(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account decoded = JSON.deserialize('{"Name":"Acme","NumberOfEmployees":"7","Contacts":{"totalSize":"2","done":"true","records":[{"attributes":{"type":"Contact"},"LastName":"One","DoNotCall":"true"},{"attributes":{"type":"Contact"},"LastName":"Two","DoNotCall":"false"}]}}', Account.class);
@@ -1889,8 +1999,14 @@ System.assertEquals('One', contacts[0].LastName);
 System.assertEquals(true, contacts[0].DoNotCall);
 System.assertEquals('Two', contacts[1].LastName);
 System.assertEquals(false, contacts[1].DoNotCall);
-Account decodedArray = JSON.deserialize('{"Name":"Acme","Contacts":[{"attributes":{"type":"Contact"},"LastName":"Three"}]}', Account.class);
-System.assertEquals('Three', decodedArray.Contacts[0].LastName);
+Boolean arrayRejected = false;
+try {
+	Account decodedArray = JSON.deserialize('{"Name":"Acme","Contacts":[{"attributes":{"type":"Contact"},"LastName":"Three"}]}', Account.class);
+} catch (JSONException e) {
+	arrayRejected = true;
+	System.assert(e.getMessage().equals('QueryResult must start with \'{\''));
+}
+System.assert(arrayRejected);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2041,7 +2157,7 @@ System.assertEquals('Item', items[0].Name);
 
 func TestExecJSONDeserializeManagedParentRelationshipWithNamespace(t *testing.T) {
 	program, err := CompileAnonymous(`
-zpkg__OrderItemLine__c line = (zpkg__OrderItemLine__c)JSON.deserialize('{"zpkg__OrderItem__r":{"zpkg__Entity__c":null}}', zpkg__OrderItemLine__c.class);
+zpkg__BundleLine__c line = (zpkg__BundleLine__c)JSON.deserialize('{"zpkg__OrderItem__r":{"zpkg__Entity__c":null}}', zpkg__BundleLine__c.class);
 System.assertNotEquals(null, line.zpkg__OrderItem__r);
 System.assertEquals(null, line.zpkg__OrderItem__r.zpkg__Entity__c);
 `)
@@ -2061,9 +2177,9 @@ System.assertEquals(null, line.zpkg__OrderItem__r.zpkg__Entity__c);
 			},
 			Records: map[storage.ID]storage.Record{},
 		},
-		"zpkg__OrderItemLine__c": {
+		"zpkg__BundleLine__c": {
 			Definition: storage.ObjectDefinition{
-				APIName:   "zpkg__OrderItemLine__c",
+				APIName:   "zpkg__BundleLine__c",
 				KeyPrefix: "a02",
 				Fields: map[string]storage.Field{
 					"Id":                 {APIName: "Id", Type: storage.FieldID},
@@ -2266,6 +2382,7 @@ System.assertNotEquals(null, decoded.opaque);
 	}
 }
 
+// A18 R126/R213: native JSON contract.
 func TestExecJSONDeserializeStrictRejectsUnknownApexClassFieldsAsJSONException(t *testing.T) {
 	program, err := CompileAnonymous(`
 String caught = '';
@@ -2274,7 +2391,7 @@ try {
 } catch (JSONException e) {
 	caught = e.getMessage();
 }
-System.assert(caught.contains('unknown field "Extra__c"'));
+System.assert(caught.contains('Unknown field: JsonDTO.Extra__c'));
 System.assert(caught.contains('JsonDTO'));
 `)
 	if err != nil {
@@ -2294,7 +2411,7 @@ System.assert(caught.contains('JsonDTO'));
 	}
 }
 
-func TestExecJSONDeserializeKeepsNonStrictApexClassUnknownFieldBehavior(t *testing.T) {
+func TestExecJSONDeserializeIgnoresNonStrictApexClassUnknownFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object decoded = JSON.deserialize('{"Name":"Acme","Extra__c":"x"}', JsonDTO.class);
 `)
@@ -2317,11 +2434,85 @@ Object decoded = JSON.deserialize('{"Name":"Acme","Extra__c":"x"}', JsonDTO.clas
 	if decoded.Type != "JsonDTO" {
 		t.Fatalf("decoded.Type = %q, want JsonDTO", decoded.Type)
 	}
-	if got := decoded.Fields["Extra__c"]; got.Kind != ValueString || got.Text != "x" {
-		t.Fatalf("Extra__c = %#v, want string x", got)
+	if got := decoded.Fields["Name"]; got.Kind != ValueString || got.Text != "Acme" {
+		t.Fatalf("Name = %#v, want string Acme", got)
+	}
+	if got, exists := decoded.Fields["Extra__c"]; exists {
+		t.Fatalf("unexpected Extra__c = %#v", got)
 	}
 }
 
+func TestExecJSONDeserializeApexClassIgnoresExtraFieldsAPI67(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		source string
+	}{
+		{
+			name: "ordinaryExtra",
+			source: `
+Car decoded = (Car)JSON.deserialize('{"make":"SFDC","year":"2020","extra":"drop-me"}', Car.class);
+System.assert(decoded.make.equals('SFDC'));
+System.assert(decoded.year.equals('2020'));
+System.assertEquals(false, JSON.serialize(decoded).contains('"extra"'));
+`,
+		},
+		{
+			name: "strictExtra",
+			source: `
+Boolean caught = false;
+try {
+	Car decoded = (Car)JSON.deserializeStrict('{"make":"SFDC","year":"2020","extra":"drop-me"}', Car.class);
+} catch (Exception e) {
+	caught = true;
+}
+System.assertEquals(true, caught);
+`,
+		},
+		{
+			name: "ordinaryKnown",
+			source: `
+Car decoded = (Car)JSON.deserialize('{"make":"SFDC","year":"2020"}', Car.class);
+System.assert(decoded.make.equals('SFDC'));
+System.assert(decoded.year.equals('2020'));
+`,
+		},
+		{
+			name: "strictKnown",
+			source: `
+Car decoded = (Car)JSON.deserializeStrict('{"make":"SFDC","year":"2020"}', Car.class);
+System.assert(decoded.make.equals('SFDC'));
+System.assert(decoded.year.equals('2020'));
+`,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymousWithOptions(tc.source, CompileOptions{APIVersion: "67.0"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if program.APIVersion != "67.0" {
+				t.Fatalf("compiled API version = %q, want 67.0", program.APIVersion)
+			}
+			machine := New(nil)
+			if err := machine.RegisterClass(Class{
+				Name:       "Car",
+				APIVersion: "67.0",
+				Fields: map[string]Field{
+					"make": {Name: "make", Type: "String"},
+					"year": {Name: "year", Type: "String"},
+				},
+				FieldOrder: []string{"make", "year"},
+			}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := machine.Execute(program); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+// A18 R233: native JSON contract.
 func TestExecJSONDeserializeTypedRejectsMismatchedShapes(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object n = JSON.deserialize('"not-a-number"', Integer.class);
@@ -2330,13 +2521,14 @@ Object n = JSON.deserialize('"not-a-number"', Integer.class);
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "JSON.deserialize cannot map JSON String to Integer") {
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "Value does not match expected type at [line:1, column:1]") {
 		t.Fatalf("err = %v", err)
 	}
 }
 
 func TestExecJSONDeserializeTypedRejectsUnsupportedMapKeyTargets(t *testing.T) {
 	program, err := CompileAnonymous(`
+// A45 K094/K095: native diagnoses the unsupported key before the Object value.
 Type mapType = Type.forName('Map<List<String>,Object>');
 Object value = JSON.deserialize('{"1":"one"}', mapType);
 `)
@@ -2344,7 +2536,7 @@ Object value = JSON.deserialize('{"1":"one"}', mapType);
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "Map keys only for scalar/String/Object targets") {
+	if _, err := machine.Execute(program); err == nil || err.Error() != "JSONException: No mapping for apex type: List<String>" {
 		t.Fatalf("err = %v", err)
 	}
 }
@@ -2393,7 +2585,7 @@ try {
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSON.deserializeUntyped invalid JSON input'));
+System.assertEquals('System.JSONException:Unexpected end-of-input within/between OBJECT entries at [line:1, column:21]', caught);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2416,8 +2608,14 @@ System.assertEquals('For input string: "9223372036854775808" at [line:1, column:
 
 Object duplicateUntyped = JSON.deserializeUntyped('{"Name":"First","Name":"Second"}');
 System.assertEquals('{"Name":"Second"}', JSON.serialize(duplicateUntyped));
-Object duplicateObject = JSON.deserialize('{"Name":"First","Name":"Second"}', Object.class);
-System.assertEquals('{"Name":"Second"}', JSON.serialize(duplicateObject));
+// A45 K062: typed Object is unsupported, including duplicate-key input.
+caught = '';
+try {
+	JSON.deserialize('{"Name":"First","Name":"Second"}', Object.class);
+} catch (JSONException e) {
+	caught = e.getMessage();
+}
+System.assert('Apex Type unsupported in JSON: Object'.equals(caught), caught);
 
 Map<String,Object> primitive = new Map<String,Object>();
 primitive.put('n', null);
@@ -2449,7 +2647,7 @@ System.assertEquals('JSON.deserialize cannot map JSON object to Integer', caught
 
 caught = '';
 try {
-	Account unknownField = JSON.deserializeStrict('{"NoSuchField__c":"x"}', Account.class);
+	Account unknownField = JSON.deserializeStrict('{"Name":"Acme","NoSuchField__c":"x"}', Account.class);
 } catch (JSONException e) {
 	caught = e.getMessage();
 }
@@ -2547,6 +2745,13 @@ try {
 System.assert(caught.contains('JSONException:malformed JSON:'), caught);
 caught = '';
 try {
+	List<Account> decoded = (List<Account>)JSON.deserialize('{"bad: JSON"}', List<Account>.class);
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:Malformed JSON:'), caught);
+caught = '';
+try {
 	Account decoded = JSON.deserializeStrict('{"Name":"First","Name":"Second"}', Account.class);
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
@@ -2560,6 +2765,24 @@ System.assertEquals('', caught);
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONMalformedTypedNestedObjectUsesSalesforceEOFMessage(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+try {
+    List<Account> decoded = (List<Account>)JSON.deserialize('[{"Name":"Acme"', List<Account>.class);
+} catch (JSONException e) {
+    caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:Unexpected end-of-input'), caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -2640,6 +2863,7 @@ System.assertEquals(2, ((Map<String,Object>)decodedRows[1]).get('b'));
 }
 
 func TestExecJSONParserAndTokenRemainingEdges(t *testing.T) {
+	// A30 native J005/J054 record the native assertion expectations.
 	program, err := CompileAnonymous(`
 JSONParser parser = JSON.createParser('[{"id":"001B000001DVM9t","blob":"YWJj"},false]');
 System.assertEquals(JSONToken.START_ARRAY, parser.nextToken());
@@ -2647,7 +2871,7 @@ System.assertEquals(JSONToken.START_OBJECT, parser.nextToken());
 System.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());
 System.assertEquals('id', parser.getCurrentName());
 System.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());
-System.assertEquals('001B000001DVM9t', parser.getIdValue().toString());
+System.assertEquals('001B000001DVM9tIAH', parser.getIdValue().toString());
 System.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());
 System.assertEquals('blob', parser.getCurrentName());
 System.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());

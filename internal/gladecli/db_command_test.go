@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestParseDBUIOptions(t *testing.T) {
@@ -244,4 +246,75 @@ func waitForDBUIReadyFile(t *testing.T, path string) dbUIReadyFile {
 	}
 	t.Fatalf("ready file was not written: %v", lastErr)
 	return dbUIReadyFile{}
+}
+
+func TestDBCanonicalOrgOriginSeedAndStoredPrecedence(t *testing.T) {
+	root := t.TempDir()
+	writeProjectWithWidgetField(t, root, "Name__c")
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  domainUrl: https://seed.example.test/\n")
+	dbPath := filepath.Join(root, "org.sqlite")
+	store, org, err := openDBStore(dbPath, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if org.DomainURL != "https://seed.example.test" {
+		store.Close()
+		t.Fatalf("new org origin = %q", org.DomainURL)
+	}
+	if err := storage.ApplyFixture(&org, storage.Fixture{Version: storage.FixtureVersion, Org: storage.FixtureOrg{DomainURL: "https://stored.example.test/"}}); err != nil {
+		store.Close()
+		t.Fatal(err)
+	}
+	if err := store.Save(org); err != nil {
+		store.Close()
+		t.Fatal(err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  domainUrl: https://changed-seed.example.test\n")
+	// A schema refresh must also preserve the saved org origin.
+	writeProjectWithWidgetField(t, root, "Extra__c")
+	store, org, err = openDBStore(dbPath, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	if org.DomainURL != "https://stored.example.test" {
+		t.Fatalf("saved org origin after config/schema change = %q", org.DomainURL)
+	}
+}
+
+func TestDBCanonicalOrgOriginSeedsLegacyMetadataAndRejectsInvalidConfig(t *testing.T) {
+	root := t.TempDir()
+	writeProjectWithWidgetField(t, root, "Name__c")
+	dbPath := filepath.Join(root, "org.sqlite")
+	store, org, err := openDBStore(dbPath, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if org.DomainURL != "" {
+		store.Close()
+		t.Fatalf("unset origin = %q, want persisted unset", org.DomainURL)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  domainUrl: https://legacy-seed.example.test/\n")
+	store, org, err = openDBStore(dbPath, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if org.DomainURL != "https://legacy-seed.example.test" {
+		store.Close()
+		t.Fatalf("legacy org origin = %q", org.DomainURL)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  domainUrl: https://invalid.example.test/path\n")
+	if store, _, err := openDBStore(dbPath, root); err == nil {
+		store.Close()
+		t.Fatal("invalid org.domainUrl config was accepted")
+	}
 }

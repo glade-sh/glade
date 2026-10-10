@@ -1,0 +1,433 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "provenance": {
+    "normalization": "Replace each manifest unit name consistently in sources and messages: F -> POFixture, D -> PODecoy, T -> POTest. No other diagnostic normalization."
+  },
+  "absentRoutes": [
+    {
+      "route": "anonymous",
+      "reason": "Every fixture nests types inside an outer class; anonymous Apex rejects this with \"Inner types are not allowed to have inner types\". No anonymous rows are exported."
+    }
+  ],
+  "rows": [
+    {
+      "id": "R001",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy {\n public abstract class Parent { public abstract Integer value(); }\n}",
+        "POFixture": "public class POFixture {\n public abstract class Parent { public abstract Integer value(); }\n public class Child extends Parent {\n  public override Integer value() { return 9; }\n }\n public static Integer run() { Parent p=new Child(); return p.value(); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void R001() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R001|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "compiled",
+      "expectedRuntime": "9",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO629eed57b94454R001D",
+          "submittedSha256": "f8d686c1406ed53498ed13f0765c1c3ea502d8deeaebd7ab2e1e2e147f0cccc6",
+          "storedSha256": "f8d686c1406ed53498ed13f0765c1c3ea502d8deeaebd7ab2e1e2e147f0cccc6"
+        },
+        {
+          "name": "POFixture",
+          "nativeName": "PO629eed57b94454R001F",
+          "submittedSha256": "a685811ca372324eea46de631aa411ad6bdc36067c5f73ed28512a5dc2a0bbac",
+          "storedSha256": "a685811ca372324eea46de631aa411ad6bdc36067c5f73ed28512a5dc2a0bbac"
+        },
+        {
+          "name": "POTest",
+          "nativeName": "PO629eed57b94454R001T",
+          "submittedSha256": "e742a8a18ecf170e1c039aed323b00edf76e1267d84f3e2a5914f5c62aedd1d1",
+          "storedSha256": "2173d97c09dc31c7920e24080bea0fd38b7ed6885776dda0e24384ca8470fd85"
+        }
+      ]
+    },
+    {
+      "id": "R002",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class SharedBase {} }",
+        "POFixture": "public class POFixture {\n public virtual class SharedBase {\n  public virtual Integer answer(Object ignored) { return 0; }\n }\n public class Child extends SharedBase {\n  public override Integer answer(Object ignored) { return 41; }\n }\n public static Integer run() { SharedBase p=new Child(); return p.answer(null); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void R002() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R002|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "compiled",
+      "expectedRuntime": "41",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO629eed57b94454R002D",
+          "submittedSha256": "84db4b163702ca5eb34ba258e278d268348c526f5bba0ba402feea8326ba99d3",
+          "storedSha256": "84db4b163702ca5eb34ba258e278d268348c526f5bba0ba402feea8326ba99d3"
+        },
+        {
+          "name": "POFixture",
+          "nativeName": "PO629eed57b94454R002F",
+          "submittedSha256": "a811ccbf9e9e58443ce6cb3d46d1ee135a53502b6a8132933842b5757a227a76",
+          "storedSha256": "a811ccbf9e9e58443ce6cb3d46d1ee135a53502b6a8132933842b5757a227a76"
+        },
+        {
+          "name": "POTest",
+          "nativeName": "PO629eed57b94454R002T",
+          "submittedSha256": "f3c34c37800271680364adbebc3626e66d5fc2824b7e77a61c34d39c354b1de4",
+          "storedSha256": "78a7ac496f526a3073046e5e6dc89d754cca633482be2517d4c32858e889ac53"
+        }
+      ]
+    },
+    {
+      "id": "R003",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class Payload {} }",
+        "POFixture": "public class POFixture {\n public class Payload {}\n public virtual class Parent {\n  public virtual Integer value(Payload p) { return 0; }\n }\n public class Child extends Parent {\n  public override Integer value(POFixture.Payload p) { return 17; }\n }\n public static Integer run() { Parent p=new Child(); return p.value(new Payload()); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void R003() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R003|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "compiled",
+      "expectedRuntime": "17",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO629eed57b94454R003D",
+          "submittedSha256": "c8ea068d29a9df4210130dc7ea3b9dc72ae2451b361b71329d8b78979b087eb1",
+          "storedSha256": "c8ea068d29a9df4210130dc7ea3b9dc72ae2451b361b71329d8b78979b087eb1"
+        },
+        {
+          "name": "POFixture",
+          "nativeName": "PO629eed57b94454R003F",
+          "submittedSha256": "36f9dd5709cf0f5121d18550dddbe955b92d43e91fec1d247576b1d0efcac28e",
+          "storedSha256": "36f9dd5709cf0f5121d18550dddbe955b92d43e91fec1d247576b1d0efcac28e"
+        },
+        {
+          "name": "POTest",
+          "nativeName": "PO629eed57b94454R003T",
+          "submittedSha256": "88e26ed658c563401ff24e78d61e3bc61724d11801047e4adb3ec7a9de163149",
+          "storedSha256": "d25bc945d6886176626d3e09bb461c32265ed8495c2d817ffa50f42121a78a4b"
+        }
+      ]
+    },
+    {
+      "id": "R004",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class Payload {} }",
+        "POFixture": "public class POFixture {\n public class Payload {}\n public virtual class Parent {\n  public virtual Integer value(List<Map<String,Payload>> p) { return 0; }\n }\n public class Child extends Parent {\n  public override Integer value(List<Map<String,POFixture.Payload>> p) { return 23; }\n }\n public static Integer run() {\n  Parent p=new Child(); return p.value(new List<Map<String,Payload>>());\n }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void R004() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R004|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "compiled",
+      "expectedRuntime": "23",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO629eed57b94454R004D",
+          "submittedSha256": "29af7159af4b69908cff5875160a1674f18097e765733a9bf9553a4d2eab0bac",
+          "storedSha256": "29af7159af4b69908cff5875160a1674f18097e765733a9bf9553a4d2eab0bac"
+        },
+        {
+          "name": "POFixture",
+          "nativeName": "PO629eed57b94454R004F",
+          "submittedSha256": "4037d92510efbfd74acd14db01294b383dc076d81a665f5a3059c594e015b4e2",
+          "storedSha256": "4037d92510efbfd74acd14db01294b383dc076d81a665f5a3059c594e015b4e2"
+        },
+        {
+          "name": "POTest",
+          "nativeName": "PO629eed57b94454R004T",
+          "submittedSha256": "c112871edb8bfb5ad92bea91f1ebcafc1f742a048e8bfe4da563f109bbddaf47",
+          "storedSha256": "0121e60516f93147c7aaadbeb58599d976e2b5f5d395363a7c2406462b73f156"
+        }
+      ]
+    },
+    {
+      "id": "C001",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy {\n public abstract class Parent { public abstract Integer value(); }\n}",
+        "POFixture": "public class POFixture {\n public abstract class Parent { public abstract Integer value(); }\n public class Child extends Parent {\n  public override Integer value(Integer unused) { return 9; }\n }\n public static Integer run() { Parent p=new Child(); return p.value(); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void C001() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|C001|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "COMPILE_ERROR\t@Override specified for non-overriding method: Integer POFixture.Child.value(Integer)",
+      "expectedRuntime": "",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO629eed57b94454C001D",
+          "submittedSha256": "ed37dc50a8e8de313b9f0e308ea30fa739779b2382e69597d34d6c5aa236649e",
+          "storedSha256": "ed37dc50a8e8de313b9f0e308ea30fa739779b2382e69597d34d6c5aa236649e"
+        }
+      ]
+    },
+    {
+      "id": "C002",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class SharedBase {} }",
+        "POFixture": "public class POFixture {\n public virtual class SharedBase {\n  public virtual Integer answer(Object ignored) { return 0; }\n }\n public class Child extends SharedBase {\n  public override Integer answer(String ignored) { return 41; }\n }\n public static Integer run() { SharedBase p=new Child(); return p.answer(null); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void C002() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|C002|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "COMPILE_ERROR\t@Override specified for non-overriding method: Integer POFixture.Child.answer(String)",
+      "expectedRuntime": "",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO629eed57b94454C002D",
+          "submittedSha256": "bed867368b48d13a895d6e8b5a94a9b06c11e6ab82daa12b754f16aea50fccbe",
+          "storedSha256": "bed867368b48d13a895d6e8b5a94a9b06c11e6ab82daa12b754f16aea50fccbe"
+        }
+      ]
+    },
+    {
+      "id": "C003",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class Payload {} }",
+        "POFixture": "public class POFixture {\n public class Payload {}\n public virtual class Parent {\n  public virtual Integer value(Payload p) { return 0; }\n }\n public class Child extends Parent {\n  public override Integer value(PODecoy.Payload p) { return 17; }\n }\n public static Integer run() { Parent p=new Child(); return p.value(new Payload()); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void C003() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|C003|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "COMPILE_ERROR\t@Override specified for non-overriding method: Integer POFixture.Child.value(PODecoy.Payload)",
+      "expectedRuntime": "",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO629eed57b94454C003D",
+          "submittedSha256": "5e4d54a802737f7e83f4090b5b9a4d735c2048215b69f6583486ff37ea3723fa",
+          "storedSha256": "5e4d54a802737f7e83f4090b5b9a4d735c2048215b69f6583486ff37ea3723fa"
+        }
+      ]
+    },
+    {
+      "id": "C004",
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class Payload {} }",
+        "POFixture": "public class POFixture {\n public class Payload {}\n public virtual class Parent {\n  public virtual Integer value(List<Map<String,Payload>> p) { return 0; }\n }\n public class Child extends Parent {\n  public override Integer value(List<Map<String,PODecoy.Payload>> p) { return 23; }\n }\n public static Integer run() {\n  Parent p=new Child(); return p.value(new List<Map<String,Payload>>());\n }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void C004() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|C004|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "COMPILE_ERROR\t@Override specified for non-overriding method: Integer POFixture.Child.value(List<Map<String,PODecoy.Payload>>)",
+      "expectedRuntime": "",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO629eed57b94454C004D",
+          "submittedSha256": "3715a1b291e935d10860e18ac8755b829ea8ba8fe9ba0e3e3c07247baea325b0",
+          "storedSha256": "3715a1b291e935d10860e18ac8755b829ea8ba8fe9ba0e3e3c07247baea325b0"
+        }
+      ]
+    },
+    {
+      "id": "R001",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy {\n public abstract class Parent { public abstract Integer value(); }\n}",
+        "POFixture": "public class POFixture {\n public abstract class Parent { public abstract Integer value(); }\n public class Child extends Parent {\n  public override Integer value() { return 9; }\n }\n public static Integer run() { Parent p=new Child(); return p.value(); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void R001() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R001|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "compiled",
+      "expectedRuntime": "9",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO6736eff5c878cbR001D",
+          "submittedSha256": "33b94c55c390937125e6a375dfd7cc0a8af3387a455508f2c2c4f069fa7eecaf",
+          "storedSha256": "33b94c55c390937125e6a375dfd7cc0a8af3387a455508f2c2c4f069fa7eecaf"
+        },
+        {
+          "name": "POFixture",
+          "nativeName": "PO6736eff5c878cbR001F",
+          "submittedSha256": "c1f3b1666fe8f08d7e38cd7315e119b296409a4752d1bdd44467e0fb0e77e0e7",
+          "storedSha256": "c1f3b1666fe8f08d7e38cd7315e119b296409a4752d1bdd44467e0fb0e77e0e7"
+        },
+        {
+          "name": "POTest",
+          "nativeName": "PO6736eff5c878cbR001T",
+          "submittedSha256": "0d0486c3d864035880772304a79618e686e48b9cf7331b2ae315b3fdaa11a3a8",
+          "storedSha256": "66b08c719b6c149eee06ead1d678b13efd7499efee5817feaef5bd0f9eb7727f"
+        }
+      ]
+    },
+    {
+      "id": "R002",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class SharedBase {} }",
+        "POFixture": "public class POFixture {\n public virtual class SharedBase {\n  public virtual Integer answer(Object ignored) { return 0; }\n }\n public class Child extends SharedBase {\n  public override Integer answer(Object ignored) { return 41; }\n }\n public static Integer run() { SharedBase p=new Child(); return p.answer(null); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void R002() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R002|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "compiled",
+      "expectedRuntime": "41",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO6736eff5c878cbR002D",
+          "submittedSha256": "2e1c3ecbac7f2c2421b8e417d30adbc97dce90ba7952b557b0795228f7013a0a",
+          "storedSha256": "2e1c3ecbac7f2c2421b8e417d30adbc97dce90ba7952b557b0795228f7013a0a"
+        },
+        {
+          "name": "POFixture",
+          "nativeName": "PO6736eff5c878cbR002F",
+          "submittedSha256": "c128ff5bb27fcf9125cb7ba9c7c2800f2df829194c64e4dfe771fb465a79a20c",
+          "storedSha256": "c128ff5bb27fcf9125cb7ba9c7c2800f2df829194c64e4dfe771fb465a79a20c"
+        },
+        {
+          "name": "POTest",
+          "nativeName": "PO6736eff5c878cbR002T",
+          "submittedSha256": "8cfe4ae2a85774c6e913422cea2c1cf4c7dfade7978368cfd0f9f3c579934fb9",
+          "storedSha256": "74e8a4554f09396efc5729a89419e0f5eee0d1897e96b56e20d8e61bbb583430"
+        }
+      ]
+    },
+    {
+      "id": "R003",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class Payload {} }",
+        "POFixture": "public class POFixture {\n public class Payload {}\n public virtual class Parent {\n  public virtual Integer value(Payload p) { return 0; }\n }\n public class Child extends Parent {\n  public override Integer value(POFixture.Payload p) { return 17; }\n }\n public static Integer run() { Parent p=new Child(); return p.value(new Payload()); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void R003() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R003|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "compiled",
+      "expectedRuntime": "17",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO6736eff5c878cbR003D",
+          "submittedSha256": "39299c9d65e5495fd58030443fdcdc6bb0a81020d7edbafe4f3c3a490df4a16e",
+          "storedSha256": "39299c9d65e5495fd58030443fdcdc6bb0a81020d7edbafe4f3c3a490df4a16e"
+        },
+        {
+          "name": "POFixture",
+          "nativeName": "PO6736eff5c878cbR003F",
+          "submittedSha256": "bdf4c2c8348844f67bbd7333dd9e1eea2bcd37f7460fa769f0b8700c611994d3",
+          "storedSha256": "bdf4c2c8348844f67bbd7333dd9e1eea2bcd37f7460fa769f0b8700c611994d3"
+        },
+        {
+          "name": "POTest",
+          "nativeName": "PO6736eff5c878cbR003T",
+          "submittedSha256": "d5f135444310463bac83fc30587c97dfe0489e6f4cf5a64e0ac8e6af6541a914",
+          "storedSha256": "300c556a53356d13ea7c94dc6f785367d16ffc0af82c7f126398864865ca9da1"
+        }
+      ]
+    },
+    {
+      "id": "R004",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class Payload {} }",
+        "POFixture": "public class POFixture {\n public class Payload {}\n public virtual class Parent {\n  public virtual Integer value(List<Map<String,Payload>> p) { return 0; }\n }\n public class Child extends Parent {\n  public override Integer value(List<Map<String,POFixture.Payload>> p) { return 23; }\n }\n public static Integer run() {\n  Parent p=new Child(); return p.value(new List<Map<String,Payload>>());\n }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void R004() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|R004|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "compiled",
+      "expectedRuntime": "23",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO6736eff5c878cbR004D",
+          "submittedSha256": "14006d60dfc9d43f89f9c43dbe5f8ad9e278b753ff3269e0ae50dfb7f343f2fc",
+          "storedSha256": "14006d60dfc9d43f89f9c43dbe5f8ad9e278b753ff3269e0ae50dfb7f343f2fc"
+        },
+        {
+          "name": "POFixture",
+          "nativeName": "PO6736eff5c878cbR004F",
+          "submittedSha256": "a1fc644f5675f06f4abefd04aa0772240902bfe777552ff4e9520ccd0968f0db",
+          "storedSha256": "a1fc644f5675f06f4abefd04aa0772240902bfe777552ff4e9520ccd0968f0db"
+        },
+        {
+          "name": "POTest",
+          "nativeName": "PO6736eff5c878cbR004T",
+          "submittedSha256": "99bfcb2e66889365704fff507f511b20a6e8f1e9d6d2cc521314556f2f01420c",
+          "storedSha256": "b7998a84c9942de9513bc24b370baf3185ced4ac9a779110623a73bb62b186af"
+        }
+      ]
+    },
+    {
+      "id": "C001",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy {\n public abstract class Parent { public abstract Integer value(); }\n}",
+        "POFixture": "public class POFixture {\n public abstract class Parent { public abstract Integer value(); }\n public class Child extends Parent {\n  public override Integer value(Integer unused) { return 9; }\n }\n public static Integer run() { Parent p=new Child(); return p.value(); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void C001() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|C001|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "COMPILE_ERROR\t@Override specified for non-overriding method: Integer POFixture.Child.value(Integer)",
+      "expectedRuntime": "",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO6736eff5c878cbC001D",
+          "submittedSha256": "3b5fed099038a1bb7e6b5a63f2d5c831079b7197f8be4952a7788d99c8823a31",
+          "storedSha256": "3b5fed099038a1bb7e6b5a63f2d5c831079b7197f8be4952a7788d99c8823a31"
+        }
+      ]
+    },
+    {
+      "id": "C002",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class SharedBase {} }",
+        "POFixture": "public class POFixture {\n public virtual class SharedBase {\n  public virtual Integer answer(Object ignored) { return 0; }\n }\n public class Child extends SharedBase {\n  public override Integer answer(String ignored) { return 41; }\n }\n public static Integer run() { SharedBase p=new Child(); return p.answer(null); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void C002() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|C002|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "COMPILE_ERROR\t@Override specified for non-overriding method: Integer POFixture.Child.answer(String)",
+      "expectedRuntime": "",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO6736eff5c878cbC002D",
+          "submittedSha256": "e77425c6d32331109734f256d9810b6f3b83fba9fd2c1985d187b750aabc0d81",
+          "storedSha256": "e77425c6d32331109734f256d9810b6f3b83fba9fd2c1985d187b750aabc0d81"
+        }
+      ]
+    },
+    {
+      "id": "C003",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class Payload {} }",
+        "POFixture": "public class POFixture {\n public class Payload {}\n public virtual class Parent {\n  public virtual Integer value(Payload p) { return 0; }\n }\n public class Child extends Parent {\n  public override Integer value(PODecoy.Payload p) { return 17; }\n }\n public static Integer run() { Parent p=new Child(); return p.value(new Payload()); }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void C003() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|C003|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "COMPILE_ERROR\t@Override specified for non-overriding method: Integer POFixture.Child.value(PODecoy.Payload)",
+      "expectedRuntime": "",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO6736eff5c878cbC003D",
+          "submittedSha256": "6c5f1d7fea0cc4dcfc307bbe5bf811b1ae0cdbe913171ca3c74d34635e34878e",
+          "storedSha256": "6c5f1d7fea0cc4dcfc307bbe5bf811b1ae0cdbe913171ca3c74d34635e34878e"
+        }
+      ]
+    },
+    {
+      "id": "C004",
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "sources": {
+        "PODecoy": "public class PODecoy { public class Payload {} }",
+        "POFixture": "public class POFixture {\n public class Payload {}\n public virtual class Parent {\n  public virtual Integer value(List<Map<String,Payload>> p) { return 0; }\n }\n public class Child extends Parent {\n  public override Integer value(List<Map<String,PODecoy.Payload>> p) { return 23; }\n }\n public static Integer run() {\n  Parent p=new Child(); return p.value(new List<Map<String,Payload>>());\n }\n}",
+        "POTest": "@IsTest private class POTest {\n@IsTest static void C004() {\nObject r; try {\nr=POFixture.run();\n} catch(Exception e) {r='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nSystem.assert(false,'P|C004|'+String.valueOf(r));\n}\n}\n"
+      },
+      "expectedCompilation": "COMPILE_ERROR\t@Override specified for non-overriding method: Integer POFixture.Child.value(List<Map<String,PODecoy.Payload>>)",
+      "expectedRuntime": "",
+      "sourceVerification": [
+        {
+          "name": "PODecoy",
+          "nativeName": "PO6736eff5c878cbC004D",
+          "submittedSha256": "f52eac0525b7252953776c367d233007d95699512bcd25c8d15bdc3ed6ba3951",
+          "storedSha256": "f52eac0525b7252953776c367d233007d95699512bcd25c8d15bdc3ed6ba3951"
+        }
+      ]
+    }
+  ]
+}

@@ -1,11 +1,50 @@
 package visualforce
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/vm"
 )
+
+func TestPageReferenceRenderErrorPreservesControlErrors(t *testing.T) {
+	unsupported := vm.NewUnsupportedFeatureError("flow:interview local surface")
+	limit := &vm.RuntimeError{Type: "System.LimitException", Message: "Too many SOQL queries: 101"}
+	ordinary := errors.New("controller getter failed")
+	cases := []struct {
+		name string
+		err  error
+	}{
+		{name: "unsupported feature", err: unsupported},
+		{name: "governor limit", err: limit},
+		{name: "canceled", err: context.Canceled},
+		{name: "deadline exceeded", err: context.DeadlineExceeded},
+		{name: "ordinary render failure", err: ordinary},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := pageReferenceRenderError(tc.err)
+			if got == nil {
+				t.Fatal("pageReferenceRenderError returned nil")
+			}
+			if tc.name != "ordinary render failure" {
+				if !errors.Is(got, tc.err) {
+					t.Fatalf("err = %v, want identity of %v", got, tc.err)
+				}
+				return
+			}
+			if got == tc.err || got.Error() != tc.err.Error() {
+				t.Fatalf("err = %v, want a distinct ExecutionException wrapper", got)
+			}
+		})
+	}
+	if got := pageReferenceRenderError(fmt.Errorf("wrapped: %w", context.Canceled)); !errors.Is(got, context.Canceled) {
+		t.Fatalf("wrapped cancellation err = %v, want cancellation identity", got)
+	}
+}
 
 func TestRenderPageSetsProjectNamespaceForMemberAccess(t *testing.T) {
 	machine := vm.New(nil)

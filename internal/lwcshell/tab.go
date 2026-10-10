@@ -8,6 +8,7 @@ import (
 
 type customTabXML struct {
 	Label        string `xml:"label"`
+	Motif        string `xml:"motif"`
 	LWCComponent string `xml:"lwcComponent"`
 	FlexiPage    string `xml:"flexiPage"`
 	Page         string `xml:"page"`
@@ -28,6 +29,7 @@ func LoadCustomTab(path string) (CustomTab, error) {
 	tab := CustomTab{
 		Name:  metadataName(path, ".tab-meta.xml", ".tab"),
 		Label: strings.TrimSpace(raw.Label),
+		Motif: strings.TrimSpace(raw.Motif),
 		File:  path,
 	}
 	switch {

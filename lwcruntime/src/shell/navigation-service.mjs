@@ -28,6 +28,7 @@ const SUPPORTED_PAGE_REFERENCE_TYPES = new Set([
 ]);
 
 const pageReferenceListeners = new Set();
+let activePageReference;
 
 export { SUPPORTED_PAGE_REFERENCE_TYPES };
 
@@ -75,7 +76,10 @@ export function readConfig() {
 }
 
 export function currentPageReference() {
-  return readConfig().pageReference || DEFAULT_PAGE_REFERENCE;
+  if (!activePageReference) {
+    activePageReference = immutablePageReference(readConfig().pageReference || DEFAULT_PAGE_REFERENCE);
+  }
+  return activePageReference;
 }
 
 export function readShellContext() {
@@ -96,6 +100,8 @@ export function subscribePageReference(listener) {
 }
 
 export function emitPageReference(pageReference = currentPageReference()) {
+  pageReference = immutablePageReference(pageReference);
+  activePageReference = pageReference;
   for (const listener of [...pageReferenceListeners]) {
     listener(pageReference);
   }
@@ -111,10 +117,122 @@ export async function generateUrl(pageReference) {
   return buildLocalUrl(pageReference);
 }
 
+// Evaluate the page reference before creating the Promise: accessor failures
+// belong to the call, while invalid references resolve to a raw null value.
+export function generatePageReferenceUrl(pageReference) {
+  return Promise.resolve(pageReferenceUrl(pageReference));
+}
+
 export async function navigate(pageReference, options = {}) {
+  const current = currentPageReference();
+  if (pageReference?.type === "standard__navItemPage" &&
+      current.type === pageReference.type &&
+      pageReference.attributes?.apiName === current.attributes.apiName) {
+    const url = withPageReferenceState(`/lwc/preview/tab/${enc(pageReference.attributes.apiName)}`, pageReference.state);
+    const state = {};
+    for (const [key, value] of new URL(url, window.location.href).searchParams) {
+      if (key.includes("__")) state[key] = value;
+    }
+    // A state transition on the current tab replaces its query and wire value
+    // without loading another document or creating another history entry.
+    window.history.replaceState(window.history.state, "", url);
+    emitPageReference({ type: pageReference.type, attributes: { ...pageReference.attributes }, state });
+    return url;
+  }
   const url = await generateUrl(pageReference);
   navigateToUrl(url, options);
   return url;
+}
+
+function immutablePageReference(pageReference) {
+  const attributes = readOnlyObject({ ...pageReference.attributes });
+  const state = readOnlyObject({ ...pageReference.state });
+  return readOnlyObject({ ...pageReference, attributes, state });
+}
+
+function readOnlyObject(value) {
+  return new Proxy(Object.freeze(value), {
+    set: () => false,
+    deleteProperty: () => false,
+    defineProperty: () => false,
+    setPrototypeOf: () => false,
+  });
+}
+
+function pageReferenceUrl(ref) {
+  if (ref === null || ref === undefined) {
+    return readConfig().pageReference?.type === "standard__webPage"
+      ? "javascript:void(0);" : "/lightning";
+  }
+  const type = ref.type;
+  const attrs = ref.attributes || {};
+  const state = ref.state;
+  let url;
+  switch (type) {
+    case "standard__objectPage":
+      // Native VF Lightning Out controls at APIs 59/67 resolve a no-op URL.
+      // Read actionName before returning so accessor errors stay synchronous.
+      if (readConfig().pageReference?.type === "standard__webPage") {
+        void attrs.actionName;
+        return "javascript:void(0);";
+      }
+      if (!attrs.objectApiName || !attrs.actionName) return null;
+      url = `/lightning/o/${enc(attrs.objectApiName)}/${enc(attrs.actionName)}`;
+      break;
+    case "standard__recordPage":
+      if (!attrs.recordId || !attrs.actionName) return null;
+      url = `/lightning/r/${enc(attrs.objectApiName || "Record")}/${enc(attrs.recordId)}/${enc(attrs.actionName)}`;
+      break;
+    case "standard__recordRelationshipPage":
+      if (!attrs.recordId || !attrs.relationshipApiName || !attrs.actionName) return null;
+      url = `/lightning/r/${enc(attrs.objectApiName || "Record")}/${enc(attrs.recordId)}/related/${enc(attrs.relationshipApiName)}/${enc(attrs.actionName)}`;
+      break;
+    case "standard__namedPage":
+      if (!attrs.pageName) return null;
+      url = `/lightning/page/${enc(attrs.pageName)}`;
+      break;
+    case "standard__navItemPage":
+      if (!attrs.apiName) return null;
+      url = `/lightning/n/${enc(attrs.apiName)}`;
+      break;
+    case "standard__component":
+      if (!attrs.componentName) return null;
+      url = `/lightning/cmp/${enc(attrs.componentName)}`;
+      break;
+    case "standard__webPage":
+      if (!attrs.url) return null;
+      url = `/lightning/webpage/${enc(attrs.url)}`;
+      break;
+    case "standard__app": {
+      url = attrs.appTarget ? `/lightning/app/${enc(attrs.appTarget)}` : "/lightning";
+      if (attrs.appTarget && attrs.pageRef) {
+        const nested = pageReferenceUrl(attrs.pageRef);
+        if (nested === null) return null;
+        url += nested.startsWith("/lightning/") ? nested.slice("/lightning".length) : nested;
+      }
+      break;
+    }
+    case "standard__quickAction":
+      return attrs.apiName ? buildLocalUrl(ref) : null;
+    default:
+      // Other supported container types retain their local host behavior.
+      if (SUPPORTED_PAGE_REFERENCE_TYPES.has(type) || String(type || "").startsWith("comm__")) {
+        return buildLocalUrl(ref);
+      }
+      return null;
+  }
+  return withPageReferenceState(url, state);
+}
+
+function withPageReferenceState(path, state) {
+  const query = [];
+  for (const [key, value] of Object.entries(state || {})) {
+    if (value === undefined) continue;
+    const encodedKey = encodeURIComponent(key);
+    query.push(value === null ? encodedKey : `${encodedKey}=${encodeURIComponent(String(value))}`);
+  }
+  if (!query.length) return path;
+  return `${path}${path.includes("?") ? "&" : "?"}${query.join("&")}`;
 }
 
 export function navigateToUrl(url, options = {}) {

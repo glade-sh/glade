@@ -1,0 +1,153 @@
+{
+  "class_prefix": "FamilyL08Review",
+  "controller": "public with sharing class __CTRL__ {\n @AuraEnabled(cacheable=true) public static String topFailure(String value) {\n  throw new __TOP_EXCEPTION__('L08 top-level custom');\n }\n @AuraEnabled(cacheable=true) public static __DTO__ populatedDTO(String value) {\n  __DTO__ out = new __DTO__();\n  out.label = value; out.count = 7; out.visibleField = 'VISIBLE';\n  out.hidden = 'POPULATED'; out.hiddenField = 'POPULATED FIELD';\n  return out;\n }\n}\n",
+  "dto": "public class __DTO__ {\n @AuraEnabled public String label {get;set;}\n @AuraEnabled public Integer count {get;set;}\n @AuraEnabled public String nil {get;set;}\n @AuraEnabled public String visibleField;\n public String hidden {get;set;}\n public String hiddenField;\n}\n",
+  "exception": "public class __TOP_EXCEPTION__ extends Exception {}",
+  "cases": [
+    {
+      "id": "c_control_top_custom_imperative",
+      "group": "error-shapes",
+      "kind": "compile",
+      "runtime_id": "r_control_top_custom_imperative",
+      "js": "import { LightningElement, wire } from 'lwc';\nimport call from '@salesforce/apex/__CTRL__.topFailure';\nimport { refreshApex } from '@salesforce/apex';\nexport default class FamilyBridge extends LightningElement {\n result=\"\";\nnorm(value) {\n if (value === undefined) return {type:'undefined'};\n if (value === null) return null;\n if (Array.isArray(value)) return value.map(v=>this.norm(v));\n if (typeof value === 'object') {\n  const out={}; if (value instanceof Error) { out.name=value.name; out.message=value.message; }\n  for (const key of Object.keys(value).sort()) {\n   if (key==='stackTrace') { out.stackTracePresent=!!value[key]; continue; }\n   out[key]=this.norm(value[key]);\n  } return out;\n }\n return value;\n}\nerror(error) { return this.norm(error); }\npublish(value) { this.result=JSON.stringify(this.norm(value)); }\nasync run() { try {\nthis.publish({value:await call({value:'CONTROL'})});\n} catch(error) { this.publish({rejected:this.error(error)}); } }\n}\n",
+      "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "source_index": 1
+    },
+    {
+      "id": "c_control_populated_dto_imperative",
+      "group": "serialization",
+      "kind": "compile",
+      "runtime_id": "r_control_populated_dto_imperative",
+      "js": "import { LightningElement, wire } from 'lwc';\nimport call from '@salesforce/apex/__CTRL__.populatedDTO';\nimport { refreshApex } from '@salesforce/apex';\nexport default class FamilyBridge extends LightningElement {\n result=\"\";\nnorm(value) {\n if (value === undefined) return {type:'undefined'};\n if (value === null) return null;\n if (Array.isArray(value)) return value.map(v=>this.norm(v));\n if (typeof value === 'object') {\n  const out={}; if (value instanceof Error) { out.name=value.name; out.message=value.message; }\n  for (const key of Object.keys(value).sort()) {\n   if (key==='stackTrace') { out.stackTracePresent=!!value[key]; continue; }\n   out[key]=this.norm(value[key]);\n  } return out;\n }\n return value;\n}\nerror(error) { return this.norm(error); }\npublish(value) { this.result=JSON.stringify(this.norm(value)); }\nasync run() { try {\nthis.publish({value:await call({value:'CONTROL'})});\n} catch(error) { this.publish({rejected:this.error(error)}); } }\n}\n",
+      "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "source_index": 3
+    },
+    {
+      "id": "c_control_top_custom_wire",
+      "group": "error-shapes",
+      "kind": "compile",
+      "runtime_id": "r_control_top_custom_wire",
+      "js": "import { LightningElement, wire } from 'lwc';\nimport call from '@salesforce/apex/__CTRL__.topFailure';\nimport { refreshApex } from '@salesforce/apex';\nexport default class FamilyBridge extends LightningElement {\n result=\"\";\nnorm(value) {\n if (value === undefined) return {type:'undefined'};\n if (value === null) return null;\n if (Array.isArray(value)) return value.map(v=>this.norm(v));\n if (typeof value === 'object') {\n  const out={}; if (value instanceof Error) { out.name=value.name; out.message=value.message; }\n  for (const key of Object.keys(value).sort()) {\n   if (key==='stackTrace') { out.stackTracePresent=!!value[key]; continue; }\n   out[key]=this.norm(value[key]);\n  } return out;\n }\n return value;\n}\nerror(error) { return this.norm(error); }\npublish(value) { this.result=JSON.stringify(this.norm(value)); }\n_response; _waiter; value=undefined; first=undefined; second=undefined; mode=undefined;\n @wire(call, {value:'$value'}) receive(response) {\n  this._response=response;\n  if (this._waiter && (response.data!==undefined || response.error!==undefined)) {\n   const waiter=this._waiter; this._waiter=null; waiter(response);\n  }\n }\n activate(input) {\n  return new Promise(resolve=>{this._waiter=resolve;\n   this.value=input.value; this.first=input.first; this.second=input.second; this.mode=input.mode;\n  });\n }\nasync run() { try {\nconst response=await this.activate({value:'CONTROL'}); this.publish({data:response.data,error:response.error});\n} catch(error) { this.publish({rejected:this.error(error)}); } }\n}\n",
+      "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "source_index": 5
+    },
+    {
+      "id": "c_control_populated_dto_wire",
+      "group": "serialization",
+      "kind": "compile",
+      "runtime_id": "r_control_populated_dto_wire",
+      "js": "import { LightningElement, wire } from 'lwc';\nimport call from '@salesforce/apex/__CTRL__.populatedDTO';\nimport { refreshApex } from '@salesforce/apex';\nexport default class FamilyBridge extends LightningElement {\n result=\"\";\nnorm(value) {\n if (value === undefined) return {type:'undefined'};\n if (value === null) return null;\n if (Array.isArray(value)) return value.map(v=>this.norm(v));\n if (typeof value === 'object') {\n  const out={}; if (value instanceof Error) { out.name=value.name; out.message=value.message; }\n  for (const key of Object.keys(value).sort()) {\n   if (key==='stackTrace') { out.stackTracePresent=!!value[key]; continue; }\n   out[key]=this.norm(value[key]);\n  } return out;\n }\n return value;\n}\nerror(error) { return this.norm(error); }\npublish(value) { this.result=JSON.stringify(this.norm(value)); }\n_response; _waiter; value=undefined; first=undefined; second=undefined; mode=undefined;\n @wire(call, {value:'$value'}) receive(response) {\n  this._response=response;\n  if (this._waiter && (response.data!==undefined || response.error!==undefined)) {\n   const waiter=this._waiter; this._waiter=null; waiter(response);\n  }\n }\n activate(input) {\n  return new Promise(resolve=>{this._waiter=resolve;\n   this.value=input.value; this.first=input.first; this.second=input.second; this.mode=input.mode;\n  });\n }\nasync run() { try {\nconst response=await this.activate({value:'CONTROL'}); this.publish({data:response.data,error:response.error});\n} catch(error) { this.publish({rejected:this.error(error)}); } }\n}\n",
+      "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "source_index": 7
+    },
+    {
+      "id": "c_review_controller",
+      "group": "serialization",
+      "kind": "compile",
+      "apex_base": "controller",
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "source_index": 8
+    },
+    {
+      "id": "c_review_dto",
+      "group": "serialization",
+      "kind": "compile",
+      "apex_base": "dto",
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "source_index": 9
+    },
+    {
+      "id": "c_review_top_exception",
+      "group": "error-shapes",
+      "kind": "compile",
+      "apex_base": "exception",
+      "expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      },
+      "source_index": 10
+    },
+    {
+      "id": "r_control_top_custom_imperative",
+      "group": "error-shapes",
+      "kind": "runtime",
+      "js": "import { LightningElement, wire } from 'lwc';\nimport call from '@salesforce/apex/__CTRL__.topFailure';\nimport { refreshApex } from '@salesforce/apex';\nexport default class FamilyBridge extends LightningElement {\n result=\"\";\nnorm(value) {\n if (value === undefined) return {type:'undefined'};\n if (value === null) return null;\n if (Array.isArray(value)) return value.map(v=>this.norm(v));\n if (typeof value === 'object') {\n  const out={}; if (value instanceof Error) { out.name=value.name; out.message=value.message; }\n  for (const key of Object.keys(value).sort()) {\n   if (key==='stackTrace') { out.stackTracePresent=!!value[key]; continue; }\n   out[key]=this.norm(value[key]);\n  } return out;\n }\n return value;\n}\nerror(error) { return this.norm(error); }\npublish(value) { this.result=JSON.stringify(this.norm(value)); }\nasync run() { try {\nthis.publish({value:await call({value:'CONTROL'})});\n} catch(error) { this.publish({rejected:this.error(error)}); } }\n}\n",
+      "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
+      "expected": {
+        "59.0": "DOM|{\"rejected\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV59LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}",
+        "67.0": "DOM|{\"rejected\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV67LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}"
+      },
+      "compile_expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      }
+    },
+    {
+      "id": "r_control_populated_dto_imperative",
+      "group": "serialization",
+      "kind": "runtime",
+      "js": "import { LightningElement, wire } from 'lwc';\nimport call from '@salesforce/apex/__CTRL__.populatedDTO';\nimport { refreshApex } from '@salesforce/apex';\nexport default class FamilyBridge extends LightningElement {\n result=\"\";\nnorm(value) {\n if (value === undefined) return {type:'undefined'};\n if (value === null) return null;\n if (Array.isArray(value)) return value.map(v=>this.norm(v));\n if (typeof value === 'object') {\n  const out={}; if (value instanceof Error) { out.name=value.name; out.message=value.message; }\n  for (const key of Object.keys(value).sort()) {\n   if (key==='stackTrace') { out.stackTracePresent=!!value[key]; continue; }\n   out[key]=this.norm(value[key]);\n  } return out;\n }\n return value;\n}\nerror(error) { return this.norm(error); }\npublish(value) { this.result=JSON.stringify(this.norm(value)); }\nasync run() { try {\nthis.publish({value:await call({value:'CONTROL'})});\n} catch(error) { this.publish({rejected:this.error(error)}); } }\n}\n",
+      "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
+      "expected": {
+        "59.0": "DOM|{\"value\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"}}",
+        "67.0": "DOM|{\"value\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"}}"
+      },
+      "compile_expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      }
+    },
+    {
+      "id": "r_control_top_custom_wire",
+      "group": "error-shapes",
+      "kind": "runtime",
+      "js": "import { LightningElement, wire } from 'lwc';\nimport call from '@salesforce/apex/__CTRL__.topFailure';\nimport { refreshApex } from '@salesforce/apex';\nexport default class FamilyBridge extends LightningElement {\n result=\"\";\nnorm(value) {\n if (value === undefined) return {type:'undefined'};\n if (value === null) return null;\n if (Array.isArray(value)) return value.map(v=>this.norm(v));\n if (typeof value === 'object') {\n  const out={}; if (value instanceof Error) { out.name=value.name; out.message=value.message; }\n  for (const key of Object.keys(value).sort()) {\n   if (key==='stackTrace') { out.stackTracePresent=!!value[key]; continue; }\n   out[key]=this.norm(value[key]);\n  } return out;\n }\n return value;\n}\nerror(error) { return this.norm(error); }\npublish(value) { this.result=JSON.stringify(this.norm(value)); }\n_response; _waiter; value=undefined; first=undefined; second=undefined; mode=undefined;\n @wire(call, {value:'$value'}) receive(response) {\n  this._response=response;\n  if (this._waiter && (response.data!==undefined || response.error!==undefined)) {\n   const waiter=this._waiter; this._waiter=null; waiter(response);\n  }\n }\n activate(input) {\n  return new Promise(resolve=>{this._waiter=resolve;\n   this.value=input.value; this.first=input.first; this.second=input.second; this.mode=input.mode;\n  });\n }\nasync run() { try {\nconst response=await this.activate({value:'CONTROL'}); this.publish({data:response.data,error:response.error});\n} catch(error) { this.publish({rejected:this.error(error)}); } }\n}\n",
+      "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
+      "expected": {
+        "59.0": "DOM|{\"data\":{\"type\":\"undefined\"},\"error\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV59LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}",
+        "67.0": "DOM|{\"data\":{\"type\":\"undefined\"},\"error\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV67LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}"
+      },
+      "compile_expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      }
+    },
+    {
+      "id": "r_control_populated_dto_wire",
+      "group": "serialization",
+      "kind": "runtime",
+      "js": "import { LightningElement, wire } from 'lwc';\nimport call from '@salesforce/apex/__CTRL__.populatedDTO';\nimport { refreshApex } from '@salesforce/apex';\nexport default class FamilyBridge extends LightningElement {\n result=\"\";\nnorm(value) {\n if (value === undefined) return {type:'undefined'};\n if (value === null) return null;\n if (Array.isArray(value)) return value.map(v=>this.norm(v));\n if (typeof value === 'object') {\n  const out={}; if (value instanceof Error) { out.name=value.name; out.message=value.message; }\n  for (const key of Object.keys(value).sort()) {\n   if (key==='stackTrace') { out.stackTracePresent=!!value[key]; continue; }\n   out[key]=this.norm(value[key]);\n  } return out;\n }\n return value;\n}\nerror(error) { return this.norm(error); }\npublish(value) { this.result=JSON.stringify(this.norm(value)); }\n_response; _waiter; value=undefined; first=undefined; second=undefined; mode=undefined;\n @wire(call, {value:'$value'}) receive(response) {\n  this._response=response;\n  if (this._waiter && (response.data!==undefined || response.error!==undefined)) {\n   const waiter=this._waiter; this._waiter=null; waiter(response);\n  }\n }\n activate(input) {\n  return new Promise(resolve=>{this._waiter=resolve;\n   this.value=input.value; this.first=input.first; this.second=input.second; this.mode=input.mode;\n  });\n }\nasync run() { try {\nconst response=await this.activate({value:'CONTROL'}); this.publish({data:response.data,error:response.error});\n} catch(error) { this.publish({rejected:this.error(error)}); } }\n}\n",
+      "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
+      "expected": {
+        "59.0": "DOM|{\"data\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"},\"error\":{\"type\":\"undefined\"}}",
+        "67.0": "DOM|{\"data\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"},\"error\":{\"type\":\"undefined\"}}"
+      },
+      "compile_expected": {
+        "59.0": "COMPILE_OK",
+        "67.0": "COMPILE_OK"
+      }
+    }
+  ]
+}

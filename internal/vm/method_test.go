@@ -617,10 +617,19 @@ func TestExecRegisteredStaticMethod(t *testing.T) {
 	}
 }
 
+// A06 Y011/Y012 capture both display calls for a native nested empty class.
 func TestExecStringValueOfNestedClassUsesLocalName(t *testing.T) {
+	// HTTP shadow control S020 captures the [] display of an empty source class.
 	program, err := CompileAnonymous(`
 Outer.Inner nestedValue = new Outer.Inner();
-System.assertEquals('Inner:{}', String.valueOf(nestedValue));
+System.assertEquals('Inner:[]', String.valueOf(nestedValue));
+System.assertEquals('Inner:[]', nestedValue.toString());
+A06DisplayOuter.Empty emptyValue = new A06DisplayOuter.Empty();
+String expectedText='Empty:[]';
+String observedText=String.valueOf(emptyValue);
+System.assert(expectedText.equals(observedText),'Y011 expected <'+expectedText+'> actual <'+observedText+'>');
+observedText=emptyValue.toString();
+System.assert(expectedText.equals(observedText),'Y012 expected <'+expectedText+'> actual <'+observedText+'>');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -630,6 +639,12 @@ System.assertEquals('Inner:{}', String.valueOf(nestedValue));
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{Name: "Outer.Inner"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "A06DisplayOuter"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "A06DisplayOuter.Empty"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
@@ -771,7 +786,7 @@ System.assertEquals(1, CouponReApplier.reapplyCartCoupons(values));
 		ClassName:  "CouponReApplier",
 		IsStatic:   true,
 		ReturnType: "Integer",
-		Params:     []Param{{Name: "values", Type: "Map<Id, List<CartItemLine__c>>"}},
+		Params:     []Param{{Name: "values", Type: "Map<Id, List<BasketLine__c>>"}},
 		Program:    methodProgram,
 	}); err != nil {
 		t.Fatal(err)
@@ -3758,7 +3773,8 @@ Date normalized = (Date)Date.valueOf('2026-05-02 00:00:00');
 System.assertEquals(Date.newInstance(2026, 5, 2), normalized);
 System.assertEquals(Date.valueOf('2026-05-02 00:00:00'), Date.newInstance(2026, 5, 2));
 System.assertEquals(DateTime.newInstance(2026, 5, 2, 0, 0, 0), Date.newInstance(2026, 5, 2));
-System.assertEquals(Date.valueOf('2026-05-02 00:00:00'), '2026-05-02');
+// A30 J084/J088: Date/String comparison rejects; verify explicit date text.
+System.assertEquals('2026-05-02', String.valueOf(Date.valueOf('2026-05-02 00:00:00')));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4470,7 +4486,8 @@ System.assertEquals('static', Child.Called);
 	}
 }
 
-func TestExecTestCreateStubSObjectGetFallsThroughWithoutMethodMetadata(t *testing.T) {
+func TestExecTestCreateStubRejectsSObjectBeforeMemberDispatch(t *testing.T) {
+	// A30 native J011 records the native assertion expectations.
 	program, err := CompileAnonymous(`
 Order orderStub = (Order)Test.createStub(Order.class, new Provider());
 orderStub.put('Status', 'Draft');
@@ -4513,12 +4530,15 @@ System.assertEquals('Draft', orderStub.get('Status'));
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "System.TypeException" || runtimeErr.Message != "Test.createStub() can only be invoked on user defined types." {
+		t.Fatalf("error = %v", err)
 	}
 }
 
-func TestExecTestCreateStubDynamicMethodWithoutMetadataCallsProvider(t *testing.T) {
+func TestExecTestCreateStubRejectsSObjectBeforeDynamicDispatch(t *testing.T) {
+	// A30 native J011 records the native assertion expectations.
 	program, err := CompileAnonymous(`
 Order orderStub = (Order)Test.createStub(Order.class, new Provider());
 System.assertEquals('handled', orderStub.get());
@@ -4560,8 +4580,10 @@ System.assertEquals('handled', orderStub.get());
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "System.TypeException" || runtimeErr.Message != "Test.createStub() can only be invoked on user defined types." {
+		t.Fatalf("error = %v", err)
 	}
 }
 
@@ -12039,8 +12061,10 @@ func TestRuntimeRejectsRecursiveChainedConstructor(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = machine.Execute(program)
-	if err == nil || !strings.Contains(err.Error(), "recursive constructor invocation Loopy.<init>") {
-		t.Fatalf("err = %v, want recursive constructor invocation", err)
+	// A04 C003 captures this uncaught recursion limit at API 62 and 67.
+	want := "System.LimitException: Maximum stack depth reached: 1001"
+	if err == nil || err.Error() != want {
+		t.Fatalf("err = %v, want %s", err, want)
 	}
 }
 
@@ -12887,6 +12911,46 @@ System.assertEquals('concrete', Util.pick(records));
 	}
 }
 
+func TestRuntimeTypedNullCollectionRejectsUnrelatedDerivedOverload(t *testing.T) {
+	mapProgram, err := CompileAnonymous("return 'map';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	listProgram, err := CompileAnonymous("return 'list';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child child = new Child();
+Map<Id, SObject> records = null;
+System.assertEquals('map', child.pick(records));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Methods: map[string]Method{
+			"pick": {Name: "Base.pick", ClassName: "Base", ReturnType: "String", Params: []Param{{Name: "records", Type: "Map<Id,SObject>"}}, Program: mapProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Methods: map[string]Method{
+			"pick": {Name: "Child.pick", ClassName: "Child", ReturnType: "String", Params: []Param{{Name: "records", Type: "List<SObject>"}}, Program: listProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeNumericOverloadChoosesNarrowestWidening(t *testing.T) {
 	longProgram, err := CompileAnonymous("return 'long';")
 	if err != nil {
@@ -12902,7 +12966,7 @@ func TestRuntimeNumericOverloadChoosesNarrowestWidening(t *testing.T) {
 	}
 	program, err := CompileAnonymous(`
 System.assertEquals('long', Util.pick(1));
-System.assertEquals('decimal', Util.pickDecimal(1));
+System.assertEquals('double', Util.pickDecimal(1));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -13002,7 +13066,7 @@ func TestRuntimeOverloadUsesPairwiseSpecificity(t *testing.T) {
 	}
 }
 
-func TestRuntimeNullOverloadChoosesMostSpecificType(t *testing.T) {
+func TestRuntimeNullOverloadPreservesNativeAmbiguity(t *testing.T) {
 	stringProgram, err := CompileAnonymous("return 'string';")
 	if err != nil {
 		t.Fatal(err)
@@ -13011,7 +13075,9 @@ func TestRuntimeNullOverloadChoosesMostSpecificType(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	program, err := CompileAnonymous("System.assertEquals('string', Util.pick(null));")
+	// Type-system R167 rejects this call at both API 62 and 67. Raw VM dispatch
+	// must reject it too, even when the semantic checker was not invoked.
+	program, err := CompileAnonymous("Util.pick(null);")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -13024,8 +13090,8 @@ func TestRuntimeNullOverloadChoosesMostSpecificType(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "ambiguous overload") {
+		t.Fatalf("expected native null ambiguity, got %v", err)
 	}
 }
 
@@ -14036,11 +14102,16 @@ func TestExecObjectToStringDispatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// HTTP shadow control S020 captures the [] display of an empty source class.
 	program, err := CompileAnonymous(`
 Named named = new Named();
 Plain plain = new Plain();
-System.assertEquals('custom', named.toString());
-System.assertEquals('Plain:{}', plain.toString());
+String observedText = named.toString();
+String expectedText = 'custom';
+System.assert(expectedText.equals(observedText), 'Y022 expected <' + expectedText + '> actual <' + observedText + '>');
+observedText = plain.toString();
+expectedText = 'Plain:[]';
+System.assert(expectedText.equals(observedText), 'Y021 expected <' + expectedText + '> actual <' + observedText + '>');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -14088,6 +14159,7 @@ try {
 }
 
 func TestExecObjectToStringUsedForDebugAndAssertMessages(t *testing.T) {
+	// A30 native J018 records the native assertion expectations.
 	toStringProgram, err := CompileAnonymous("return 'named-value';")
 	if err != nil {
 		t.Fatal(err)
@@ -14095,7 +14167,7 @@ func TestExecObjectToStringUsedForDebugAndAssertMessages(t *testing.T) {
 	program, err := CompileAnonymous(`
 Named named = new Named();
 System.debug(named);
-System.assertEquals('expected-value', named);
+System.assertEquals(null, named);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -14110,8 +14182,10 @@ System.assertEquals('expected-value', named);
 		t.Fatal(err)
 	}
 	result, err := machine.Execute(program)
-	if err == nil || !strings.Contains(err.Error(), "actual <named-value>") {
-		t.Fatalf("error = %v", err)
+	const wantMessage = "Assertion Failed: Expected: null, Actual: named-value"
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || exceptionQualifiedTypeName(runtimeErr.Type) != "System.AssertException" || runtimeErr.ExceptionMessage() != wantMessage {
+		t.Fatalf("error = %#v, want System.AssertException with message %q", err, wantMessage)
 	}
 	if len(result.Debug) != 1 || result.Debug[0] != "named-value" {
 		t.Fatalf("debug = %#v", result.Debug)
@@ -14923,6 +14997,19 @@ func TestExecAssignIDToStringUses18CharacterID(t *testing.T) {
 Id accountId = Id.valueOf('001000000000001');
 String text = accountId;
 System.assertEquals('001000000000001AAA', text);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecIDToStringUses18CharacterID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = Id.valueOf('001000000000001');
+System.assertEquals('001000000000001AAA', accountId.toString());
 `)
 	if err != nil {
 		t.Fatal(err)

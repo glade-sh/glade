@@ -11,22 +11,38 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// Setup data work is charged to each test method's
+// outer budget. Preserve only the counters captured by these native controls.
+func (vm *VM) RestoreTestSetupLimits(used Limits) {
+	vm.limits.Queries = used.Queries
+	vm.limits.QueryRows = used.QueryRows
+	vm.limits.DMLStatements = used.DMLStatements
+	vm.limits.DMLRows = used.DMLRows
+}
+
 func (vm *VM) testSetMock(args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Null, fmt.Errorf("Test.setMock expects mock type and mock instance")
 	}
 	if err := vm.requireTestContext("Test.setMock"); err != nil {
-		return Null, err
+		return Null, newExceptionError("TypeException", "Test.setMock() can only be called from test methods")
+	}
+	if args[0].Kind == ValueNull {
+		// A null type token is rejected before validating the mock.
+		return Null, newExceptionError("System.NullPointerException", "Null type token")
 	}
 	mockType, ok := testMockTypeName(args[0])
 	if !ok {
 		return Null, fmt.Errorf("Test.setMock expects mock type")
 	}
-	if mockType == "WebServiceMock" {
+	if strings.EqualFold(mockType, "WebServiceMock") || strings.EqualFold(mockType, "System.WebServiceMock") {
 		vm.testContext.WebServiceMock = args[1]
 		return Null, nil
 	}
-	if mockType != "HttpCalloutMock" {
+	if !strings.EqualFold(mockType, "HttpCalloutMock") && !strings.EqualFold(mockType, "System.HttpCalloutMock") {
+		if strings.EqualFold(mockType, "String") {
+			return Null, newExceptionError("System.TypeException", "Supplied type is not an interface")
+		}
 		return Null, unsupportedCallError("Test.setMock " + mockType + " mock surface")
 	}
 	vm.testContext.HTTPMock = args[1]
@@ -46,16 +62,16 @@ func (vm *VM) testSetContinuationResponse(args []Value) (Value, error) {
 	return Null, nil
 }
 func (vm *VM) continuationGetResponse(args []Value) (Value, error) {
-	if len(args) != 1 || args[0].Kind != ValueString {
+	if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) {
 		return Null, fmt.Errorf("Continuation.getResponse expects label String")
 	}
-	if vm.testContext == nil || vm.testContext.ContinuationResponses == nil {
-		return Null, unsupportedCallError("Continuation.getResponse local continuation callout surface")
+	if args[0].Kind == ValueNull || vm.testContext == nil || vm.testContext.ContinuationResponses == nil {
+		return Null, nil
 	}
 	if response, ok := vm.testContext.ContinuationResponses[args[0].Text]; ok {
 		return response, nil
 	}
-	return Null, unsupportedCallError("Continuation.getResponse local continuation callout surface")
+	return Null, nil
 }
 func (vm *VM) testInvokeContinuationMethod(args []Value, result *Result) (Value, error) {
 	if len(args) != 2 || args[0].Kind != ValueObject || args[1].Kind != ValueObject || !strings.EqualFold(args[1].Type, "Continuation") {
@@ -216,12 +232,24 @@ func (vm *VM) testCreateStub(args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Null, fmt.Errorf("Test.createStub expects Type and StubProvider")
 	}
+	// A null type is dereferenced first.
+	if args[0].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+	}
 	if err := vm.requireTestContext("Test.createStub"); err != nil {
-		return Null, err
+		return Null, newExceptionError("System.TypeException", "Test.createStub() can only be called from test methods")
 	}
 	stubbedType, ok := testMockTypeName(args[0])
 	if !ok || stubbedType == "" {
 		return Null, fmt.Errorf("Test.createStub expects Type")
+	}
+	if args[1].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "stubProvider cannot be null")
+	}
+	// T042/T043/J011/J062: reject catalog/schema sObjects, while source
+	// classes remain stubbable even when their names end in ChangeEvent.
+	if strings.EqualFold(stubbedType, "String") || isCommonSObjectTypeName(stubbedType) || vm.isSObjectType(stubbedType) {
+		return Null, newExceptionError("System.TypeException", "Test.createStub() can only be invoked on user defined types.")
 	}
 	if args[1].Kind != ValueObject || !vm.typeMatches(args[1].Type, "StubProvider", make(map[string]bool)) {
 		return Null, fmt.Errorf("Test.createStub expects StubProvider")
@@ -314,11 +342,21 @@ func (vm *VM) stubQueryRowFromMap(objectName string, fields Value) (Value, error
 	return row, nil
 }
 func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
-	if len(args) != 2 || !isSObjectTypeToken(args[0]) || args[1].Kind != ValueString {
+	// Test context is checked before either nullable argument.
+	if err := vm.requireTestContext("Test.loadData"); err != nil {
+		return Null, newExceptionError("System.TypeException", "Test.loadData() can only be called from test methods")
+	}
+	if len(args) != 2 {
 		return Null, fmt.Errorf("Test.loadData expects Schema.SObjectType and static resource name")
 	}
-	if err := vm.requireTestContext("Test.loadData"); err != nil {
-		return Null, err
+	if args[0].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "sObject type token cannot be null")
+	}
+	if args[1].Kind == ValueNull {
+		return Null, newExceptionError("System.NullPointerException", "staticResourceName cannot be null")
+	}
+	if !isSObjectTypeToken(args[0]) || args[1].Kind != ValueString {
+		return Null, fmt.Errorf("Test.loadData expects Schema.SObjectType and static resource name")
 	}
 	objectName, err := vm.schemaDescribeObjectName(args[0])
 	if err != nil {
@@ -329,7 +367,7 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 		return Null, err
 	}
 	if !ok {
-		return Null, newExceptionError("StringException", fmt.Sprintf("Test.loadData static resource %s not found", args[1].Text))
+		return Null, newExceptionError("System.NullPointerException", "Static Resource not found: "+args[1].Text)
 	}
 	reader := csv.NewReader(strings.NewReader(content))
 	reader.TrimLeadingSpace = true
@@ -339,7 +377,7 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 	}
 	out := typedList("List<" + objectName + ">")
 	if len(rows) == 0 {
-		return out, nil
+		return Null, newExceptionError("System.StringException", "Static Resource has no content: "+args[1].Text)
 	}
 	headers := rows[0]
 	if err := vm.validateTestLoadDataHeaders(objectName, headers); err != nil {
@@ -372,7 +410,7 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 		out.List = append(out.List, record)
 	}
 	if len(out.List) == 0 {
-		return out, nil
+		return Null, newExceptionError("System.StringException", "Static Resource has no content: "+args[1].Text)
 	}
 	if _, err := vm.applyDML("insert", out, true, "", dml.Options{}, result); err != nil {
 		return Null, err
@@ -400,7 +438,7 @@ func (vm *VM) validateTestLoadDataHeaders(objectName string, headers []string) e
 			continue
 		}
 		if _, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, fieldName); !ok {
-			return newExceptionError("StringException", fmt.Sprintf("Test.loadData %s CSV header contains Unknown field %s", objectName, fieldName))
+			return newExceptionError("System.StringException", "Unknown field: "+fieldName)
 		}
 	}
 	return nil

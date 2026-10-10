@@ -79,12 +79,15 @@ func BindInputFileUpload(req *http.Request, fieldName string) (InputFileUpload, 
 	return InputFileUpload{}, fmt.Errorf("visualforce inputFile upload part %s not found", fieldName)
 }
 
-func renderApexInputFile(node *MarkupNode, _ *RenderContext) (string, error) {
+func renderApexInputFile(node *MarkupNode, ctx *RenderContext) (string, error) {
 	fieldName := inputFileUploadFieldName(node)
 	if fieldName == "" {
 		fieldName = "file"
 	}
-	id := strings.TrimSpace(node.Attribute("id"))
+	id := visualforceExplicitComponentClientID(node, ctx)
+	if id == "" {
+		id = strings.TrimSpace(node.Attribute("id"))
+	}
 	if id == "" {
 		id = fieldName
 	}

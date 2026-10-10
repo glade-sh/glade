@@ -3,8 +3,22 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import test from "node:test";
-import { chromium } from "playwright";
+import { pathToFileURL } from "node:url";
 import { repoRoot } from "./helpers.mjs";
+
+const args = process.argv.slice(2);
+const serveOnly = args.length === 2 && args[0] === "--serve-only" && args[1] === "--port=8942";
+if (!serveOnly && args.length !== 0) {
+  throw new Error("expected no arguments or exactly --serve-only --port=8942; host is fixed at 127.0.0.1");
+}
+
+async function launchBrowser() {
+  const playwrightDir = process.env.GLADE_LWC_PLAYWRIGHT_MODULE;
+  const entry = playwrightDir ? pathToFileURL(path.join(playwrightDir, "index.mjs")).href : "playwright";
+  const { chromium } = await import(entry);
+  const executablePath = process.env.GLADE_LWC_BROWSER_EXECUTABLE;
+  return chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
+}
 
 function serveShellServiceFile(urlPath, res) {
   const normalizedPath = urlPath.replace(/\.mjs$/, ".js");
@@ -28,7 +42,7 @@ function serveShellServiceFile(urlPath, res) {
   res.end(fs.readFileSync(filePath));
 }
 
-function startShellServiceServer() {
+function startShellServiceServer({ port = 0 } = {}) {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://localhost");
     if (url.pathname === "/services.html") {
@@ -245,8 +259,10 @@ window.__serviceResults.community = {
     }
     serveShellServiceFile(url.pathname, res);
   });
-  return new Promise((resolve) => {
-    server.listen(0, "127.0.0.1", () => {
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, "127.0.0.1", () => {
+      server.off("error", reject);
       const { port } = server.address();
       resolve({
         baseURL: `http://127.0.0.1:${port}`,
@@ -256,10 +272,35 @@ window.__serviceResults.community = {
   });
 }
 
+async function serveFixture() {
+  const server = await startShellServiceServer({ port: 8942 });
+  process.stdout.write(`${JSON.stringify({ mode: "serve-only", url: `${server.baseURL}/services.html` })}\n`);
+  let stopping = false;
+  const stop = () => {
+    if (stopping) return;
+    stopping = true;
+    server.close().then(() => { process.exitCode = 0; }, (error) => {
+      process.stderr.write(`${error.message}\n`);
+      process.exitCode = 1;
+    });
+  };
+  process.on("SIGTERM", stop);
+  process.on("SIGINT", stop);
+}
+
+if (serveOnly) {
+  serveFixture().catch((error) => {
+    process.stderr.write(`${error.stack || error.message}\n`);
+    process.exitCode = 1;
+  });
+}
+
+if (!serveOnly) {
 test("navigation services generate URLs and stable unsupported errors", async () => {
   const server = await startShellServiceServer();
-  const browser = await chromium.launch({ headless: true });
+  let browser;
   try {
+    browser = await launchBrowser();
     const page = await browser.newPage();
     await page.goto(`${server.baseURL}/services.html`, { waitUntil: "networkidle" });
     const results = await page.evaluate(() => window.__serviceResults);
@@ -290,15 +331,16 @@ test("navigation services generate URLs and stable unsupported errors", async ()
     assert.equal(results.assignedUrl, "/lwc/preview/tab/Reports");
     assert.equal(results.externalAssignedUrl, "/lwc/preview/home?glade__unavailablePageReference=standard__externalRecordPage&glade__recordId=cms-404&glade__objectType=cms&c__source=button");
   } finally {
-    await browser.close();
+    await browser?.close();
     await server.close();
   }
 });
 
 test("services capture toasts and deliver in-page messages", async () => {
   const server = await startShellServiceServer();
-  const browser = await chromium.launch({ headless: true });
+  let browser;
   try {
+    browser = await launchBrowser();
     const page = await browser.newPage();
     await page.goto(`${server.baseURL}/services.html`, { waitUntil: "networkidle" });
     const results = await page.evaluate(() => window.__serviceResults);
@@ -307,8 +349,8 @@ test("services capture toasts and deliver in-page messages", async () => {
     assert.match(results.toastText, /Account updated/);
     assert.deepEqual(results.messages, [{ recordId: "001000000000001AAA" }]);
     assert.deepEqual(results.scopedMessages, [{ id: "one" }]);
-    assert.deepEqual(results.componentScope.first, [{ id: "first" }]);
-    assert.deepEqual(results.componentScope.second, [{ id: "second" }]);
+    assert.deepEqual(results.componentScope.first, [{ id: "first" }, { id: "second" }]);
+    assert.deepEqual(results.componentScope.second, [{ id: "first" }, { id: "second" }]);
     assert.deepEqual(results.componentScope.application, [{ id: "first" }, { id: "second" }]);
     assert.deepEqual(results.empMessages, [{ payload: { Name__c: "Probe" }, replayId: 1 }]);
     assert.equal(results.workspace.focused.label, "Reports");
@@ -319,7 +361,8 @@ test("services capture toasts and deliver in-page messages", async () => {
     assert.equal(results.community.routeRecordId, "001000000000001AAA");
     assert.equal(results.community.managedContent.title, "Welcome");
   } finally {
-    await browser.close();
+    await browser?.close();
     await server.close();
   }
 });
+}

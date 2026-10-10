@@ -15,6 +15,8 @@ type objectDMLPolicy struct {
 
 func dmlPolicyForObject(objectName string) *objectDMLPolicy {
 	switch {
+	case strings.EqualFold(objectName, "Task"):
+		return &taskDMLPolicy
 	case strings.EqualFold(objectName, "Opportunity"):
 		return &opportunityDMLPolicy
 	case strings.EqualFold(objectName, "Account"):

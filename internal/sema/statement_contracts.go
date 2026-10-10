@@ -15,18 +15,8 @@ type irStatementContext struct {
 	switchDepth int
 }
 
-func checkCustomExceptionNames(index typesys.Index) []diagnostic.Diagnostic {
-	var diagnostics []diagnostic.Diagnostic
-	for _, typ := range index.Types {
-		if skipProjectDiagnosticType(typ) || string(typ.Kind) != "class" || !strings.EqualFold(typ.SuperClass, "Exception") {
-			continue
-		}
-		if strings.HasSuffix(strings.ToLower(typ.Name), "exception") {
-			continue
-		}
-		diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA030", Message: fmt.Sprintf("custom exception class %q must end with Exception", typ.Name), File: typ.File, Range: &typ.Range})
-	}
-	return diagnostics
+func checkCustomExceptionNames(index typesys.Index, model *semaTypeMemberView) []diagnostic.Diagnostic {
+	return checkExceptionDeclarationsWithView(index, model)
 }
 
 func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, scope irSemaScope, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
@@ -52,7 +42,9 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 			case ir.OpThrow:
 				thrownType := a.inferIRExprType(inst.Expr, *currentScope, model, typ.Name)
 				if thrownType != "" && !semaAssignableToType("Exception", thrownType, model) {
-					diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, "throw requires an Exception value", bodyOffset+inst.Pos, source))
+					d := statementContractDiagnostic(typ, member, "throw requires an Exception value", bodyOffset+inst.Pos, source)
+					d.NativeMessage = "Throw expression must be of type exception: " + thrownType
+					diagnostics = append(diagnostics, d)
 				}
 			case ir.OpSwitch:
 				selectorType := a.inferIRExprType(inst.Expr, *currentScope, model, typ.Name)
@@ -137,15 +129,21 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 					for _, catchType := range catchClause.Types {
 						key := normalizeName(catchType)
 						if seenCatchTypes[key] {
-							diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, "duplicate catch type", bodyOffset+catchClause.Pos, source))
+							d := statementContractDiagnostic(typ, member, "duplicate catch type", bodyOffset+catchClause.Pos, source)
+							d.NativeMessage = "Exception type already caught: " + exceptionDiagnosticType(resolveNestedTypeReference(model, typ.Name, catchType), model)
+							diagnostics = append(diagnostics, d)
 						}
 						seenCatchTypes[key] = true
 						if !semaAssignableToType("Exception", catchType, model) {
-							diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, "catch requires an Exception type", bodyOffset+catchClause.Pos, source))
+							d := statementContractDiagnostic(typ, member, "catch requires an Exception type", bodyOffset+catchClause.Pos, source)
+							d.NativeMessage = "Catch block variable must be of type exception: " + catchType
+							diagnostics = append(diagnostics, d)
 						}
 						for _, prior := range priorCatchTypes {
 							if semaAssignableToType(prior, catchType, model) {
-								diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, "catch type is already covered by an earlier catch", bodyOffset+catchClause.Pos, source))
+								d := statementContractDiagnostic(typ, member, "catch type is already covered by an earlier catch", bodyOffset+catchClause.Pos, source)
+								d.NativeMessage = "Exception type already caught: " + exceptionDiagnosticType(resolveNestedTypeReference(model, typ.Name, catchType), model)
+								diagnostics = append(diagnostics, d)
 								break
 							}
 						}
@@ -189,7 +187,7 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 }
 
 func cloneIRStatementScope(scope irSemaScope) irSemaScope {
-	clone := irSemaScope{frames: make([]map[string]irSemaBinding, len(scope.frames))}
+	clone := irSemaScope{frames: make([]map[string]irSemaBinding, len(scope.frames)), flatMemo: &irSemaScopeFlatMemo{}, flatVersion: new(uint64)}
 	for index, frame := range scope.frames {
 		clone.frames[index] = make(map[string]irSemaBinding, len(frame))
 		for name, binding := range frame {
@@ -214,6 +212,9 @@ func semaResolveSwitchSelectorType(typeName, owner string, model *semaTypeMember
 }
 
 func semaSupportedSwitchSelector(typeName string, model *semaTypeMemberView) bool {
+	if semaExplicitPlatformEnumType(typeName) {
+		return true
+	}
 	typeName = semaCanonicalPlatformAlias(typeName)
 	switch strings.ToLower(strings.TrimSpace(typeName)) {
 	case "integer", "int", "long", "string":
@@ -254,8 +255,17 @@ func semaSwitchValueCaseAllowed(selectorType string, expr ir.Expr, model *semaTy
 	if expr.Kind == ir.ExprLiteral {
 		return true
 	}
+	// Apex represents a negative integer case (for example, -1) as a unary
+	// expression over an integer literal. Salesforce treats that as a literal
+	// case value, too.
+	if expr.Kind == ir.ExprUnary && expr.Operator == "-" && expr.Left != nil && expr.Left.Kind == ir.ExprLiteral {
+		return strings.EqualFold(strings.TrimSpace(selectorType), "Integer") || strings.EqualFold(strings.TrimSpace(selectorType), "Long")
+	}
 	if expr.Kind != ir.ExprVariable || selectorType == "" {
 		return false
+	}
+	if semaExplicitPlatformEnumType(selectorType) {
+		return semaStandardPlatformEnumValue(semaCanonicalPlatformAlias(selectorType), expr.Name)
 	}
 	selectorType = semaCanonicalPlatformAlias(selectorType)
 	if enumType := semaEnumValuePathType(model, expr.Name); enumType != "" {
@@ -272,6 +282,13 @@ func semaSwitchValueCaseAllowed(selectorType string, expr ir.Expr, model *semaTy
 }
 
 func semaSwitchCaseValueKey(selectorType string, expr ir.Expr) string {
+	if expr.Kind == ir.ExprUnary {
+		operand := ""
+		if expr.Left != nil {
+			operand = semaSwitchCaseValueKey(selectorType, *expr.Left)
+		}
+		return normalizeName(strings.TrimSpace(string(expr.Kind) + ":" + expr.Operator + ":" + operand))
+	}
 	if expr.Kind == ir.ExprLiteral && strings.EqualFold(strings.TrimSpace(selectorType), "String") {
 		return string(expr.Kind) + ":" + strings.TrimSpace(expr.Value) + ":" + expr.Name
 	}
@@ -280,6 +297,12 @@ func semaSwitchCaseValueKey(selectorType string, expr ir.Expr) string {
 
 func semaSwitchSelectorEnumCaseType(selectorType string, expr ir.Expr, model *semaTypeMemberView) string {
 	if expr.Kind != ir.ExprVariable {
+		return ""
+	}
+	if semaExplicitPlatformEnumType(selectorType) {
+		if semaStandardPlatformEnumValue(semaCanonicalPlatformAlias(selectorType), expr.Name) {
+			return selectorType
+		}
 		return ""
 	}
 	selectorType = semaCanonicalPlatformAlias(selectorType)

@@ -1,0 +1,226 @@
+[
+  {
+    "id": "D001",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D001",
+    "source": "@IsTest private class A04Diagnostic62D001 {\nabstract class B {\n public abstract String tag(Integer value);\n public abstract String tag(String value);\n}\nclass D extends B { public override String tag(String value){return value;} }\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic62D001.D must implement the abstract method: String A04Diagnostic62D001.B.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D002",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D002",
+    "source": "@IsTest private class A04Diagnostic62D002 {\nabstract class B {\n public abstract String tag(String value);\n public abstract String tag(Integer value);\n}\nclass D extends B { public override String tag(String value){return value;} }\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic62D002.D must implement the abstract method: String A04Diagnostic62D002.B.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D003",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D003",
+    "source": "@IsTest private class A04Diagnostic62D003 {\ninterface I {\n String tag(Integer value);\n String tag(String value);\n}\nclass D implements I {\n public String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic62D003.D must implement the method: String A04Diagnostic62D003.I.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D004",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D004",
+    "source": "@IsTest private class A04Diagnostic62D004 {\ninterface I {\n String tag(String value);\n String tag(Integer value);\n}\nclass D implements I {\n public String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic62D004.D must implement the method: String A04Diagnostic62D004.I.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D005",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D005",
+    "source": "@IsTest private class A04Diagnostic62D005 {\nvirtual class B {\n public String tag(Integer value){return 'integer';}\n public virtual String tag(String value){return value;}\n}\nclass D extends B {\n public override String tag(Integer value){return 'integer';}\n public override String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tNon-virtual, non-abstract methods cannot be overridden: String A04Diagnostic62D005.D.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D006",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D006",
+    "source": "@IsTest private class A04Diagnostic62D006 {\nvirtual class B {\n public String tag(Integer value){return 'integer';}\n public virtual String tag(String value){return value;}\n}\nclass D extends B {\n public override String tag(String value){return value;}\n public override String tag(Integer value){return 'integer';}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tNon-virtual, non-abstract methods cannot be overridden: String A04Diagnostic62D006.D.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D007",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D007",
+    "source": "@IsTest private class A04Diagnostic62D007 {\nvirtual class B {\n public virtual String tag(String value){return value;}\n}\nclass D extends B {\n public override String tag(Integer value){return 'integer';}\n public override String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\t@Override specified for non-overriding method: String A04Diagnostic62D007.D.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D008",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D008",
+    "source": "@IsTest private class A04Diagnostic62D008 {\nvirtual class B {\n public virtual String tag(String value){return value;}\n}\nclass D extends B {\n public override String tag(String value){return value;}\n public override String tag(Integer value){return 'integer';}\n}\n}\n",
+    "expected": "COMPILE_ERROR\t@Override specified for non-overriding method: String A04Diagnostic62D008.D.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D009",
+    "apiVersion": "62.0",
+    "name": "Mixed",
+    "source": "class Mixed {\n public static Integer prop {get;set;}\n public static Integer field=1;\n public static final Integer other=2;\n}\nMixed value;\n",
+    "expected": "COMPILE_ERROR\tline -1: static can only be used on fields of a top level type",
+    "anonymous": true
+  },
+  {
+    "id": "D010",
+    "apiVersion": "62.0",
+    "name": "Mixed",
+    "source": "class Mixed {\n public static Integer field=1;\n public static final Integer other=2;\n public static Integer prop {get;set;}\n}\nMixed value;\n",
+    "expected": "COMPILE_ERROR\tline 2: static can only be used on fields of a top level type",
+    "anonymous": true
+  },
+  {
+    "id": "D011",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D011",
+    "source": "@IsTest private class A04Diagnostic62D011 {\nclass Item {}\nabstract class B {\n public abstract String tag(Item value);\n public abstract String tag(String value);\n}\nclass D extends B { public override String tag(String value){return value;} }\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic62D011.D must implement the abstract method: String A04Diagnostic62D011.B.tag(A04Diagnostic62D011.Item)",
+    "anonymous": false
+  },
+  {
+    "id": "D012",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D012",
+    "source": "@IsTest private class A04Diagnostic62D012 {\nclass Item {}\nabstract class B {\n public abstract String tag(String value);\n public abstract String tag(Item value);\n}\nclass D extends B { public override String tag(String value){return value;} }\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic62D012.D must implement the abstract method: String A04Diagnostic62D012.B.tag(A04Diagnostic62D012.Item)",
+    "anonymous": false
+  },
+  {
+    "id": "D013",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D013",
+    "source": "@IsTest private class A04Diagnostic62D013 {\ninterface I {\n String tag(Integer value);\n String tag(String value);\n}\nclass D implements I {\n private String tag(Integer value){return 'integer';}\n public String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tA04Diagnostic62D013.D: Overriding implementations of global or public interface methods must be global or public: String A04Diagnostic62D013.I.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D014",
+    "apiVersion": "62.0",
+    "name": "A04Diagnostic62D014",
+    "source": "@IsTest private class A04Diagnostic62D014 {\ninterface I {\n String tag(String value);\n String tag(Integer value);\n}\nclass D implements I {\n private String tag(Integer value){return 'integer';}\n public String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tA04Diagnostic62D014.D: Overriding implementations of global or public interface methods must be global or public: String A04Diagnostic62D014.I.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D001",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D001",
+    "source": "@IsTest private class A04Diagnostic67D001 {\nabstract class B {\n public abstract String tag(Integer value);\n public abstract String tag(String value);\n}\nclass D extends B { public override String tag(String value){return value;} }\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic67D001.D must implement the abstract method: String A04Diagnostic67D001.B.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D002",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D002",
+    "source": "@IsTest private class A04Diagnostic67D002 {\nabstract class B {\n public abstract String tag(String value);\n public abstract String tag(Integer value);\n}\nclass D extends B { public override String tag(String value){return value;} }\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic67D002.D must implement the abstract method: String A04Diagnostic67D002.B.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D003",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D003",
+    "source": "@IsTest private class A04Diagnostic67D003 {\ninterface I {\n String tag(Integer value);\n String tag(String value);\n}\nclass D implements I {\n public String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic67D003.D must implement the method: String A04Diagnostic67D003.I.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D004",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D004",
+    "source": "@IsTest private class A04Diagnostic67D004 {\ninterface I {\n String tag(String value);\n String tag(Integer value);\n}\nclass D implements I {\n public String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic67D004.D must implement the method: String A04Diagnostic67D004.I.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D005",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D005",
+    "source": "@IsTest private class A04Diagnostic67D005 {\nvirtual class B {\n public String tag(Integer value){return 'integer';}\n public virtual String tag(String value){return value;}\n}\nclass D extends B {\n public override String tag(Integer value){return 'integer';}\n public override String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tNon-virtual, non-abstract methods cannot be overridden: String A04Diagnostic67D005.D.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D006",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D006",
+    "source": "@IsTest private class A04Diagnostic67D006 {\nvirtual class B {\n public String tag(Integer value){return 'integer';}\n public virtual String tag(String value){return value;}\n}\nclass D extends B {\n public override String tag(String value){return value;}\n public override String tag(Integer value){return 'integer';}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tNon-virtual, non-abstract methods cannot be overridden: String A04Diagnostic67D006.D.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D007",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D007",
+    "source": "@IsTest private class A04Diagnostic67D007 {\nvirtual class B {\n public virtual String tag(String value){return value;}\n}\nclass D extends B {\n public override String tag(Integer value){return 'integer';}\n public override String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\t@Override specified for non-overriding method: String A04Diagnostic67D007.D.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D008",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D008",
+    "source": "@IsTest private class A04Diagnostic67D008 {\nvirtual class B {\n public virtual String tag(String value){return value;}\n}\nclass D extends B {\n public override String tag(String value){return value;}\n public override String tag(Integer value){return 'integer';}\n}\n}\n",
+    "expected": "COMPILE_ERROR\t@Override specified for non-overriding method: String A04Diagnostic67D008.D.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D009",
+    "apiVersion": "67.0",
+    "name": "Mixed",
+    "source": "class Mixed {\n public static Integer prop {get;set;}\n public static Integer field=1;\n public static final Integer other=2;\n}\nMixed value;\n",
+    "expected": "COMPILE_ERROR\tline -1: static can only be used on fields of a top level type",
+    "anonymous": true
+  },
+  {
+    "id": "D010",
+    "apiVersion": "67.0",
+    "name": "Mixed",
+    "source": "class Mixed {\n public static Integer field=1;\n public static final Integer other=2;\n public static Integer prop {get;set;}\n}\nMixed value;\n",
+    "expected": "COMPILE_ERROR\tline 2: static can only be used on fields of a top level type",
+    "anonymous": true
+  },
+  {
+    "id": "D011",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D011",
+    "source": "@IsTest private class A04Diagnostic67D011 {\nclass Item {}\nabstract class B {\n public abstract String tag(Item value);\n public abstract String tag(String value);\n}\nclass D extends B { public override String tag(String value){return value;} }\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic67D011.D must implement the abstract method: String A04Diagnostic67D011.B.tag(A04Diagnostic67D011.Item)",
+    "anonymous": false
+  },
+  {
+    "id": "D012",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D012",
+    "source": "@IsTest private class A04Diagnostic67D012 {\nclass Item {}\nabstract class B {\n public abstract String tag(String value);\n public abstract String tag(Item value);\n}\nclass D extends B { public override String tag(String value){return value;} }\n}\n",
+    "expected": "COMPILE_ERROR\tClass A04Diagnostic67D012.D must implement the abstract method: String A04Diagnostic67D012.B.tag(A04Diagnostic67D012.Item)",
+    "anonymous": false
+  },
+  {
+    "id": "D013",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D013",
+    "source": "@IsTest private class A04Diagnostic67D013 {\ninterface I {\n String tag(Integer value);\n String tag(String value);\n}\nclass D implements I {\n private String tag(Integer value){return 'integer';}\n public String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tA04Diagnostic67D013.D: Overriding implementations of global or public interface methods must be global or public: String A04Diagnostic67D013.I.tag(Integer)",
+    "anonymous": false
+  },
+  {
+    "id": "D014",
+    "apiVersion": "67.0",
+    "name": "A04Diagnostic67D014",
+    "source": "@IsTest private class A04Diagnostic67D014 {\ninterface I {\n String tag(String value);\n String tag(Integer value);\n}\nclass D implements I {\n private String tag(Integer value){return 'integer';}\n public String tag(String value){return value;}\n}\n}\n",
+    "expected": "COMPILE_ERROR\tA04Diagnostic67D014.D: Overriding implementations of global or public interface methods must be global or public: String A04Diagnostic67D014.I.tag(Integer)",
+    "anonymous": false
+  }
+]

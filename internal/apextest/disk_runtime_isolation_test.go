@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"sync"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -145,8 +146,11 @@ func TestDiskRuntimeCachePolicyReportsWhyCacheIsUnavailable(t *testing.T) {
 }
 
 func TestDiskRuntimeIsolationDeterministicWorkers(t *testing.T) {
-	fixture := buildDiskRuntimeIsolationFixture(t)
-	want := runDiskRuntimeIsolationState(t, fixture, "built-no-disk", 1, fixture.cases, nil)
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
+	fixture, want := sharedDiskRuntimeIsolationFixture(t)
 	for _, workers := range []int{1, 2, 4, 8} {
 		for _, state := range diskRuntimeIsolationStates(workers) {
 			t.Run(fmt.Sprintf("%s/workers-%d", state, workers), func(t *testing.T) {
@@ -160,11 +164,19 @@ func TestDiskRuntimeIsolationDeterministicWorkers(t *testing.T) {
 }
 
 func TestDiskRuntimeIsolationRandomizedWorkers(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	// Randomize discovery order and scheduling priorities. VM random-state
 	// isolation is covered separately with the other mutable runtime state.
-	fixture := buildDiskRuntimeIsolationFixture(t)
-	want := runDiskRuntimeIsolationState(t, fixture, "built-no-disk", 1, fixture.cases, nil)
-	for _, seed := range []int64{11, 29, 47, 83} {
+	//
+	// Rotate the four states across seeds and worker counts to cover every
+	// seed/state, seed/workers and valid workers/state pair in 17 runs. The
+	// restored opt-in needs multiple workers; its worker-1 position gets a
+	// separate built run and an opt-in run with two workers.
+	fixture, want := sharedDiskRuntimeIsolationFixture(t)
+	for seedIndex, seed := range []int64{11, 29, 47, 83} {
 		cases := append([]TestCase(nil), fixture.cases...)
 		rng := rand.New(rand.NewSource(seed))
 		rng.Shuffle(len(cases), func(i, j int) { cases[i], cases[j] = cases[j], cases[i] })
@@ -173,15 +185,23 @@ func TestDiskRuntimeIsolationRandomizedWorkers(t *testing.T) {
 		for i, testCase := range cases {
 			durations[testCase.ClassName+"."+testCase.MethodName] = int64(priorities[i] + 1)
 		}
-		for _, workers := range []int{1, 2, 4, 8} {
-			for _, state := range diskRuntimeIsolationStates(workers) {
-				t.Run(fmt.Sprintf("seed-%d/%s/workers-%d", seed, state, workers), func(t *testing.T) {
-					got := runDiskRuntimeIsolationState(t, fixture, state, workers, cases, durations)
-					if !reflect.DeepEqual(got, want) {
-						t.Fatalf("canonical randomized result differs from oracle:\n got: %#v\nwant: %#v", got, want)
-					}
-				})
+		run := func(state string, workers int) {
+			t.Run(fmt.Sprintf("seed-%d/%s/workers-%d", seed, state, workers), func(t *testing.T) {
+				got := runDiskRuntimeIsolationState(t, fixture, state, workers, cases, durations)
+				if !reflect.DeepEqual(got, want) {
+					t.Fatalf("canonical randomized result differs from oracle:\n got: %#v\nwant: %#v", got, want)
+				}
+			})
+		}
+		states := diskRuntimeIsolationStates(2)
+		for workerIndex, workers := range []int{1, 2, 4, 8} {
+			state := states[(seedIndex+workerIndex)%len(states)]
+			if workers == 1 && state == "restored-opt-in" {
+				run("built-no-disk", 1)
+				run(state, 2)
+				continue
 			}
+			run(state, workers)
 		}
 	}
 }
@@ -215,8 +235,7 @@ func TestRestoredRuntimeMultiWorkerCorruptDiskFallsBack(t *testing.T) {
 }
 
 func TestRestoredRuntimeMultiWorkerDefaultRemainsOff(t *testing.T) {
-	fixture := buildDiskRuntimeIsolationFixture(t)
-	want := runDiskRuntimeIsolationState(t, fixture, "built-no-disk", 1, fixture.cases, nil)
+	fixture, want := sharedDiskRuntimeIsolationFixture(t)
 	InvalidateRuntimeCaches()
 	ResetPerfCounters()
 	run := RunCasesContext(context.Background(), fixture.index, Options{
@@ -250,7 +269,26 @@ type diskRuntimeIsolationFixture struct {
 	cases   []TestCase
 }
 
-func buildDiskRuntimeIsolationFixture(t *testing.T) diskRuntimeIsolationFixture {
+// sharedDiskRuntimeIsolation holds one persisted fixture and its worker-1
+// build oracle for the read-only isolation tests. The fixture root lives
+// outside any test's TempDir and is removed by TestMain.
+var sharedDiskRuntimeIsolation struct {
+	mu      sync.Mutex
+	root    string
+	fixture diskRuntimeIsolationFixture
+	want    []diskRuntimeIsolationResult
+	ready   bool
+}
+
+func removeSharedDiskRuntimeIsolation() {
+	sharedDiskRuntimeIsolation.mu.Lock()
+	defer sharedDiskRuntimeIsolation.mu.Unlock()
+	if sharedDiskRuntimeIsolation.root != "" {
+		_ = os.RemoveAll(sharedDiskRuntimeIsolation.root)
+	}
+}
+
+func enableDiskCacheForIsolationTest(t *testing.T) {
 	t.Helper()
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -261,7 +299,38 @@ func buildDiskRuntimeIsolationFixture(t *testing.T) diskRuntimeIsolationFixture 
 	})
 	InvalidateRuntimeCaches()
 	ResetPerfCounters()
-	root := t.TempDir()
+}
+
+// sharedDiskRuntimeIsolationFixture returns the shared fixture and oracle.
+// Callers must not modify the fixture's files or its persisted startup cache.
+func sharedDiskRuntimeIsolationFixture(t *testing.T) (diskRuntimeIsolationFixture, []diskRuntimeIsolationResult) {
+	t.Helper()
+	enableDiskCacheForIsolationTest(t)
+	shared := &sharedDiskRuntimeIsolation
+	shared.mu.Lock()
+	defer shared.mu.Unlock()
+	if !shared.ready {
+		root, err := os.MkdirTemp("", "glade-disk-isolation-")
+		if err != nil {
+			t.Fatal(err)
+		}
+		shared.root = root
+		fixture := newDiskRuntimeIsolationFixture(t, root)
+		shared.fixture = fixture
+		shared.want = runDiskRuntimeIsolationState(t, fixture, "built-no-disk", 1, fixture.cases, nil)
+		shared.ready = true
+	}
+	return shared.fixture, shared.want
+}
+
+func buildDiskRuntimeIsolationFixture(t *testing.T) diskRuntimeIsolationFixture {
+	t.Helper()
+	enableDiskCacheForIsolationTest(t)
+	return newDiskRuntimeIsolationFixture(t, t.TempDir())
+}
+
+func newDiskRuntimeIsolationFixture(t *testing.T, root string) diskRuntimeIsolationFixture {
+	t.Helper()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/IsolationProbe.page"), `<apex:page/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DiskIsolationState.cls"), `

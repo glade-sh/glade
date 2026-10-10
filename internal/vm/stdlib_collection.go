@@ -6,18 +6,13 @@ import (
 )
 
 func callListStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	// clear is handled by the VM dispatcher so collection aliases are updated.
 	switch method {
 	case "isEmpty":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("List.isEmpty expects 0 arguments")
 		}
 		return Bool(len(receiver.List) == 0), receiver, false, true, nil
-	case "clear":
-		if len(args) != 0 {
-			return Null, receiver, false, true, fmt.Errorf("List.clear expects 0 arguments")
-		}
-		receiver.List = nil
-		return Null, receiver, true, true, nil
 	case "iterator":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("List.iterator expects 0 arguments")
@@ -39,18 +34,13 @@ func callListStdlibMember(receiver Value, method string, args []Value) (Value, V
 	}
 }
 func callSetStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	// clear is handled by the VM dispatcher so collection aliases are updated.
 	switch method {
 	case "isEmpty":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Set.isEmpty expects 0 arguments")
 		}
 		return Bool(len(receiver.Set) == 0), receiver, false, true, nil
-	case "clear":
-		if len(args) != 0 {
-			return Null, receiver, false, true, fmt.Errorf("Set.clear expects 0 arguments")
-		}
-		receiver.Set = nil
-		return Null, receiver, true, true, nil
 	case "iterator":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Set.iterator expects 0 arguments")
@@ -61,6 +51,13 @@ func callSetStdlibMember(receiver Value, method string, args []Value) (Value, Va
 	}
 }
 func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if isSObjectFieldMapValue(receiver) {
+		switch method {
+		case "clear", "remove", "put", "putAll":
+			// R076: this platform map raises an uncatchable FinalException.
+			return Null, receiver, false, true, fmt.Errorf("System.FinalException: Collection is read-only")
+		}
+	}
 	switch method {
 	case "isEmpty":
 		if len(args) != 0 {
@@ -78,6 +75,10 @@ func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Va
 	case "remove":
 		if len(args) != 1 {
 			return Null, receiver, false, true, fmt.Errorf("Map.remove expects 1 argument")
+		}
+		// Custom keys require the VM's hash and equals methods.
+		if args[0].Kind == ValueObject {
+			return Null, receiver, false, false, nil
 		}
 		key := mapKey(args[0])
 		if foldedKey, ok := caseInsensitiveStringMapStoredKey(receiver, args[0]); ok {

@@ -3,6 +3,12 @@ package vm
 import "strings"
 
 var api67CoreEnumOrders = map[string][]string{
+	"compression.Level": {
+		"DEFAULT_LEVEL", "NO_COMPRESSION", "BEST_SPEED", "BEST_COMPRESSION",
+	},
+	"compression.Method": {
+		"STORED", "DEFLATED",
+	},
 	"Dom.XmlNodeType": {
 		"ELEMENT", "TEXT", "COMMENT",
 	},

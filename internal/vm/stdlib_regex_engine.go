@@ -1,11 +1,13 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/dlclark/regexp2"
+	"github.com/dlclark/regexp2/syntax"
 )
 
 const regexp2MatchTimeout = 2 * time.Second
@@ -15,6 +17,9 @@ func compileRegexp2Pattern(callee, source string) (string, *regexp2.Regexp, erro
 }
 
 func compileRegexp2PatternWithException(callee, source, exceptionType string) (string, *regexp2.Regexp, error) {
+	if err := validateJavaRegexGroups(source, exceptionType); err != nil {
+		return "", nil, err
+	}
 	regexp2Source, err := compileRegexp2Source(callee, source)
 	if err != nil {
 		return "", nil, err
@@ -36,6 +41,7 @@ func compileRegexp2Source(callee, source string) (string, error) {
 	regexp2Source := converted
 	unicodeCharacterClass := false
 	regexp2Source, unicodeCharacterClass = rewriteInlineUnicodeCharacterClassFlagForRegexp2(regexp2Source, unicodeCharacterClass)
+	regexp2Source = rewriteJavaRegexFlagsForRegexp2(regexp2Source)
 	regexp2Source = rewriteJavaRegexEscapesForRegexp2(regexp2Source)
 	regexp2Source = rewriteJavaUnicodeClassesForRegexp2(regexp2Source)
 	regexp2Source = rewriteJavaShorthandClassesForRegexp2(regexp2Source, unicodeCharacterClass)
@@ -294,7 +300,16 @@ func rewriteJavaShorthandClassesForRegexp2(source string, unicodeCharacterClass 
 			out.WriteByte(next)
 			continue
 		}
-		out.WriteString(replacement)
+		// A shorthand denotes a set, not a range endpoint. Keep it as a
+		// nested union operand so a following hyphen cannot bind to the last
+		// character of its expansion (for example, \w-: becoming _-:).
+		if inClass && i+2 < len(source) && source[i+2] == '-' {
+			out.WriteByte('[')
+			out.WriteString(replacement)
+			out.WriteByte(']')
+		} else {
+			out.WriteString(replacement)
+		}
 		i++
 	}
 	return out.String()
@@ -599,7 +614,7 @@ func regexp2MatchByteIndices(input string, match *regexp2.Match, runeOffset int)
 	return indices, nil
 }
 
-func matcherRegexp2MatchIndices(matcher Value, input string, region matcherRegionBounds, op matcherOp) ([]int, error) {
+func matcherRegexp2MatchIndices(matcher Value, input string, region matcherRegionBounds, op matcherOp) ([]int, bool, bool, error) {
 	text := input
 	runeOffset := 0
 	startAt := region.startByte
@@ -614,22 +629,28 @@ func matcherRegexp2MatchIndices(matcher Value, input string, region matcherRegio
 	}
 	plan, err := matcherRegexp2PlanForInput(matcher, text)
 	if err != nil {
-		return nil, err
+		return nil, false, false, err
 	}
-	match, err := plan.findValidStartingAt(text, startAt)
+	match, err := plan.matchStartingAt(text, startAt, requiredEnd, op == matcherOpMatches)
+	if err != nil {
+		return nil, false, false, err
+	}
+	hitEnd, err := plan.operationHitEnd(text, startAt, requiredEnd, true, op == matcherOpMatches)
 	if err != nil || match == nil {
-		return nil, err
+		return nil, hitEnd, false, err
 	}
 	if match.Index != requiredStart {
-		return nil, nil
+		return nil, hitEnd, false, nil
 	}
 	if op == matcherOpMatches && match.Index+match.Length != requiredEnd {
-		return nil, nil
+		return nil, hitEnd, false, nil
 	}
-	return plan.matchByteIndices(input, match, runeOffset)
+	indices, err := plan.matchByteIndices(input, match, runeOffset)
+	requiresEnd := plan.matchRequiresEnd(text, match)
+	return indices, hitEnd || requiresEnd, requiresEnd, err
 }
 
-func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegionBounds, startByte int) ([]int, error) {
+func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegionBounds, startByte int) ([]int, bool, bool, error) {
 	if !matcherUsesFullInputBounds(matcher) {
 		if startByte < region.startByte {
 			startByte = region.startByte
@@ -637,17 +658,27 @@ func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegion
 		text := input[region.startByte:region.endByte]
 		plan, err := matcherRegexp2PlanForInput(matcher, text)
 		if err != nil {
-			return nil, err
+			return nil, false, false, err
 		}
 		match, err := plan.findValidStartingAt(text, startByte-region.startByte)
-		if err != nil || match == nil {
-			return nil, err
+		if err != nil {
+			return nil, false, false, err
 		}
-		return plan.matchByteIndices(input, match, region.startRune)
+		hitEnd, err := plan.operationHitEnd(text, startByte-region.startByte, region.endRune-region.startRune, false, false)
+		if err != nil || match == nil {
+			return nil, hitEnd, false, err
+		}
+		indices, err := plan.matchByteIndices(input, match, region.startRune)
+		requiresEnd := plan.matchRequiresEnd(text, match)
+		return indices, hitEnd || requiresEnd, requiresEnd, err
 	}
 	plan, err := matcherRegexp2PlanForInput(matcher, input)
 	if err != nil {
-		return nil, err
+		return nil, false, false, err
+	}
+	hitEnd, err := plan.operationHitEnd(input, startByte, region.endRune, false, false)
+	if err != nil {
+		return nil, false, false, err
 	}
 	match, err := plan.findValidStartingAt(input, startByte)
 	for match != nil && err == nil {
@@ -658,14 +689,16 @@ func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegion
 			continue
 		}
 		if start > region.endRune {
-			return nil, nil
+			return nil, hitEnd, false, nil
 		}
 		if end <= region.endRune {
-			return plan.matchByteIndices(input, match, 0)
+			indices, err := plan.matchByteIndices(input, match, 0)
+			requiresEnd := plan.matchRequiresEnd(input, match)
+			return indices, hitEnd || requiresEnd, requiresEnd, err
 		}
 		match, err = plan.findNextValid(input, match)
 	}
-	return nil, err
+	return nil, hitEnd, false, err
 }
 
 func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error) {
@@ -744,4 +777,29 @@ func regexContainsNumericBackreference(source string) bool {
 		}
 	}
 	return false
+}
+
+// regexp2 errors identify the syntax failure but do not expose its offset.
+// On this error path only, parse original-source prefixes to find the offending
+// quantifier. This preserves offsets through quoting and length-changing rewrites.
+func danglingRegexQuantifierDescription(pattern string, err error) (string, bool) {
+	var parseErr *syntax.Error
+	if !errors.As(err, &parseErr) || parseErr.Code != syntax.ErrMissingRepeatArgument {
+		return "", false
+	}
+	for i := 0; i < len(pattern); i++ {
+		if !strings.ContainsRune("*+?", rune(pattern[i])) {
+			continue
+		}
+		source, sourceErr := compileRegexp2Source("Pattern.compile", pattern[:i+1])
+		if sourceErr != nil {
+			continue
+		}
+		_, prefixErr := regexp2.Compile(regexp2CompileSourceForSyntax(source), regexp2.None)
+		var prefixParseErr *syntax.Error
+		if errors.As(prefixErr, &prefixParseErr) && prefixParseErr.Code == syntax.ErrMissingRepeatArgument {
+			return javaRegexSyntaxMessage(pattern, fmt.Sprintf("Dangling meta character '%c'", pattern[i]), apexStringLength(pattern[:i])), true
+		}
+	}
+	return "", false
 }

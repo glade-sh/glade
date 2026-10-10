@@ -63,6 +63,33 @@ func TestInsertUpdateDelete(t *testing.T) {
 	}
 }
 
+func TestInsertStripsGeneratedAutoNumberValues(t *testing.T) {
+	org := testOrg()
+	org.Objects["Case"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Case",
+			KeyPrefix: "500",
+			Fields: map[string]storage.Field{
+				"CaseNumber": {APIName: "CaseNumber", Type: storage.FieldString, DefaultedOnCreate: storage.BoolFlag(true), Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)},
+				"Subject":    {APIName: "Subject", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	result := engine.Insert([]storage.Record{{Object: "Case", Fields: map[string]storage.Value{
+		"CaseNumber": storage.StringValue("00001026"),
+		"Subject":    storage.StringValue("proof"),
+	}}})
+	if len(result) != 1 || !result[0].Success {
+		t.Fatalf("insert with generated number = %#v", result)
+	}
+	stored := org.Objects["Case"].Records[result[0].ID]
+	if _, ok := stored.Fields["CaseNumber"]; ok {
+		t.Fatalf("generated number was retained: %#v", stored.Fields)
+	}
+}
+
 func TestNewEngineAvoidsSecondPrefixMapCopy(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001"}}
@@ -96,6 +123,8 @@ func TestInsertProbeTestObjectDoesNotCopyCustomNameToStandardName(t *testing.T) 
 		Definition: storage.ObjectDefinition{
 			APIName:   "ProbeTestObject__c",
 			KeyPrefix: "a0p",
+			// N001/N009: this fixture declares a custom text NameField.
+			Metadata: map[string]string{"nameFieldType": "Text"},
 			Fields: map[string]storage.Field{
 				"Name":    {APIName: "Name", Type: storage.FieldString, Required: true},
 				"Name__c": {APIName: "Name__c", Type: storage.FieldString},
@@ -112,11 +141,43 @@ func TestInsertProbeTestObjectDoesNotCopyCustomNameToStandardName(t *testing.T) 
 		},
 	}})
 
-	if result[0].Success {
-		t.Fatalf("insert succeeded: %#v", result[0])
+	// A28 N001/N009: missing text Name defaults to the Id, not Name__c.
+	if !result[0].Success {
+		t.Fatalf("insert failed: %#v", result[0])
 	}
-	if !strings.Contains(result[0].Error, "Required fields are missing: [Name]") {
-		t.Fatalf("insert error = %q", result[0].Error)
+	stored := org.Objects["ProbeTestObject__c"].Records[result[0].ID]
+	if name, ok := stored.GetField("Name"); !ok || name.String != string(result[0].ID) {
+		t.Fatalf("stored Name = %#v, want generated Id %q", name, result[0].ID)
+	}
+}
+
+func TestInsertCustomObjectExplicitNullNameUsesGeneratedID(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	result := engine.Insert([]storage.Record{{
+		Object:        "Widget__c",
+		ExplicitNulls: map[string]bool{"Name": true},
+	}})
+	if len(result) != 1 || !result[0].Success {
+		t.Fatalf("explicit null Name insert = %#v", result)
+	}
+	stored := org.Objects["Widget__c"].Records[result[0].ID]
+	if got, ok := stored.Fields["Name"]; !ok || got.Kind != storage.ValueString || got.String != string(result[0].ID) {
+		t.Fatalf("stored Name = %#v, want generated Id %q", stored.Fields["Name"], result[0].ID)
+	}
+	if stored.HasExplicitNull("Name") {
+		t.Fatalf("stored explicit null Name = %#v", stored.ExplicitNulls)
 	}
 }
 
@@ -294,9 +355,9 @@ func TestValidationFormulaResolvesForeignNamespacedRelationshipFields(t *testing
 			"a03000000000001EAA": {ID: "a03000000000001EAA", Object: "pkg__CartItem__c", Fields: map[string]storage.Value{"pkg__Entity__c": storage.IDValue("a01000000000001EAA")}},
 		},
 	}
-	org.Objects["pkg__CartItemLine__c"] = storage.ObjectState{
+	org.Objects["pkg__BasketLine__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "pkg__CartItemLine__c",
+			APIName:   "pkg__BasketLine__c",
 			KeyPrefix: "a04",
 			Fields: map[string]storage.Field{
 				"pkg__Product2__c": {APIName: "pkg__Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__Product__c"}, RelationshipName: "pkg__Product2__r"},
@@ -314,7 +375,7 @@ func TestValidationFormulaResolvesForeignNamespacedRelationshipFields(t *testing
 
 	engine := NewEngine(&org)
 	result := engine.Insert([]storage.Record{{
-		Object: "pkg__CartItemLine__c",
+		Object: "pkg__BasketLine__c",
 		Fields: map[string]storage.Value{
 			"pkg__Product2__c": storage.IDValue("a02000000000001EAA"),
 			"pkg__CartItem__c": storage.IDValue("a03000000000001EAA"),
@@ -570,6 +631,29 @@ func TestInsertRejectsOverlongSingleLineText(t *testing.T) {
 	}
 	if len(org.Objects["Account"].Records) != 0 {
 		t.Fatalf("record persisted after overlong insert: %#v", org.Objects["Account"].Records)
+	}
+}
+
+func TestInsertOverlongSingleLineTextUsesSchemaLabelOrFieldName(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Labelled__c"] = storage.Field{APIName: "Labelled__c", Label: "Owned Label", Type: storage.FieldString, Length: 3}
+	account.Definition.Fields["Fallback__c"] = storage.Field{APIName: "Fallback__c", Type: storage.FieldString, Length: 3}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	for _, tc := range []struct {
+		field, want string
+	}{
+		{"Labelled__c", "Owned Label: data value too large: abcd (max length=3)"},
+		{"Fallback__c", "Fallback__c: data value too large: abcd (max length=3)"},
+	} {
+		t.Run(tc.field, func(t *testing.T) {
+			result := engine.Insert([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme"), tc.field: storage.StringValue("abcd")}}})[0]
+			if result.Success || result.StatusCode != "STRING_TOO_LONG" || len(result.Fields) != 1 || result.Fields[0] != tc.field || result.Error != tc.want {
+				t.Fatalf("overlong %s = %#v", tc.field, result)
+			}
+		})
 	}
 }
 
@@ -2404,6 +2488,9 @@ func TestDMLAppliesLocalUserRequiredDefaults(t *testing.T) {
 	if !user.Fields["IsActive"].Boolean {
 		t.Fatalf("IsActive = %#v", user.Fields["IsActive"])
 	}
+	if got := user.Fields["Name"].String; got != "Local Provider" {
+		t.Fatalf("Name = %q", got)
+	}
 	if got := user.Fields["ProfileId"]; got.Kind != storage.ValueID || got.ID != "00e000000000001" {
 		t.Fatalf("ProfileId = %#v", got)
 	}
@@ -2619,7 +2706,7 @@ func TestUndeleteMixedRowsKeepResultAlignment(t *testing.T) {
 	if results[1].Success || results[1].ID != activeID || results[1].StatusCode != "UNDELETE_FAILED" {
 		t.Fatalf("active row result = %#v", results[1])
 	}
-	if results[2].Success || results[2].ID != "001999999999999" || results[2].StatusCode != "ENTITY_IS_DELETED" {
+	if results[2].Success || results[2].ID != "001999999999999" || results[2].StatusCode != "UNDELETE_FAILED" {
 		t.Fatalf("missing row result = %#v", results[2])
 	}
 	if results[3].Success || results[3].ID != "003000000000001" || results[3].StatusCode != "INVALID_FIELD" {
@@ -3452,9 +3539,9 @@ func TestValidationRulesSupportIsChangedWithParentRelationshipFields(t *testing.
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
-	org.Objects["OrderItemLine__c"] = storage.ObjectState{
+	org.Objects["BundleLine__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "OrderItemLine__c",
+			APIName:   "BundleLine__c",
 			KeyPrefix: "a15",
 			Fields: map[string]storage.Field{
 				"Name":                {APIName: "Name", Type: storage.FieldString},
@@ -3472,7 +3559,7 @@ func TestValidationRulesSupportIsChangedWithParentRelationshipFields(t *testing.
 				"StartDate__c":       {APIName: "StartDate__c", Type: storage.FieldDate},
 				"EndDate__c":         {APIName: "EndDate__c", Type: storage.FieldDate},
 				"EndDateOverride__c": {APIName: "EndDateOverride__c", Type: storage.FieldDate},
-				"OrderItemLine__c":   {APIName: "OrderItemLine__c", Type: storage.FieldReference, ReferenceTo: []string{"OrderItemLine__c"}},
+				"BundleLine__c":      {APIName: "BundleLine__c", Type: storage.FieldReference, ReferenceTo: []string{"BundleLine__c"}},
 			},
 			ValidationRules: []storage.ValidationRule{{
 				Name:   "TermUnchangeableForDeferredMembership",
@@ -3482,8 +3569,8 @@ OR(
 ISCHANGED(StartDate__c),
 AND(ISCHANGED(EndDate__c), !ISCHANGED(EndDateOverride__c))
 ),
-IsBlank(OrderItemLine__c) = False,
-IsBlank(OrderItemLine__r.DeferredSchedule__c) = False
+IsBlank(BundleLine__c) = False,
+IsBlank(BundleLine__r.DeferredSchedule__c) = False
 )`,
 				ErrorMessage: "deferred membership term cannot change",
 			}},
@@ -3497,7 +3584,7 @@ IsBlank(OrderItemLine__r.DeferredSchedule__c) = False
 		t.Fatalf("schedule insert = %#v", schedule)
 	}
 	line := engine.Insert([]storage.Record{{
-		Object: "OrderItemLine__c",
+		Object: "BundleLine__c",
 		Fields: map[string]storage.Value{
 			"Name":                storage.StringValue("Line"),
 			"DeferredSchedule__c": storage.IDValue(schedule[0].ID),
@@ -3509,10 +3596,10 @@ IsBlank(OrderItemLine__r.DeferredSchedule__c) = False
 	membership := engine.Insert([]storage.Record{{
 		Object: "Subscription__c",
 		Fields: map[string]storage.Value{
-			"Name":             storage.StringValue("Subscription"),
-			"StartDate__c":     storage.DateValue("2026-01-01"),
-			"EndDate__c":       storage.DateValue("2026-12-31"),
-			"OrderItemLine__c": storage.IDValue(line[0].ID),
+			"Name":          storage.StringValue("Subscription"),
+			"StartDate__c":  storage.DateValue("2026-01-01"),
+			"EndDate__c":    storage.DateValue("2026-12-31"),
+			"BundleLine__c": storage.IDValue(line[0].ID),
 		},
 	}})
 	if !membership[0].Success {
@@ -3672,26 +3759,26 @@ func TestValidationRulesResolveParentFormulaFields(t *testing.T) {
 				"Name":                      {APIName: "Name", Type: storage.FieldString},
 				"IsCredit__c":               {APIName: "IsCredit__c", Type: storage.FieldBoolean},
 				"PaymentAmount__c":          {APIName: "PaymentAmount__c", Type: storage.FieldDecimal},
-				"TotalPaymentApplied__c":    {APIName: "TotalPaymentApplied__c", Type: storage.FieldSummary, SummaryOperation: "sum", SummaryForeignKey: "PaymentLine__c.Payment__c", SummarizedField: "PaymentLine__c.PaymentAmount__c"},
-				"AvailableCreditBalance__c": {APIName: "AvailableCreditBalance__c", Type: storage.FieldCalculated, Formula: "IF(IsCredit__c, PaymentAmount__c - TotalPaymentApplied__c, 0)"},
+				"TotalTenderApplied__c":     {APIName: "TotalTenderApplied__c", Type: storage.FieldSummary, SummaryOperation: "sum", SummaryForeignKey: "ReceiptLine__c.Payment__c", SummarizedField: "ReceiptLine__c.PaymentAmount__c"},
+				"AvailableCreditBalance__c": {APIName: "AvailableCreditBalance__c", Type: storage.FieldCalculated, Formula: "IF(IsCredit__c, PaymentAmount__c - TotalTenderApplied__c, 0)"},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
-	org.Objects["CartPayment__c"] = storage.ObjectState{
+	org.Objects["BasketTender__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "CartPayment__c",
+			APIName:   "BasketTender__c",
 			KeyPrefix: "a13",
 			Fields: map[string]storage.Field{
 				"Name":             {APIName: "Name", Type: storage.FieldString},
 				"PaymentAmount__c": {APIName: "PaymentAmount__c", Type: storage.FieldDecimal},
-				"CreditPayment__c": {APIName: "CreditPayment__c", Type: storage.FieldReference, ReferenceTo: []string{"Payment__c"}, RelationshipName: "CreditCartPayments"},
+				"CreditTender__c":  {APIName: "CreditTender__c", Type: storage.FieldReference, ReferenceTo: []string{"Payment__c"}, RelationshipName: "CreditBasketTenders"},
 			},
 			ValidationRules: []storage.ValidationRule{{
-				Name:                  "PrepaymentAmountCannotExceedBalance",
+				Name:                  "TenderCannotExceedBalance",
 				Active:                true,
-				ErrorConditionFormula: "IsBlank(CreditPayment__c) = false && PaymentAmount__c > CreditPayment__r.AvailableCreditBalance__c",
-				ErrorMessage:          "The prepayment amount cannot exceed the available credit balance on the prepayment.",
+				ErrorConditionFormula: "IsBlank(CreditTender__c) = false && PaymentAmount__c > CreditTender__r.AvailableCreditBalance__c",
+				ErrorMessage:          "The tender amount cannot exceed the available credit balance.",
 			}},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -3711,14 +3798,14 @@ func TestValidationRulesResolveParentFormulaFields(t *testing.T) {
 	}
 
 	applied := engine.Upsert([]storage.Record{{
-		Object: "CartPayment__c",
+		Object: "BasketTender__c",
 		Fields: map[string]storage.Value{
 			"Name":             storage.StringValue("Applied"),
 			"PaymentAmount__c": storage.DecimalValue("10"),
-			"CreditPayment__c": storage.IDValue(storage.ID(string(credit[0].ID) + "AAA")),
+			"CreditTender__c":  storage.IDValue(storage.ID(string(credit[0].ID) + "AAA")),
 		},
 	}})
-	if applied[0].Success || applied[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" || applied[0].Error != "The prepayment amount cannot exceed the available credit balance on the prepayment." {
+	if applied[0].Success || applied[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" || applied[0].Error != "The tender amount cannot exceed the available credit balance." {
 		t.Fatalf("over-applied credit insert = %#v", applied)
 	}
 }
@@ -4363,7 +4450,7 @@ func TestRelationshipFormulaEvaluatesParentFormulaBackedField(t *testing.T) {
 	childDefinition := storage.ObjectDefinition{
 		APIName: "Line__c",
 		Fields: map[string]storage.Field{
-			"OrderItemLine__c":       {APIName: "OrderItemLine__c", Type: storage.FieldReference, ReferenceTo: []string{"OrderItemLine__c"}},
+			"BundleLine__c":          {APIName: "BundleLine__c", Type: storage.FieldReference, ReferenceTo: []string{"BundleLine__c"}},
 			"ParentBundleSubtype__c": {APIName: "ParentBundleSubtype__c", Type: storage.FieldString},
 			"Product2__c":            {APIName: "Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}},
 			"Product__c":             {APIName: "Product__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}, RelationshipName: "Product__r"},
@@ -4438,7 +4525,7 @@ func TestRelationshipFormulaEvaluatesParentFormulaBackedField(t *testing.T) {
 	matches, ok = evaluateValidationFormulaInOrg(`AND(Product__r.TrackInventory__c,
 Product__r.RecordTypeName__c != 'Merchandise',
 Quantity__c - IF(ISNEW(), 0, PRIORVALUE(Quantity__c)) > Product__r.InventoryOnHand__c,
-ISBLANK(OrderItemLine__c) || (!ISNEW() && Quantity__c > PRIORVALUE(Quantity__c)),
+ISBLANK(BundleLine__c) || (!ISNEW() && Quantity__c > PRIORVALUE(Quantity__c)),
 TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Record{
 		Object: "Line__c",
 		Fields: map[string]storage.Value{
@@ -4452,7 +4539,7 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Re
 	matches, ok = evaluateValidationFormulaInOrg(`AND(Product2__r.TrackInventory__c,
 Product2__r.RecordTypeName__c != 'Merchandise' || !$Setup.ManagedAppPublicSettings__c.CanBackorderStaffView__c,
 Quantity__c - IF(ISNEW(), 0, PRIORVALUE(Quantity__c)) > Product2__r.InventoryOnHand__c,
-ISBLANK(OrderItemLine__c) || (!ISNEW() && Quantity__c > PRIORVALUE(Quantity__c)),
+ISBLANK(BundleLine__c) || (!ISNEW() && Quantity__c > PRIORVALUE(Quantity__c)),
 TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Record{
 		Object: "Line__c",
 		Fields: map[string]storage.Value{
@@ -4498,7 +4585,7 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Re
 	matches, ok = evaluateValidationFormulaInOrg(`AND(Product2__r.TrackInventory__c,
 Product2__r.RecordTypeName__c != 'Merchandise' || !$Setup.ManagedAppPublicSettings__c.CanBackorderStaffView__c,
 Quantity__c - IF(ISNEW(), 0, PRIORVALUE(Quantity__c)) > Product2__r.InventoryOnHand__c,
-ISBLANK(OrderItemLine__c) || (!ISNEW() && Quantity__c > PRIORVALUE(Quantity__c)),
+ISBLANK(BundleLine__c) || (!ISNEW() && Quantity__c > PRIORVALUE(Quantity__c)),
 TEXT(ParentBundleSubtype__c) != 'Assembled')`, &orgWithSetup, childDefinition, storage.Record{
 		Object: "Line__c",
 		Fields: map[string]storage.Value{
@@ -4548,7 +4635,7 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &orgWithSetup, childDefinition, s
 
 func TestValidationFormulaSupportsABSWithRelationshipField(t *testing.T) {
 	childDefinition := storage.ObjectDefinition{
-		APIName: "CartPayment__c",
+		APIName: "BasketTender__c",
 		Fields: map[string]storage.Field{
 			"Cart__c":          {APIName: "Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"Cart__c"}, RelationshipName: "Cart__r"},
 			"PaymentAmount__c": {APIName: "PaymentAmount__c", Type: storage.FieldDecimal},
@@ -4561,7 +4648,7 @@ func TestValidationFormulaSupportsABSWithRelationshipField(t *testing.T) {
 		},
 	}
 	org := storage.OrgState{Objects: map[string]storage.ObjectState{
-		"CartPayment__c": {Definition: childDefinition},
+		"BasketTender__c": {Definition: childDefinition},
 		"Cart__c": {
 			Definition: parentDefinition,
 			Records: map[storage.ID]storage.Record{
@@ -4577,7 +4664,7 @@ func TestValidationFormulaSupportsABSWithRelationshipField(t *testing.T) {
 	}}
 
 	matches, ok := evaluateValidationFormulaInOrg("ABS(PaymentAmount__c) > ABS(Cart__r.Balance__c)", &org, childDefinition, storage.Record{
-		Object: "CartPayment__c",
+		Object: "BasketTender__c",
 		Fields: map[string]storage.Value{
 			"Cart__c":          storage.IDValue("a01000000000001"),
 			"PaymentAmount__c": storage.DecimalValue("-10"),
@@ -4590,7 +4677,7 @@ func TestValidationFormulaSupportsABSWithRelationshipField(t *testing.T) {
 
 func TestStandaloneRecordTypeNameDefaultEvaluatesFromRecordTypeID(t *testing.T) {
 	definition := storage.ObjectDefinition{
-		APIName: "DeferredRevenueMethod__c",
+		APIName: "RevenuePlan__c",
 		Fields: map[string]storage.Field{
 			"RecordTypeId":      {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}},
 			"RecordTypeName__c": {APIName: "RecordTypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
@@ -4604,7 +4691,7 @@ func TestStandaloneRecordTypeNameDefaultEvaluatesFromRecordTypeID(t *testing.T) 
 		}},
 	}
 	value, ok := defaultValueForRecordField(nil, definition, storage.Record{
-		Object: "DeferredRevenueMethod__c",
+		Object: "RevenuePlan__c",
 		Fields: map[string]storage.Value{
 			"RecordTypeId": storage.IDValue("012000000000001"),
 		},
@@ -4616,7 +4703,7 @@ func TestStandaloneRecordTypeNameDefaultEvaluatesFromRecordTypeID(t *testing.T) 
 
 func TestInsertRefreshesStaleRecordTypeNameDefault(t *testing.T) {
 	definition := storage.ObjectDefinition{
-		APIName:   "DeferredRevenueMethod__c",
+		APIName:   "RevenuePlan__c",
 		KeyPrefix: "a6p",
 		Fields: map[string]storage.Field{
 			"RecordTypeId":      {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}},
@@ -4628,14 +4715,14 @@ func TestInsertRefreshesStaleRecordTypeNameDefault(t *testing.T) {
 		},
 	}
 	org := storage.NewOrgState()
-	org.Objects["DeferredRevenueMethod__c"] = storage.ObjectState{
+	org.Objects["RevenuePlan__c"] = storage.ObjectState{
 		Definition: definition,
 		Records:    map[storage.ID]storage.Record{},
 	}
 	engine := NewEngine(&org)
 
 	insert := engine.Insert([]storage.Record{{
-		Object: "DeferredRevenueMethod__c",
+		Object: "RevenuePlan__c",
 		Fields: map[string]storage.Value{
 			"RecordTypeId":      storage.IDValue("012000000000021"),
 			"RecordTypeName__c": storage.StringValue("Coupon"),
@@ -4644,7 +4731,7 @@ func TestInsertRefreshesStaleRecordTypeNameDefault(t *testing.T) {
 	if !insert[0].Success {
 		t.Fatalf("insert = %#v", insert)
 	}
-	record := org.Objects["DeferredRevenueMethod__c"].Records[insert[0].ID]
+	record := org.Objects["RevenuePlan__c"].Records[insert[0].ID]
 	value, ok := record.GetField("RecordTypeName__c")
 	if !ok || value.Kind != storage.ValueString || value.String != "Subscription" {
 		t.Fatalf("record type name after insert = %#v, ok=%v; want Subscription", value, ok)
@@ -4708,7 +4795,7 @@ func TestFormulaDownloadURLStringFunctionsAndBlankCalculatedText(t *testing.T) {
 		},
 	}
 	lineDefinition := storage.ObjectDefinition{
-		APIName: "OrderItemLine__c",
+		APIName: "BundleLine__c",
 		Fields: map[string]storage.Field{
 			"Product2__c": {APIName: "Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}, RelationshipName: "Product2__r"},
 			"DownloadUrl__c": {
@@ -4765,11 +4852,11 @@ func TestFormulaDownloadURLStringFunctionsAndBlankCalculatedText(t *testing.T) {
 				},
 			},
 		},
-		"OrderItemLine__c": {Definition: lineDefinition},
+		"BundleLine__c": {Definition: lineDefinition},
 	}}
 	line := storage.Record{
 		ID:     "a0L000000000001AAA",
-		Object: "OrderItemLine__c",
+		Object: "BundleLine__c",
 		Fields: map[string]storage.Value{
 			"Product2__c": storage.IDValue("a0P000000000001AAA"),
 		},
@@ -5197,6 +5284,39 @@ func TestFlowRuleFormulaAndFormulaFieldUpdates(t *testing.T) {
 	}
 	if got := record.Fields["ScoreCopy__c"].Integer; got != 12 {
 		t.Fatalf("score copy = %d", got)
+	}
+}
+
+func TestBeforeSaveFlowStringValueExpandsRecordMergeFields(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Event_Name__c"] = storage.Field{APIName: "Event_Name__c", Type: storage.FieldString}
+	account.Definition.Fields["Occurred_On__c"] = storage.Field{APIName: "Occurred_On__c", Type: storage.FieldDateTime}
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:        "FlowStringMerge",
+		Active:      true,
+		TriggerType: "RecordBeforeSave",
+		FieldUpdates: []storage.WorkflowFieldUpdate{{
+			Name:         "AssignRecordName",
+			Field:        "Name",
+			LiteralValue: "{!$Record.Event_Name__c} - {!$Record.Occurred_On__c}",
+		}},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+	records := []storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("placeholder"),
+			"Event_Name__c":  storage.StringValue("Flow Event"),
+			"Occurred_On__c": storage.DateTimeValue("2026-09-09T12:34:56Z"),
+		},
+	}}
+	if err := engine.ApplyBeforeSaveFlows(records); err != nil {
+		t.Fatalf("ApplyBeforeSaveFlows = %v", err)
+	}
+	if got := records[0].Fields["Name"].String; got != "Flow Event - 9/9/2026, 12:34 PM" {
+		t.Fatalf("merged Name = %q", got)
 	}
 }
 
@@ -5632,6 +5752,22 @@ func TestFlowRecordCreateRunsAfterSameObjectLookup(t *testing.T) {
 	}
 }
 
+func TestFlowRecordCreateResolvesRecordRelationshipReference(t *testing.T) {
+	definition := storage.ObjectDefinition{
+		APIName: "Animal_Alert__c",
+		Fields: map[string]storage.Field{
+			"Animal__c": {APIName: "Animal__c", Type: storage.FieldReference, ReferenceTo: []string{"Animal__c"}, RelationshipName: "Animal"},
+		},
+	}
+	targetField := storage.Field{APIName: "Record_ID__c", Type: storage.FieldString}
+	source := storage.Record{ID: "a01000000000001", Fields: map[string]storage.Value{"Animal__c": storage.IDValue("a00000000000001")}}
+	assignment := storage.WorkflowFieldUpdate{Field: "Record_ID__c", Formula: "$Record.Animal__r.Id"}
+	value, explicitNull, ok := flowRecordCreateAssignmentValue(targetField, source, assignment, definition, nil, nil)
+	if !ok || explicitNull || value.ID != "a00000000000001" {
+		t.Fatalf("relationship assignment = %#v, explicitNull=%v, ok=%v", value, explicitNull, ok)
+	}
+}
+
 func TestFlowRecordCreateUsesLookupOutputField(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
@@ -5695,6 +5831,199 @@ func TestFlowRecordCreateUsesLookupOutputField(t *testing.T) {
 	}
 	if got := request.Fields["Payload__c"].String; got != "Parent" {
 		t.Fatalf("payload = %q", got)
+	}
+}
+
+func TestFlowRecordCreateResolvesSourceRelationshipId(t *testing.T) {
+	org := testOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a0w",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "CreateParentRequest",
+				Active: true,
+				RecordCreates: []storage.FlowRecordCreate{{
+					Name:       "CreateRequest",
+					ObjectName: "ActionRequest__c",
+					InputAssignments: []storage.WorkflowFieldUpdate{{
+						Name:        "SourceRecordId",
+						Field:       "SourceRecordId__c",
+						SourceField: "Parent__r.Id",
+					}},
+				}},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ActionRequest__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"SourceRecordId__c": {APIName: "SourceRecordId__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	parent := engine.Insert([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Parent")}}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent)
+	}
+	child := engine.Insert([]storage.Record{{
+		Object: "Widget__c",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Child"), "Parent__c": storage.IDValue(parent[0].ID)},
+	}})
+	if !child[0].Success {
+		t.Fatalf("child insert = %#v", child)
+	}
+	if len(org.Objects["ActionRequest__c"].Records) != 1 {
+		t.Fatalf("requests = %#v", org.Objects["ActionRequest__c"].Records)
+	}
+	for _, request := range org.Objects["ActionRequest__c"].Records {
+		if got := request.Fields["SourceRecordId__c"].ID; got != parent[0].ID {
+			t.Fatalf("source relationship id = %q, want %q", got, parent[0].ID)
+		}
+	}
+}
+
+func TestFlowRecordLookupResolvesIdFromInterviewScalar(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+	parent := engine.Insert([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Parent")}}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent)
+	}
+
+	frame := newFlowFrame()
+	frame.scalars[flowFrameKey("parentId")] = storage.IDValue(parent[0].ID)
+	records, _, err := engine.flowRecordLookupRecords(storage.FlowRecordLookup{
+		Name:               "GetParent",
+		ObjectName:         "Account",
+		GetFirstRecordOnly: true,
+		Criteria: []storage.WorkflowCriteriaItem{{
+			Field:       "Id",
+			Operation:   "equals",
+			SourceField: "parentId",
+		}},
+	}, storage.Record{}, storage.ObjectDefinition{}, frame)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(records) != 1 || records[0].ID != parent[0].ID {
+		t.Fatalf("lookup records = %#v, want parent %q", records, parent[0].ID)
+	}
+}
+
+func TestFlowAssignmentFormulaUsesInterviewFrameValues(t *testing.T) {
+	frame := newFlowFrame()
+	frame.scalars[flowFrameKey("Movement")] = storage.BooleanValue(false)
+	frame.lookupOutputs[flowFrameKey("Get_Animal_Details")] = flowLookupOutput{record: storage.Record{
+		Fields: map[string]storage.Value{"Animal_Name__c": storage.StringValue("Bella")},
+	}}
+	frame.lookupOutputs[flowFrameKey("Get_Animal_Action_Record")] = flowLookupOutput{record: storage.Record{
+		Fields: map[string]storage.Value{"Action_Type__c": storage.StringValue("Vaccination")},
+	}}
+	value, ok := (&Engine{}).flowFrameValue(storage.FlowAssignment{
+		Formula: `IF(Movement, Get_Animal_Details.Animal_Name__c + " needs to be moved", Get_Animal_Action_Record.Action_Type__c + " action for " + Get_Animal_Details.Animal_Name__c)`,
+	}, frame)
+	if !ok || value.Kind != storage.ValueString || value.String != "Vaccination action for Bella" {
+		t.Fatalf("formula value = %#v, want Vaccination action for Bella", value)
+	}
+}
+
+func TestRunAutolaunchedFlowTextTemplateAssignment(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+	rule := storage.FlowRule{
+		Name: "TextTemplate",
+		TextTemplates: map[string]string{
+			"greetingtemplate": "Hello {!Name}",
+		},
+		Variables: []storage.FlowVariable{
+			{Name: "Name", DataType: "String", IsInput: true},
+			{Name: "Greeting", DataType: "String", IsOutput: true},
+		},
+		Steps: []storage.FlowStep{{
+			Kind: "assignment",
+			Assignment: storage.FlowAssignment{
+				Name:        "Set_Greeting",
+				Target:      "Greeting",
+				Operator:    "Assign",
+				SourceField: "GreetingTemplate",
+			},
+		}},
+	}
+	output, err := engine.RunAutolaunchedFlowWithOutput(rule, FlowInterviewInput{
+		Scalars: map[string]storage.Value{"Name": storage.StringValue("Ada")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, ok := output.Scalars["greeting"]
+	if !ok || value.Kind != storage.ValueString || value.String != "Hello Ada" {
+		t.Fatalf("output greeting = %#v, want Hello Ada", value)
+	}
+}
+
+func TestFlowActionReceivesRenderedTextTemplateInput(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+	var got storage.Value
+	engine.FlowActionInvokerWithContext = func(_ storage.FlowAction, _ storage.Record, context FlowActionContext) error {
+		got = context.Scalars["message"]
+		return nil
+	}
+	rule := storage.FlowRule{
+		Name: "TemplateAction", Active: true, TextTemplates: map[string]string{"message": "Hello {!Name}"},
+		Steps: []storage.FlowStep{{Kind: "action", Action: storage.FlowAction{Name: "Capture", ActionType: "apex", Inputs: []storage.WorkflowFieldUpdate{{Name: "message", SourceField: "Message"}}}}},
+	}
+	if err := engine.RunAutolaunchedFlow(rule, FlowInterviewInput{Scalars: map[string]storage.Value{"Name": storage.StringValue("Grace")}}); err != nil {
+		t.Fatal(err)
+	}
+	if got.Kind != storage.ValueString || got.String != "Hello Grace" {
+		t.Fatalf("template action input = %#v, want Hello Grace", got)
+	}
+}
+
+func TestFlowTextTemplateReferenceFailures(t *testing.T) {
+	engine := &Engine{}
+	frame := newFlowFrame()
+	frame.scalars["name"] = storage.NullValue()
+	frame.textTemplates["greeting"] = "Hello {!Name}"
+	value, ok := engine.flowFrameReferenceValue("Greeting", frame)
+	if !ok || value.Kind != storage.ValueString || value.String != "Hello " {
+		t.Fatalf("explicit null template value = %#v, ok=%v; want blank substitution", value, ok)
+	}
+
+	frame.textTemplates = map[string]string{"greeting": "Hello {!Missing}"}
+	if _, ok := engine.flowFrameReferenceValue("Greeting", frame); ok {
+		t.Fatal("unresolved template reference returned success")
+	}
+
+	frame.textTemplates = map[string]string{"first": "{!Second}", "second": "{!First}"}
+	if _, ok := engine.flowFrameReferenceValue("First", frame); ok {
+		t.Fatal("cyclic template references returned success")
+	}
+}
+
+func TestFlowAssignmentFormulaPreservesNumericValueForArithmetic(t *testing.T) {
+	frame := newFlowFrame()
+	engine := &Engine{}
+	if err := engine.applyFlowAssignmentStep(storage.FlowAssignment{Target: "count", Formula: "1 + 2"}, frame); err != nil {
+		t.Fatal(err)
+	}
+	frame.scalars[flowFrameKey("one")] = storage.IntegerValue(1)
+	if err := engine.applyFlowAssignmentStep(storage.FlowAssignment{Target: "count", Operator: "Subtract", SourceField: "one"}, frame); err != nil {
+		t.Fatal(err)
+	}
+	if got := frame.scalars[flowFrameKey("count")]; got.Kind != storage.ValueInteger || got.Integer != 2 {
+		t.Fatalf("count after formula arithmetic = %#v, want integer 2", got)
 	}
 }
 
@@ -5871,6 +6200,51 @@ func TestFlowStepsRunInXmlOrder(t *testing.T) {
 	want := []string{"apex.flow.record_lookup", "apex.flow.record_create", "apex.flow.action", "apex.flow.chatter_post"}
 	if !stringSlicesContainInOrder(events, want) {
 		t.Fatalf("events = %#v, want order %#v", events, want)
+	}
+}
+
+func TestFlowRecordCreateIgnoresReadonlyRecordVariableFields(t *testing.T) {
+	org := testOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":     {APIName: "LastName", Type: storage.FieldString, Required: true},
+				"CreatedDate":  {APIName: "CreatedDate", Type: storage.FieldDateTime, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)},
+				"OtherAddress": {APIName: "OtherAddress", Type: storage.FieldAddress, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	created, err := engine.executeFlowRecordCreateRecord(storage.FlowRecordCreate{
+		Name:       "CreateContact",
+		ObjectName: "Contact",
+	}, storage.Record{
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"LastName":     storage.StringValue("Doe"),
+			"CreatedDate":  storage.DateTimeValue("2021-01-29T12:26:00Z"),
+			"OtherAddress": storage.StringValue("ignored compound value"),
+		},
+		System: storage.SystemFields{CreatedDate: "2000-01-01T00:00:00Z"},
+	})
+	if err != nil {
+		t.Fatalf("Flow record create = %v", err)
+	}
+	stored := org.Objects["Contact"].Records[created]
+	if got := stored.Fields["LastName"].String; got != "Doe" {
+		t.Fatalf("LastName = %q", got)
+	}
+	if _, ok := stored.Fields["CreatedDate"]; ok {
+		t.Fatal("Flow record create retained CreatedDate field")
+	}
+	if _, ok := stored.Fields["OtherAddress"]; ok {
+		t.Fatal("Flow record create retained compound OtherAddress field")
+	}
+	if stored.System.CreatedDate == "2000-01-01T00:00:00Z" || stored.System.CreatedDate == "" {
+		t.Fatalf("generated CreatedDate = %q", stored.System.CreatedDate)
 	}
 }
 
@@ -6470,6 +6844,101 @@ func TestFlowFaultBranchSubflowFailsRecoveryHandlesError(t *testing.T) {
 	}
 }
 
+func TestFlowSubflowResolvesOrgMetadataFlow(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Status__c"] = storage.Field{APIName: "Status__c", Type: storage.FieldString}
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:   "Call_Status_Subflow",
+		Active: true,
+		Steps: []storage.FlowStep{{
+			Kind: "subflow",
+			Subflow: storage.FlowSubflow{
+				Name:     "Call_Status_Subflow",
+				FlowName: "Set_Status_Subflow",
+				InputAssignments: []storage.WorkflowFieldUpdate{{
+					Name:        "varName",
+					Field:       "varName",
+					SourceField: "Name",
+				}},
+			},
+		}},
+	}}
+	org.Objects["Account"] = account
+	org.Metadata.Flows = []storage.FlowRule{{
+		Name:   "Set_Status_Subflow",
+		Active: true,
+		Steps: []storage.FlowStep{{
+			Kind:   "action",
+			Action: storage.FlowAction{Name: "SetStatus", ActionType: "apex", ActionName: "SetStatus"},
+		}},
+	}}
+	engine := NewEngine(&org)
+	called := 0
+	var input storage.Value
+	engine.FlowActionInvokerWithContext = func(_ storage.FlowAction, _ storage.Record, context FlowActionContext) error {
+		called++
+		input = context.Scalars["varname"]
+		return nil
+	}
+
+	result := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Subflow")},
+	}})
+	if !result[0].Success {
+		t.Fatalf("insert through metadata subflow = %#v", result)
+	}
+	if called != 1 {
+		t.Fatalf("metadata subflow action calls = %d", called)
+	}
+	if input.Kind != storage.ValueString || input.String != "Subflow" {
+		t.Fatalf("metadata subflow source input = %#v", input)
+	}
+}
+
+func TestFlowDecisionBranchLookupCollectionIsNull(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Probe__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Probe__c",
+			KeyPrefix: "a0p",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Status__c": {APIName: "Status__c", Type: storage.FieldString},
+			},
+			FlowRules: []storage.FlowRule{{
+				Name:   "LookupDecision",
+				Active: true,
+				Steps: []storage.FlowStep{
+					{Kind: "recordLookup", RecordLookup: storage.FlowRecordLookup{
+						Name:                     "MissingTargets",
+						ObjectName:               "Target__c",
+						StoreOutputAutomatically: true,
+					}},
+					{Kind: "decision", Branches: []storage.FlowBranch{
+						{Name: "NoTargets", Criteria: []storage.WorkflowCriteriaItem{{Field: "MissingTargets", Operation: "isnull", Value: "true"}}, Steps: []storage.FlowStep{{Kind: "fieldUpdate", FieldUpdates: []storage.WorkflowFieldUpdate{{Field: "Status__c", LiteralValue: "No targets"}}}}},
+						{Default: true, Name: "HasTargets"},
+					}},
+				},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Target__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Target__c", KeyPrefix: "a0t", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	result := engine.Insert([]storage.Record{{Object: "Probe__c", Fields: map[string]storage.Value{"Name": storage.StringValue("probe")}}})
+	if !result[0].Success {
+		t.Fatalf("lookup decision insert = %#v", result)
+	}
+	if got := org.Objects["Probe__c"].Records[result[0].ID].Fields["Status__c"].String; got != "No targets" {
+		t.Fatalf("empty lookup decision status = %q", got)
+	}
+}
+
 func stringSliceContains(values []string, needle string) bool {
 	for _, value := range values {
 		if value == needle {
@@ -6906,6 +7375,33 @@ func TestAttachmentBodyDMLRoundTrip(t *testing.T) {
 	}
 }
 
+func TestAttachmentAcceptsExplicitEmptyBody(t *testing.T) {
+	org := fileTestOrg()
+	engine := NewEngine(&org)
+	account := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !account[0].Success {
+		t.Fatalf("account insert = %#v", account)
+	}
+	attachment := engine.Insert([]storage.Record{{
+		Object: "Attachment",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("empty.jpg"),
+			"ParentId": storage.IDValue(account[0].ID),
+			"Body":     storage.BlobValue(""),
+		},
+	}})
+	if len(attachment) != 1 || !attachment[0].Success {
+		t.Fatalf("empty attachment insert = %#v", attachment)
+	}
+	row := org.Objects["Attachment"].Records[attachment[0].ID]
+	if row.Fields["Body"].Kind != storage.ValueBlob || row.Fields["Body"].String != "" {
+		t.Fatalf("empty attachment row = %#v", row)
+	}
+}
+
 func TestAttachmentParentCanReferenceCurrentUser(t *testing.T) {
 	org := fileTestOrg()
 	engine := NewEngine(&org)
@@ -6989,6 +7485,9 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 	document := org.Objects["ContentDocument"].Records[documentID]
 	if document.Fields["LatestPublishedVersionId"].ID != first[0].ID || document.Fields["Title"].String != "Spec" || document.Fields["FileExtension"].String != "pdf" || document.Fields["FileType"].String != "PDF" {
 		t.Fatalf("content document = %#v", document)
+	}
+	if version.Fields["FileExtension"].String != "pdf" || version.Fields["FileType"].String != "PDF" || version.Fields["ContentSize"].Integer != int64(len("pdf bytes")) {
+		t.Fatalf("content version derived fields = %#v", version.Fields)
 	}
 	if got := len(org.Objects["ContentDocumentLink"].Records); got != 1 {
 		t.Fatalf("content document links = %d", got)

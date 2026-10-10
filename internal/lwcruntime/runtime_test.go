@@ -22,6 +22,8 @@ func TestBrowserRuntimeSuite(t *testing.T) {
 	}
 	cmd := exec.Command("npm", "test")
 	cmd.Dir = filepath.Join(root, "lwcruntime")
+	tmpDir := t.TempDir()
+	cmd.Env = append(os.Environ(), "TMPDIR="+tmpDir, "TMP="+tmpDir, "TEMP="+tmpDir)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("npm test: %v\n%s", err, out)

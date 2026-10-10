@@ -39,7 +39,7 @@ export function notifyRecordUpdateAvailable(items = []) {
       continue;
     }
     if (recordIds.size === 0 || adapterMatches(adapter, recordIds)) {
-      refreshes.push(adapter.refresh({ force: true }));
+      refreshes.push(adapter.refresh({ force: true, suppressUnchanged: true }));
     }
   }
   return Promise.all(refreshes).then(() => undefined);
@@ -51,9 +51,11 @@ export function getRecordNotifyChange(items = []) {
 
 export function refreshApex(value) {
   if (value && typeof value.refresh === "function") {
-    return value.refresh({ force: true });
+    return Promise.resolve(value.refresh({ force: true })).then(() => undefined);
   }
-  return Promise.resolve(value);
+  // Native Apex refresh promises carry settlement only, including data-only,
+  // cloned, null and imperative-promise inputs (r_refresh_*).
+  return Promise.resolve(value).then(() => undefined);
 }
 
 export function recordIdsFromBody(body) {

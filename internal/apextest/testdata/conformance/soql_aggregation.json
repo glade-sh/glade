@@ -1,0 +1,1692 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "declarations": {
+    "SAContext": "public class SAContext { public Account account; }",
+    "SA": "public class SA {\n public String typed(Object value) {\n  if(value==null) return 'null';\n  return String.valueOf(value)+'|Integer='+(value instanceof Integer)\n   +'|Decimal='+(value instanceof Decimal)+'|Date='+(value instanceof Date)\n   +'|String='+(value instanceof String)+'|AggregateResult='+(value instanceof AggregateResult);\n }\n public String signature(List<SObject> rows,List<String> keys) {\n  List<String> values=new List<String>();\n  for(SObject row:rows) {\n   List<String> parts=new List<String>();\n   for(String key:keys) parts.add(key+'='+String.valueOf(row.get(key)));\n   values.add(String.join(parts,','));\n  }\n  values.sort(); return rows.size()+'|'+String.join(values,';');\n }\n}"
+  },
+  "prelude": "\n\n\nSA sa=new SA();\nString marker='A33-oracle-20261004';\ndelete [SELECT Id FROM Contact WHERE Department=:marker];\ndelete [SELECT Id FROM Account WHERE AccountNumber=:marker];\nList<Account> seed=new List<Account>{\n new Account(Name='A33-Alpha',AccountNumber=marker,BillingCity='North',BillingState='A',AnnualRevenue=10.5,NumberOfEmployees=1,Phone='100'),\n new Account(Name='A33-Beta',AccountNumber=marker,BillingCity='North',BillingState='A',AnnualRevenue=20,NumberOfEmployees=2,Phone='200'),\n new Account(Name='A33-Gamma',AccountNumber=marker,BillingCity='North',BillingState='B',AnnualRevenue=20,NumberOfEmployees=2,Phone=null),\n new Account(Name='A33-Delta',AccountNumber=marker,BillingCity='South',BillingState='A',AnnualRevenue=-5.25,NumberOfEmployees=0,Phone='200'),\n new Account(Name='A33-Epsilon',AccountNumber=marker,BillingCity='South',BillingState='B',AnnualRevenue=0,NumberOfEmployees=0,Phone=null),\n new Account(Name='A33-Zeta',AccountNumber=marker,BillingCity=null,BillingState='B',AnnualRevenue=null,NumberOfEmployees=null,Phone=null),\n new Account(Name='A33-Eta',AccountNumber=marker,BillingCity=null,BillingState=null,AnnualRevenue=null,NumberOfEmployees=null,Phone='300'),\n new Account(Name='A33-Theta',AccountNumber=marker,BillingCity='South',BillingState=null,AnnualRevenue=1000000.01,NumberOfEmployees=100,Phone='300')\n};\ninsert seed;\nSet<Id> sids=new Map<Id,Account>(seed).keySet();\nSet<Id> emptyIds=new Set<Id>();\nId selectedId=seed[0].Id;\nAccount account=seed[0];\nSAContext context=new SAContext(); context.account=account;\nList<Contact> contacts=new List<Contact>{\n new Contact(LastName='A33-One',Department=marker,AccountId=seed[0].Id,Birthdate=Date.newInstance(2000,1,1)),\n new Contact(LastName='A33-Two',Department=marker,AccountId=seed[0].Id,Birthdate=Date.newInstance(2000,1,1)),\n new Contact(LastName='A33-Three',Department=marker,AccountId=seed[1].Id,Birthdate=Date.newInstance(2001,2,3)),\n new Contact(LastName='A33-Four',Department=marker,AccountId=seed[1].Id,Birthdate=null),\n new Contact(LastName='A33-Five',Department=marker,AccountId=null,Birthdate=Date.newInstance(1999,12,31)),\n new Contact(LastName='A33-Six',Department=marker,AccountId=null,Birthdate=null)\n};\ninsert contacts;\nSet<Id> cids=new Map<Id,Contact>(contacts).keySet();\n",
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Object y=[SELECT COUNT() FROM Account WHERE Id IN :sids]; r=sa.typed(y);",
+      "expected": "8|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R002",
+      "code": "Object y=[SELECT COUNT() FROM Account WHERE Id IN :emptyIds]; r=sa.typed(y);",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R003",
+      "code": "Object y=[SELECT COUNT() FROM Account WHERE Id=:selectedId]; r=sa.typed(y);",
+      "expected": "1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R004",
+      "code": "Object y=[SELECT COUNT() FROM Account WHERE Id=:account.Id]; r=sa.typed(y);",
+      "expected": "1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R005",
+      "code": "Object y=[SELECT COUNT() FROM Account WHERE Id=:context.account.Id]; r=sa.typed(y);",
+      "expected": "1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R006",
+      "code": "Object y=[SELECT COUNT() FROM Account WHERE Id=:seed[0].Id]; r=sa.typed(y);",
+      "expected": "1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R007",
+      "code": "Object y=[SELECT COUNT() FROM Account WHERE Id=:context.account.Id AND Name='A33-absent']; r=sa.typed(y);",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R008",
+      "code": "Object y=[SELECT COUNT() FROM Account WHERE Id=:account.Id AND Name='A33-Alpha']; r=sa.typed(y);",
+      "expected": "1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R009",
+      "code": " r=sa.typed(Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids'));",
+      "expected": "8|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R010",
+      "code": " r=sa.typed(Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids AND AnnualRevenue=null'));",
+      "expected": "2|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R011",
+      "code": " r=sa.typed(Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids AND AnnualRevenue!=null'));",
+      "expected": "6|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R012",
+      "code": "Decimal amount=20; r=sa.typed(Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids AND AnnualRevenue>=:amount'));",
+      "expected": "3|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R013",
+      "code": "String city='North'; r=sa.typed(Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids AND BillingCity=:city'));",
+      "expected": "3|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R014",
+      "code": "String city=null; r=sa.typed(Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids AND BillingCity=:city'));",
+      "expected": "2|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R015",
+      "code": " r=sa.typed(Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids LIMIT 0'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R016",
+      "code": " r=sa.typed(Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids LIMIT 1'));",
+      "expected": "1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R017",
+      "code": "Integer n=2; r=sa.typed(Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids LIMIT :n'));",
+      "expected": "2|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R018",
+      "code": "Integer n=-1; r=sa.typed(Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids LIMIT :n'));",
+      "expected": "EXC|System.QueryException|Limit must be a non-negative value",
+      "compile": false
+    },
+    {
+      "id": "R019",
+      "code": " r=sa.typed(Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids OFFSET 1'));",
+      "expected": "7|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R020",
+      "code": "Integer y=[SELECT COUNT() FROM Account WHERE Id IN :sids]; r=y;",
+      "expected": "8",
+      "compile": false
+    },
+    {
+      "id": "R021",
+      "code": "Long y=[SELECT COUNT() FROM Account WHERE Id IN :sids]; r=y;",
+      "expected": "8",
+      "compile": false
+    },
+    {
+      "id": "R022",
+      "code": "Decimal y=[SELECT COUNT() FROM Account WHERE Id IN :sids]; r=y;",
+      "expected": "8",
+      "compile": false
+    },
+    {
+      "id": "R023",
+      "code": "Object y=Database.query('SELECT COUNT() FROM Account WHERE Id IN :sids'); r=y instanceof List<SObject>;",
+      "expected": "EXC|System.QueryException|use countQuery() for [select count()...] queries",
+      "compile": false
+    },
+    {
+      "id": "R024",
+      "code": "r=Database.countQuery('SELECT COUNT(Id) FROM Account WHERE Id IN :sids');",
+      "expected": "EXC|System.QueryException|Use query() for non-count queries",
+      "compile": false
+    },
+    {
+      "id": "R025",
+      "code": "r=Database.countQuery('SELECT Id FROM Account WHERE Id IN :sids');",
+      "expected": "EXC|System.QueryException|Use query() for non-count queries",
+      "compile": false
+    },
+    {
+      "id": "R026",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Id) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "8|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R027",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Id) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R028",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Id) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "2|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R029",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(Id) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "8|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R030",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(Id) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R031",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(Id) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "2|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R032",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Name) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "8|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R033",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Name) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R034",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Name) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "2|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R035",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(Name) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "8|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R036",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(Name) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R037",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(Name) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "2|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R038",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Phone) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "5|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R039",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Phone) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R040",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Phone) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R041",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(Phone) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "3|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R042",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(Phone) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R043",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(Phone) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R044",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(AnnualRevenue) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "6|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R045",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(AnnualRevenue) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R046",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(AnnualRevenue) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R047",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(AnnualRevenue) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "5|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R048",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(AnnualRevenue) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R049",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(AnnualRevenue) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R050",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(NumberOfEmployees) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "6|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R051",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R052",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R053",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(NumberOfEmployees) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "4|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R054",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R055",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R056",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "1000045.26|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R057",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R058",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R059",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids AND Id=:selectedId'); r=sa.typed(rows[0].get('v'));",
+      "expected": "10.5|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R060",
+      "code": " List<SObject> rows=Database.query('SELECT AVG(AnnualRevenue) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "166674.21|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R061",
+      "code": " List<SObject> rows=Database.query('SELECT AVG(AnnualRevenue) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R062",
+      "code": " List<SObject> rows=Database.query('SELECT AVG(AnnualRevenue) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R063",
+      "code": " List<SObject> rows=Database.query('SELECT AVG(AnnualRevenue) v FROM Account WHERE Id IN :sids AND Id=:selectedId'); r=sa.typed(rows[0].get('v'));",
+      "expected": "10.5|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R064",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(AnnualRevenue) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "-5.25|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R065",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(AnnualRevenue) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R066",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(AnnualRevenue) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R067",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(AnnualRevenue) v FROM Account WHERE Id IN :sids AND Id=:selectedId'); r=sa.typed(rows[0].get('v'));",
+      "expected": "10.5|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R068",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(AnnualRevenue) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "1000000.01|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R069",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(AnnualRevenue) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R070",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(AnnualRevenue) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R071",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(AnnualRevenue) v FROM Account WHERE Id IN :sids AND Id=:selectedId'); r=sa.typed(rows[0].get('v'));",
+      "expected": "10.5|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R072",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(NumberOfEmployees) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "105.0|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R073",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R074",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R075",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND Id=:selectedId'); r=sa.typed(rows[0].get('v'));",
+      "expected": "1.0|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R076",
+      "code": " List<SObject> rows=Database.query('SELECT AVG(NumberOfEmployees) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "17.5|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R077",
+      "code": " List<SObject> rows=Database.query('SELECT AVG(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R078",
+      "code": " List<SObject> rows=Database.query('SELECT AVG(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R079",
+      "code": " List<SObject> rows=Database.query('SELECT AVG(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND Id=:selectedId'); r=sa.typed(rows[0].get('v'));",
+      "expected": "1.0|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R080",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(NumberOfEmployees) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "0|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R081",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R082",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R083",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND Id=:selectedId'); r=sa.typed(rows[0].get('v'));",
+      "expected": "1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R084",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(NumberOfEmployees) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "100|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R085",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND Id IN :emptyIds'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R086",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND AnnualRevenue=null'); r=sa.typed(rows[0].get('v'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R087",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(NumberOfEmployees) v FROM Account WHERE Id IN :sids AND Id=:selectedId'); r=sa.typed(rows[0].get('v'));",
+      "expected": "1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R088",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Birthdate) v FROM Contact WHERE Id IN :cids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "4|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R089",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT(Birthdate) v FROM Contact WHERE Id IN :cids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "3|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R090",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(Birthdate) v FROM Contact WHERE Id IN :cids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "1999-12-31 00:00:00|Integer=false|Decimal=false|Date=true|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R091",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(Birthdate) v FROM Contact WHERE Id IN :cids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "2001-02-03 00:00:00|Integer=false|Decimal=false|Date=true|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R092",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(Birthdate) v FROM Contact WHERE Id IN :cids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "EXC|System.QueryException|field Birthdate does not support aggregate operator SUM",
+      "compile": false
+    },
+    {
+      "id": "R093",
+      "code": " List<SObject> rows=Database.query('SELECT AVG(Birthdate) v FROM Contact WHERE Id IN :cids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "EXC|System.QueryException|field Birthdate does not support aggregate operator AVG",
+      "compile": false
+    },
+    {
+      "id": "R094",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(Name) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "A33-Alpha|Integer=false|Decimal=false|Date=false|String=true|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R095",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(Name) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "A33-Zeta|Integer=false|Decimal=false|Date=false|String=true|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R096",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(Phone) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "100|Integer=false|Decimal=false|Date=false|String=true|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R097",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(Phone) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "300|Integer=false|Decimal=false|Date=false|String=true|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R098",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(BillingCity) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "North|Integer=false|Decimal=false|Date=false|String=true|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R099",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(BillingCity) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "South|Integer=false|Decimal=false|Date=false|String=true|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R100",
+      "code": " List<SObject> rows=Database.query('SELECT MIN(IsDeleted) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "EXC|System.QueryException|field IsDeleted does not support aggregate operator MIN",
+      "compile": false
+    },
+    {
+      "id": "R101",
+      "code": " List<SObject> rows=Database.query('SELECT MAX(IsDeleted) v FROM Account WHERE Id IN :sids'); r=sa.typed(rows[0].get('v'));",
+      "expected": "EXC|System.QueryException|field IsDeleted does not support aggregate operator MAX",
+      "compile": false
+    },
+    {
+      "id": "R102",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Id) n,SUM(AnnualRevenue) s,AVG(NumberOfEmployees) a,MIN(Name) lo,MAX(Name) hi FROM Account WHERE Id IN :sids'); r=sa.signature(rows,new List<String>{'n','s','a','lo','hi'});",
+      "expected": "1|n=8,s=1000045.26,a=17.5,lo=A33-Alpha,hi=A33-Zeta",
+      "compile": false
+    },
+    {
+      "id": "R103",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Id),SUM(AnnualRevenue),MAX(NumberOfEmployees) FROM Account WHERE Id IN :sids'); r=sa.signature(rows,new List<String>{'expr0','expr1','expr2'});",
+      "expected": "1|expr0=8,expr1=1000045.26,expr2=100",
+      "compile": false
+    },
+    {
+      "id": "R104",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R105",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY BillingCity'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=0",
+      "compile": false
+    },
+    {
+      "id": "R106",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY BillingCity'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=50.5;BillingCity=South,v=999994.76;BillingCity=null,v=null",
+      "compile": false
+    },
+    {
+      "id": "R107",
+      "code": " List<SObject> rows=Database.query('SELECT BillingState,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingState'); r=sa.signature(rows,new List<String>{'BillingState','v'});",
+      "expected": "3|BillingState=A,v=3;BillingState=B,v=3;BillingState=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R108",
+      "code": " List<SObject> rows=Database.query('SELECT BillingState,COUNT(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY BillingState'); r=sa.signature(rows,new List<String>{'BillingState','v'});",
+      "expected": "3|BillingState=A,v=3;BillingState=B,v=2;BillingState=null,v=1",
+      "compile": false
+    },
+    {
+      "id": "R109",
+      "code": " List<SObject> rows=Database.query('SELECT BillingState,SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY BillingState'); r=sa.signature(rows,new List<String>{'BillingState','v'});",
+      "expected": "3|BillingState=A,v=25.25;BillingState=B,v=20.0;BillingState=null,v=1000000.01",
+      "compile": false
+    },
+    {
+      "id": "R110",
+      "code": " List<SObject> rows=Database.query('SELECT Phone,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY Phone'); r=sa.signature(rows,new List<String>{'Phone','v'});",
+      "expected": "4|Phone=100,v=1;Phone=200,v=2;Phone=300,v=2;Phone=null,v=3",
+      "compile": false
+    },
+    {
+      "id": "R111",
+      "code": " List<SObject> rows=Database.query('SELECT Phone,COUNT(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY Phone'); r=sa.signature(rows,new List<String>{'Phone','v'});",
+      "expected": "4|Phone=100,v=1;Phone=200,v=2;Phone=300,v=1;Phone=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R112",
+      "code": " List<SObject> rows=Database.query('SELECT Phone,SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY Phone'); r=sa.signature(rows,new List<String>{'Phone','v'});",
+      "expected": "4|Phone=100,v=10.5;Phone=200,v=14.75;Phone=300,v=1000000.01;Phone=null,v=20.0",
+      "compile": false
+    },
+    {
+      "id": "R113",
+      "code": " List<SObject> rows=Database.query('SELECT NumberOfEmployees,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY NumberOfEmployees'); r=sa.signature(rows,new List<String>{'NumberOfEmployees','v'});",
+      "expected": "5|NumberOfEmployees=0,v=2;NumberOfEmployees=1,v=1;NumberOfEmployees=100,v=1;NumberOfEmployees=2,v=2;NumberOfEmployees=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R114",
+      "code": " List<SObject> rows=Database.query('SELECT NumberOfEmployees,COUNT(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY NumberOfEmployees'); r=sa.signature(rows,new List<String>{'NumberOfEmployees','v'});",
+      "expected": "5|NumberOfEmployees=0,v=2;NumberOfEmployees=1,v=1;NumberOfEmployees=100,v=1;NumberOfEmployees=2,v=2;NumberOfEmployees=null,v=0",
+      "compile": false
+    },
+    {
+      "id": "R115",
+      "code": " List<SObject> rows=Database.query('SELECT NumberOfEmployees,SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY NumberOfEmployees'); r=sa.signature(rows,new List<String>{'NumberOfEmployees','v'});",
+      "expected": "5|NumberOfEmployees=0,v=-5.25;NumberOfEmployees=1,v=10.5;NumberOfEmployees=100,v=1000000.01;NumberOfEmployees=2,v=40.0;NumberOfEmployees=null,v=null",
+      "compile": false
+    },
+    {
+      "id": "R116",
+      "code": " List<SObject> rows=Database.query('SELECT AnnualRevenue,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY AnnualRevenue'); r=sa.signature(rows,new List<String>{'AnnualRevenue','v'});",
+      "expected": "UNCAUGHT|System.UnexpectedException: field 'AnnualRevenue' can not be grouped in a query call",
+      "compile": false
+    },
+    {
+      "id": "R117",
+      "code": " List<SObject> rows=Database.query('SELECT AnnualRevenue,COUNT(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY AnnualRevenue'); r=sa.signature(rows,new List<String>{'AnnualRevenue','v'});",
+      "expected": "EXC|System.QueryException|Grouped field should not be aggregated: AnnualRevenue",
+      "compile": false
+    },
+    {
+      "id": "R118",
+      "code": " List<SObject> rows=Database.query('SELECT AnnualRevenue,SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY AnnualRevenue'); r=sa.signature(rows,new List<String>{'AnnualRevenue','v'});",
+      "expected": "EXC|System.QueryException|Grouped field should not be aggregated: AnnualRevenue",
+      "compile": false
+    },
+    {
+      "id": "R119",
+      "code": " List<SObject> rows=Database.query('SELECT Name,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY Name'); r=sa.signature(rows,new List<String>{'Name','v'});",
+      "expected": "8|Name=A33-Alpha,v=1;Name=A33-Beta,v=1;Name=A33-Delta,v=1;Name=A33-Epsilon,v=1;Name=A33-Eta,v=1;Name=A33-Gamma,v=1;Name=A33-Theta,v=1;Name=A33-Zeta,v=1",
+      "compile": false
+    },
+    {
+      "id": "R120",
+      "code": " List<SObject> rows=Database.query('SELECT Name,COUNT(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY Name'); r=sa.signature(rows,new List<String>{'Name','v'});",
+      "expected": "8|Name=A33-Alpha,v=1;Name=A33-Beta,v=1;Name=A33-Delta,v=1;Name=A33-Epsilon,v=1;Name=A33-Eta,v=0;Name=A33-Gamma,v=1;Name=A33-Theta,v=1;Name=A33-Zeta,v=0",
+      "compile": false
+    },
+    {
+      "id": "R121",
+      "code": " List<SObject> rows=Database.query('SELECT Name,SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids GROUP BY Name'); r=sa.signature(rows,new List<String>{'Name','v'});",
+      "expected": "8|Name=A33-Alpha,v=10.5;Name=A33-Beta,v=20.0;Name=A33-Delta,v=-5.25;Name=A33-Epsilon,v=0.0;Name=A33-Eta,v=null;Name=A33-Gamma,v=20.0;Name=A33-Theta,v=1000000.01;Name=A33-Zeta,v=null",
+      "compile": false
+    },
+    {
+      "id": "R122",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,BillingState,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity,BillingState'); r=sa.signature(rows,new List<String>{'BillingCity','BillingState','v'});",
+      "expected": "7|BillingCity=North,BillingState=A,v=2;BillingCity=North,BillingState=B,v=1;BillingCity=South,BillingState=A,v=1;BillingCity=South,BillingState=B,v=1;BillingCity=South,BillingState=null,v=1;BillingCity=null,BillingState=B,v=1;BillingCity=null,BillingState=null,v=1",
+      "compile": false
+    },
+    {
+      "id": "R123",
+      "code": " List<SObject> rows=Database.query('SELECT BillingState,BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingState,BillingCity'); r=sa.signature(rows,new List<String>{'BillingState','BillingCity','v'});",
+      "expected": "7|BillingState=A,BillingCity=North,v=2;BillingState=A,BillingCity=South,v=1;BillingState=B,BillingCity=North,v=1;BillingState=B,BillingCity=South,v=1;BillingState=B,BillingCity=null,v=1;BillingState=null,BillingCity=South,v=1;BillingState=null,BillingCity=null,v=1",
+      "compile": false
+    },
+    {
+      "id": "R124",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,Phone,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity,Phone'); r=sa.signature(rows,new List<String>{'BillingCity','Phone','v'});",
+      "expected": "8|BillingCity=North,Phone=100,v=1;BillingCity=North,Phone=200,v=1;BillingCity=North,Phone=null,v=1;BillingCity=South,Phone=200,v=1;BillingCity=South,Phone=300,v=1;BillingCity=South,Phone=null,v=1;BillingCity=null,Phone=300,v=1;BillingCity=null,Phone=null,v=1",
+      "compile": false
+    },
+    {
+      "id": "R125",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity FROM Account WHERE Id IN :sids GROUP BY BillingCity'); r=sa.signature(rows,new List<String>{'BillingCity'});",
+      "expected": "3|BillingCity=North;BillingCity=South;BillingCity=null",
+      "compile": false
+    },
+    {
+      "id": "R126",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :emptyIds GROUP BY BillingCity'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "0|",
+      "compile": false
+    },
+    {
+      "id": "R127",
+      "code": " List<SObject> rows=Database.query('SELECT Birthdate,COUNT(Id) v FROM Contact WHERE Id IN :cids GROUP BY Birthdate'); r=sa.signature(rows,new List<String>{'Birthdate','v'});",
+      "expected": "4|Birthdate=1999-12-31 00:00:00,v=1;Birthdate=2000-01-01 00:00:00,v=2;Birthdate=2001-02-03 00:00:00,v=1;Birthdate=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R128",
+      "code": " List<SObject> rows=Database.query('SELECT CALENDAR_YEAR(Birthdate) period,COUNT(Id) v FROM Contact WHERE Id IN :cids GROUP BY CALENDAR_YEAR(Birthdate)'); r=sa.signature(rows,new List<String>{'period','v'});",
+      "expected": "4|period=1999,v=1;period=2000,v=2;period=2001,v=1;period=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R129",
+      "code": " List<SObject> rows=Database.query('SELECT CALENDAR_MONTH(Birthdate) period,COUNT(Id) v FROM Contact WHERE Id IN :cids GROUP BY CALENDAR_MONTH(Birthdate)'); r=sa.signature(rows,new List<String>{'period','v'});",
+      "expected": "4|period=1,v=2;period=12,v=1;period=2,v=1;period=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R130",
+      "code": " List<SObject> rows=Database.query('SELECT CALENDAR_QUARTER(Birthdate) period,COUNT(Id) v FROM Contact WHERE Id IN :cids GROUP BY CALENDAR_QUARTER(Birthdate)'); r=sa.signature(rows,new List<String>{'period','v'});",
+      "expected": "3|period=1,v=3;period=4,v=1;period=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R131",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v,GROUPING(BillingCity) g0 FROM Account WHERE Id IN :sids GROUP BY ROLLUP(BillingCity)'); r=sa.signature(rows,new List<String>{'BillingCity','v','g0'});",
+      "expected": "4|BillingCity=North,v=3,g0=0;BillingCity=South,v=3,g0=0;BillingCity=null,v=2,g0=0;BillingCity=null,v=8,g0=1",
+      "compile": false
+    },
+    {
+      "id": "R132",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,BillingState,COUNT(Id) v,GROUPING(BillingCity) g0,GROUPING(BillingState) g1 FROM Account WHERE Id IN :sids GROUP BY ROLLUP(BillingCity,BillingState)'); r=sa.signature(rows,new List<String>{'BillingCity','BillingState','v','g0','g1'});",
+      "expected": "11|BillingCity=North,BillingState=A,v=2,g0=0,g1=0;BillingCity=North,BillingState=B,v=1,g0=0,g1=0;BillingCity=North,BillingState=null,v=3,g0=0,g1=1;BillingCity=South,BillingState=A,v=1,g0=0,g1=0;BillingCity=South,BillingState=B,v=1,g0=0,g1=0;BillingCity=South,BillingState=null,v=1,g0=0,g1=0;BillingCity=South,BillingState=null,v=3,g0=0,g1=1;BillingCity=null,BillingState=B,v=1,g0=0,g1=0;BillingCity=null,BillingState=null,v=1,g0=0,g1=0;BillingCity=null,BillingState=null,v=2,g0=0,g1=1;BillingCity=null,BillingState=null,v=8,g0=1,g1=1",
+      "compile": false
+    },
+    {
+      "id": "R133",
+      "code": " List<SObject> rows=Database.query('SELECT BillingState,BillingCity,COUNT(Id) v,GROUPING(BillingState) g0,GROUPING(BillingCity) g1 FROM Account WHERE Id IN :sids GROUP BY ROLLUP(BillingState,BillingCity)'); r=sa.signature(rows,new List<String>{'BillingState','BillingCity','v','g0','g1'});",
+      "expected": "11|BillingState=A,BillingCity=North,v=2,g0=0,g1=0;BillingState=A,BillingCity=South,v=1,g0=0,g1=0;BillingState=A,BillingCity=null,v=3,g0=0,g1=1;BillingState=B,BillingCity=North,v=1,g0=0,g1=0;BillingState=B,BillingCity=South,v=1,g0=0,g1=0;BillingState=B,BillingCity=null,v=1,g0=0,g1=0;BillingState=B,BillingCity=null,v=3,g0=0,g1=1;BillingState=null,BillingCity=South,v=1,g0=0,g1=0;BillingState=null,BillingCity=null,v=1,g0=0,g1=0;BillingState=null,BillingCity=null,v=2,g0=0,g1=1;BillingState=null,BillingCity=null,v=8,g0=1,g1=1",
+      "compile": false
+    },
+    {
+      "id": "R134",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,SUM(AnnualRevenue) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :sids GROUP BY ROLLUP(BillingCity)'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "4|BillingCity=North,v=50.5,g=0;BillingCity=South,v=999994.76,g=0;BillingCity=null,v=1000045.26,g=1;BillingCity=null,v=null,g=0",
+      "compile": false
+    },
+    {
+      "id": "R135",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,AVG(AnnualRevenue) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :sids GROUP BY ROLLUP(BillingCity)'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "4|BillingCity=North,v=16.833333333333332,g=0;BillingCity=South,v=333331.58666666667,g=0;BillingCity=null,v=166674.21,g=1;BillingCity=null,v=null,g=0",
+      "compile": false
+    },
+    {
+      "id": "R136",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT_DISTINCT(Phone) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :sids GROUP BY ROLLUP(BillingCity)'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "4|BillingCity=North,v=2,g=0;BillingCity=South,v=2,g=0;BillingCity=null,v=1,g=0;BillingCity=null,v=3,g=1",
+      "compile": false
+    },
+    {
+      "id": "R137",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :emptyIds GROUP BY ROLLUP(BillingCity)'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "0|",
+      "compile": false
+    },
+    {
+      "id": "R138",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v,GROUPING(BillingCity) g0 FROM Account WHERE Id IN :sids GROUP BY CUBE(BillingCity)'); r=sa.signature(rows,new List<String>{'BillingCity','v','g0'});",
+      "expected": "4|BillingCity=North,v=3,g0=0;BillingCity=South,v=3,g0=0;BillingCity=null,v=2,g0=0;BillingCity=null,v=8,g0=1",
+      "compile": false
+    },
+    {
+      "id": "R139",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,BillingState,COUNT(Id) v,GROUPING(BillingCity) g0,GROUPING(BillingState) g1 FROM Account WHERE Id IN :sids GROUP BY CUBE(BillingCity,BillingState)'); r=sa.signature(rows,new List<String>{'BillingCity','BillingState','v','g0','g1'});",
+      "expected": "14|BillingCity=North,BillingState=A,v=2,g0=0,g1=0;BillingCity=North,BillingState=B,v=1,g0=0,g1=0;BillingCity=North,BillingState=null,v=3,g0=0,g1=1;BillingCity=South,BillingState=A,v=1,g0=0,g1=0;BillingCity=South,BillingState=B,v=1,g0=0,g1=0;BillingCity=South,BillingState=null,v=1,g0=0,g1=0;BillingCity=South,BillingState=null,v=3,g0=0,g1=1;BillingCity=null,BillingState=A,v=3,g0=1,g1=0;BillingCity=null,BillingState=B,v=1,g0=0,g1=0;BillingCity=null,BillingState=B,v=3,g0=1,g1=0;BillingCity=null,BillingState=null,v=1,g0=0,g1=0;BillingCity=null,BillingState=null,v=2,g0=0,g1=1;BillingCity=null,BillingState=null,v=2,g0=1,g1=0;BillingCity=null,BillingState=null,v=8,g0=1,g1=1",
+      "compile": false
+    },
+    {
+      "id": "R140",
+      "code": " List<SObject> rows=Database.query('SELECT BillingState,BillingCity,COUNT(Id) v,GROUPING(BillingState) g0,GROUPING(BillingCity) g1 FROM Account WHERE Id IN :sids GROUP BY CUBE(BillingState,BillingCity)'); r=sa.signature(rows,new List<String>{'BillingState','BillingCity','v','g0','g1'});",
+      "expected": "14|BillingState=A,BillingCity=North,v=2,g0=0,g1=0;BillingState=A,BillingCity=South,v=1,g0=0,g1=0;BillingState=A,BillingCity=null,v=3,g0=0,g1=1;BillingState=B,BillingCity=North,v=1,g0=0,g1=0;BillingState=B,BillingCity=South,v=1,g0=0,g1=0;BillingState=B,BillingCity=null,v=1,g0=0,g1=0;BillingState=B,BillingCity=null,v=3,g0=0,g1=1;BillingState=null,BillingCity=North,v=3,g0=1,g1=0;BillingState=null,BillingCity=South,v=1,g0=0,g1=0;BillingState=null,BillingCity=South,v=3,g0=1,g1=0;BillingState=null,BillingCity=null,v=1,g0=0,g1=0;BillingState=null,BillingCity=null,v=2,g0=0,g1=1;BillingState=null,BillingCity=null,v=2,g0=1,g1=0;BillingState=null,BillingCity=null,v=8,g0=1,g1=1",
+      "compile": false
+    },
+    {
+      "id": "R141",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,SUM(AnnualRevenue) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :sids GROUP BY CUBE(BillingCity)'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "4|BillingCity=North,v=50.5,g=0;BillingCity=South,v=999994.76,g=0;BillingCity=null,v=1000045.26,g=1;BillingCity=null,v=null,g=0",
+      "compile": false
+    },
+    {
+      "id": "R142",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,AVG(AnnualRevenue) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :sids GROUP BY CUBE(BillingCity)'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "4|BillingCity=North,v=16.833333333333332,g=0;BillingCity=South,v=333331.58666666667,g=0;BillingCity=null,v=166674.21,g=1;BillingCity=null,v=null,g=0",
+      "compile": false
+    },
+    {
+      "id": "R143",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT_DISTINCT(Phone) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :sids GROUP BY CUBE(BillingCity)'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "4|BillingCity=North,v=2,g=0;BillingCity=South,v=2,g=0;BillingCity=null,v=1,g=0;BillingCity=null,v=3,g=1",
+      "compile": false
+    },
+    {
+      "id": "R144",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :emptyIds GROUP BY CUBE(BillingCity)'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "0|",
+      "compile": false
+    },
+    {
+      "id": "R145",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :sids GROUP BY BillingCity'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "3|BillingCity=North,v=3,g=0;BillingCity=South,v=3,g=0;BillingCity=null,v=2,g=0",
+      "compile": false
+    },
+    {
+      "id": "R146",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)>1'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R147",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)=1'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "0|",
+      "compile": false
+    },
+    {
+      "id": "R148",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)>=2'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R149",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)!=2'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "2|BillingCity=North,v=3;BillingCity=South,v=3",
+      "compile": false
+    },
+    {
+      "id": "R150",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)<3'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "1|BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R151",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)<=2'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "1|BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R152",
+      "code": "Integer n=1; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)>:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R153",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(AnnualRevenue)=0'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "1|BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R154",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT_DISTINCT(Phone)>1'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "2|BillingCity=North,v=3;BillingCity=South,v=3",
+      "compile": false
+    },
+    {
+      "id": "R155",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING SUM(AnnualRevenue)>0'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "2|BillingCity=North,v=3;BillingCity=South,v=3",
+      "compile": false
+    },
+    {
+      "id": "R156",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING SUM(AnnualRevenue)=null'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "1|BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R157",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING AVG(AnnualRevenue)>10'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "2|BillingCity=North,v=3;BillingCity=South,v=3",
+      "compile": false
+    },
+    {
+      "id": "R158",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING MIN(NumberOfEmployees)=0'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "1|BillingCity=South,v=3",
+      "compile": false
+    },
+    {
+      "id": "R159",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING MAX(NumberOfEmployees)>=100'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "1|BillingCity=South,v=3",
+      "compile": false
+    },
+    {
+      "id": "R160",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)>1 AND SUM(AnnualRevenue)>0'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "2|BillingCity=North,v=3;BillingCity=South,v=3",
+      "compile": false
+    },
+    {
+      "id": "R161",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)=1 OR COUNT_DISTINCT(Phone)=1'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "1|BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R162",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING BillingCity=\\'North\\''); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "1|BillingCity=North,v=3",
+      "compile": false
+    },
+    {
+      "id": "R163",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING BillingCity=null'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "1|BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R164",
+      "code": "Integer n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)>:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R165",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :sids GROUP BY ROLLUP(BillingCity) HAVING GROUPING(BillingCity)=0'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "3|BillingCity=North,v=3,g=0;BillingCity=South,v=3,g=0;BillingCity=null,v=2,g=0",
+      "compile": false
+    },
+    {
+      "id": "R166",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :sids GROUP BY ROLLUP(BillingCity) HAVING GROUPING(BillingCity)=1'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "1|BillingCity=null,v=8,g=1",
+      "compile": false
+    },
+    {
+      "id": "R167",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v,GROUPING(BillingCity) g FROM Account WHERE Id IN :sids GROUP BY ROLLUP(BillingCity) HAVING COUNT(Id)>2'); r=sa.signature(rows,new List<String>{'BillingCity','v','g'});",
+      "expected": "3|BillingCity=North,v=3,g=0;BillingCity=South,v=3,g=0;BillingCity=null,v=8,g=1",
+      "compile": false
+    },
+    {
+      "id": "R168",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids HAVING COUNT(Id)>0'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "EXC|System.QueryException|unexpected token: 'HAVING'",
+      "compile": false
+    },
+    {
+      "id": "R169",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity ORDER BY COUNT(Id) DESC LIMIT 2'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "2|BillingCity=North,v=3;BillingCity=South,v=3",
+      "compile": false
+    },
+    {
+      "id": "R170",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)>1 ORDER BY BillingCity NULLS FIRST LIMIT 1'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "1|BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "R171",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)>1 LIMIT 0'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "0|",
+      "compile": false
+    },
+    {
+      "id": "R172",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)>1 ORDER BY BillingCity NULLS FIRST OFFSET 1'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "2|BillingCity=North,v=3;BillingCity=South,v=3",
+      "compile": false
+    },
+    {
+      "id": "R173",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('v'));",
+      "expected": "8|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R174",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('V'));",
+      "expected": "8|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R175",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('expr0'));",
+      "expected": "EXC|System.SObjectException|Invalid field expr0 for AggregateResult",
+      "compile": false
+    },
+    {
+      "id": "R176",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('missing'));",
+      "expected": "EXC|System.SObjectException|Invalid field missing for AggregateResult",
+      "compile": false
+    },
+    {
+      "id": "R177",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('Id'));",
+      "expected": "null",
+      "compile": false
+    },
+    {
+      "id": "R178",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('Name'));",
+      "expected": "EXC|System.SObjectException|Invalid field Name for AggregateResult",
+      "compile": false
+    },
+    {
+      "id": "R179",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; r=sa.typed(a.get(''));",
+      "expected": "EXC|System.SObjectException|Invalid field  for AggregateResult",
+      "compile": false
+    },
+    {
+      "id": "R180",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; r=sa.typed(a.get(null));",
+      "expected": "COMPILE_ERROR\tline 84: Ambiguous method signature: void get(NULL)",
+      "compile": false,
+      "runtimeCompile": true,
+      "nativeLine": 84
+    },
+    {
+      "id": "R181",
+      "code": "AggregateResult a=[SELECT COUNT(Id),SUM(AnnualRevenue) FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('expr0'));",
+      "expected": "8|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R182",
+      "code": "AggregateResult a=[SELECT COUNT(Id),SUM(AnnualRevenue) FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('expr1'));",
+      "expected": "1000045.26|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R183",
+      "code": "AggregateResult a=[SELECT COUNT(Id),SUM(AnnualRevenue) FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('EXPR0'));",
+      "expected": "8|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R184",
+      "code": "AggregateResult a=[SELECT COUNT(Id),SUM(AnnualRevenue) FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('v'));",
+      "expected": "EXC|System.SObjectException|Invalid field v for AggregateResult",
+      "compile": false
+    },
+    {
+      "id": "R185",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; Integer y=(Integer)a.get('v'); r=y;",
+      "expected": "8",
+      "compile": false
+    },
+    {
+      "id": "R186",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; Long y=(Long)a.get('v'); r=y;",
+      "expected": "8",
+      "compile": false
+    },
+    {
+      "id": "R187",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; Decimal y=(Decimal)a.get('v'); r=y;",
+      "expected": "8",
+      "compile": false
+    },
+    {
+      "id": "R188",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; Double y=(Double)a.get('v'); r=y;",
+      "expected": "8.0",
+      "compile": false
+    },
+    {
+      "id": "R189",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; String y=(String)a.get('v'); r=y;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Integer to String",
+      "compile": false
+    },
+    {
+      "id": "R190",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; Boolean y=(Boolean)a.get('v'); r=y;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Integer to Boolean",
+      "compile": false
+    },
+    {
+      "id": "R191",
+      "code": "AggregateResult a=[SELECT SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids]; Decimal y=(Decimal)a.get('v'); r=y;",
+      "expected": "1000045.26",
+      "compile": false
+    },
+    {
+      "id": "R192",
+      "code": "AggregateResult a=[SELECT SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids]; Integer y=(Integer)a.get('v'); r=y;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to Integer",
+      "compile": false
+    },
+    {
+      "id": "R193",
+      "code": "AggregateResult a=[SELECT SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids]; Double y=(Double)a.get('v'); r=y;",
+      "expected": "1000045.26",
+      "compile": false
+    },
+    {
+      "id": "R194",
+      "code": "AggregateResult a=[SELECT SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids]; String y=(String)a.get('v'); r=y;",
+      "expected": "EXC|System.TypeException|Invalid conversion from runtime type Decimal to String",
+      "compile": false
+    },
+    {
+      "id": "R195",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; r=a instanceof SObject;",
+      "expected": "COMPILE_ERROR\tline 98: Operation instanceof is always true since an instance of AggregateResult is always an instance of SObject",
+      "compile": false,
+      "runtimeCompile": true,
+      "nativeLine": 98
+    },
+    {
+      "id": "R196",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; r=a.getSObjectType()==AggregateResult.SObjectType;",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R197",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; r=a.getPopulatedFieldsAsMap().get('v');",
+      "expected": "8",
+      "compile": false
+    },
+    {
+      "id": "R198",
+      "code": "AggregateResult a=[SELECT SUM(AnnualRevenue) v FROM Account WHERE Id IN :emptyIds]; r=a.getPopulatedFieldsAsMap().containsKey('v');",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R199",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; a.put('v',99); r=a.get('v');",
+      "expected": "EXC|System.SObjectException|Invalid field v for AggregateResult",
+      "compile": false
+    },
+    {
+      "id": "R200",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; SObject b=a.clone(); r=b.get('v');",
+      "expected": "EXC|System.SObjectException|Invalid field v for AggregateResult",
+      "compile": false
+    },
+    {
+      "id": "R201",
+      "code": "AggregateResult a=[SELECT MIN(Id) v FROM Account WHERE Id IN :sids]; r=sids.contains((Id)a.get('v'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R202",
+      "code": "AggregateResult a=[SELECT MAX(Id) v FROM Account WHERE Id IN :sids]; r=sids.contains((Id)a.get('v'));",
+      "expected": "true",
+      "compile": false
+    },
+    {
+      "id": "R203",
+      "code": "List<AggregateResult> rows=[SELECT COUNT(Id) total FROM Account WHERE Id=:context.account.Id AND Name='A33-Alpha']; Object aggregateRow=rows[0]; r=rows.size()+'|'+(aggregateRow instanceof AggregateResult)+'|'+sa.typed(rows[0].get('total'));",
+      "expected": "1|true|1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R204",
+      "code": "List<AggregateResult> rows=[SELECT Name,COUNT(Id) total FROM Account WHERE Id=:account.Id AND Name='A33-Alpha' GROUP BY Name]; Object aggregateRow=rows[0]; r=rows.size()+'|'+(aggregateRow instanceof AggregateResult)+'|'+sa.typed(rows[0].get('Name'))+'|'+sa.typed(rows[0].get('total'));",
+      "expected": "1|true|A33-Alpha|Integer=false|Decimal=false|Date=false|String=true|AggregateResult=false|1|Integer=true|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "R205",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT() v FROM Account WHERE Id IN :sids'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|unexpected token: 'v'",
+      "compile": false
+    },
+    {
+      "id": "R206",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(),SUM(AnnualRevenue) v FROM Account WHERE Id IN :sids'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|unexpected token: ','",
+      "compile": false
+    },
+    {
+      "id": "R207",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(Name) v FROM Account WHERE Id IN :sids'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|field Name does not support aggregate operator SUM",
+      "compile": false
+    },
+    {
+      "id": "R208",
+      "code": " List<SObject> rows=Database.query('SELECT AVG(Phone) v FROM Account WHERE Id IN :sids'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|field Phone does not support aggregate operator AVG",
+      "compile": false
+    },
+    {
+      "id": "R209",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(IsDeleted) v FROM Account WHERE Id IN :sids'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|field IsDeleted does not support aggregate operator SUM",
+      "compile": false
+    },
+    {
+      "id": "R210",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT_DISTINCT() v FROM Account WHERE Id IN :sids'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|unexpected token: 'COUNT_DISTINCT()'",
+      "compile": false
+    },
+    {
+      "id": "R211",
+      "code": " List<SObject> rows=Database.query('SELECT SUM(SUM(AnnualRevenue)) v FROM Account WHERE Id IN :sids'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|nested functional syntax can only be used in the following manner: date_function(convertTimezone(columnName)): SUM",
+      "compile": false
+    },
+    {
+      "id": "R212",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: BillingCity",
+      "compile": false
+    },
+    {
+      "id": "R213",
+      "code": " List<SObject> rows=Database.query('SELECT Name,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "UNCAUGHT|System.UnexpectedException: Field must be grouped or aggregated: Name",
+      "compile": false
+    },
+    {
+      "id": "R214",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING v>1'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|No such column 'v' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false
+    },
+    {
+      "id": "R215",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)>1 WHERE Name=null'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|unexpected token: 'WHERE'",
+      "compile": false
+    },
+    {
+      "id": "R216",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY ROLLUP()'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|unexpected token: ')'",
+      "compile": false
+    },
+    {
+      "id": "R217",
+      "code": " List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY CUBE(BillingCity,BillingCity)'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "UNCAUGHT|System.UnexpectedException: duplicate grouping expression: BillingCity",
+      "compile": false
+    },
+    {
+      "id": "R219",
+      "code": " List<SObject> rows=Database.query('SELECT COUNT(Id) v FROM Account WHERE Id IN :sids OFFSET -1'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "UNCAUGHT|System.UnexpectedException: Non-grouped query that uses overall aggregate functions cannot also use OFFSET",
+      "compile": false
+    },
+    {
+      "id": "C001",
+      "code": "Object r; Integer n=[SELECT COUNT() FROM Account WHERE Id=null]; r=n; pq.out('C001',r);",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C002",
+      "code": "Object r; r=[SELECT COUNT() FROM Account WHERE Id=null]; pq.out('C002',r);",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C003",
+      "code": "Object r; List<AggregateResult> a=[SELECT COUNT() FROM Account WHERE Id=null]; r=a.size(); pq.out('C003',r);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Integer to List<AggregateResult>",
+      "compile": true,
+      "runtimeCompile": false,
+      "nativeLine": 6
+    },
+    {
+      "id": "C004",
+      "code": "Object r; Account a=new Account(); r=[SELECT COUNT() FROM Account WHERE Id=:a.Id]; pq.out('C004',r);",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C005",
+      "code": "Object r; AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id=null]; r=a.get('v'); pq.out('C005',r);",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C006",
+      "code": "Object r; AggregateResult a=[SELECT SUM(Name) v FROM Account WHERE Id=null]; r=a.get('v'); pq.out('C006',r);",
+      "expected": "COMPILE_ERROR\tline 6:  SELECT SUM(Name) v FROM Account WHERE Id=null            ^ ERROR at Row:1:Column:12 field Name does not support aggregate operator SUM",
+      "compile": true,
+      "runtimeCompile": false,
+      "nativeLine": 6
+    },
+    {
+      "id": "C007",
+      "code": "Object r; AggregateResult a=[SELECT AVG(Birthdate) v FROM Contact WHERE Id=null]; r=a.get('v'); pq.out('C007',r);",
+      "expected": "COMPILE_ERROR\tline 6:  SELECT AVG(Birthdate) v FROM Contact WHERE            ^ ERROR at Row:1:Column:12 field Birthdate does not support aggregate operator AVG",
+      "compile": true,
+      "runtimeCompile": false,
+      "nativeLine": 6
+    },
+    {
+      "id": "C008",
+      "code": "Object r; r=[SELECT Name,COUNT(Id) v FROM Account WHERE Id=null GROUP BY BillingCity].size(); pq.out('C008',r);",
+      "expected": "COMPILE_ERROR\tline 6: Field must be grouped or aggregated: Name",
+      "compile": true,
+      "runtimeCompile": false,
+      "nativeLine": 6
+    },
+    {
+      "id": "C009",
+      "code": "Object r; r=[SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id=null].size(); pq.out('C009',r);",
+      "expected": "COMPILE_ERROR\tline 6: Field must be grouped or aggregated: BillingCity",
+      "compile": true,
+      "runtimeCompile": false,
+      "nativeLine": 6
+    },
+    {
+      "id": "C010",
+      "code": "Object r; r=[SELECT BillingCity,COUNT(Id) v,GROUPING(BillingCity) g FROM Account WHERE Id=null GROUP BY ROLLUP(BillingCity)].size(); pq.out('C010',r);",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C011",
+      "code": "Object r; r=[SELECT BillingCity,BillingState,COUNT(Id) v FROM Account WHERE Id=null GROUP BY CUBE(BillingCity,BillingState)].size(); pq.out('C011',r);",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C012",
+      "code": "Object r; r=[SELECT BillingCity,GROUPING(BillingCity) g FROM Account WHERE Id=null GROUP BY BillingCity].size(); pq.out('C012',r);",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C013",
+      "code": "Object r; r=[SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id=null GROUP BY BillingCity HAVING v>1].size(); pq.out('C013',r);",
+      "expected": "COMPILE_ERROR\tline 6:  GROUP BY BillingCity HAVING v>1                                ^ ERROR at Row:1:Column:90 No such column 'v' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the app",
+      "compile": true,
+      "runtimeCompile": false,
+      "nativeLine": 6
+    },
+    {
+      "id": "C014",
+      "code": "Object r; Integer n=1; r=[SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id=null GROUP BY BillingCity HAVING COUNT(Id)>:n].size(); pq.out('C014',r);",
+      "expected": "0",
+      "compile": true
+    },
+    {
+      "id": "C015",
+      "code": "Object r; r=[SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id=null GROUP BY BillingCity HAVING COUNT(Id)>:unknown].size(); pq.out('C015',r);",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: unknown",
+      "compile": true,
+      "runtimeCompile": false,
+      "nativeLine": 6
+    },
+    {
+      "id": "C016",
+      "code": "Object r; AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id=null]; r=a.v; pq.out('C016',r);",
+      "expected": "COMPILE_ERROR\tline 6: Variable does not exist: v",
+      "compile": true,
+      "runtimeCompile": false,
+      "nativeLine": 6
+    },
+    {
+      "id": "C017",
+      "code": "Object r; AggregateResult a=new AggregateResult(); r=a; pq.out('C017',r);",
+      "expected": "COMPILE_ERROR\tline 6: SObject is not constructable: AggregateResult",
+      "compile": true,
+      "runtimeCompile": false,
+      "nativeLine": 6
+    },
+    {
+      "id": "C018",
+      "code": "Object r; AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id=null]; r=a.get(1); pq.out('C018',r);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void get(Integer) from the type AggregateResult",
+      "compile": true,
+      "runtimeCompile": false,
+      "nativeLine": 6
+    }
+  ],
+  "controls": [
+    {
+      "id": "N001",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)>:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "N002",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)>=:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "N003",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)<:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "N004",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)<=:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "N005",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)=:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "0|",
+      "compile": false
+    },
+    {
+      "id": "N006",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING COUNT(Id)!=:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "N007",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING SUM(AnnualRevenue)>:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "N008",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING SUM(AnnualRevenue)>=:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "N009",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING SUM(AnnualRevenue)<:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "N010",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING SUM(AnnualRevenue)<=:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "3|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "N011",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING SUM(AnnualRevenue)=:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "1|BillingCity=null,v=2",
+      "compile": false
+    },
+    {
+      "id": "N012",
+      "code": "Decimal n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity HAVING SUM(AnnualRevenue)!=:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "2|BillingCity=North,v=3;BillingCity=South,v=3",
+      "compile": false
+    },
+    {
+      "id": "N013",
+      "code": "Integer n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY ROLLUP(BillingCity) HAVING MIN(NumberOfEmployees)>:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "4|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2;BillingCity=null,v=8",
+      "compile": false
+    },
+    {
+      "id": "N014",
+      "code": "Integer n=null; List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY ROLLUP(BillingCity) HAVING GROUPING(BillingCity)>:n'); r=sa.signature(rows,new List<String>{'BillingCity','v'});",
+      "expected": "4|BillingCity=North,v=3;BillingCity=South,v=3;BillingCity=null,v=2;BillingCity=null,v=8",
+      "compile": false
+    },
+    {
+      "id": "N017",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v,SUM(AnnualRevenue) FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('expr0'));",
+      "expected": "1000045.26|Integer=false|Decimal=true|Date=false|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "N018",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v,SUM(AnnualRevenue) FROM Account WHERE Id IN :sids]; r=sa.typed(a.get('expr1'));",
+      "expected": "EXC|System.SObjectException|Invalid field expr1 for AggregateResult",
+      "compile": false
+    },
+    {
+      "id": "N019",
+      "code": "List<SObject> rows=Database.query('SELECT Birthdate,COUNT(Id) v FROM Contact WHERE Id IN :cids GROUP BY Birthdate ORDER BY Birthdate NULLS LAST'); r=sa.typed(rows[0].get('Birthdate'));",
+      "expected": "1999-12-31 00:00:00|Integer=false|Decimal=false|Date=true|String=false|AggregateResult=false",
+      "compile": false
+    },
+    {
+      "id": "N020",
+      "code": "AggregateResult a=[SELECT COUNT(Id) v FROM Account WHERE Id IN :sids]; SObject b=a.clone(); r=b.get('Id');",
+      "expected": "null",
+      "compile": false,
+      "nativeNull": true
+    },
+    {
+      "id": "N021",
+      "code": "r=Database.countQueryWithBinds('SELECT Id FROM Account WHERE Id=null',new Map<String,Object>(),AccessLevel.USER_MODE);",
+      "expected": "EXC|System.QueryException|Use query() for non-count queries",
+      "compile": false
+    },
+    {
+      "id": "N022",
+      "code": "Object y=Database.queryWithBinds('SELECT COUNT() FROM Account WHERE Id=null',new Map<String,Object>(),AccessLevel.USER_MODE); r=y;",
+      "expected": "EXC|System.QueryException|use countQuery() for [select count()...] queries",
+      "compile": false
+    },
+    {
+      "id": "Q001",
+      "code": "List<SObject> rows=Database.query('SELECT Birthdate,COUNT(Id) v FROM Contact WHERE Id IN :cids AND Birthdate!=null GROUP BY Birthdate ORDER BY Birthdate'); Date d=(Date)rows[0].get('Birthdate'); r=String.valueOf(d);",
+      "expected": "1999-12-31",
+      "compile": false
+    },
+    {
+      "id": "Q002",
+      "code": "List<SObject> rows=Database.query('SELECT Birthdate,COUNT(Id) v FROM Contact WHERE Id IN :cids AND Birthdate!=null GROUP BY Birthdate ORDER BY Birthdate'); r=String.valueOf((Date)rows[0].get('Birthdate'));",
+      "expected": "1999-12-31",
+      "compile": false
+    },
+    {
+      "id": "Q003",
+      "code": "List<SObject> rows=Database.query('SELECT Birthdate,COUNT(Id) v FROM Contact WHERE Id IN :cids AND Birthdate!=null GROUP BY Birthdate ORDER BY Birthdate'); r=String.valueOf(rows[0].get('Birthdate'));",
+      "expected": "1999-12-31 00:00:00",
+      "compile": false
+    },
+    {
+      "id": "Q004",
+      "code": "r=Database.countQuery('SELECT COUNT() FROM Account WHERE Id IN :sids OFFSET -1');",
+      "expected": "EXC|System.QueryException|SOQL offset must be a non-negative value",
+      "compile": false
+    },
+    {
+      "id": "Q005",
+      "code": "List<SObject> rows=Database.query('SELECT Id FROM Account WHERE Id IN :sids OFFSET -1'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|SOQL offset must be a non-negative value",
+      "compile": false
+    },
+    {
+      "id": "Q006",
+      "code": "List<SObject> rows=Database.query('SELECT BillingCity,COUNT(Id) v FROM Account WHERE Id IN :sids GROUP BY BillingCity OFFSET -1'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|SOQL offset must be a non-negative value",
+      "compile": false
+    },
+    {
+      "id": "Q007",
+      "code": "List<SObject> rows=Database.query('SELECT COUNT(Id) v FROM Account WHERE Id IN :sids OFFSET 0'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "UNCAUGHT|System.UnexpectedException: Non-grouped query that uses overall aggregate functions cannot also use OFFSET",
+      "compile": false
+    },
+    {
+      "id": "Q008",
+      "code": "List<SObject> rows=Database.query('SELECT COUNT(Id) v FROM Account WHERE Id IN :sids OFFSET z'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "EXC|System.QueryException|unexpected token: 'z'",
+      "compile": false
+    },
+    {
+      "id": "Q009",
+      "code": "List<SObject> rows=Database.query('SELECT COUNT(Account.Phone) v FROM Account WHERE Id IN :sids'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "1|v=5",
+      "compile": false
+    },
+    {
+      "id": "Q010",
+      "code": "List<SObject> rows=Database.query('SELECT COUNT(Phone) v FROM Account WHERE Id IN :sids WITH USER_MODE'); r=sa.signature(rows,new List<String>{'v'});",
+      "expected": "1|v=5",
+      "compile": false
+    },
+    {
+      "id": "S001",
+      "code": "\nList<Account> legacySeed=new List<Account>{\n new Account(Name='Acme',AccountNumber=marker,AnnualRevenue=100,Rating='Hot'),\n new Account(Name='Beta',AccountNumber=marker,AnnualRevenue=250,Rating='Warm'),\n new Account(Name='Gamma',AccountNumber=marker,AnnualRevenue=300,Rating='Hot')\n};\ninsert legacySeed;\nSet<Id> legacyIds=new Map<Id,Account>(legacySeed).keySet();\nList<SObject> rows=Database.query('SELECT COUNT(Name) namedCount,COUNT_DISTINCT(Rating),SUM(AnnualRevenue) totalRevenue,MIN(AnnualRevenue),MAX(AnnualRevenue),AVG(AnnualRevenue) averageRevenue FROM Account WHERE Id IN :legacyIds'); r=sa.signature(rows,new List<String>{'namedCount','expr0','totalRevenue','expr1','expr2','averageRevenue'});",
+      "expected": "1|namedCount=3,expr0=2,totalRevenue=650.0,expr1=100,expr2=300,averageRevenue=216.66666666666666",
+      "compile": false
+    },
+    {
+      "id": "S002",
+      "code": "\nList<Account> legacySeed=new List<Account>{\n new Account(Name='Acme',AccountNumber=marker,AnnualRevenue=100,Rating='Hot'),\n new Account(Name='Beta',AccountNumber=marker,AnnualRevenue=250,Rating='Warm'),\n new Account(Name='Gamma',AccountNumber=marker,AnnualRevenue=300,Rating='Hot')\n};\ninsert legacySeed;\nSet<Id> legacyIds=new Map<Id,Account>(legacySeed).keySet();\nList<SObject> rows=Database.query('SELECT COUNT(Name) namedCount,COUNT_DISTINCT(Rating),SUM(AnnualRevenue) totalRevenue,MIN(AnnualRevenue),MAX(AnnualRevenue),AVG(AnnualRevenue) averageRevenue FROM Account WHERE Id IN :legacyIds'); r=sa.typed(rows[0].get('expr3'));",
+      "expected": "EXC|System.SObjectException|Invalid field expr3 for AggregateResult",
+      "compile": false
+    },
+    {
+      "id": "S003",
+      "code": "\nList<Account> legacySeed=new List<Account>{\n new Account(Name='Acme',AccountNumber=marker,AnnualRevenue=100,Rating='Hot'),\n new Account(Name='Beta',AccountNumber=marker,AnnualRevenue=250,Rating='Warm'),\n new Account(Name='Gamma',AccountNumber=marker,AnnualRevenue=300,Rating='Hot')\n};\ninsert legacySeed;\nSet<Id> legacyIds=new Map<Id,Account>(legacySeed).keySet();\nList<SObject> rows=Database.query('SELECT Rating,COUNT(Id) accountCount,SUM(AnnualRevenue) totalRevenue FROM Account WHERE Id IN :legacyIds GROUP BY Rating HAVING COUNT(Id)>1'); r=sa.signature(rows,new List<String>{'Rating','accountCount','totalRevenue'});",
+      "expected": "1|Rating=Hot,accountCount=2,totalRevenue=400.0",
+      "compile": false
+    },
+    {
+      "id": "S004",
+      "code": "\nList<Account> legacySeed=new List<Account>{\n new Account(Name='Acme',AccountNumber=marker,AnnualRevenue=100,Rating='Hot'),\n new Account(Name='Beta',AccountNumber=marker,AnnualRevenue=250,Rating='Warm'),\n new Account(Name='Gamma',AccountNumber=marker,AnnualRevenue=300,Rating='Hot')\n};\ninsert legacySeed;\nSet<Id> legacyIds=new Map<Id,Account>(legacySeed).keySet();\nList<SObject> rows=Database.query('SELECT Rating,COUNT(Id) accountCount,SUM(AnnualRevenue) totalRevenue FROM Account WHERE Id IN :legacyIds GROUP BY Rating HAVING COUNT(Id)>1'); r=sa.typed(rows[0].get('expr0'));",
+      "expected": "EXC|System.SObjectException|Invalid field expr0 for AggregateResult",
+      "compile": false
+    },
+    {
+      "id": "S005",
+      "code": "\nList<Account> legacySeed=new List<Account>{\n new Account(Name='Acme',AccountNumber=marker,AnnualRevenue=100,Rating='Hot'),\n new Account(Name='Beta',AccountNumber=marker,AnnualRevenue=250,Rating='Warm'),\n new Account(Name='Gamma',AccountNumber=marker,AnnualRevenue=300,Rating='Hot')\n};\ninsert legacySeed;\nSet<Id> legacyIds=new Map<Id,Account>(legacySeed).keySet();\nList<SObject> rows=Database.query('SELECT Rating,Name,COUNT(Id) accountCount,GROUPING(Rating) ratingGrouped,GROUPING(Name) nameGrouped FROM Account WHERE Id IN :legacyIds GROUP BY CUBE(Rating,Name) HAVING COUNT(Id)>=2'); r=sa.signature(rows,new List<String>{'Rating','Name','accountCount','ratingGrouped','nameGrouped'});",
+      "expected": "2|Rating=Hot,Name=null,accountCount=2,ratingGrouped=0,nameGrouped=1;Rating=null,Name=null,accountCount=3,ratingGrouped=1,nameGrouped=1",
+      "compile": false
+    },
+    {
+      "id": "S006",
+      "code": "\nList<Account> legacySeed=new List<Account>{\n new Account(Name='Acme',AccountNumber=marker,AnnualRevenue=100,Rating='Hot'),\n new Account(Name='Beta',AccountNumber=marker,AnnualRevenue=250,Rating='Warm'),\n new Account(Name='Gamma',AccountNumber=marker,AnnualRevenue=300,Rating='Hot')\n};\ninsert legacySeed;\nSet<Id> legacyIds=new Map<Id,Account>(legacySeed).keySet();\nList<SObject> rows=Database.query('SELECT Rating,Name,COUNT(Id) accountCount,GROUPING(Rating) ratingGrouped,GROUPING(Name) nameGrouped FROM Account WHERE Id IN :legacyIds GROUP BY CUBE(Rating,Name) HAVING accountCount>=2'); r=sa.signature(rows,new List<String>{'Rating','Name','accountCount','ratingGrouped','nameGrouped'});",
+      "expected": "EXC|System.QueryException|No such column 'accountCount' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+      "compile": false
+    }
+  ],
+  "remaining": [
+    {
+      "id": "R218",
+      "owner": "query locators",
+      "reason": "FOR UPDATE requires query row locking; the native backend rejection differs from Glade's explicit unsupported locking boundary.",
+      "expected": "UNCAUGHT|System.UnexpectedException: common.exception.SfdcSqlException: ERROR: column \"_SAYONARA_ALIAS0.t.ID\" must appear in the GROUP BY clause or be used in an aggregate function"
+    },
+    {
+      "id": "N015",
+      "owner": "security access",
+      "reason": "Explicit SYSTEM_MODE countQueryWithBinds is rejected in native anonymous Apex; Glade permits it, requiring access-mode enforcement outside aggregation.",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    },
+    {
+      "id": "N016",
+      "owner": "security access",
+      "reason": "Explicit SYSTEM_MODE queryWithBinds is rejected in native anonymous Apex; Glade permits it, requiring access-mode enforcement outside aggregation.",
+      "expected": "EXC|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+    }
+  ]
+}

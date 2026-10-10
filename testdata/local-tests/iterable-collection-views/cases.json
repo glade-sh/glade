@@ -1,0 +1,141 @@
+{
+  "context": "Exact native anonymous and named sources and observations at API 62/67. Each anonymous group executes in one transaction; R004 therefore observes R003 and returns 2. Named methods execute independently and R004 returns 1. Named sources retain the captured terminal assertion transport; native-test-results.json supplies the exact assertion messages.",
+  "captures": [
+    {
+      "apiVersion": "62.0",
+      "source": "anonymous/api62/runtime.apex",
+      "sourceSHA256": "de11f47b92bc5b8a0534511002e0ed7267d479a1b1dd1803c68a2fd280feda5a",
+      "observations": "anonymous/api62/org.tsv",
+      "observationsSHA256": "2f6df09caef0f854a8e555fcf65bac0ce50b97e2dfd6cd3039d4412a2fb9b989",
+      "group": "runtime",
+      "route": "anonymous"
+    },
+    {
+      "apiVersion": "67.0",
+      "source": "anonymous/api67/runtime.apex",
+      "sourceSHA256": "de11f47b92bc5b8a0534511002e0ed7267d479a1b1dd1803c68a2fd280feda5a",
+      "observations": "anonymous/api67/org.tsv",
+      "observationsSHA256": "2f6df09caef0f854a8e555fcf65bac0ce50b97e2dfd6cd3039d4412a2fb9b989",
+      "group": "runtime",
+      "route": "anonymous"
+    },
+    {
+      "group": "runtime",
+      "route": "isTest",
+      "apiVersion": "62.0",
+      "observations": "runtime/isTest/api62/org.tsv",
+      "observationsSHA256": "3f28eb3527bca27b1b4ac3f5fad195381b19de6ab3c0357acc763cfae1286fab",
+      "compileObservations": "runtime/isTest/api62/compile.tsv",
+      "compileObservationsSHA256": "4f1b1ade33a7a994d0eb73cb4c16cda70c7db13b19b2b83fb8aabe54f1280015",
+      "sourceManifest": "runtime/isTest/api62/source-manifest.json",
+      "sourceManifestSHA256": "2ae82be68a56eee90cb24e681478772c4fc89962c432efe95231da2a2ad61095",
+      "nativeResults": "runtime/isTest/api62/native-test-results.json",
+      "nativeResultsSHA256": "4143eefb85b691ee0b05328ced7698bc8b82157ef2209aec7dcc06ef81f17f7f",
+      "namedSourceSHA256": {
+        "R001": "29bc35c00dc6dba036d66462d7510078009774f5e275231864efb13a7a0d579c",
+        "R002": "6e74633fce9ded9cde8abe5a4d56484d7131670a26c2a4cd4923a5685bead752",
+        "R003": "d14ed214347501f03212f354946d1d24f0807fde288fa7b6337f54254c383ad6",
+        "R004": "6492b0140e0b7313f996568330a785b33c3dff70af82865ac0170fb434ae5b92",
+        "R005": "25e13030f85c675f8ef63ea038104bd7b9cb3755b42cd4f7ef4fc88dbacef82a",
+        "R006": "d76d090d7d87433e009ab3447c9e97d64fc1a9cb2bf1bc8bf1b293263155bf93",
+        "R007": "98f5f870e93fa367f589032b8c2a95c6c8e15cc47e5e2e0336753ff80cb0d299",
+        "R008": "9fe5a05babf0265c9a86227b4af2ecaefe7b6bd25fed3032e880e3e51bd50e96",
+        "R009": "9dd40fe59a54d1f8ee8f2ae1369d99c78039d97c965bc29f6fa8810734b5e3cf"
+      }
+    },
+    {
+      "group": "runtime",
+      "route": "isTest",
+      "apiVersion": "67.0",
+      "observations": "runtime/isTest/api67/org.tsv",
+      "observationsSHA256": "3f28eb3527bca27b1b4ac3f5fad195381b19de6ab3c0357acc763cfae1286fab",
+      "compileObservations": "runtime/isTest/api67/compile.tsv",
+      "compileObservationsSHA256": "4f1b1ade33a7a994d0eb73cb4c16cda70c7db13b19b2b83fb8aabe54f1280015",
+      "sourceManifest": "runtime/isTest/api67/source-manifest.json",
+      "sourceManifestSHA256": "c81eabcb51998eda98d2e1e95c3b662952074e78fa980fc5a28ad964b5709da2",
+      "nativeResults": "runtime/isTest/api67/native-test-results.json",
+      "nativeResultsSHA256": "b151bc30bfdfc257253142e103e17b35500dd33934c5cef777dcb8db744a9afd",
+      "namedSourceSHA256": {
+        "R001": "a38b68667c01e250fc08481aafde433c874dc09e0e095be7e624ed66b2ae84ba",
+        "R002": "be57a255378ce5e22c9f740d989163c8d56659bc7bb7cb6be17e884c7087ff88",
+        "R003": "f3336d3155e8fa4bcc5e62e7b65b62e1c4c3c9947fe71c43ae5a06d566c5f049",
+        "R004": "7148d3108b0ec80c72277df413a80c91d41ba65cdaeb6aa69f82a0ea002b6d52",
+        "R005": "f1f73b48fde1109873d647a923a5131b06199f54085f20f1950d43ad24c4bd89",
+        "R006": "25ca59313ade3c3193b64adf4b25f8542d505c454dc1c9f81ebd3b695e084684",
+        "R007": "23870e06d884a6751474afc2bc39024cb0edd7b077e4ada06f774c8f579792ea",
+        "R008": "91bb34ea66ef9fb2dc59773aa286786a1bbc5e7500e84eabb75ebe3c4e27c3fc",
+        "R009": "00e4cc565f07a57257a22a3a12e680e7c3b32c11758bc55f73865a1f40d5b8b0"
+      }
+    },
+    {
+      "group": "controls",
+      "route": "anonymous",
+      "apiVersion": "62.0",
+      "observations": "controls/anonymous/api62/org.tsv",
+      "observationsSHA256": "62c781049baec08d3f6fbbd711014fb4547c08a7cc5d0067549f468359c1e054",
+      "source": "controls/anonymous/api62/runtime.apex",
+      "sourceSHA256": "8d7cabb6a954af4de350a37a3009a6b4a9272a8c8986bb1206907aa052d62e55"
+    },
+    {
+      "group": "controls",
+      "route": "anonymous",
+      "apiVersion": "67.0",
+      "observations": "controls/anonymous/api67/org.tsv",
+      "observationsSHA256": "62c781049baec08d3f6fbbd711014fb4547c08a7cc5d0067549f468359c1e054",
+      "source": "controls/anonymous/api67/runtime.apex",
+      "sourceSHA256": "8d7cabb6a954af4de350a37a3009a6b4a9272a8c8986bb1206907aa052d62e55"
+    },
+    {
+      "group": "controls",
+      "route": "isTest",
+      "apiVersion": "62.0",
+      "observations": "controls/isTest/api62/org.tsv",
+      "observationsSHA256": "62c781049baec08d3f6fbbd711014fb4547c08a7cc5d0067549f468359c1e054",
+      "compileObservations": "controls/isTest/api62/compile.tsv",
+      "compileObservationsSHA256": "34099a97b77e1263719a5b0e5dc26bdbbd6bc3aa385bd2e5fb4ed2a7f50f8af9",
+      "sourceManifest": "controls/isTest/api62/source-manifest.json",
+      "sourceManifestSHA256": "e04c97796c90422cef323fdd6a9ecb237f065acfe3e095d2a4143d8e0e79d2fc",
+      "nativeResults": "controls/isTest/api62/native-test-results.json",
+      "nativeResultsSHA256": "175e62ff13f88992e0bfaf95bc2440661f12141ba969d5f4c450a09329b0deb1",
+      "namedSourceSHA256": {
+        "V001": "86e37b3b2efc563bd416a87815448ff19239094f56943606603b79b3b6c529bf",
+        "V002": "5142c8b4bea0bea56b0da083214c51c38789ba22606fc4c32228ee4c4d640c4f",
+        "V003": "5904ec3a8bbd4606ec7695bfdc965cdf8f7da9442ef7ee9c6fdf4b56a13f6bc9",
+        "V004": "733e32092faa0abfb5127d22c0330820e8bcd2dd60b7c4434e7b457cf303338c",
+        "V005": "ee6066f900b79f8dd0299addcdfa1b8ca04f001f6d4fe295fdffb65947190c7a",
+        "V006": "a4fde9f2dee964bf331badf63b28af41d05718321c0b79e9e03ecd301375400a",
+        "V007": "4b7f127de02926cc1bdaa194b87d26ddb4143b5477b88f0cc3aa037e2e7eaf14",
+        "V008": "f8cd6723b41777c175ebb166aedb691819d22d9358962f2a251e996215ecfb16",
+        "V009": "fb6308707dabceea956090a226604fd1608d0b65b37fb351022fbfb1fb7a84ff",
+        "V010": "92ccbdcc113372d95d126a6573b99632bc5cce2c4bc2c940c5d8bad17f524094",
+        "V011": "5125fd21b0f7e8fc55d9ae487e436d74d9c09c2933b62acdda5d18ddf4b054a8"
+      }
+    },
+    {
+      "group": "controls",
+      "route": "isTest",
+      "apiVersion": "67.0",
+      "observations": "controls/isTest/api67/org.tsv",
+      "observationsSHA256": "62c781049baec08d3f6fbbd711014fb4547c08a7cc5d0067549f468359c1e054",
+      "compileObservations": "controls/isTest/api67/compile.tsv",
+      "compileObservationsSHA256": "34099a97b77e1263719a5b0e5dc26bdbbd6bc3aa385bd2e5fb4ed2a7f50f8af9",
+      "sourceManifest": "controls/isTest/api67/source-manifest.json",
+      "sourceManifestSHA256": "c83bace2553ac16f4b2499112b72a60a2ef39a1750227b1017d0110a046bc56f",
+      "nativeResults": "controls/isTest/api67/native-test-results.json",
+      "nativeResultsSHA256": "5af771530716e68d60afda6d226043f33a472f557923be0d752607d93416ccbd",
+      "namedSourceSHA256": {
+        "V001": "1277fa44c47c56cd09f3db04dcdcb972f76ef5a72448b4805bdce2bcdc16871c",
+        "V002": "683441219ebe0613bfba28eac9a7f85f4e4a6978fdc6c662eb190a536e4f4da4",
+        "V003": "b9bf2c1ddbcfb6e880727d52d07332eabe08dfa5c867091308c0cde09e648bd3",
+        "V004": "52b5b963746baf23c7e42e6f6bdd177436fae7708f8b91f0ee77dddfc590014b",
+        "V005": "9632817f2793e71bf77efe0596d79c89ca65a8295f41a708bea53a83357919ae",
+        "V006": "99816bd4b5e7f83bc858c0d9d0327f6eb49338f93efc5bee475cf46d2cf00edc",
+        "V007": "818a96b57640a0654d0577e6342ae437ac69d1c2013cc6234397a47dd5b734c2",
+        "V008": "6222db2db68b3434a10d4ee2c3d97b6cdb2ea64eb17142cd0a7eedcb0263e622",
+        "V009": "f0089c0a6ca87c4398fb93cc158a82a24addc190933838e0abfb1a3f683fea4a",
+        "V010": "a1895b83908582279f374e54db1ee87dad41d1db81ebc557b91bb507248fd182",
+        "V011": "2d0ec8b751758334fe26bd85531bd692171483a30c808eed3bcdd4b63c0531ab"
+      }
+    }
+  ]
+}

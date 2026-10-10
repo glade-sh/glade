@@ -67,6 +67,9 @@ func TestPartialComponentSpecsDescribeMissingBehavior(t *testing.T) {
 		{namespace: "apex", component: "component", want: "typed attribute"},
 		{namespace: "apex", component: "relatedList", want: "related list data"},
 		{namespace: "apex", component: "remoteObjects", want: "client model scaffold"},
+		// V15 dom_widget_chart_{pie,bar,line,legend} promotes these bounded
+		// profiles without claiming other chart configurations or interaction.
+		{namespace: "apex", component: "chart", want: "other chart configurations"},
 	}
 	for _, tc := range cases {
 		spec, ok := StandardComponentSpec(tc.namespace, tc.component)
@@ -76,6 +79,47 @@ func TestPartialComponentSpecsDescribeMissingBehavior(t *testing.T) {
 		if !strings.Contains(spec.Reason, tc.want) {
 			t.Fatalf("%s:%s reason = %q, want it to mention %q", tc.namespace, tc.component, spec.Reason, tc.want)
 		}
+	}
+}
+
+func TestPresentationChartUnsupportedNeighbours(t *testing.T) {
+	pie := `<apex:chart id="target" data="{!points}" height="240" width="320"><apex:pieSeries dataField="amount" labelField="name"/></apex:chart>`
+	bar := `<apex:chart id="target" data="{!points}" height="240" width="320"><apex:axis type="Category" position="bottom" fields="name"/><apex:axis type="Numeric" position="left" fields="amount"/><apex:barSeries orientation="vertical" axis="left" xField="name" yField="amount"/></apex:chart>`
+	// These configurations were unsupported before V15 and have no captured
+	// presentation contract. The bounded renderer must retain that boundary.
+	cases := map[string]string{
+		"horizontal bar":     strings.Replace(bar, `orientation="vertical"`, `orientation="horizontal"`, 1),
+		"right numeric axis": strings.Replace(bar, `position="left"`, `position="right"`, 1),
+		"other fields":       strings.Replace(bar, `fields="amount"`, `fields="other"`, 1),
+		"custom palette":     strings.Replace(pie, `dataField="amount"`, `dataField="amount" colorSet="red,blue"`, 1),
+		"other legend":       strings.Replace(pie, `<apex:pieSeries`, `<apex:legend position="left"/><apex:pieSeries`, 1),
+		"multiple series":    strings.Replace(pie, `</apex:chart>`, `<apex:pieSeries dataField="amount" labelField="name"/></apex:chart>`, 1),
+		"non-finite width":   strings.Replace(pie, `width="320"`, `width="NaN"`, 1),
+	}
+	for name, source := range cases {
+		t.Run(name, func(t *testing.T) {
+			root, err := ParseMarkupTree(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var chart *MarkupNode
+			var find func(*MarkupNode)
+			find = func(n *MarkupNode) {
+				if n.Namespace == "apex" && strings.EqualFold(n.Name, "chart") {
+					chart = n
+				}
+				for _, child := range n.Children {
+					find(child)
+				}
+			}
+			find(root)
+			if chart == nil {
+				t.Fatal("missing chart")
+			}
+			if _, _, _, ok := presentationChartProfile(chart); ok {
+				t.Fatal("uncaptured configuration must retain unsupported boundary")
+			}
+		})
 	}
 }
 
@@ -101,7 +145,10 @@ func TestUnsupportedComponentSpecsUseStableFamilyReasons(t *testing.T) {
 		component string
 		want      string
 	}{
-		{namespace: "apex", component: "chart", want: "charting runtime"},
+		// V15's captured root chart profiles now have a local renderer. A
+		// series still needs that supported parent; standalone series retain
+		// the charting-runtime boundary.
+		{namespace: "apex", component: "pieSeries", want: "charting runtime"},
 		{namespace: "apex", component: "map", want: "map widget runtime"},
 		{namespace: "apex", component: "canvasApp", want: "Canvas signed request"},
 		{namespace: "knowledge", component: "articleList", want: "Knowledge service"},

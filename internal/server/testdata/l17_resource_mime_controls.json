@@ -1,0 +1,93 @@
+{
+  "oracle": "Salesforce API native observation",
+  "rows": [
+    {
+      "api": "59.0",
+      "id": "dom_subpath_loadScript_nested",
+      "member": "cases/dom_subpath_loadScript_nested/nested/ok.js",
+      "body": "window.__familyL17Counts=window.__familyL17Counts||{}; window.__familyL17Counts[\"dom_subpath_loadScript_nested\"]=(window.__familyL17Counts[\"dom_subpath_loadScript_nested\"]||0)+1;",
+      "response": {
+        "id": "dom_subpath_loadScript_nested",
+        "page": 2,
+        "phase": "component-row",
+        "kind": "resource-response",
+        "requestId": "70802.172",
+        "type": "Fetch",
+        "source": {
+          "scheme": "https",
+          "path": "/resource/1791163004000/FamilyL17Assets/cases/dom_subpath_loadScript_nested/nested/ok.js"
+        },
+        "status": 200,
+        "mimeType": "application/x-javascript",
+        "contentType": "application/x-javascript",
+        "contentTypeOptions": "nosniff"
+      }
+    },
+    {
+      "api": "59.0",
+      "id": "dom_subpath_loadStyle_nested",
+      "member": "cases/dom_subpath_loadStyle_nested/nested/ok.css",
+      "body": ".owned-target { color: rgb(17, 34, 51); --owned-loaded: yes; }",
+      "response": {
+        "id": "dom_subpath_loadStyle_nested",
+        "page": 0,
+        "phase": "component-row",
+        "kind": "resource-response",
+        "requestId": "68584.188",
+        "type": "Stylesheet",
+        "source": {
+          "scheme": "https",
+          "path": "/resource/1791163004000/FamilyL17Assets/cases/dom_subpath_loadStyle_nested/nested/ok.css"
+        },
+        "status": 200,
+        "mimeType": "text/css",
+        "contentType": "text/css",
+        "contentTypeOptions": "nosniff"
+      }
+    },
+    {
+      "api": "67.0",
+      "id": "dom_subpath_loadScript_nested",
+      "member": "cases/dom_subpath_loadScript_nested/nested/ok.js",
+      "body": "window.__familyL17Counts=window.__familyL17Counts||{}; window.__familyL17Counts[\"dom_subpath_loadScript_nested\"]=(window.__familyL17Counts[\"dom_subpath_loadScript_nested\"]||0)+1;",
+      "response": {
+        "id": "dom_subpath_loadScript_nested",
+        "page": 2,
+        "phase": "component-row",
+        "kind": "resource-response",
+        "requestId": "62835.167",
+        "type": "Fetch",
+        "source": {
+          "scheme": "https",
+          "path": "/resource/1791163004000/FamilyL17Assets/cases/dom_subpath_loadScript_nested/nested/ok.js"
+        },
+        "status": 200,
+        "mimeType": "application/x-javascript",
+        "contentType": "application/x-javascript",
+        "contentTypeOptions": "nosniff"
+      }
+    },
+    {
+      "api": "67.0",
+      "id": "dom_subpath_loadStyle_nested",
+      "member": "cases/dom_subpath_loadStyle_nested/nested/ok.css",
+      "body": ".owned-target { color: rgb(17, 34, 51); --owned-loaded: yes; }",
+      "response": {
+        "id": "dom_subpath_loadStyle_nested",
+        "page": 0,
+        "phase": "component-row",
+        "kind": "resource-response",
+        "requestId": "60088.188",
+        "type": "Stylesheet",
+        "source": {
+          "scheme": "https",
+          "path": "/resource/1791163004000/FamilyL17Assets/cases/dom_subpath_loadStyle_nested/nested/ok.css"
+        },
+        "status": 200,
+        "mimeType": "text/css",
+        "contentType": "text/css",
+        "contentTypeOptions": "nosniff"
+      }
+    }
+  ]
+}

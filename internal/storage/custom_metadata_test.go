@@ -32,6 +32,23 @@ func TestApplyCustomMetadataRecordsAssignsDistinctPrefixesAcrossTypes(t *testing
 	}
 }
 
+func TestApplyCustomMetadataRecordsAvoidsLowDeterministicTestIDs(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Feature__mdt"] = ObjectState{
+		Definition: ObjectDefinition{APIName: "Feature__mdt", Fields: map[string]Field{}},
+		Records:    make(map[ID]Record),
+	}
+	if err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{{
+		FullName: "Feature.Default", ObjectName: "Feature__mdt", DeveloperName: "Default",
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	id := onlyRecordID(t, org.Objects["Feature__mdt"].Records)
+	if id == "m000000000000001" || id == "m00000000000001" {
+		t.Fatalf("custom metadata record reused low deterministic test id: %s", id)
+	}
+}
+
 func TestApplyCustomMetadataRecordsSetsNamespacePrefixAndLocalQualifiedNameForLocalNamespacedRows(t *testing.T) {
 	org := NewOrgState()
 	org.Namespace = "pkg"

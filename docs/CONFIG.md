@@ -67,6 +67,12 @@ Supported keys:
 | `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
 
+When an SFDX project declares a package dependency and a sibling project in the
+same source workspace declares that package in its own manifest, Glade resolves
+that sibling by package name. Use `managedPackageDependencies` for a dependency
+outside the workspace or when the source package needs an explicit namespace
+remap.
+
 `glade config validate` reports unsupported keys and parse errors before heavier
 commands run.
 

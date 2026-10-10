@@ -96,10 +96,10 @@ function startWorkbenchServer() {
     import { reportDiagnostic } from "/lightning/runtime/shell/diagnostics.js";
     window.__boot = await bootGladeShell();
     reportDiagnostic({ code: "GLADELWC999", message: "probe diagnostic" });
-    document.querySelector("[data-glade-main]").dispatchEvent(new CustomEvent("flownavigationnext", {
+    document.querySelector("[data-glade-main]").dispatchEvent(new CustomEvent("lightning__flownavigation", {
       bubbles: true,
       composed: true,
-      detail: { action: "NEXT" },
+      detail: { navigationTarget: "NEXT" },
     }));
   </script>
 </body>
@@ -995,7 +995,7 @@ test("lwc shell workbench boots context panel diagnostics toasts and route kind"
     assert.match(result.contextText, /GLADELWC999: probe diagnostic/);
     assert.equal(result.sldsHref, defaultSLDSHref);
     assert.equal(result.toastRegion, true);
-    assert.match(result.flowEventsText, /flownavigationnext/);
+    assert.match(result.flowEventsText, /lightning__flownavigation/);
     assert.match(result.flowEventsText, /NEXT/);
     assert.equal(result.diagnostics.at(-1).code, "GLADELWC999");
   } finally {

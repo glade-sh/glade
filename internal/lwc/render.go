@@ -21,15 +21,7 @@ func RenderTemplate(root *TemplateNode, ctx *RenderContext) (string, error) {
 		ctx = &RenderContext{Properties: PropertyBag{}}
 	}
 	if strings.EqualFold(root.Tag, "template") {
-		var b strings.Builder
-		for _, child := range root.Children {
-			out, err := renderNode(child, ctx)
-			if err != nil {
-				return "", err
-			}
-			b.WriteString(out)
-		}
-		return b.String(), nil
+		return renderSiblings(root.Children, ctx)
 	}
 	return renderNode(root, ctx)
 }
@@ -70,6 +62,9 @@ func renderNode(node *TemplateNode, ctx *RenderContext) (string, error) {
 			if strings.HasPrefix(key, "iterator:") && val != "" {
 				return renderForEach(node, val, ctx)
 			}
+		}
+		if node.Tag == "template" {
+			return renderSiblings(node.Children, ctx)
 		}
 		if strings.HasPrefix(node.Tag, "lightning-") {
 			return renderLightningComponent(node, ctx)
@@ -119,13 +114,11 @@ func renderForEach(node *TemplateNode, eachExpr string, ctx *RenderContext) (str
 		loopCtx := *ctx
 		loopCtx.Properties = cloneBag(ctx.Properties)
 		loopCtx.Properties[itemName] = item
-		for _, child := range node.Children {
-			out, err := renderNode(child, &loopCtx)
-			if err != nil {
-				return "", err
-			}
-			b.WriteString(out)
+		out, err := renderSiblings(node.Children, &loopCtx)
+		if err != nil {
+			return "", err
 		}
+		b.WriteString(out)
 	}
 	return b.String(), nil
 }
@@ -146,13 +139,11 @@ func renderHTMLElement(node *TemplateNode, ctx *RenderContext) (string, error) {
 		b.WriteString(`"`)
 	}
 	b.WriteString(">")
-	for _, child := range node.Children {
-		out, err := renderNode(child, ctx)
-		if err != nil {
-			return "", err
-		}
-		b.WriteString(out)
+	out, err := renderSiblings(node.Children, ctx)
+	if err != nil {
+		return "", err
 	}
+	b.WriteString(out)
 	b.WriteString("</")
 	b.WriteString(node.Tag)
 	b.WriteString(">")

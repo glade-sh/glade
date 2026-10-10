@@ -139,6 +139,15 @@ func (vm *VM) platformQualifiedStaticTypeMatches(staticType, runtimeType string)
 		platformVersionTypeName(staticType)
 }
 func (vm *VM) bestMethodByConversionScore(applicable []Method, args []Value) (Method, bool) {
+	// A better conversion in one argument cannot cancel a worse conversion
+	// in another. Apex keeps crossed signatures ambiguous.
+	for i, left := range applicable {
+		for _, right := range applicable[i+1:] {
+			if vm.compareMethodSpecificityForArgs(left, right, args) == 2 {
+				return Method{}, false
+			}
+		}
+	}
 	bestIndex := -1
 	bestScore := math.MinInt
 	for i, candidate := range applicable {
@@ -176,6 +185,9 @@ func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
 	}
 	if strings.EqualFold(typeName, "Type") {
 		return "Type"
+	}
+	if record, ok := vm.explicitSchemaRecordType(typeName); ok {
+		return "Schema." + record
 	}
 	if base := collectionBase(typeName); base != "" {
 		element, ok := collectionElementType(typeName)
@@ -227,9 +239,6 @@ func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
 				return runtimeClassName(sameNamespaceClass)
 			}
 		}
-	}
-	if isCommonSObjectTypeName(typeName) {
-		return typeName
 	}
 	return typeName
 }
@@ -336,7 +345,65 @@ func (vm *VM) resolveLexicalNestedTypeName(owner, typeName string) (string, bool
 	}
 	return "", false
 }
+
+// schemaRecordTypesMatch keeps record qualification distinct from a resolved
+// user declaration before general namespace alias matching can erase it.
+func (vm *VM) schemaRecordTypesMatch(from, to string) (bool, bool) {
+	from = canonicalRuntimePlatformType(from)
+	to = canonicalRuntimePlatformType(to)
+	fromRecord, fromSchema := vm.explicitSchemaRecordType(from)
+	toRecord, toSchema := vm.explicitSchemaRecordType(to)
+	if !fromSchema && !toSchema {
+		return false, false
+	}
+	if fromSchema && strings.EqualFold(to, "Object") {
+		return true, true
+	}
+	if fromSchema && strings.EqualFold(to, "SObject") {
+		return true, true
+	}
+	if !fromSchema {
+		if _, class := vm.lookupClass(from); class {
+			return false, true
+		}
+		fromRecord = from
+	}
+	if !toSchema {
+		if _, class := vm.lookupClass(to); class {
+			return false, true
+		}
+		toRecord = to
+	}
+	return vm.isSObjectLikeType(fromRecord) && vm.isSObjectLikeType(toRecord) && sObjectTypeNamespaceEquivalent(fromRecord, toRecord), true
+}
+
+// Runtime records use canonical object names, which can also name a user class.
+// Consult allocation provenance before matching casts, assignments or instanceof.
+func (vm *VM) schemaRecordValueMatches(value Value, target string) (bool, bool) {
+	target = canonicalRuntimePlatformType(target)
+	_, explicitRecord := vm.explicitSchemaRecordType(target)
+	if value.classInstance {
+		if explicitRecord || strings.EqualFold(target, "SObject") {
+			return false, true
+		}
+		return false, false
+	}
+	if !vm.isSObjectLikeType(runtimeObjectType(value)) {
+		return false, false
+	}
+	if strings.EqualFold(target, "Object") || strings.EqualFold(target, "SObject") {
+		return true, true
+	}
+	if explicitRecord {
+		return sObjectTypeNamespaceEquivalent(runtimeObjectType(value), target), true
+	}
+	return false, false
+}
+
 func (vm *VM) typeAssignableTo(from, to string) bool {
+	if matched, handled := vm.schemaRecordTypesMatch(from, to); handled {
+		return matched
+	}
 	from = canonicalRuntimePlatformType(from)
 	to = canonicalRuntimePlatformType(to)
 	if strings.EqualFold(from, to) || strings.EqualFold(to, "Object") {
@@ -472,10 +539,35 @@ func messagingEmailAssignable(from, to string) bool {
 		strings.EqualFold(from, "Messaging.MassEmailMessage")
 }
 func (vm *VM) conversionScore(paramType string, value Value) int {
+	// R143/R165: an exact declared Object overload outranks a runtime-only
+	// match. Keep runtime conversions available for dynamically described calls.
+	if strings.EqualFold(canonicalRuntimePlatformType(value.Static), "Object") &&
+		strings.EqualFold(canonicalRuntimePlatformType(paramType), "Object") {
+		return 1001
+	}
 	if value.Kind == ValueNull {
 		if value.Type != "" {
 			if strings.EqualFold(paramType, value.Type) {
 				return 1000
+			}
+			// A typed null retains the compile-time type of its variable. A
+			// collection or map null can be passed to Object (or to a compatible
+			// generic surface), but it cannot make an unrelated overload
+			// applicable merely because the runtime value is null. Without this
+			// guard, a derived class's List<T> overload shadows an inherited
+			// Map<K,V> overload when the map argument is null.
+			valueCollection := collectionBase(value.Type) != ""
+			valueMap := isMapType(value.Type)
+			paramCollection := collectionBase(paramType) != ""
+			paramMap := isMapType(paramType)
+			if (valueCollection && !paramCollection && !paramMap) || (valueMap && !paramMap) {
+				if vm.typeAssignableTo(value.Type, paramType) {
+					return 900
+				}
+				return -1
+			}
+			if valueCollection && paramMap {
+				return -1
 			}
 			if collectionBase(value.Type) != "" && collectionBase(paramType) != "" {
 				if vm.typeAssignableTo(value.Type, paramType) {
@@ -495,6 +587,13 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 			if vm.typeAssignableTo(value.Type, paramType) {
 				return 900
 			}
+			// Native C002: an Id-typed null cannot make an unrelated overload
+			// applicable before lookup reaches the inherited Id declaration.
+			// Keep Id/String and Object conversions above, and preserve the
+			// existing null behavior for other types outside this capture.
+			if strings.EqualFold(canonicalRuntimePlatformType(value.Type), "Id") {
+				return -1
+			}
 			return 1
 		}
 		if collectionBase(paramType) != "" || isMapType(paramType) {
@@ -506,6 +605,9 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 		if strings.EqualFold(paramType, value.Static) {
 			return 1000
 		}
+		if strings.EqualFold(paramType, "Object") {
+			return 10
+		}
 		if platformTokenTypeAlias(value.Static, paramType) {
 			return 1000
 		}
@@ -516,6 +618,9 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 	valueType := valueTypeName(value)
 	if strings.EqualFold(paramType, valueType) {
 		return 1000
+	}
+	if strings.EqualFold(paramType, "Object") {
+		return 10
 	}
 	if platformTokenTypeAlias(valueType, paramType) {
 		return 1000
@@ -532,6 +637,19 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 		}
 		if vm.collectionElementsAssignable(paramType, value) {
 			return 850
+		}
+		// A collection can retain a concrete static type while its runtime
+		// element type is the wider type that was used to construct or pass it.
+		// Prefer the runtime generic when the static type is stale or narrower;
+		// this is especially important for empty covariant lists, where there
+		// are no elements from which to infer assignability.
+		if runtimeType := strings.TrimSpace(value.Runtime); runtimeType != "" && collectionBase(runtimeType) != "" {
+			if vm.typeAssignableTo(runtimeType, paramType) {
+				return 900
+			}
+			if vm.sObjectCollectionDowncastAssignable(runtimeType, paramType) {
+				return 850
+			}
 		}
 		return -1
 	}
@@ -679,16 +797,16 @@ func numericConversionScore(paramType, valueType string) int {
 		case "Long":
 			return 900
 		case "Decimal":
-			return 800
-		case "Double":
 			return 700
+		case "Double":
+			return 800
 		}
 	case "Long":
 		switch paramType {
 		case "Decimal":
-			return 800
-		case "Double":
 			return 700
+		case "Double":
+			return 800
 		}
 	case "Decimal":
 		if paramType == "Double" {
@@ -823,6 +941,9 @@ func runtimeValueTypeName(value Value) string {
 	return valueTypeName(value)
 }
 func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
+	if matched, handled := vm.schemaRecordTypesMatch(typeName, target); handled {
+		return matched
+	}
 	typeName = systemInterfaceAlias(typeName)
 	target = systemInterfaceAlias(target)
 	if resolved, ok := vm.resolveClassName(typeName); ok {
@@ -935,6 +1056,21 @@ func exceptionTypeName(typeName string) string {
 }
 func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	typeName = vm.resolveAssignableTargetType(typeName)
+	if value.Kind == ValueObject {
+		if matched, handled := vm.schemaRecordValueMatches(value, typeName); handled {
+			if !matched {
+				return Null, fmt.Errorf("cannot assign %s to %s", runtimeValueTypeName(value), typeName)
+			}
+			if !strings.EqualFold(canonicalRuntimePlatformType(typeName), "Object") {
+				value.Static = typeName
+			}
+			return value, nil
+		}
+	}
+	// Apex type names are case-insensitive. Normalize scalar aliases before
+	// the case-sensitive conversion branches below (for example, source often
+	// spells the Id cast as `ID`).
+	typeName = canonicalApexScalarType(typeName)
 	canonicalTypeName := typeName
 	if rest, ok := stripLeadingSystemNamespace(canonicalTypeName); ok {
 		canonicalTypeName = rest
@@ -1244,7 +1380,14 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			}
 			return value, nil
 		}
-		if len(value.List) == 0 && vm.isSObjectLikeType(elementType) {
+		queriedRows := len(value.List) > 0
+		for _, row := range value.List {
+			if _, queried := row.Fields[sobjectQueriedFieldsField]; row.Kind != ValueObject || !queried {
+				queriedRows = false
+				break
+			}
+		}
+		if (len(value.List) == 0 || queriedRows) && vm.isSObjectLikeType(elementType) {
 			for _, sourceType := range sourceTypes {
 				sourceElementType, ok := collectionElementType(sourceType)
 				if !ok || strings.EqualFold(sourceElementType, "SObject") || strings.EqualFold(sourceElementType, "Object") {
@@ -1291,20 +1434,25 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			return value, nil
 		}
 		out := make([]Value, 0, len(value.Set))
-		for _, item := range value.Set {
+		hashes := make([]setInsertionHash, 0, len(value.Set))
+		for index, item := range value.Set {
 			coerced, err := vm.coerceAssignable(elementType, item)
 			if err != nil {
 				return Null, err
 			}
-			if !containsValue(out, coerced) {
+			hash := value.setInsertionHashAt(index)
+			if !setTransportContains(out, hashes, coerced, hash) {
 				out = append(out, coerced)
+				hashes = append(hashes, hash)
 			}
 		}
 		value.Set = out
+		value.setInsertionHashes = hashes
 		return value, nil
 	}
 	if collectionBase(typeName) == "Iterable" && (value.Kind == ValueList || value.Kind == ValueSet) {
-		value.Type = typeName
+		// An interface view must not erase the concrete collection element type.
+		value.Static = typeName
 		elementType, ok := collectionElementType(typeName)
 		if !ok {
 			return value, nil
@@ -1362,6 +1510,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		if !canonicalRepresentation {
 			entries = make([]coercedEntry, 0, len(value.Map))
 		}
+		var objectKeys Value
 		for index, rawKey := range rawKeys {
 			item := value.Map[rawKey]
 			keyValue := mapStoredKey(value, rawKey)
@@ -1375,7 +1524,23 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 				rollback.restore()
 				return Null, fmt.Errorf("value: %w", err)
 			}
-			entry := coercedEntry{key: vm.mapKey(coercedKey), keyValue: coercedKey, value: coercedValue}
+			encodedKey := vm.mapKey(coercedKey)
+			if customObjectHashKey(coercedKey, encodedKey) {
+				if objectKeys.Kind != ValueMap {
+					objectKeys = Map()
+				}
+				encodedKey, err = vm.mapEntryKeyWithHash(objectKeys, coercedKey, encodedKey)
+				if err != nil {
+					rollback.restore()
+					return Null, err
+				}
+				if _, exists := objectKeys.Map[encodedKey]; !exists {
+					objectKeys.MapOrder = append(objectKeys.MapOrder, encodedKey)
+				}
+				objectKeys.Map[encodedKey] = Null
+				objectKeys.MapKeys[encodedKey] = coercedKey
+			}
+			entry := coercedEntry{key: encodedKey, keyValue: coercedKey, value: coercedValue}
 			if entries == nil &&
 				(entry.key != rawKey ||
 					!sameCoercionRepresentation(entry.keyValue, keyValue) ||
@@ -1455,12 +1620,16 @@ func sameCoercionRepresentation(left, right Value) bool {
 	return reflect.DeepEqual(left, right)
 }
 
-func (vm *VM) typedJSONMapKey(typeName, key string) (Value, error) {
+func (vm *VM) typedJSONMapKey(typeName, key string, input jsonTypedInput) (Value, error) {
 	resolvedType := vm.resolveAssignableTargetType(typeName)
 	if _, ok := vm.resolveEnumClass(resolvedType); ok {
+		if input.source != "" {
+			value, _, err := vm.typedEnumJSONInput(resolvedType, key, input)
+			return value, err
+		}
 		return vm.coerceAssignable(resolvedType, String(key))
 	}
-	return typedJSONMapKey(typeName, key)
+	return typedJSONMapKey(typeName, key, input)
 }
 func (vm *VM) resolveAssignableTargetType(typeName string) string {
 	base := collectionBase(typeName)

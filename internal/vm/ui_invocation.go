@@ -25,6 +25,16 @@ type UIActionError struct {
 	Code    string `json:"code,omitempty"`
 	Type    string `json:"type,omitempty"`
 	Message string `json:"message"`
+	cause   error
+}
+
+// ExceptionTypeName qualifies known platform exceptions while preserving the
+// declared names of custom exceptions, whether top-level or nested.
+func (err *UIActionError) ExceptionTypeName() string {
+	if err == nil {
+		return ""
+	}
+	return exceptionQualifiedTypeName(err.Type)
 }
 
 func (vm *VM) InvokeAuraAction(className, methodName string, params map[string]any) (UIInvocationResult, error) {
@@ -142,6 +152,7 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 }
 
 func (vm *VM) InvokeVisualforceActionOnController(controller Value, className, methodName, pageURL string, params map[string]string) (Value, Value, UIInvocationResult, error) {
+	vm.registerSObjectAliasRecord(controller)
 	out := UIInvocationResult{Framework: "visualforce", ClassName: className, MethodName: methodName}
 	if strings.TrimSpace(className) == "" || strings.TrimSpace(methodName) == "" {
 		out.Success = false
@@ -151,7 +162,7 @@ func (vm *VM) InvokeVisualforceActionOnController(controller Value, className, m
 	if strings.TrimSpace(pageURL) == "" {
 		pageURL = "/apex/current"
 	}
-	vm.pageMessages = nil
+	// A bound action shares its request's messages with constructors and setters.
 	vm.currentPage = vm.newPageReference(pageURL)
 	if len(params) > 0 {
 		mergeCurrentPageStringParams(vm.currentPage, params)
@@ -278,7 +289,8 @@ func (vm *VM) invokeUIAction(framework, className, methodName string, params map
 	callerEntrySharing := vm.entrySharingMode
 	vm.entrySharingMode = "with sharing"
 	defer func() { vm.entrySharingMode = callerEntrySharing }()
-	method, args, err := vm.resolveUIAction(className, methodName, params)
+	lwc := framework == "lwc"
+	method, args, err := vm.resolveUIAction(className, methodName, params, lwc)
 	if err != nil {
 		var diagnostic *UIActionDiagnosticError
 		if errors.As(err, &diagnostic) {
@@ -304,37 +316,56 @@ func (vm *VM) invokeUIAction(framework, className, methodName string, params map
 		return out, nil
 	}
 	out.Success = true
-	out.ReturnValue = plainUIJSON(jsonFromValue(value, false))
+	if lwc {
+		out.ReturnValue = vm.lwcJSONFromValue(value)
+	} else {
+		out.ReturnValue = plainUIJSON(jsonFromValue(value, false))
+	}
 	return out, nil
 }
 
-func (vm *VM) resolveUIAction(className, methodName string, params map[string]any) (Method, []Value, error) {
+func (vm *VM) resolveUIAction(className, methodName string, params map[string]any, lwc bool) (Method, []Value, error) {
 	if strings.TrimSpace(className) == "" || strings.TrimSpace(methodName) == "" {
 		return Method{}, nil, fmt.Errorf("UI action requires class and method")
 	}
-	candidates := append([]Method(nil), vm.MethodOverloads[className+"."+methodName]...)
+	candidates := append([]Method(nil), vm.registeredOverloads(className+"."+methodName)...)
 	if len(candidates) == 0 {
-		candidates = append(candidates, vm.MethodFolded[strings.ToLower(className+"."+methodName)]...)
+		candidates = append(candidates, vm.registeredFolded(strings.ToLower(className+"."+methodName))...)
 	}
 	sort.SliceStable(candidates, func(i, j int) bool { return uiMethodSignature(candidates[i]) < uiMethodSignature(candidates[j]) })
 	var matchedMethod Method
 	var matchedArgs []Value
 	matched := 0
 	matchedSignatures := map[string]bool{}
+	var parameterErr error
 	for _, method := range candidates {
-		if !method.IsStatic || !methodHasAuraEnabled(method.Modifiers) || len(method.Params) != len(params) {
+		if !method.IsStatic || !methodHasAuraEnabled(method.Modifiers) || (!lwc && len(method.Params) != len(params)) {
 			continue
 		}
 		args := make([]Value, 0, len(method.Params))
 		ok := true
 		for _, param := range method.Params {
 			raw, exists := params[param.Name]
-			if !exists {
+			if !exists && !lwc {
 				ok = false
 				break
 			}
-			value, err := vm.typedValueFromJSON(vm.resolveTypeNameInClass(method.ClassName, param.Type), raw, false)
+			typeName := vm.resolveTypeNameInClass(method.ClassName, param.Type)
+			var value Value
+			var err error
+			if lwc {
+				value, err = vm.lwcParameterValue(typeName, raw)
+			} else {
+				value, err = vm.typedValueFromJSON(typeName, raw, false)
+			}
 			if err != nil {
+				if lwc {
+					parameterErr = &UIActionDiagnosticError{Type: "InvalidActionParameter", Message: fmt.Sprintf("Value provided is invalid for action parameter '%s' of type '%s'", param.Name, param.Type)}
+					var actionErr *UIActionDiagnosticError
+					if errors.As(err, &actionErr) {
+						parameterErr = actionErr
+					}
+				}
 				ok = false
 				break
 			}
@@ -361,7 +392,116 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 	if matched == 1 {
 		return matchedMethod, matchedArgs, nil
 	}
+	if parameterErr != nil {
+		return Method{}, nil, parameterErr
+	}
 	return Method{}, nil, fmt.Errorf("no static @AuraEnabled method %s.%s accepts parameters %s", className, methodName, sortedParamNames(params))
+}
+
+func (vm *VM) lwcParameterValue(typeName string, raw any) (Value, error) {
+	// Native null List<String> parameters arrive as an empty collection; the
+	// captured null List<Account> and Map<String,String> parameters stay null.
+	if raw == nil && strings.EqualFold(strings.Join(strings.Fields(typeName), ""), "List<String>") {
+		return typedList(typeName), nil
+	}
+	if strings.EqualFold(typeName, "Datetime") {
+		if text, ok := raw.(string); ok && !strings.HasSuffix(text, "Z") {
+			return Null, fmt.Errorf("LWC Datetime parameter requires UTC JSON")
+		}
+	}
+	if fields, ok := raw.(map[string]any); ok && vm.isSObjectLikeType(typeName) && !strings.EqualFold(typeName, "SObject") {
+		if actual, ok := fields["sobjectType"].(string); ok && !strings.EqualFold(typeName, actual) {
+			// Preserve the entity mismatch as an explicit local boundary. The
+			// native U# identifiers in r_serial_account_wrong_type are hosted
+			// identities, not local schema identifiers.
+			return Null, &UIActionDiagnosticError{Type: "InvalidActionParameter", Message: fmt.Sprintf("Mismatched entity type. Expected %s but received %s", typeName, actual)}
+		}
+	}
+	return vm.typedValueFromJSON(typeName, raw, false)
+}
+
+// The Apex action transport has its own serializer. JSON.serialize and the
+// Aura/Visualforce paths retain their existing representation. Native action rows
+// omit null collection entries and fields, expose only @AuraEnabled DTO members,
+// emit millisecond UTC Datetimes, and retain high-precision Decimals as strings.
+func (vm *VM) lwcJSONFromValue(value Value) any {
+	switch value.Kind {
+	case ValueDecimal:
+		if !isFloatBackedDecimal(value) {
+			text := decimalDisplayText(value)
+			digits := strings.TrimLeft(strings.ReplaceAll(strings.TrimPrefix(text, "-"), ".", ""), "0")
+			if len(digits) > 15 {
+				return text
+			}
+		}
+		return jsonFromValue(value, false)
+	case ValueList, ValueSet:
+		items := value.List
+		if value.Kind == ValueSet {
+			items = value.Set
+		}
+		out := make([]any, 0, len(items))
+		for _, item := range items {
+			if item.Kind != ValueNull {
+				out = append(out, vm.lwcJSONFromValue(item))
+			}
+		}
+		return out
+	case ValueMap:
+		out := make(map[string]any, len(value.Map))
+		for key, item := range value.Map {
+			if item.Kind != ValueNull {
+				out[mapStoredKey(value, key).String()] = vm.lwcJSONFromValue(item)
+			}
+		}
+		return out
+	case ValueObject:
+		if strings.EqualFold(value.Type, "Datetime") {
+			if timestamp, err := parsePlatformDatetime(value); err == nil {
+				return timestamp.UTC().Format("2006-01-02T15:04:05.000Z")
+			}
+		}
+		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
+			return scalar
+		}
+		out := make(map[string]any)
+		if _, ok := vm.lookupClass(value.Type); ok {
+			for _, name := range vm.jsonSerializableFieldNames(value.Type) {
+				field, owner, ok := vm.lookupField(value.Type, name)
+				if !ok || field.Static || !methodHasAuraEnabled(field.Modifiers) {
+					continue
+				}
+				_, item, present := objectFieldValue(value, name)
+				if field.Getter != nil {
+					getterValue, err := vm.callGetter(vm.getterOwner(owner, field), field, value)
+					if err != nil {
+						continue
+					}
+					item, present = getterValue, true
+				}
+				if present && item.Kind != ValueNull {
+					out[name] = vm.lwcJSONFromValue(item)
+				}
+			}
+			return out
+		}
+		sobject := vm.isSObjectLikeType(value.Type)
+		for name, item := range value.Fields {
+			if item.Kind == ValueNull {
+				continue
+			}
+			// Native r_return_account/r_return_accounts omit constructor
+			// defaults. Explicit assignments clear this marker, retaining zero
+			// and false values without changing DTO or map serialization.
+			if sobject && (isInternalSObjectField(name) || isDefaultedSObjectField(value, name) || name == "attributes" || name == "sobjectType") {
+				continue
+			}
+			out[name] = vm.lwcJSONFromValue(item)
+		}
+		return out
+	default:
+		return jsonFromValue(value, false)
+	}
 }
 
 type UIActionDiagnosticError struct {
@@ -395,14 +535,14 @@ func uiInvocationError(err error) *UIActionError {
 	if errors.As(err, &thrown) {
 		runtime := runtimeError(thrown.value, thrown.stack)
 		if runtimeErr, ok := runtime.(*RuntimeError); ok {
-			return &UIActionError{Type: runtimeErr.Type, Message: runtimeErr.Message}
+			return &UIActionError{Type: runtimeErr.Type, Message: runtimeErr.Message, cause: runtimeErr}
 		}
 	}
 	var runtimeErr *RuntimeError
 	if errors.As(err, &runtimeErr) {
-		return &UIActionError{Type: runtimeErr.Type, Message: runtimeErr.Message}
+		return &UIActionError{Type: runtimeErr.Type, Message: runtimeErr.Message, cause: runtimeErr}
 	}
-	return &UIActionError{Type: "RuntimeError", Message: err.Error()}
+	return &UIActionError{Type: "RuntimeError", Message: err.Error(), cause: err}
 }
 
 func sortedParamNames(params map[string]any) []string {

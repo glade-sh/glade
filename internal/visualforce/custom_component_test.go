@@ -39,7 +39,14 @@ func TestRenderCustomComponentAssignToFacetAndBody(t *testing.T) {
 		t.Fatal(err)
 	}
 	machine := vm.New(nil)
-	if err := machine.RegisterClass(vm.Class{Name: "CardController"}); err != nil {
+	// assignTo requires a declared get/set property. The fixture must not rely
+	// on binding silently creating an undeclared controller field.
+	if err := machine.RegisterClass(vm.Class{
+		Name: "CardController",
+		Fields: map[string]vm.Field{
+			"heading": {Name: "heading", Type: "String", Property: true, HasGetter: true, HasSetter: true, InitialValue: vm.String("")},
+		},
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(vm.Class{

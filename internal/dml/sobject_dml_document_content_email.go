@@ -105,6 +105,7 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		contentDocumentObject.Records[contentDocumentID] = document
 		e.Org.Objects["ContentDocument"] = contentDocumentObject
 	}
+	e.updateContentVersionDerivedFields(version)
 	e.markLatestContentVersion(contentDocumentID, version.ID)
 	locationID := idFromStorageValue(version.Fields["FirstPublishLocationId"])
 	if locationID == "" && contentDocumentWasCreated {
@@ -131,6 +132,34 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		}
 	}
 	return nil
+}
+
+func (e *Engine) updateContentVersionDerivedFields(version storage.Record) {
+	storage.EnsureMutableObjectRecords(e.Org, "ContentVersion")
+	object := e.Org.Objects["ContentVersion"]
+	stored, ok := object.Records[version.ID]
+	if !ok {
+		return
+	}
+	if e.IsolationJournal != nil {
+		e.IsolationJournal.RecordUpdate("ContentVersion", version.ID, stored)
+	}
+	if stored.Fields == nil {
+		stored.Fields = make(map[string]storage.Value)
+	}
+	if path, ok := version.Fields["PathOnClient"]; ok {
+		extension := fileExtension(path.String)
+		stored.Fields["FileExtension"] = storage.StringValue(extension)
+		if fileType := contentDocumentFileType(extension); fileType != "" {
+			stored.Fields["FileType"] = storage.StringValue(fileType)
+		}
+	}
+	if size, ok := contentVersionSize(version); ok {
+		stored.Fields["ContentSize"] = storage.IntegerValue(size)
+		stored.Fields["ContentSizeLong"] = storage.IntegerValue(size)
+	}
+	object.Records[version.ID] = stored
+	e.Org.Objects["ContentVersion"] = object
 }
 
 func (e *Engine) afterInsertContentDistribution(id storage.ID) {
@@ -211,6 +240,19 @@ func (e *Engine) contentDocumentSize(version storage.Record) (int64, bool) {
 	if _, ok := documentObject.Definition.Fields["ContentSize"]; !ok {
 		return 0, false
 	}
+	data, ok := version.Fields["VersionData"]
+	if !ok {
+		return 0, false
+	}
+	switch data.Kind {
+	case storage.ValueBlob, storage.ValueString:
+		return int64(len(data.String)), true
+	default:
+		return 0, false
+	}
+}
+
+func contentVersionSize(version storage.Record) (int64, bool) {
 	data, ok := version.Fields["VersionData"]
 	if !ok {
 		return 0, false

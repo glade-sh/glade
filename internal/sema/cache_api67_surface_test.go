@@ -38,6 +38,8 @@ func TestAPI67CacheRejectedShapes(t *testing.T) {
 
 func TestAPI67CacheAcceptedShapes(t *testing.T) {
 	tests := map[string]string{
+		"Cache.Org default constructor":        `Cache.Org orgCache = new Cache.Org();`,
+		"Cache.Session default constructor":    `Cache.Session sessionCache = new Cache.Session();`,
 		"Cache.Session.isAvailable exists":     `Cache.Session.isAvailable();`,
 		"partition isAvailable exists":         `Cache.OrgPartition p = Cache.Org.getPartition('local'); p.isAvailable();`,
 		"createFullyQualifiedKey static":       `Cache.OrgPartition.createFullyQualifiedKey('local', 'default', 'account');`,

@@ -2,6 +2,7 @@ package gladecli
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,6 +12,10 @@ import (
 )
 
 func TestLoadDAPStartupStateCachesReusesAndInvalidates(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	t.Parallel()
 
 	root := t.TempDir()
@@ -77,6 +82,10 @@ func TestLoadDAPStartupStateCachesReusesAndInvalidates(t *testing.T) {
 }
 
 func TestDAPCacheKeyIncludesSourceAPIVersion(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	root := t.TempDir()
 	writeTestProject(t, root)
 	projectFile := filepath.Join(root, "sfdx-project.json")
@@ -113,4 +122,40 @@ func readDAPCacheEntry(t *testing.T, path string) startupcache.Entry {
 		t.Fatalf("parse DAP cache entry: %v", err)
 	}
 	return entry
+}
+
+func TestDAPRejectsPriorCacheVersions(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
+	// Share the project within this invocation, including under -count.
+	root := t.TempDir()
+	writeTestProject(t, root)
+	for _, version := range []int{4, 5, 6} {
+		t.Run(fmt.Sprint(version), func(t *testing.T) {
+			if _, _, _, err := loadDAPStartupState(root); err != nil {
+				t.Fatal(err)
+			}
+			path := filepath.Join(root, ".glade", "dap", "startup.json")
+			old := readDAPCacheEntry(t, path)
+			old.Version = version
+			old.Runtime.Methods = nil
+			delete(old.Org.Objects, "TaskStatus")
+			if err := startupcache.Write(&old, startupcache.SubdirDAP); err != nil {
+				t.Fatal(err)
+			}
+			org, rebuilt, _, err := loadDAPStartupState(root)
+			if err != nil || len(rebuilt.Methods) == 0 {
+				t.Fatalf("old cache reused: methods=%d err=%v", len(rebuilt.Methods), err)
+			}
+			if len(org.Objects["TaskStatus"].Records) != 5 {
+				t.Fatalf("TaskStatus-free cache reused: rows=%d", len(org.Objects["TaskStatus"].Records))
+			}
+			if got := readDAPCacheEntry(t, path); got.Version != dapCacheVersion {
+				t.Fatalf("cache version=%d want=%d", got.Version, dapCacheVersion)
+			}
+
+		})
+	}
 }

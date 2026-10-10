@@ -419,7 +419,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		t.Fatal("race generic matrix must use only the classified generic packages")
 	}
 	if got := strings.Count(raceJob, "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0"); got != 1 {
-		t.Fatalf("race Node setup count = %d, want one setup shared by all LWC consumers", got)
+		t.Fatalf("race Node setup count = %d, want one setup shared by all Node consumers", got)
 	}
 	if strings.Contains(raceJob, "cache: npm") {
 		t.Fatal("race setup-node must not own an implicit npm cache")
@@ -437,9 +437,35 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 			t.Errorf("race explicit npm cache missing %q", marker)
 		}
 	}
+	const nodeConsumers = `contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server","./internal/visualforce"]'), matrix.package)`
 	const lwcConsumers = `contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package)`
-	if got := strings.Count(raceJob, lwcConsumers); got != 4 {
-		t.Fatalf("race LWC consumer selector count = %d, want setup, path, restore, and install", got)
+	const browserConsumers = `contains(fromJSON('["./internal/lwc/compile","./internal/lwcbrowser","./internal/server","./internal/visualforce"]'), matrix.package)`
+	for selector, want := range map[string]int{nodeConsumers: 1, lwcConsumers: 3, browserConsumers: 2} {
+		if got := strings.Count(raceJob, selector); got != want {
+			t.Errorf("race consumer selector %q count = %d, want %d", selector, got, want)
+		}
+	}
+	previous := -1
+	for _, requirement := range []struct{ marker, selector, command string }{
+		{"      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", nodeConsumers, `node-version: "22"`},
+		{"      - name: Resolve npm cache path", lwcConsumers, `run: echo "dir=$(npm config get cache)" >>"$GITHUB_OUTPUT"`},
+		{"      - name: Restore LWC npm cache", lwcConsumers, "actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"},
+		{"      - name: Install LWC toolchain", lwcConsumers, "run: npm ci --prefix third_party/lwc"},
+		{"      - name: Install browser conformance dependencies", browserConsumers, "run: npm ci --prefix lwcruntime"},
+		{"      - name: Install conformance Chromium", browserConsumers, "run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium"},
+	} {
+		step := workflowStepBlockText(raceJob, requirement.marker)
+		if !strings.Contains(step, "if: ${{ "+requirement.selector+" }}") || !strings.Contains(step, requirement.command) {
+			t.Errorf("race prerequisite %q must use its exact consumer selector and command", requirement.marker)
+		}
+		index := strings.Index(raceJob, requirement.marker)
+		if strings.Count(raceJob, requirement.marker) != 1 || index <= previous {
+			t.Errorf("race prerequisite %q must occur exactly once after its prerequisites", requirement.marker)
+		}
+		previous = index
+	}
+	if runIndex := strings.Index(raceJob, "      - name: Run race detector"); runIndex <= previous {
+		t.Error("race detector must run after browser prerequisites")
 	}
 	if strings.Contains(raceJob, "actions/cache/save") || strings.Contains(raceJob, "cache: npm") {
 		t.Fatal("dynamic race matrix must be restore-only for npm cache")
@@ -743,7 +769,11 @@ exit 124
 }
 
 func TestCIRacePlaygroundRealPlanUsesFiveOrdinaryShards(t *testing.T) {
-	discoveryCommand := exec.Command("go", "test", "-race", "-list", ".", "../internal/playground")
+	// Discovery only needs names; playground has no race-specific build tags.
+	// The real planner below still checks all five shards and their exact union.
+	// -vet=off matches the CI discovery step (ci-go-test.sh) and skips a vet
+	// pass over the whole playground dependency graph on a cold build cache.
+	discoveryCommand := exec.Command("go", "test", "-vet=off", "-list", ".", "../internal/playground")
 	discoveryOutput, err := discoveryCommand.Output()
 	if err != nil {
 		t.Fatalf("playground race discovery: %v", err)

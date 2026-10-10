@@ -16,6 +16,7 @@ func newXmlStreamWriter() Value {
 	writer.Fields["stack"] = List()
 	writer.Fields["namespaceStack"] = List()
 	writer.Fields["openStart"] = Bool(false)
+	writer.Fields["emptyStart"] = Bool(false)
 	writer.Fields["closed"] = Bool(false)
 	writer.Fields["defaultNamespace"] = String("")
 	return writer
@@ -29,6 +30,12 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 	if method == "" {
 		return Null, receiver, false, false, nil
 	}
+	if closed := receiver.Fields["closed"]; closed.Kind == ValueBool && closed.Bool {
+		return Null, receiver, false, true, newExceptionError("XmlException", "Stream already closed")
+	}
+	if index := xmlStreamWriterRequiredNullArgument(method, args); index > 0 {
+		return Null, receiver, false, true, xmlNullArgument(index)
+	}
 	switch method {
 	case "close":
 		if len(args) != 0 {
@@ -41,7 +48,6 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.%s expects 0 arguments", method)
 		}
-		receiver = xmlStreamWriterCloseOpenStart(receiver)
 		return String(xmlStreamWriterText(receiver)), receiver, false, true, nil
 	case "toString":
 		if len(args) != 0 {
@@ -55,19 +61,20 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 		receiver.Fields["defaultNamespace"] = args[0]
 		return Null, receiver, true, true, nil
 	case "writeStartDocument":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		if len(args) != 2 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeStartDocument expects encoding String and version String")
 		}
-		receiver = xmlStreamWriterAppend(receiver, fmt.Sprintf(`<?xml version="%s" encoding="%s"?>`, xmlStreamWriterEscapeAttr(args[1].Text), xmlStreamWriterEscapeAttr(args[0].Text)))
+		declaration := fmt.Sprintf(`<?xml version="%s"`, xmlStreamWriterEscapeAttr(args[1].Text))
+		if args[0].Kind != ValueNull {
+			declaration += fmt.Sprintf(` encoding="%s"`, xmlStreamWriterEscapeAttr(args[0].Text))
+		}
+		receiver = xmlStreamWriterAppend(receiver, declaration+"?>")
 		return Null, receiver, true, true, nil
 	case "writeStartElement":
-		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
+		if len(args) != 3 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) || args[1].Kind != ValueString || (args[2].Kind != ValueString && args[2].Kind != ValueNull) {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeStartElement expects prefix, localName, and namespaceURI Strings")
 		}
 		name := xmlStreamWriterQualifiedName(args[0].Text, args[1].Text)
-		if name == "" {
-			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeStartElement expects localName")
-		}
 		receiver = xmlStreamWriterCloseOpenStart(receiver)
 		receiver = xmlStreamWriterAppend(receiver, "<"+name)
 		receiver = xmlStreamWriterPushElement(receiver, name)
@@ -80,10 +87,11 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeEndElement expects 0 arguments")
 		}
+		receiver = xmlStreamWriterCloseEmptyStart(receiver)
 		name, updated, ok := xmlStreamWriterPopElement(receiver)
 		receiver = updated
 		if !ok {
-			return Null, receiver, false, true, newExceptionError("XmlException", "XmlStreamWriter.writeEndElement has no open element")
+			return Null, receiver, false, true, newExceptionError("XmlException", "No element was found to write: ")
 		}
 		receiver = xmlStreamWriterCloseOpenStart(receiver)
 		receiver = xmlStreamWriterAppend(receiver, "</"+name+">")
@@ -92,6 +100,7 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeEndDocument expects 0 arguments")
 		}
+		receiver = xmlStreamWriterCloseEmptyStart(receiver)
 		for {
 			name, updated, ok := xmlStreamWriterPopElement(receiver)
 			receiver = updated
@@ -114,14 +123,14 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeCData expects String")
 		}
 		receiver = xmlStreamWriterCloseOpenStart(receiver)
-		receiver = xmlStreamWriterAppend(receiver, "<![CDATA["+strings.ReplaceAll(args[0].Text, "]]>", "]]]]><![CDATA[>")+"]]>")
+		receiver = xmlStreamWriterAppend(receiver, "<![CDATA["+args[0].Text+"]]>")
 		return Null, receiver, true, true, nil
 	case "writeComment":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeComment expects String")
 		}
 		receiver = xmlStreamWriterCloseOpenStart(receiver)
-		receiver = xmlStreamWriterAppend(receiver, "<!--"+strings.ReplaceAll(args[0].Text, "--", "- -")+"-->")
+		receiver = xmlStreamWriterAppend(receiver, "<!--"+args[0].Text+"-->")
 		return Null, receiver, true, true, nil
 	case "writeProcessingInstruction":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
@@ -131,11 +140,11 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 		receiver = xmlStreamWriterAppend(receiver, "<?"+args[0].Text+" "+strings.ReplaceAll(args[1].Text, "?>", "? >")+"?>")
 		return Null, receiver, true, true, nil
 	case "writeAttribute":
-		if len(args) != 4 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString || args[3].Kind != ValueString {
+		if len(args) != 4 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) || (args[1].Kind != ValueString && args[1].Kind != ValueNull) || args[2].Kind != ValueString || args[3].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeAttribute expects prefix, namespaceURI, localName, and value Strings")
 		}
 		if !xmlStreamWriterOpenStart(receiver) {
-			return Null, receiver, false, true, newExceptionError("XmlException", "XmlStreamWriter.writeAttribute requires an open start element")
+			return Null, receiver, false, true, newExceptionError("XmlException", "Attribute not associated with any element")
 		}
 		name := xmlStreamWriterQualifiedName(args[0].Text, args[2].Text)
 		if name == "" {
@@ -152,7 +161,7 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeDefaultNamespace expects namespaceURI String")
 		}
 		if !xmlStreamWriterOpenStart(receiver) {
-			return Null, receiver, false, true, newExceptionError("XmlException", "XmlStreamWriter.writeNamespace requires an open start element")
+			return Null, receiver, false, true, newExceptionError("XmlException", fmt.Sprintf("Illegal State: Invalid state: start tag is not opened at writeNamespace(%s, %s)", args[0].Text, args[len(args)-1].Text))
 		}
 		prefix := ""
 		uri := args[0].Text
@@ -163,21 +172,18 @@ func callXmlStreamWriterMember(receiver Value, method string, args []Value) (Val
 		receiver = xmlStreamWriterDeclareNamespace(receiver, prefix, uri)
 		return Null, receiver, true, true, nil
 	case "writeEmptyElement":
-		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
+		if len(args) != 3 || (args[0].Kind != ValueString && args[0].Kind != ValueNull) || args[1].Kind != ValueString || (args[2].Kind != ValueString && args[2].Kind != ValueNull) {
 			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeEmptyElement expects prefix, localName, and namespaceURI Strings")
 		}
 		name := xmlStreamWriterQualifiedName(args[0].Text, args[1].Text)
-		if name == "" {
-			return Null, receiver, false, true, fmt.Errorf("XmlStreamWriter.writeEmptyElement expects localName")
-		}
 		receiver = xmlStreamWriterCloseOpenStart(receiver)
 		receiver = xmlStreamWriterAppend(receiver, "<"+name)
 		receiver = xmlStreamWriterPushElement(receiver, name)
 		if args[2].Text != "" {
 			receiver = xmlStreamWriterDeclareNamespace(receiver, args[0].Text, args[2].Text)
 		}
-		_, receiver, _ = xmlStreamWriterPopElement(receiver)
-		receiver = xmlStreamWriterAppend(receiver, "/>")
+		receiver.Fields["openStart"] = Bool(true)
+		receiver.Fields["emptyStart"] = Bool(true)
 		return Null, receiver, true, true, nil
 	default:
 		return Null, receiver, false, false, nil
@@ -211,6 +217,9 @@ func xmlStreamWriterOpenStart(receiver Value) bool {
 }
 
 func xmlStreamWriterCloseOpenStart(receiver Value) Value {
+	if empty := receiver.Fields["emptyStart"]; empty.Kind == ValueBool && empty.Bool {
+		return xmlStreamWriterCloseEmptyStart(receiver)
+	}
 	if xmlStreamWriterOpenStart(receiver) {
 		receiver = xmlStreamWriterAppend(receiver, ">")
 		receiver.Fields["openStart"] = Bool(false)
@@ -280,9 +289,6 @@ func xmlStreamWriterDeclareNamespace(receiver Value, prefix, uri string) Value {
 }
 
 func xmlStreamWriterQualifiedName(prefix, localName string) string {
-	if strings.TrimSpace(localName) == "" {
-		return ""
-	}
 	if prefix == "" {
 		return localName
 	}
@@ -295,4 +301,36 @@ func xmlStreamWriterEscapeText(text string) string {
 
 func xmlStreamWriterEscapeAttr(text string) string {
 	return xmlStreamWriterAttrReplacer.Replace(text)
+}
+
+// Empty elements remain writable start tags until the next output operation.
+func xmlStreamWriterCloseEmptyStart(receiver Value) Value {
+	if empty := receiver.Fields["emptyStart"]; empty.Kind == ValueBool && empty.Bool {
+		receiver = xmlStreamWriterAppend(receiver, "/>")
+		_, receiver, _ = xmlStreamWriterPopElement(receiver)
+		receiver.Fields["emptyStart"] = Bool(false)
+		receiver.Fields["openStart"] = Bool(false)
+	}
+	return receiver
+}
+
+func xmlStreamWriterRequiredNullArgument(method string, args []Value) int {
+	var required []int
+	switch method {
+	case "writeStartElement", "writeEmptyElement":
+		// R260 and N001-N003: null localName is rejected as argument 2.
+		required = []int{1}
+	case "writeAttribute":
+		// N004-N010: localName/value are required before checking element state;
+		// argument 3 takes precedence when both are null.
+		required = []int{2, 3}
+	case "writeCharacters", "writeCData", "writeComment":
+		required = []int{0}
+	}
+	for _, index := range required {
+		if index < len(args) && args[index].Kind == ValueNull {
+			return index + 1
+		}
+	}
+	return 0
 }

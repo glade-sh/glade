@@ -11,6 +11,7 @@ import (
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
@@ -118,6 +119,13 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 				if value, ok := compileFieldInitializer(member.Type, member.Name, member.Range, source); ok {
 					field.Value = value
 					field.InitialValue = value
+					if !field.Static {
+						// Preserve folded field metadata and the executable-body
+						// layout. The VM assigns instance literals at their source
+						// position, after child initialization.
+						field.InitializerLine = member.Range.Start.Line
+						field.InitializerColumn = member.Range.Start.Column
+					}
 				} else if initializer, ok := compileFieldInitializerMethod(typ.Name, field.Name, field.Static, typ.File, member.Range, source, apiVersion); ok {
 					if field.Static {
 						class.StaticInitializers = append(class.StaticInitializers, initializer)
@@ -168,6 +176,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 		Source     string
 		APIVersion string
 		Dependency bool
+		Approve    func() map[int]bool
 	}
 	type methodCompileResult struct {
 		Key    string
@@ -230,6 +239,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 				Source:     source,
 				APIVersion: runtimeTypeAPIVersion(typ, sources),
 				Dependency: typ.Dependency,
+				Approve:    namedPrefixApprovals(index, typ, member, source),
 			})
 		}
 	}
@@ -246,7 +256,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 			}
 			return
 		}
-		method, err := compileProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, member.BodyRange, job.Source, job.APIVersion)
+		method, err := compileProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, member.BodyRange, job.Source, job.APIVersion, job.Approve)
 		if err != nil {
 			if unsupported, ok := unsupportedProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source, err); ok {
 				unsupported.Dependency = job.Dependency
@@ -301,7 +311,13 @@ func runtimeTypeAPIVersion(typ typesys.TypeSymbol, sources *sourceCache) string 
 	if sources.hasArtifactCapturedSource(typ.File) {
 		return typ.EffectiveAPIVersion
 	}
-	return sources.apexAPIVersion(typ.File)
+	version := sources.apexAPIVersion(typ.File)
+	// Transient anonymous declarations have no
+	// metadata sidecar. Preserve the source API captured by their index.
+	if version == "" && hasModifier(typ.Modifiers, vm.AnonymousClassModifier) {
+		return typ.EffectiveAPIVersion
+	}
+	return version
 }
 
 const capturedPackageNoLocalBody = "captured package member has no local body; add a project.packageShims entry or run this behavior in Salesforce"
@@ -768,7 +784,20 @@ func projectProfileLicenseID(org *storage.OrgState, name string) (storage.ID, bo
 	return "", false
 }
 
+// ApplyProjectPermissionSets seeds explicitly declared permission metadata
+// without creating users or assigning permissions based on metadata names.
+func ApplyProjectPermissionSets(org *storage.OrgState, p project.Project) {
+	seedProjectPermissionSetRecords(org, p, make(map[string]permissionSetMetadataCacheEntry), false)
+}
+
 func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project, permissionSetMetadataCache map[string]permissionSetMetadataCacheEntry) {
+	// Preserve the existing test-runner guest fixture policy. Database creation
+	// uses metadata alone and does not opt into that policy (R209-R211).
+	seedProjectPermissionSetRecords(org, p, permissionSetMetadataCache, true)
+}
+
+func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, permissionSetMetadataCache map[string]permissionSetMetadataCacheEntry, assignGuestFixtures bool) {
+	applyProjectCustomPermissionRecords(org, p)
 	if org == nil || len(p.PermissionSetFiles) == 0 {
 		return
 	}
@@ -827,7 +856,9 @@ func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project, 
 			}
 		}
 		applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
-		applyProjectGuestPermissionSetAssignment(org, name, id, &generator)
+		if assignGuestFixtures {
+			applyProjectGuestPermissionSetAssignment(org, name, id, &generator)
+		}
 	}
 	org.IDSequences = generator.Sequences
 	org.Objects["PermissionSet"] = state
@@ -1068,7 +1099,31 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 	org.Objects["PermissionSetGroup"] = state
 }
 
-func compileProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, bodyRange *diagnostic.Range, source, apiVersion string) (vm.Method, error) {
+// namedPrefixApprovals asks semantic analysis which ++/-- prefix candidates in
+// a class method a captured named rule covers. Methods of classes declared in
+// execute-anonymous Apex keep the name path.
+func namedPrefixApprovals(index typesys.Index, typ typesys.TypeSymbol, member typesys.MemberSymbol, source string) func() map[int]bool {
+	if typ.Kind != apexast.DeclarationClass || hasModifier(typ.Modifiers, vm.AnonymousClassModifier) {
+		return nil
+	}
+	return func() map[int]bool { return sema.ApprovedPrefixStatements(index, typ, member, source) }
+}
+
+// approvedBodyOffsets maps approved source offsets into the compiled body, which
+// pads the text before the body to keep line and column positions.
+func approvedBodyOffsets(approved map[int]bool, body string, bodyRange *diagnostic.Range) map[int]bool {
+	pad := len(body) - (bodyRange.End.Offset - 1 - (bodyRange.Start.Offset + 1))
+	offsets := make(map[int]bool, len(approved))
+	for offset := range approved {
+		offsets[pad+offset-(bodyRange.Start.Offset+1)] = true
+	}
+	return offsets
+}
+
+// compileProjectMethod lowers a method body by the name path. A body the name
+// path cannot lower is lowered again with only the prefix statements approve
+// returns; if that also fails, the name-path error stands.
+func compileProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, bodyRange *diagnostic.Range, source, apiVersion string, approve func() map[int]bool) (vm.Method, error) {
 	methodSource, err := extractMethodSource(source, r)
 	if err != nil {
 		return vm.Method{}, err
@@ -1082,6 +1137,18 @@ func compileProjectMethod(className, methodName, returnType string, modifiers []
 		return vm.Method{}, err
 	}
 	program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: apiVersion})
+	if err != nil && approve != nil {
+		// Ask semantic analysis only when the prefix candidates are what the
+		// name path cannot lower.
+		if _, candidateErr := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{PrefixStatementCandidates: true}); candidateErr != nil {
+			return vm.Method{}, err
+		}
+		if approved := approve(); len(approved) > 0 {
+			if lowered, loweredErr := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: apiVersion, ApprovedPrefixStatements: approvedBodyOffsets(approved, body, bodyRange)}); loweredErr == nil {
+				program, err = lowered, nil
+			}
+		}
+	}
 	if err != nil {
 		return vm.Method{}, err
 	}

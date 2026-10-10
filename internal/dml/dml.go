@@ -17,11 +17,15 @@ type Engine struct {
 	UserID            storage.ID
 	Options           Options
 	FlowActionInvoker func(storage.FlowAction, storage.Record) error
-	WorkflowEmailer   func(storage.WorkflowEmailAlert, storage.Record) error
-	AutomationTracer  func(name string, args map[string]any)
-	DeferAutomation   bool
-	PriorRecords      map[storage.ID]storage.Record
-	IsolationJournal  *storage.IsolationJournal
+	// FlowActionInvokerWithContext receives the values materialized by Flow
+	// assignments and lookups for an Apex action. The legacy invoker remains
+	// available for callers that only model the triggering record.
+	FlowActionInvokerWithContext func(storage.FlowAction, storage.Record, FlowActionContext) error
+	WorkflowEmailer              func(storage.WorkflowEmailAlert, storage.Record) error
+	AutomationTracer             func(name string, args map[string]any)
+	DeferAutomation              bool
+	PriorRecords                 map[storage.ID]storage.Record
+	IsolationJournal             *storage.IsolationJournal
 
 	workflowDepth  int
 	flowDepth      int
@@ -35,6 +39,38 @@ type Engine struct {
 	uniqueIndexes  map[string]map[string]map[storage.ID]bool
 	SummaryByChild *SummaryRelationCache
 	subflowCache   map[string]cachedSubflow
+}
+
+// FlowActionContext contains the runtime references visible to a Flow Apex
+// action. Collections and records are copied from the active Flow frame so an
+// invoker can build the typed @InvocableMethod input without mutating Flow
+// state.
+type FlowActionContext struct {
+	Records           map[string]storage.Record
+	Collections       map[string][]storage.Record
+	PriorCollections  map[string]bool
+	Scalars           map[string]storage.Value
+	LookupOutputs     map[string]storage.Record
+	LookupCollections map[string][]storage.Record
+}
+
+// FlowInterviewInput contains the values supplied to an autolaunched Flow
+// interview. The engine reuses the same Flow frame and Apex-action path as
+// record-triggered flows.
+type FlowInterviewInput struct {
+	Scalars     map[string]storage.Value
+	Records     map[string]storage.Record
+	Collections map[string][]storage.Record
+}
+
+// FlowInterviewOutput contains the values materialized by an autolaunched
+// Flow. It intentionally uses the same storage-backed shapes as the input so
+// the VM can expose output variables through Flow.Interview.getVariableValue
+// without creating a second Flow execution path.
+type FlowInterviewOutput struct {
+	Scalars     map[string]storage.Value
+	Records     map[string]storage.Record
+	Collections map[string][]storage.Record
 }
 
 type cachedSubflow struct {
@@ -71,9 +107,14 @@ func (c *SummaryRelationCache) store(childObjectName string, relations []summary
 }
 
 type Options struct {
-	AllowFieldTruncation      bool
-	AllowUpdateDeleted        bool
-	AllowBatchUniqueValueSwap bool
+	// Consumed by the VM after successful Task DML; it records a notification
+	// request, not delivery or a Messaging.sendEmail invocation.
+	CaptureTaskAssignmentEmail bool
+	AllowFieldTruncation       bool
+	AllowUpdateDeleted         bool
+	AllowBatchUniqueValueSwap  bool
+	// Test-context emptyRecycleBin releases membership while retaining deleted rows.
+	RetainEmptiedRecycleBinRecords bool
 }
 
 type SummaryUpdate struct {
@@ -92,6 +133,9 @@ type Result struct {
 	Created           bool         `json:"created,omitempty"`
 	MergedRecordIDs   []storage.ID `json:"mergedRecordIds,omitempty"`
 	UpdatedRelatedIDs []storage.ID `json:"updatedRelatedIds,omitempty"`
+	// Apex UpsertResult.isCreated retains the insert path on failure.
+	// Created keeps the successful-creation contract used by API responses.
+	UpsertCreated bool `json:"-"`
 }
 
 type rollbackPoint struct {
@@ -116,6 +160,7 @@ type deleteRelation struct {
 type deleteContext struct {
 	restrictedByParent map[string][]deleteRelation
 	cascadeByParent    map[string][]deleteRelation
+	setNullByParent    map[string][]deleteRelation
 	referenceIndex     map[string]map[storage.ID][]storage.ID
 }
 
@@ -145,6 +190,88 @@ func NewEngine(org *storage.OrgState) Engine {
 		uniqueFields:   make(map[string][]string),
 		uniqueIndexes:  make(map[string]map[string]map[storage.ID]bool),
 	}
+}
+
+// RunAutolaunchedFlow executes an autolaunched Flow from an Apex interview in
+// the current transaction. It deliberately shares the record-triggered Flow
+// step interpreter so assignments, collection inputs, and Apex actions keep
+// one observable implementation.
+func (e *Engine) RunAutolaunchedFlow(rule storage.FlowRule, input FlowInterviewInput) error {
+	_, err := e.RunAutolaunchedFlowWithOutput(rule, input)
+	return err
+}
+
+// RunAutolaunchedFlowWithOutput executes an autolaunched Flow and returns the
+// final frame values. Callers that do not need outputs can use
+// RunAutolaunchedFlow, which preserves the original error-only contract.
+func (e *Engine) RunAutolaunchedFlowWithOutput(rule storage.FlowRule, input FlowInterviewInput) (FlowInterviewOutput, error) {
+	output := FlowInterviewOutput{
+		Scalars:     make(map[string]storage.Value),
+		Records:     make(map[string]storage.Record),
+		Collections: make(map[string][]storage.Record),
+	}
+	if e == nil {
+		return output, fmt.Errorf("autolaunched flow %s requires an engine", rule.Name)
+	}
+	frame := newFlowFrame()
+	frame.textTemplates = cloneFlowTextTemplates(rule.TextTemplates)
+	for name, value := range input.Scalars {
+		frame.scalars[flowFrameKey(name)] = value.Clone()
+	}
+	for name, record := range input.Records {
+		frame.records[flowFrameKey(name)] = record.Clone()
+	}
+	for name, records := range input.Collections {
+		frame.collections[flowFrameKey(name)] = cloneFlowRecords(records)
+	}
+	// Salesforce exposes declared interview variables even when the caller
+	// omits an optional input. Seed those variables as null or empty
+	// collections so assignments and decisions can observe a real null value
+	// instead of being treated as an unsupported reference.
+	for _, variable := range rule.Variables {
+		key := flowFrameKey(variable.Name)
+		if key == "" {
+			continue
+		}
+		if variable.IsCollection && flowVariableRecordCollection(variable) {
+			if _, ok := frame.collections[key]; !ok {
+				frame.collections[key] = []storage.Record{}
+			}
+			continue
+		}
+		if !variable.IsCollection && flowVariableRecordCollection(variable) && strings.TrimSpace(variable.ObjectType) != "" {
+			if _, ok := frame.records[key]; !ok {
+				frame.records[key] = storage.Record{Object: variable.ObjectType, Fields: make(map[string]storage.Value)}
+			}
+			continue
+		}
+		if variable.IsCollection {
+			if _, ok := frame.scalars[key]; !ok {
+				frame.scalars[key] = storage.ListValue()
+			}
+			continue
+		}
+		if _, ok := frame.scalars[key]; !ok {
+			frame.scalars[key] = storage.NullValue()
+		}
+	}
+	record := storage.Record{}
+	_, err := e.applyFlowStepsWithFrame(rule.Name, "", &record, storage.ObjectDefinition{}, rule.Steps, frame)
+	for name, value := range frame.scalars {
+		output.Scalars[name] = value.Clone()
+	}
+	for name, value := range frame.records {
+		output.Records[name] = value.Clone()
+	}
+	for name, records := range frame.collections {
+		output.Collections[name] = cloneFlowRecords(records)
+	}
+	return output, err
+}
+
+func flowVariableRecordCollection(variable storage.FlowVariable) bool {
+	return strings.EqualFold(strings.TrimSpace(variable.DataType), "SObject") ||
+		strings.EqualFold(strings.TrimSpace(variable.DataType), "Apex")
 }
 
 func (e *Engine) syncOrgClock() {
@@ -277,9 +404,10 @@ func (e *Engine) upsert(records []storage.Record, externalIDField string) []Resu
 			id, created, err := e.upsertByExternalID(record, externalIDField)
 			if err != nil {
 				results[i] = resultFromError(record.ID, err)
+				results[i].UpsertCreated = created
 				continue
 			}
-			results[i] = Result{ID: id, Success: true, Created: created}
+			results[i] = Result{ID: id, Success: true, Created: created, UpsertCreated: created}
 			continue
 		}
 		if err := e.validateUpsertIDReference(record); err != nil {
@@ -315,10 +443,10 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 		}
 		storedID, stored, ok := storage.LookupRecordByID(object.Records, record.ID)
 		if !ok {
-			results[i] = resultFromError(record.ID, fmt.Errorf("dml: record %s does not exist", record.ID))
+			results[i] = failedResult(record.ID, fmt.Sprintf("dml: record %s does not exist", record.ID), "UNDELETE_FAILED", nil)
 			continue
 		}
-		if !stored.System.IsDeleted {
+		if !stored.System.IsDeleted || stored.System.RecycleBinEmptied {
 			results[i] = failedResult(record.ID, "Entity is not in the recycle bin", "UNDELETE_FAILED", nil)
 			continue
 		}
@@ -331,12 +459,16 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 			e.IsolationJournal.RecordUpdate(objectName, storedID, stored)
 		}
 		stored.System.IsDeleted = false
+		stored.System.RecycleBinEmptied = false
+		stored.System.CascadeDeletedByObject = ""
+		stored.System.CascadeDeletedByID = ""
 		stored.System.LastModifiedDate = stamp
 		stored.System.SystemModstamp = stamp
 		stored.System.LastModifiedByID = e.systemUserID()
 		object.Records[storedID] = stored
 		e.Org.Objects[objectName] = object
 		e.addUniqueIndexRecord(objectName, object.Definition, stored)
+		e.restoreCascadeDeletedChildren(objectName, storedID, make(map[string]bool))
 		results[i] = Result{ID: record.ID, Success: true}
 	}
 	return results
@@ -364,6 +496,10 @@ func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
 			results[i] = resultFromError(record.ID, fmt.Errorf("dml: record %s does not exist", record.ID))
 			continue
 		}
+		if stored.System.RecycleBinEmptied {
+			results[i] = failedResult(record.ID, "invalid record id; no recycle bin entry found", "INVALID_ID_FIELD", nil)
+			continue
+		}
 		if !stored.System.IsDeleted {
 			results[i] = failedResult(record.ID, fmt.Sprintf("dml: record %s is not in the recycle bin", record.ID), "ENTITY_IS_NOT_IN_RECYCLE_BIN", nil)
 			continue
@@ -374,7 +510,12 @@ func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
 		if e.IsolationJournal != nil {
 			e.IsolationJournal.RecordUpdate(objectName, storedID, stored)
 		}
-		delete(object.Records, storedID)
+		if e.Options.RetainEmptiedRecycleBinRecords {
+			stored.System.RecycleBinEmptied = true
+			object.Records[storedID] = stored
+		} else {
+			delete(object.Records, storedID)
+		}
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: record.ID, Success: true}
 	}
@@ -434,7 +575,8 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 			continue
 		}
 		if duplicate.ID == master.ID {
-			results[i] = resultFromError(duplicate.ID, fmt.Errorf("dml: merge duplicate cannot be master"))
+			// Retain the master Id, with no field list.
+			results[i] = resultFromError(duplicate.ID, dmlErrorf("INVALID_ID_FIELD", nil, "dml: merge duplicate cannot be master"))
 			continue
 		}
 		storedDuplicateID, storedDuplicate, ok := storage.LookupRecordByID(object.Records, duplicate.ID)
@@ -633,20 +775,25 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err != nil {
 		return "", err
 	}
+	if err := e.validateManagedShareInsert(record); err != nil {
+		return "", err
+	}
 	normalizeNameFields(objectName, object.Definition, &record)
 	stripImplicitReadOnlyDefaultFields(object.Definition, e.Org.Namespace, &record, true)
 	if err := validateFieldWriteability(object.Definition, e.Org.Namespace, record, true); err != nil {
 		return "", err
 	}
+	normalizeUserNameFields(objectName, object.Definition, &record)
 	createPersonContact := createsPersonContactOnInsert(objectName, record)
 	applyDefaultRecordTypeID(objectName, object.Definition, &record)
 	applyFieldDefaults(e.Org, object.Definition, &record)
+	e.applyCurrencyInsertDefaults(object.Definition, &record)
 	applyAutoNumberName(object.Definition, e.IDs.Sequences[objectName]+1, &record)
+	e.applyContractNumberDefault(objectName, &record)
 	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
 	applySetupInsertDefaults(objectName, object.Definition, &record)
 	e.applyUserContactAccountDefault(objectName, object.Definition, &record)
 	e.applyFileInsertDefaults(objectName, object.Definition, &record)
-	stripMissingGeneratedRecordTypeID(e.Org, &record)
 	if err := e.applyStringLengthRules(object.Definition, &record); err != nil {
 		return "", err
 	}
@@ -659,7 +806,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := validateAccountNameRequiredFields(objectName, object.Definition, record); err != nil {
 		return "", err
 	}
-	if err := validateRequired(object.Definition, record); err != nil {
+	if err := validateRequiredInsert(object.Definition, record); err != nil {
 		return "", err
 	}
 	if isGeneratedPlaceholderInsertID(record.ID) {
@@ -672,6 +819,9 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 		return "", err
 	}
 	if err := e.validateValidationRules(objectName, object.Definition, record, nil, true); err != nil {
+		return "", err
+	}
+	if err := e.validateLookupFilters(object.Definition, record); err != nil {
 		return "", err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, ""); err != nil {
@@ -694,6 +844,17 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	}
 	if err := storage.ValidateID(record.ID); err != nil {
 		return "", err
+	}
+	if customTextNameUsesRecordID(object.Definition, record) {
+		if record.Fields == nil {
+			record.Fields = make(map[string]storage.Value)
+		}
+		name := string(record.ID)
+		if len(name) > 15 {
+			name = name[:15]
+		}
+		record.Fields["Name"] = storage.StringValue(name)
+		delete(record.ExplicitNulls, "Name")
 	}
 	if _, exists := object.Records[record.ID]; exists {
 		return "", dmlErrorf("DUPLICATE_VALUE", []string{"Id"}, "dml: duplicate id %s", record.ID)
@@ -729,6 +890,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	}
 	storedRecord := record.Clone()
 	storedRecord.ParentRelationships = nil
+	storedRecord.LoadedReferences = nil
 	object.Records[record.ID] = storedRecord
 	e.Org.Objects[objectName] = object
 	e.addUniqueIndexRecord(objectName, object.Definition, record)

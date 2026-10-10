@@ -905,6 +905,10 @@ func TestRuntimeTransitionRejectsCachedBaseFromDifferentPrivateProjectIdentity(t
 }
 
 func TestExplicitRuntimeTransitionFallsBackForEveryUnsafeShape(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+
 	tests := []struct {
 		name               string
 		mutate             func(*testing.T, runtimeTransitionFixture, typesys.Index) typesys.Index
@@ -2188,7 +2192,7 @@ func TestRuntimePatchBaseAuthorityRequiresExactRuntimeInputsAndCleanErrors(t *te
 	if !ok || entry.patchAuthority == nil {
 		t.Fatal("fixture runtime lacks patch authority")
 	}
-	runtimeInputsFingerprint := entry.patchAuthority.runtimeInputsFingerprint
+	runtimeInputsFingerprint := entry.patchAuthority.runtimeInputs()
 	if !runtimePatchBaseEntryTrusted(entry, key, fingerprint, runtimeInputsFingerprint) {
 		t.Fatal("exact clean base authority was rejected")
 	}

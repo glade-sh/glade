@@ -1,3 +1,17 @@
-import { createBaseComponent, renderTextContainer } from "./base.mjs";
+import { freezeTemplate, registerComponent, registerTemplate } from "lwc";
+import LightningBadge from "./source/badge/badge.js";
 
-export default createBaseComponent("lightning-badge", renderTextContainer("span", "slds-badge"));
+function renderBadge($api, $cmp) {
+  const label = $cmp.label == null ? "" : String($cmp.label);
+  return [$api.h("span", { key: 0 }, [$api.t(label)])];
+}
+renderBadge.stylesheets = [];
+const template = registerTemplate(renderBadge);
+freezeTemplate(template);
+
+class Badge extends LightningBadge {}
+export default registerComponent(Badge, {
+  tmpl: template,
+  sel: "lightning-badge",
+  apiVersion: 63,
+});

@@ -17,30 +17,30 @@ func EscapeVisualforceOutput(raw string, escape bool) string {
 }
 
 func RenderVisualforceText(raw string, ctx *ExpressionContext) (string, error) {
-	return renderVisualforceText(raw, ctx, true)
+	return renderVisualforceText(raw, ctx, true, true)
 }
 
 func RenderVisualforceRawText(raw string, ctx *ExpressionContext) (string, error) {
-	return renderVisualforceText(raw, ctx, false)
+	return renderVisualforceText(raw, ctx, false, false)
 }
 
-func renderVisualforceText(raw string, ctx *ExpressionContext, escapeExpressions bool) (string, error) {
+func renderVisualforceText(raw string, ctx *ExpressionContext, escapeExpressions, escapeLiterals bool) (string, error) {
 	if !strings.Contains(raw, "{!") {
-		return raw, nil
+		return renderVisualforceLiteralText(raw, ctx, escapeLiterals), nil
 	}
 	var out strings.Builder
 	pos := 0
 	for pos < len(raw) {
 		next := strings.Index(raw[pos:], "{!")
 		if next < 0 {
-			out.WriteString(raw[pos:])
+			out.WriteString(renderVisualforceLiteralText(raw[pos:], ctx, escapeLiterals))
 			break
 		}
 		start := pos + next
-		out.WriteString(raw[pos:start])
+		out.WriteString(renderVisualforceLiteralText(raw[pos:start], ctx, escapeLiterals))
 		end := findExpressionTemplateEnd(raw, start+2)
 		if end < 0 {
-			out.WriteString(raw[start:])
+			out.WriteString(renderVisualforceLiteralText(raw[start:], ctx, escapeLiterals))
 			break
 		}
 		exprText := strings.TrimSpace(raw[start+2 : end])
@@ -55,6 +55,16 @@ func renderVisualforceText(raw string, ctx *ExpressionContext, escapeExpressions
 		pos = end + 1
 	}
 	return out.String(), nil
+}
+
+func renderVisualforceLiteralText(raw string, ctx *ExpressionContext, escape bool) string {
+	// The HTML parser decodes entities in text nodes. Restore literal ampersands
+	// for the HTML page profile, separately from expression escaping. Raw script
+	// and style text, attribute values and non-HTML profiles use their own paths.
+	if escape && ctx != nil && ctx.escapeLiteralAmpersands {
+		return strings.ReplaceAll(raw, "&", "&amp;")
+	}
+	return raw
 }
 
 func EscapeVisualforceJavaScriptString(raw string) string {
@@ -137,6 +147,30 @@ func VisualforcePageHeaderOptionsFromNode(node *MarkupNode) VisualforcePageHeade
 		}
 	}
 	return options
+}
+
+// EvaluateVisualforcePageHeaderOptions resolves contentType with the same
+// controller state used for the page body. A null or empty value leaves the
+// response on its default HTML/PDF profile. Other header attributes retain their
+// existing handling.
+func EvaluateVisualforcePageHeaderOptions(node *MarkupNode, ctx *ExpressionContext) (VisualforcePageHeaderOptions, error) {
+	options := VisualforcePageHeaderOptionsFromNode(node)
+	page := firstVisualforcePageNode(node)
+	if page == nil {
+		return options, nil
+	}
+	value, err := RenderVisualforceRawText(page.Attribute("contentType"), ctx)
+	if err != nil {
+		return VisualforcePageHeaderOptions{}, err
+	}
+	options.ContentType, options.FileName = splitVisualforceContentType(value)
+	// These text profiles supply UTF-8 when the attribute does not specify a
+	// charset. Preserve explicitly supplied parameters and other MIME profiles.
+	switch strings.ToLower(options.ContentType) {
+	case "text/html", "text/plain", "application/json", "application/xml":
+		options.ContentType += "; charset=utf-8"
+	}
+	return options, nil
 }
 
 func (o VisualforcePageHeaderOptions) Apply(header http.Header, now time.Time) {

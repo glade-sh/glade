@@ -16,6 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/lwcshell"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type lwcLocalContextPayload struct {
@@ -39,8 +40,8 @@ type lwcLocalContextPreset struct {
 	Diagnostics []lwcshell.Diagnostic `json:"diagnostics,omitempty"`
 }
 
-func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell lwcshell.ShellPage, activeRoute string, sampleRecordID string) string {
-	model := lwcshell.BuildWorkbenchModel(p, shell, activeRoute)
+func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell lwcshell.ShellPage, activeRoute string, sampleRecordID string, metadata ...storage.MetadataRegistry) string {
+	model := lwcshell.BuildWorkbenchModel(p, shell, activeRoute, metadata...)
 	if strings.TrimSpace(sampleRecordID) == "" {
 		sampleRecordID = lwcShellDefaultSampleRecordID
 	}
@@ -937,7 +938,7 @@ func (s *Server) handleLightningLocalContext(w http.ResponseWriter, r *http.Requ
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 		return
 	}
-	model := lwcshell.BuildWorkbenchModel(s.Source.Project, shell, activeRoute)
+	model := lwcshell.BuildWorkbenchModel(s.Source.Project, shell, activeRoute, s.lwcShellMetadata())
 	activeContext := model.Active.Context
 	defaultContext, selectedContext, contexts, presetDiagnostics := lwcLocalContextPresets(s.Source.Project, activeRoute)
 	payload := lwcLocalContextPayload{

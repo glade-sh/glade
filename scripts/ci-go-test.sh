@@ -6,8 +6,6 @@ if [[ ! "${heartbeat_seconds}" =~ ^[0-9]+$ ]] || [[ "${heartbeat_seconds}" -lt 1
 	heartbeat_seconds=60
 fi
 
-export GOMAXPROCS="${GOMAXPROCS:-2}"
-
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "${script_dir}/.." && pwd)"
 
@@ -93,7 +91,7 @@ run_with_heartbeat() {
 	local rc=0
 
 	echo "::group::${label}"
-	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS}"
+	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS:-default}"
 	printf '+'
 	printf ' %q' "$@"
 	printf '\n'
@@ -176,14 +174,18 @@ run_json_with_heartbeat() {
 	status_file="$(mktemp "${TMPDIR:-/tmp}/glade-ci-testlog.XXXXXX")"
 	testlog_status_files+=("${status_file}")
 	echo "::group::${label}"
-	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS}"
+	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS:-default}"
 	printf '+ go test -json -vet=off'
 	printf ' %q' "$@"
 	printf ' | testlog -output %q\n' "${artifact}"
 
 	(
 		set +e
-		go test -json -vet=off "$@" | tee "${artifact}" | run_testlog_renderer
+		local -a test_command=(go)
+		if [[ "${CI_LOCAL_RELEASE_METRICS:-0}" == "1" && "${label}" == "go test local-release "* ]]; then
+			test_command=(/usr/bin/time -l -o "${artifact%.json}.time.txt" go)
+		fi
+		"${test_command[@]}" test -json -vet=off "$@" | tee "${artifact}" | run_testlog_renderer
 		pipeline_status=("${PIPESTATUS[@]}")
 		printf '%s %s %s\n' "${pipeline_status[0]}" "${pipeline_status[1]}" "${pipeline_status[2]}" >"${status_file}"
 	) &
@@ -261,8 +263,7 @@ run_package_lane() {
 	local lane="$1"
 	local kind="$2"
 	local timeout="$3"
-	local parallelism="$4"
-	local skip_regex="${5:-}"
+	local skip_regex="${4:-}"
 	local -a packages=()
 	local -a args=()
 	load_package_lanes
@@ -276,9 +277,6 @@ run_package_lane() {
 	if [[ "${kind}" == "race" ]]; then
 		args+=(-race)
 	fi
-	if [[ "${parallelism}" != "0" ]]; then
-		args+=(-p="${parallelism}")
-	fi
 	args+=(-timeout="${timeout}")
 	if [[ -n "${skip_regex}" ]]; then
 		args+=(-skip "${skip_regex}")
@@ -286,7 +284,7 @@ run_package_lane() {
 	run_json_with_heartbeat "go test ${lane}" "$(testlog_artifact "${kind}" "${lane}")" "${args[@]}" "${packages[@]}"
 }
 
-node_integration_run_regex='^(?:TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
+node_integration_run_regex='^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
 
 write_node_integration_expected() {
 	local output="$1"
@@ -299,13 +297,18 @@ github.com/glade-sh/glade/internal/gladehome	TestEnsureRootHonorsExplicitGladeHo
 github.com/glade-sh/glade/internal/gladehome	TestInstallFromCWDSkipsGlobalShareAsSource
 github.com/glade-sh/glade/internal/gladehome	TestInstallFromCopiesToolchain
 github.com/glade-sh/glade/internal/gladehome	TestValidateRootFindsRepoCheckout
+github.com/glade-sh/glade/internal/lwc/compile	TestBuildCompileConfigAPIVersionMatrix
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileEmitsAdditionalHTMLTemplateModules
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileEmitsSiblingJSModules
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileEmitsUtilityOnlyLWCModules
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileEnablesLwcOnDirective
+github.com/glade-sh/glade/internal/lwc/compile	TestCompilePreservesDeclaredAPI67
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileProjectLWCBundles
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileRewritesTemplateStylesheetImports
 github.com/glade-sh/glade/internal/lwc/compile	TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate
+github.com/glade-sh/glade/internal/lwc/compile	TestComplexTemplateExpressionsFollowBundleAPIVersion
+github.com/glade-sh/glade/internal/lwc/compile	TestHTMLDetailsNameFollowsBundleAPIVersion
+github.com/glade-sh/glade/internal/lwc/compile	TestLWCModuleAvailabilityFollowsBundleAPIVersion
 github.com/glade-sh/glade/internal/lwcbrowser	TestSetupBundleIncludesLabelsSibling
 github.com/glade-sh/glade/internal/lwcbrowser	TestSetupImportMapIncludesLocalComponents
 github.com/glade-sh/glade/internal/server	TestLWCShellAppRouteFallsBackToApplicationDefaultTab
@@ -336,14 +339,15 @@ import sys
 
 events_path, expected_path, discovery_path, summary_path = sys.argv[1:]
 expected = []
+expected_count = 35
 with open(expected_path, encoding="utf-8") as source:
     for line_number, raw in enumerate(source, 1):
         fields = raw.rstrip("\n").split("\t")
         if len(fields) != 2 or not all(fields):
             raise SystemExit(f"[ci] malformed node integration expected row {line_number}")
         expected.append(tuple(fields))
-if len(expected) != 30 or len(set(expected)) != 30 or expected != sorted(expected):
-    raise SystemExit("[ci] node integration expected set must be 30 unique sorted package/name pairs")
+if len(expected) != expected_count or len(set(expected)) != expected_count or expected != sorted(expected):
+    raise SystemExit(f"[ci] node integration expected set must be {expected_count} unique sorted package/name pairs")
 
 expected_set = set(expected)
 discovered = []
@@ -371,12 +375,12 @@ try:
                 discovered.append(pair)
             elif action in {"pass", "skip", "fail"}:
                 terminals.append((pair, action))
-    if len(discovered) != 30 or len(set(discovered)) != 30 or set(discovered) != expected_set:
+    if len(discovered) != expected_count or len(set(discovered)) != expected_count or set(discovered) != expected_set:
         raise ValueError("discovery does not contain each expected test exactly once")
-    if len(terminals) != 30:
-        raise ValueError(f"terminal count is {len(terminals)}, want 30")
+    if len(terminals) != expected_count:
+        raise ValueError(f"terminal count is {len(terminals)}, want {expected_count}")
     terminal_pairs = [pair for pair, _ in terminals]
-    if len(set(terminal_pairs)) != 30 or set(terminal_pairs) != expected_set:
+    if len(set(terminal_pairs)) != expected_count or set(terminal_pairs) != expected_set:
         raise ValueError("terminal results do not contain each expected test exactly once")
     not_passed = [(pair, action) for pair, action in terminals if action != "pass"]
     if not_passed:
@@ -394,7 +398,7 @@ with open(discovery_path, "w", encoding="utf-8") as target:
     for package, test in sorted(discovered):
         target.write(f"{package}\t{test}\n")
 with open(summary_path, "w", encoding="utf-8") as target:
-    json.dump({"valid": True, "tests": 30, "passed": 30, "skipped": 0, "failed": 0}, target, sort_keys=True, indent=2)
+    json.dump({"valid": True, "tests": expected_count, "passed": expected_count, "skipped": 0, "failed": 0}, target, sort_keys=True, indent=2)
     target.write("\n")
 PY
 }
@@ -415,7 +419,7 @@ run_node_integration() {
 	status_file="$(mktemp "${TMPDIR:-/tmp}/glade-ci-node-integration.XXXXXX")"
 	testlog_status_files+=("${status_file}")
 	echo "::group::go test node-integration"
-	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS}"
+	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS:-default}"
 	printf '+ go test -json -vet=off -count=1 -timeout=30m -run %q ./internal/gladecli ./internal/gladehome ./internal/lwc/compile ./internal/lwcbrowser ./internal/server | testlog -output %q\n' "${node_integration_run_regex}" "${events_path}"
 	(
 		set +e
@@ -482,10 +486,10 @@ run_named_package_lane() {
 	local lane="$1"
 	case "${lane}" in
 		gladecli|sema|server-and-playground|repoguard)
-			run_package_lane "${lane}" test 30m 0
+			run_package_lane "${lane}" test 30m
 			;;
 		remaining-go)
-			run_package_lane "${lane}" test 20m 2
+			run_package_lane "${lane}" test 20m
 			;;
 		apextest)
 			echo "[ci] apextest must use dedicated apex-shard routing" >&2
@@ -498,17 +502,23 @@ run_named_package_lane() {
 	esac
 }
 
+# These lane-specific skips route tests to provisioned authorities; they are not
+# known-failure waivers. The 35 excluded Node tests run in node-integration,
+# whose validator requires every selected test to pass without skips. The three
+# browser tests run in .github/workflows/browser.yml with Node, LWC dependencies,
+# Chromium and GLADE_LWC_BROWSER=1; that workflow rejects Go and Node skip events.
+# local-release uses run_local_release_lane instead and retains these tests.
 run_ci_package_lane() {
 	local lane="$1"
 	case "${lane}" in
 		gladecli)
-			run_package_lane "${lane}" test 30m 0 '^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
+			run_package_lane "${lane}" test 30m '^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
 			;;
 		server-and-playground)
-			run_package_lane "${lane}" test 30m 0 '^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents)$'
+			run_package_lane "${lane}" test 30m '^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents)$'
 			;;
 		remaining-go)
-			run_package_lane "${lane}" test 20m 2 '^(?:TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$'
+			run_package_lane "${lane}" test 20m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$'
 			;;
 		sema|repoguard)
 			run_named_package_lane "${lane}"
@@ -520,7 +530,7 @@ run_ci_package_lane() {
 }
 
 run_full_tests() {
-	run_package_lane "apextest" test 30m 0
+	run_package_lane "apextest" test 30m
 	run_core_tests
 }
 
@@ -565,8 +575,49 @@ for argument in arguments:
         expected.append(module + argument[1:])
     else:
         expected.append(argument)
+# DataWeave is explicitly deferred by the offline surface scope. Keep only
+# these optional installation/engine checks visible as deferred when their
+# explicit prerequisites are absent. Configured inputs must execute normally.
+import re
+engine_inputs = ("GLADE_DATAWEAVE_TEST_CLASSPATH", "GLADE_DATAWEAVE_TEST_JAVA_HOME")
+installation_inputs = ("GLADE_DATAWEAVE_TEST_ENGINE", "GLADE_DATAWEAVE_TEST_JAVA_HOME")
+deferred_dataweave = {
+    (module + "/internal/gladecli", "TestDataWeaveToolchainCLIInstalledJSON"): (installation_inputs, "explicit Java17 JDK and verified DataWeave engine required"),
+    (module + "/internal/gladehome", "TestDataWeaveInstallExecuteAndTamper"): (installation_inputs, "explicit Java17 JDK and verified DataWeave engine required"),
+    (module + "/internal/dataweave", "TestOfficialEngineSourceAndDenials"): (engine_inputs, "explicit DataWeave engine and Java17 test toolchain required"),
+    (module + "/internal/dataweave", "TestOfficialEngineExplicitProjectModules"): (engine_inputs, "explicit DataWeave engine and Java17 test toolchain required"),
+    (module + "/internal/dataweave", "TestOfficialEngineTypedApexInputsAndOutput"): (engine_inputs, "explicit DataWeave engine and Java17 test toolchain required"),
+    (module + "/internal/dataweave", "TestOfficialEngineUnprovedJavaOutputIsHostError"): (engine_inputs, "explicit DataWeave engine and Java17 test toolchain required"),
+    (module + "/internal/dataweave", "TestOfficialEngineQueryRelationshipWriterBoundary"): (engine_inputs, "query relationship contract requires explicit real DataWeave toolchain; configured acceptance must execute this test"),
+    (module + "/internal/dataweave", "TestOfficialEngineExtendedTypedValues"): (engine_inputs, "explicit DataWeave engine and Java17 test toolchain required"),
+    (module + "/internal/dataweave", "TestVerifyEngineRequiresExactSourceOffers"): (("GLADE_DATAWEAVE_TEST_INSTALLED_ENGINE",), "explicit provisioned engine required"),
+    (module + "/internal/dataweave", "TestPinnedEngineInstallation"): (("GLADE_DATAWEAVE_TEST_INSTALL_DIRECTORY",), "explicit engine installation destination required"),
+    (module + "/internal/apextest", "TestRunDataWeaveSourceSourceNames"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunDataWeaveSourceChangedSource"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunDataWeaveSourceBuiltinImports"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunDataWeaveSourceRestrictedWordsInLiterals"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunDataWeaveSourceLocalFunctionShadow"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunDataWeaveSourceReadURLDeadBranch"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunDataWeaveSourceEnvironmentDeadBranch"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunDataWeaveSourceReadURLAlias"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunDataWeaveSourceEnvironmentAlias"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunDataWeaveSourceProjectModule"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunDataWeaveTypedAdmitted"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunC5BulkTypedProof"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunC5LegacyAdmitted"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunC5QueryProvenanceAdmitted"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/vm", "TestExecDataWeaveScriptResultCarriers"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/vm", "TestNestedSOQLAPIVersion66"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/vm", "TestNestedSOQLAPIVersion65ThrowsDataWeaveScriptException"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/vm", "TestExecDataWeaveScriptErrorThrowsScriptException"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/vm", "TestExecDataWeaveExcelOutputErrorThrowsScriptException"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/vm", "TestExecDataWeaveMultipleInputsReturnsXMLString"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/vm", "TestExecDataWeaveJsonDateFormatPreservesRecipeFieldOrder"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/vm", "TestExecDataWeaveRecipeConversionsReturnStructuredValues"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+    (module + "/internal/apextest", "TestRunDataWeaveScriptResourceExecutesRuntimeStub"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
+}
 summary = {"version": 1, "lane": lane, "label": label, "valid": False,
-           "expected": sorted(expected), "passed": [], "errors": []}
+           "expected": sorted(expected), "passed": [], "errors": [], "deferred": []}
 try:
     if len(expected) != len(set(expected)):
         raise ValueError("expected package list contains duplicates")
@@ -582,6 +633,8 @@ try:
         raise ValueError("package test-file metadata is missing: " + ", ".join(metadata_missing))
     terminal = {}
     skipped_tests = []
+    test_output = {}
+    failed_tests = []
     with open(events_path, encoding="utf-8") as source:
         for line_number, line in enumerate(source, 1):
             if not line.strip():
@@ -595,8 +648,23 @@ try:
             if test not in (None, ""):
                 # A package pass only says its process reached a terminal
                 # state. It cannot excuse a skipped top-level test or subtest.
+                identity = (package, test)
+                if action == "output" and isinstance(event.get("Output"), str):
+                    test_output.setdefault(identity, []).append(event["Output"])
+                if action == "fail":
+                    failed_tests.append(f"{package}/{test}")
                 if action == "skip":
-                    skipped_tests.append(f"{package}/{test}")
+                    inputs, cause = deferred_dataweave.get(identity, ((), ""))
+                    missing = [name for name in inputs if not os.environ.get(name)]
+                    reason_pattern = r"\s+\S+_test.go:\d+: " + re.escape(cause) + r"\s*$"
+                    observed_cause = bool(cause) and any(re.fullmatch(reason_pattern, line)
+                        for output in test_output.get(identity, ()) for line in output.splitlines())
+                    if missing and observed_cause:
+                        summary["deferred"].append({"package": package, "test": test,
+                            "skipReason": cause,
+                            "reason": "DataWeave is deferred; missing explicit prerequisites: " + ", ".join(missing)})
+                    else:
+                        skipped_tests.append(f"{package}/{test}")
                 continue
             if not isinstance(package, str) or action not in ("pass", "fail", "skip"):
                 continue
@@ -616,6 +684,8 @@ try:
         summary["errors"].append("skipped test results: " + ", ".join(sorted(skipped_tests)))
     if failed:
         summary["errors"].append("failed package results: " + ", ".join(failed))
+    if failed_tests:
+        summary["errors"].append("failed test results: " + ", ".join(sorted(failed_tests)))
     if extra:
         summary["errors"].append("extra package results: " + ", ".join(extra))
     summary["passed"] = sorted(package for package, actions in terminal.items() if actions in (["pass"], ["skip"]) and package in expected)
@@ -628,6 +698,8 @@ os.makedirs(os.path.dirname(summary_path) or ".", exist_ok=True)
 with open(summary_path, "w", encoding="utf-8") as target:
     json.dump(summary, target, sort_keys=True, indent=2)
     target.write("\n")
+for deferred in summary["deferred"]:
+    print(f"[ci] {label} deferred {deferred['package']}/{deferred['test']}: {deferred['reason']}")
 if not summary["valid"]:
     for error in summary["errors"]:
         print(f"[ci] {label} package summary rejected: {error}", file=sys.stderr)
@@ -696,51 +768,59 @@ wait_local_release_lane() {
 }
 
 run_local_release() {
-	local jobs
-	jobs="$(local_release_jobs)"
+	local_release_jobs >/dev/null
 	local artifact_root="${CI_LOCAL_RELEASE_ARTIFACT_DIR:-ci-artifacts/local-release}"
-	local server_pid=""
-	local remaining_pid=""
 	mkdir -p "${artifact_root}"
-	printf '[ci] local release lanes: jobs=%s artifact_dir=%s\n' "${jobs}" "${artifact_root}"
-	# Keep this order stable: it puts repository and compiler failures ahead of
-	# the expensive Apex lane. The existing checked manifest remains the sole
-	# package inventory authority after go list ./... validates it.
+	printf '[ci] local release lanes: jobs=1 artifact_dir=%s\n' "${artifact_root}"
 	run_with_heartbeat "go vet ./..." go vet ./...
-	run_local_release_lane "repoguard" "guard" 15m "${artifact_root}"
+	run_local_release_lane "repoguard" "guard" 30m "${artifact_root}"
 	run_local_release_lane "gladecli" "cli-ui" 30m "${artifact_root}"
-	run_local_release_lane "sema" "sema" 45m "${artifact_root}"
-	run_local_release_lane "apextest" "apex" 45m "${artifact_root}"
-	if [[ "${jobs}" -eq 1 ]]; then
-		run_local_release_lane "server-and-playground" "server-playground" 30m "${artifact_root}"
-		run_local_release_lane "remaining-go" "remaining" 30m "${artifact_root}" '^(?:TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$'
-		return
-	fi
-	# Only a caller that explicitly chooses jobs > 1 can overlap these final
-	# two lanes. Auto stays serial until a resource-matrix measurement proves a
-	# safe low-memory overlap.
-	run_local_release_lane "server-and-playground" "server-playground" 30m "${artifact_root}" &
-	server_pid="$!"
-	register_owned_child "${server_pid}"
-	run_local_release_lane "remaining-go" "remaining" 30m "${artifact_root}" '^(?:TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$' &
-	remaining_pid="$!"
-	register_owned_child "${remaining_pid}"
-	local server_rc=0 remaining_rc=0
-	wait_local_release_lane "${server_pid}" || server_rc="$?"
-	wait_local_release_lane "${remaining_pid}" || remaining_rc="$?"
-	if [[ "${server_rc}" -ne 0 ]]; then
-		return "${server_rc}"
-	fi
-	return "${remaining_rc}"
+	run_local_release_lane "sema" "sema" 30m "${artifact_root}"
+	run_local_release_lane "apextest" "apex" 90m "${artifact_root}"
+	run_local_release_lane "server-and-playground" "server-playground" 30m "${artifact_root}"
+	run_local_release_lane "remaining-go" "remaining" 70m "${artifact_root}"
+}
+
+run_selected_local_release_lane() {
+	local lane="$1"
+	local artifact_root="${CI_LOCAL_RELEASE_ARTIFACT_DIR:-ci-artifacts/local-release}"
+	local_release_jobs >/dev/null
+	case "${lane}" in
+		vet)
+			run_with_heartbeat "go vet ./..." go vet ./...
+			;;
+		guard)
+			run_local_release_lane "repoguard" "guard" 30m "${artifact_root}"
+			;;
+		cli-ui)
+			run_local_release_lane "gladecli" "cli-ui" 30m "${artifact_root}"
+			;;
+		sema)
+			run_local_release_lane "sema" "sema" 30m "${artifact_root}"
+			;;
+		apex-0|apex-1)
+			CI_APEXTEST_ARTIFACT_DIR="${artifact_root}/${lane}" run_apextest_matrix_shard "${lane#apex-}" local-release
+			;;
+		server-playground)
+			run_local_release_lane "server-and-playground" "server-playground" 30m "${artifact_root}"
+			;;
+		remaining)
+			run_local_release_lane "remaining-go" "remaining" 70m "${artifact_root}"
+			;;
+		*)
+			echo "usage: scripts/ci-go-test.sh local-release-lane {vet|guard|cli-ui|sema|apex-0|apex-1|server-playground|remaining}" >&2
+			return 2
+			;;
+	esac
 }
 
 run_race_tests() {
-	run_package_lane "apextest" race 60m 0
-	run_package_lane "gladecli" race 60m 0
-	run_package_lane "sema" race 60m 0
-	run_package_lane "server-and-playground" race 60m 0
-	run_package_lane "repoguard" race 60m 0
-	run_package_lane "remaining-go" race 30m 1
+	run_package_lane "apextest" race 60m
+	run_package_lane "gladecli" race 60m
+	run_package_lane "sema" race 60m
+	run_package_lane "server-and-playground" race 60m
+	run_package_lane "repoguard" race 60m
+	run_package_lane "remaining-go" race 30m
 }
 
 validate_package_discovery() {
@@ -851,13 +931,21 @@ validate_shard_results() {
 	local summary_path="$3"
 	local package_name="$4"
 	local label="$5"
-	python3 - "${selected_path}" "${events_path}" "${summary_path}" "${package_name}" "${label}" <<'PY'
+	local package_summary_path="${6:-}"
+	python3 - "${selected_path}" "${events_path}" "${summary_path}" "${package_name}" "${label}" "${package_summary_path}" <<'PY'
 import json
 import sys
 
-selected_path, events_path, summary_path, package_name, label = sys.argv[1:]
+selected_path, events_path, summary_path, package_name, label, package_summary_path = sys.argv[1:]
 summary = {"valid": False, "expected": [], "passed": [], "errors": []}
 try:
+    deferred = set()
+    if package_summary_path:
+        with open(package_summary_path, encoding="utf-8") as source:
+            package_summary = json.load(source)
+        if not package_summary.get("valid"):
+            raise ValueError("local-release package summary is invalid")
+        deferred = {row["test"] for row in package_summary["deferred"] if row["package"] == package_name}
     with open(selected_path, encoding="utf-8") as source:
         selected = json.load(source)
     expected = selected["tests"]
@@ -880,12 +968,15 @@ try:
             terminal.setdefault(name, []).append(action)
     passed = sorted(name for name, actions in terminal.items() if actions == ["pass"])
     summary["passed"] = passed
-    if passed != sorted(expected):
+    deferred_results = sorted(name for name, actions in terminal.items() if actions == ["skip"] and name in deferred)
+    if package_summary_path:
+        summary["deferred"] = deferred_results
+    if sorted(passed + deferred_results) != sorted(expected):
         summary["errors"].append("top-level passing set does not match selected shard")
     duplicates = sorted(name for name, actions in terminal.items() if len(actions) != 1)
     if duplicates:
         summary["errors"].append("duplicate top-level terminal results: " + ", ".join(duplicates))
-    wrong = sorted(name for name, actions in terminal.items() if actions != ["pass"])
+    wrong = sorted(name for name, actions in terminal.items() if actions != ["pass"] and name not in deferred_results)
     if wrong:
         summary["errors"].append("non-passing top-level results: " + ", ".join(wrong))
     extras = sorted(set(terminal) - set(expected))
@@ -916,7 +1007,14 @@ run_test_matrix_shard() {
 	local artifact_dir="$6"
 	local history_path="$7"
 	local strict_discovery="$8"
+	local mode="${9:-test}"
 	local -a lane_packages=()
+	local -a test_args=(-timeout=30m)
+	local package_summary_path=""
+	if [[ "${mode}" == "local-release" ]]; then
+		test_args=(-count=1 -timeout=90m)
+		package_summary_path="${artifact_dir}/package-summary.json"
+	fi
 	local artifact_suffix="invalid"
 	if [[ "${index}" =~ ^[01]$ ]]; then
 		artifact_suffix="${index}"
@@ -941,6 +1039,9 @@ run_test_matrix_shard() {
 	: >"${selected}"
 	: >"${events}"
 	printf '{"valid": false, "errors": ["shard did not reach result validation"]}\n' >"${summary}"
+	if [[ -n "${package_summary_path}" ]]; then
+		printf '{"valid": false, "errors": ["shard did not reach result validation"]}\n' >"${package_summary_path}"
+	fi
 	if [[ ! "${index}" =~ ^[01]$ ]]; then
 		echo "shard index must be 0 or 1" >&2
 		return 2
@@ -982,10 +1083,14 @@ run_test_matrix_shard() {
 	regex="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["regex"])' "${selected}")"
 
 	set +e
-	run_json_with_heartbeat "go test ${label} shard ${index}" "${events}" -timeout=30m -run "${regex}" "${package_arg}"
+	run_json_with_heartbeat "go test ${label} shard ${index}" "${events}" "${test_args[@]}" -run "${regex}" "${package_arg}"
 	native_rc="$?"
 	set -e
-	validate_shard_results "${selected}" "${events}" "${summary}" "${package_name}" "${label}" || validation_rc="$?"
+	if [[ -n "${package_summary_path}" ]]; then
+		load_package_lanes
+		validate_local_release_package_summary "${lane}" "${label} shard ${index}" "${events}" "${package_summary_path}" "${package_test_metadata_temp}" "${package_arg}" || validation_rc="$?"
+	fi
+	validate_shard_results "${selected}" "${events}" "${summary}" "${package_name}" "${label}" "${package_summary_path}" || validation_rc="$?"
 	if [[ "${native_rc}" -ne 0 || "${validation_rc}" -ne 0 ]]; then
 		render_failure_output "${events}" "${label}"
 	fi
@@ -997,6 +1102,11 @@ run_test_matrix_shard() {
 
 run_apextest_matrix_shard() {
 	local index="${1:-}"
+	local mode="${2:-test}"
+	local label="Apex"
+	if [[ "${mode}" == "local-release" ]]; then
+		label="local-release Apex"
+	fi
 	local artifact_suffix="invalid"
 	local history_path=""
 	[[ "${index}" =~ ^[01]$ ]] && artifact_suffix="${index}"
@@ -1007,7 +1117,7 @@ run_apextest_matrix_shard() {
 	# GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${apex_package}"
 	# planner+=(--history "${CI_APEXTEST_HISTORY_PATH}")
 	# run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=30m -run "${regex}" "${apex_package}"
-	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/apextest" "./internal/apextest" "apextest" "Apex" "${CI_APEXTEST_ARTIFACT_DIR:-ci-artifacts/apextest-${artifact_suffix}}" "${history_path}" "0"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/apextest" "./internal/apextest" "apextest" "${label}" "${CI_APEXTEST_ARTIFACT_DIR:-ci-artifacts/apextest-${artifact_suffix}}" "${history_path}" "0" "${mode}"
 }
 
 run_sema_matrix_shard() {
@@ -1371,6 +1481,13 @@ main() {
 			if [[ "$#" -ne 1 ]]; then echo "usage: scripts/ci-go-test.sh local-release" >&2; return 2; fi
 			run_local_release
 			;;
+		local-release-lane)
+			if [[ "$#" -ne 2 ]]; then
+				echo "usage: scripts/ci-go-test.sh local-release-lane {vet|guard|cli-ui|sema|apex-0|apex-1|server-playground|remaining}" >&2
+				return 2
+			fi
+			run_selected_local_release_lane "$2"
+			;;
 		race)
 			run_race_tests
 			;;
@@ -1408,7 +1525,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|lane NAME|node-integration|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-shard 0|1|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-shard 0|1|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

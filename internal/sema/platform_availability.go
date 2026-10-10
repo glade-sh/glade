@@ -9,10 +9,38 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+// A release introduction date does not always gate source type references.
+// C032 and N003 declare this type in anonymous and named Apex at API 62 and 67.
+// Captured member exceptions are listed below; other members retain their
+// generated availability ranges.
+var observedPlatformSourceTypeAvailability = map[string]apexversion.Range{
+	"database.paginationcursor": {Since: 62},
+	// Messaging C019/R261/R262, bisected at API 64/65/66.
+	"richmessaging.processformhandler": {Since: 65},
+	"richmessaging.catalogsection":     {Since: 66},
+}
+
+// Messaging C019 compiles this callback at API 65 as well as 66/67.
+var observedPlatformSourceMemberAvailability = map[string]apexversion.Range{
+	"richmessaging.processformhandler.processformrequest": {Since: 65},
+	// Both cursor counter getters are admitted at API 62 and 67.
+	"system.limits.getapexcursors":      {Since: 62},
+	"system.limits.getlimitapexcursors": {Since: 62},
+}
+
+var observedPlatformSourceExactAvailability = map[string]apexversion.Range{
+	"apex:richmessaging.processformhandler.processformrequest(richmessaging.processformresponse)": {Since: 65},
+	"apex:system.limits.getapexcursors()":      {Since: 62},
+	"apex:system.limits.getlimitapexcursors()": {Since: 62},
+}
+
 func semaPlatformTypeUnavailable(version, typeName string) bool {
 	for _, key := range semaPlatformTypeKeys(typeName) {
 		if semaPlatformExplicitlyUnsupported("apex:" + key) {
 			return true
+		}
+		if rng, ok := observedPlatformSourceTypeAvailability[key]; ok {
+			return !semaVersionAllows(version, rng)
 		}
 		if rng, ok := generatedPlatformTypeAvailability[key]; ok {
 			return !semaVersionAllows(version, rng)
@@ -24,6 +52,9 @@ func semaPlatformTypeUnavailable(version, typeName string) bool {
 func semaPlatformMemberUnavailable(version, receiver, member string) bool {
 	member = normalizeName(member)
 	for _, owner := range semaPlatformTypeKeys(receiver) {
+		if rng, ok := observedPlatformSourceMemberAvailability[owner+"."+member]; ok {
+			return !semaVersionAllows(version, rng)
+		}
 		if rng, ok := generatedPlatformMemberAvailability[owner+"."+member]; ok {
 			return !semaVersionAllows(version, rng)
 		}
@@ -45,6 +76,9 @@ func semaPlatformFieldPathUnavailable(version, path string) bool {
 func semaPlatformExactUnavailable(version, surfaceID string) bool {
 	if semaPlatformExplicitlyUnsupported(surfaceID) {
 		return true
+	}
+	if rng, ok := observedPlatformSourceExactAvailability[normalizeName(surfaceID)]; ok {
+		return !semaVersionAllows(version, rng)
 	}
 	if rng, ok := generatedPlatformExactAvailability[normalizeName(surfaceID)]; ok {
 		return !semaVersionAllows(version, rng)

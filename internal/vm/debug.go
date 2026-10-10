@@ -189,6 +189,7 @@ func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 				out.MapKeys = nil
 				out.List = nil
 				out.Set = nil
+				out.setInsertionHashes = nil
 				return out
 			}
 			seen[value.Ref] = true
@@ -225,6 +226,7 @@ func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 	}
 	if value.Set != nil {
 		out.Set = make([]Value, len(value.Set))
+		out.setInsertionHashes = cloneSetInsertionHashes(value)
 		for i, child := range value.Set {
 			out.Set[i] = cloneValueWithSeen(child, seen)
 		}

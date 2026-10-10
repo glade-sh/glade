@@ -395,8 +395,10 @@ func displayFieldType(raw string) string {
 		return "PHONE"
 	case "email":
 		return "EMAIL"
-	case "picklist", "combobox":
+	case "picklist":
 		return "PICKLIST"
+	case "combobox":
+		return "COMBOBOX"
 	case "multipicklist":
 		return "MULTIPICKLIST"
 	case "boolean":

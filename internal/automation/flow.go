@@ -158,6 +158,7 @@ type flowSubflowXML struct {
 }
 
 type flowFieldAssignmentXML struct {
+	Name  string       `xml:"name"`
 	Field string       `xml:"field"`
 	Value flowValueXML `xml:"value"`
 }
@@ -192,9 +193,13 @@ type flowActionInputXML struct {
 
 type flowVariableXML struct {
 	Name         string       `xml:"name"`
+	Description  string       `xml:"description"`
 	DataType     string       `xml:"dataType"`
 	ObjectType   string       `xml:"objectType"`
+	ApexClass    string       `xml:"apexClass"`
 	IsCollection bool         `xml:"isCollection"`
+	IsInput      bool         `xml:"isInput"`
+	IsOutput     bool         `xml:"isOutput"`
 	Value        flowValueXML `xml:"value"`
 }
 
@@ -285,10 +290,10 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 	objectName := strings.TrimSpace(raw.Start.Object)
 	flow := Flow{ObjectName: objectName, File: path}
 	diagnostics := make([]diagnostic.Diagnostic, 0)
-	if !flowActive(raw.Status) || objectName == "" {
-		return flow, diagnostics, nil
-	}
-	if flowProcessTypeNonDML(raw.ProcessType) {
+	// DML-triggered flows must be active and identify an object. Autolaunched
+	// interview flows have no start object and can be invoked by Apex even when
+	// the source metadata carries a Draft or Obsolete status.
+	if (!flowActive(raw.Status) && objectName != "") || flowProcessTypeNonDML(raw.ProcessType) {
 		return flow, diagnostics, nil
 	}
 	formulas := flowFormulaMap(raw.Formulas)
@@ -315,13 +320,29 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 		diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("environments %q is not supported for local test execution", raw.Environments)))
 	}
 	rule := storage.FlowRule{
-		Name:         name,
-		File:         path,
-		Active:       true,
-		ProcessType:  strings.TrimSpace(raw.ProcessType),
-		TriggerType:  strings.TrimSpace(raw.Start.TriggerType),
-		TriggerOrder: raw.TriggerOrder,
-		RunInMode:    strings.TrimSpace(raw.RunInMode),
+		Name:          name,
+		File:          path,
+		Active:        true,
+		ProcessType:   strings.TrimSpace(raw.ProcessType),
+		TriggerType:   strings.TrimSpace(raw.Start.TriggerType),
+		TriggerOrder:  raw.TriggerOrder,
+		RunInMode:     strings.TrimSpace(raw.RunInMode),
+		TextTemplates: flowTextTemplateMap(raw.TextTemplates),
+	}
+	for _, variable := range raw.Variables {
+		variableName := strings.TrimSpace(variable.Name)
+		if variableName == "" {
+			continue
+		}
+		rule.Variables = append(rule.Variables, storage.FlowVariable{
+			Name:         variableName,
+			Description:  strings.TrimSpace(variable.Description),
+			DataType:     strings.TrimSpace(variable.DataType),
+			ObjectType:   firstNonBlank(variable.ObjectType, variable.ApexClass),
+			IsCollection: variable.IsCollection,
+			IsInput:      variable.IsInput,
+			IsOutput:     variable.IsOutput,
+		})
 	}
 	routedDecisions := false
 	for _, filter := range raw.Start.Filters {
@@ -402,12 +423,13 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 			if field == "" {
 				continue
 			}
+			formula := flowExpressionValue(item.Value, formulas)
 			rule.FieldUpdates = append(rule.FieldUpdates, storage.WorkflowFieldUpdate{
 				Name:         firstNonBlank(assignment.Name, assignment.Label, field),
 				Field:        field,
 				LiteralValue: flowLiteralValue(item.Value),
-				Formula:      flowExpressionValue(item.Value, formulas),
-				SourceField:  flowSourceFieldValue(item.Value, variables),
+				Formula:      formula,
+				SourceField:  flowSourceFieldValueUnlessFormula(item.Value, formula, variables),
 			})
 		}
 	}
@@ -416,7 +438,7 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 			continue
 		}
 		if !flowUpdatesTriggeringRecord(update.InputReference) {
-			if _, ok := modeledFlowRecordUpdate(update, formulas, variables, raw.RecordLookups); !ok && !flowRequiresOrderedGraph(raw) {
+			if _, ok := modeledFlowRecordUpdate(update, formulas, variables, flowConstantMap(raw.Constants), raw.RecordLookups); !ok && !flowRequiresOrderedGraph(raw) {
 				diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("record update %q does not target the triggering record", firstNonBlank(update.Name, update.Label))))
 			}
 			continue
@@ -429,17 +451,18 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 			if field == "" {
 				continue
 			}
+			formula := flowExpressionValue(assignment.Value, formulas)
 			rule.FieldUpdates = append(rule.FieldUpdates, storage.WorkflowFieldUpdate{
 				Name:         firstNonBlank(update.Name, update.Label, field),
 				Field:        field,
 				LiteralValue: flowLiteralValue(assignment.Value),
-				Formula:      flowExpressionValue(assignment.Value, formulas),
-				SourceField:  flowSourceFieldValue(assignment.Value, variables),
+				Formula:      formula,
+				SourceField:  flowSourceFieldValueUnlessFormula(assignment.Value, formula, variables),
 			})
 		}
 	}
 	for _, lookup := range raw.RecordLookups {
-		recordLookup, ok := modeledFlowRecordLookup(lookup, variables, raw.RecordLookups)
+		recordLookup, ok := modeledFlowRecordLookup(lookup, variables, flowConstantMap(raw.Constants), raw.RecordLookups)
 		if !ok {
 			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("record lookup node %q is not modeled", firstNonBlank(lookup.Name, lookup.Label))))
 			continue
@@ -463,7 +486,7 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 		rule.Actions = append(rule.Actions, flowAction)
 	}
 	for _, del := range raw.RecordDeletes {
-		recordDelete, ok := modeledFlowRecordDelete(del, variables, raw.RecordLookups)
+		recordDelete, ok := modeledFlowRecordDelete(del, variables, flowConstantMap(raw.Constants), raw.RecordLookups)
 		if !ok {
 			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("record delete node %q is not modeled", firstNonBlank(del.Name, del.Label))))
 			continue
@@ -921,6 +944,20 @@ func flowSourceFieldValue(value flowValueXML, variables map[string]flowVariableX
 	return ""
 }
 
+func flowSourceFieldValueUnlessFormula(value flowValueXML, formula string, variables map[string]flowVariableXML) string {
+	if strings.TrimSpace(formula) != "" {
+		return ""
+	}
+	return flowSourceFieldValue(value, variables)
+}
+
+func flowLookupSourceFieldValueUnlessFormula(value flowValueXML, formula string, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) string {
+	if strings.TrimSpace(formula) != "" {
+		return ""
+	}
+	return flowLookupSourceFieldValue(value, variables, lookups)
+}
+
 func flowRecordSourceFieldReference(reference string) string {
 	reference = strings.TrimSpace(reference)
 	for _, prefix := range []string{"$Record.", "Record."} {
@@ -944,6 +981,28 @@ func flowLookupSourceFieldValue(value flowValueXML, variables map[string]flowVar
 	}
 	if variable, ok := variables[strings.ToLower(reference)]; ok {
 		return flowLookupFieldReference(variable.Value.ElementReference, lookups)
+	}
+	return ""
+}
+
+// Lookup criteria can compare a field with a scalar Flow variable. Preserve
+// that variable reference so the runtime can resolve the value from the
+// active interview frame instead of treating it as an empty literal.
+func flowLookupCriteriaSourceFieldValue(value flowValueXML, variables map[string]flowVariableXML, constants map[string]flowValueXML, lookups []flowRecordLookupXML) string {
+	reference := strings.TrimSpace(value.ElementReference)
+	if reference != "" {
+		if _, ok := constants[strings.ToLower(reference)]; ok {
+			return ""
+		}
+	}
+	if source := flowLookupSourceFieldValue(value, variables, lookups); source != "" {
+		return source
+	}
+	if reference == "" {
+		return ""
+	}
+	if _, ok := variables[strings.ToLower(reference)]; ok {
+		return reference
 	}
 	return ""
 }
@@ -1000,7 +1059,7 @@ func flowLiteralOrVariableOrConstantValue(value flowValueXML, variables map[stri
 	return flowLiteralOrConstantValue(value, constants)
 }
 
-func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) (storage.FlowRecordLookup, bool) {
+func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]flowVariableXML, constants map[string]flowValueXML, lookups []flowRecordLookupXML) (storage.FlowRecordLookup, bool) {
 	name := firstNonBlank(lookup.Name, lookup.Label)
 	objectName := strings.TrimSpace(lookup.Object)
 	if name == "" || objectName == "" {
@@ -1023,8 +1082,8 @@ func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]fl
 		out.Criteria = append(out.Criteria, storage.WorkflowCriteriaItem{
 			Field:       field,
 			Operation:   flowOperator(strings.TrimSpace(filter.Operator)),
-			Value:       flowLiteralValue(filter.Value),
-			SourceField: flowLookupSourceFieldValue(filter.Value, variables, lookups),
+			Value:       flowLiteralOrVariableOrConstantValue(filter.Value, variables, constants),
+			SourceField: flowLookupCriteriaSourceFieldValue(filter.Value, variables, constants, lookups),
 		})
 	}
 	return out, true
@@ -1053,18 +1112,19 @@ func modeledFlowRecordCreate(create flowRecordCreateXML, formulas map[string]str
 		if field == "" {
 			return storage.FlowRecordCreate{}, false
 		}
+		formula := flowExpressionValue(assignment.Value, formulas)
 		out.InputAssignments = append(out.InputAssignments, storage.WorkflowFieldUpdate{
 			Name:         field,
 			Field:        field,
 			LiteralValue: flowLiteralOrVariableValue(assignment.Value, variables),
-			Formula:      flowExpressionValue(assignment.Value, formulas),
-			SourceField:  flowLookupSourceFieldValue(assignment.Value, variables, lookups),
+			Formula:      formula,
+			SourceField:  flowLookupSourceFieldValueUnlessFormula(assignment.Value, formula, variables, lookups),
 		})
 	}
 	return out, true
 }
 
-func modeledFlowRecordDelete(del flowRecordDeleteXML, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) (storage.FlowRecordDelete, bool) {
+func modeledFlowRecordDelete(del flowRecordDeleteXML, variables map[string]flowVariableXML, constants map[string]flowValueXML, lookups []flowRecordLookupXML) (storage.FlowRecordDelete, bool) {
 	name := firstNonBlank(del.Name, del.Label)
 	objectName := strings.TrimSpace(del.Object)
 	if name == "" || objectName == "" {
@@ -1086,8 +1146,8 @@ func modeledFlowRecordDelete(del flowRecordDeleteXML, variables map[string]flowV
 		out.Criteria = append(out.Criteria, storage.WorkflowCriteriaItem{
 			Field:       field,
 			Operation:   flowOperator(strings.TrimSpace(filter.Operator)),
-			Value:       flowLiteralValue(filter.Value),
-			SourceField: flowLookupSourceFieldValue(filter.Value, variables, lookups),
+			Value:       flowLiteralOrVariableOrConstantValue(filter.Value, variables, constants),
+			SourceField: flowLookupCriteriaSourceFieldValue(filter.Value, variables, constants, lookups),
 		})
 	}
 	return out, true
@@ -1104,16 +1164,17 @@ func modeledFlowSubflow(subflow flowSubflowXML, formulas map[string]string, vari
 		FlowName: flowName,
 	}
 	for _, input := range subflow.InputAssignments {
-		field := trimObjectPrefix(strings.TrimSpace(input.Field))
+		field := trimObjectPrefix(firstNonBlank(input.Name, input.Field))
 		if field == "" {
 			continue
 		}
+		formula := flowExpressionValue(input.Value, formulas)
 		out.InputAssignments = append(out.InputAssignments, storage.WorkflowFieldUpdate{
 			Name:         field,
 			Field:        field,
 			LiteralValue: flowLiteralOrVariableValue(input.Value, variables),
-			Formula:      flowExpressionValue(input.Value, formulas),
-			SourceField:  flowLookupSourceFieldValue(input.Value, variables, lookups),
+			Formula:      formula,
+			SourceField:  flowLookupSourceFieldValueUnlessFormula(input.Value, formula, variables, lookups),
 		})
 	}
 	for _, output := range subflow.OutputAssignments {
@@ -1317,7 +1378,17 @@ func flowStepDisplayName(step storage.FlowStep) string {
 	return ""
 }
 
-func buildFlowFaultBranches(steps []storage.FlowStep, raw flowXML, formulas map[string]string, variables map[string]flowVariableXML) {
+func cloneFlowVisited(visited map[string]bool) map[string]bool {
+	clone := make(map[string]bool, len(visited)+1)
+	for key, value := range visited {
+		if value {
+			clone[key] = true
+		}
+	}
+	return clone
+}
+
+func buildFlowFaultBranches(steps []storage.FlowStep, raw flowXML, formulas map[string]string, variables map[string]flowVariableXML, visited map[string]bool) {
 	hasFault := false
 	for _, step := range steps {
 		if step.FaultTarget != "" {
@@ -1344,7 +1415,11 @@ func buildFlowFaultBranches(steps []storage.FlowStep, raw flowXML, formulas map[
 			continue
 		}
 		faultBranch := storage.FlowBranch{}
-		faultBranch, _ = flowPopulateBranchFromTargetWithStop(faultBranch, step.FaultTarget, "", raw, formulas, variables, make(map[string]bool))
+		faultVisited := cloneFlowVisited(visited)
+		for name := range mainNames {
+			faultVisited[name] = true
+		}
+		faultBranch, _ = flowPopulateBranchFromTargetWithStop(faultBranch, step.FaultTarget, "", raw, formulas, variables, faultVisited)
 		if len(faultBranch.Steps) > 0 {
 			step.FaultBranch = faultBranch.Steps
 		}
@@ -1405,7 +1480,7 @@ func flowPopulateBranchFromTargetWithStop(branch storage.FlowBranch, target, sto
 				if len(updates) > 0 {
 					branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "fieldUpdate", FaultTarget: fault, FieldUpdates: updates})
 				}
-			} else if recordUpdate, ok := modeledFlowRecordUpdate(update, formulas, variables, raw.RecordLookups); ok {
+			} else if recordUpdate, ok := modeledFlowRecordUpdate(update, formulas, variables, flowConstantMap(raw.Constants), raw.RecordLookups); ok {
 				branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "recordUpdate", FaultTarget: fault, RecordUpdate: recordUpdate})
 			} else {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("record update %q is not modeled in routed decision branch", firstNonBlank(update.Name, update.Label))})
@@ -1423,7 +1498,7 @@ func flowPopulateBranchFromTargetWithStop(branch storage.FlowBranch, target, sto
 			}
 			modeled = true
 			fault := strings.TrimSpace(lookup.FaultConnector.TargetReference)
-			if recordLookup, ok := modeledFlowRecordLookup(lookup, variables, raw.RecordLookups); ok {
+			if recordLookup, ok := modeledFlowRecordLookup(lookup, variables, flowConstantMap(raw.Constants), raw.RecordLookups); ok {
 				branch.RecordLookups = append(branch.RecordLookups, recordLookup)
 				branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "recordLookup", FaultTarget: fault, RecordLookup: recordLookup})
 			} else {
@@ -1461,7 +1536,7 @@ func flowPopulateBranchFromTargetWithStop(branch storage.FlowBranch, target, sto
 			}
 			modeled = true
 			fault := strings.TrimSpace(del.FaultConnector.TargetReference)
-			if recordDelete, ok := modeledFlowRecordDelete(del, variables, raw.RecordLookups); ok {
+			if recordDelete, ok := modeledFlowRecordDelete(del, variables, flowConstantMap(raw.Constants), raw.RecordLookups); ok {
 				branch.RecordDeletes = append(branch.RecordDeletes, recordDelete)
 				branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "recordDelete", FaultTarget: fault, RecordDelete: recordDelete})
 			} else {
@@ -1585,7 +1660,9 @@ func flowPopulateBranchFromTargetWithStop(branch storage.FlowBranch, target, sto
 			}
 			body := storage.FlowBranch{Name: loopName}
 			var bodyDiagnostics []diagnostic.Diagnostic
-			body, bodyDiagnostics = flowPopulateBranchFromTargetWithStop(body, bodyTarget, loopName, raw, formulas, variables, make(map[string]bool))
+			loopVisited := cloneFlowVisited(visited)
+			loopVisited[strings.ToLower(loopName)] = true
+			body, bodyDiagnostics = flowPopulateBranchFromTargetWithStop(body, bodyTarget, loopName, raw, formulas, variables, loopVisited)
 			diagnostics = append(diagnostics, bodyDiagnostics...)
 			currentItem := strings.TrimSpace(loop.AssignNextValueToReference)
 			if currentItem == "" {
@@ -1604,7 +1681,7 @@ func flowPopulateBranchFromTargetWithStop(branch storage.FlowBranch, target, sto
 				continue
 			}
 			modeled = true
-			stepBranches, decisionDiagnostics := modeledFlowStepDecisionBranches(decision, raw, formulas, variables)
+			stepBranches, decisionDiagnostics := modeledFlowStepDecisionBranches(decision, raw, formulas, variables, visited)
 			diagnostics = append(diagnostics, decisionDiagnostics...)
 			if len(stepBranches) == 0 {
 				next = flowDefaultDecisionTarget(decision)
@@ -1634,7 +1711,7 @@ func flowPopulateBranchFromTargetWithStop(branch storage.FlowBranch, target, sto
 		}
 		break
 	}
-	buildFlowFaultBranches(branch.Steps, raw, formulas, variables)
+	buildFlowFaultBranches(branch.Steps, raw, formulas, variables, visited)
 	return branch, diagnostics
 }
 
@@ -1646,7 +1723,7 @@ func modeledFlowCustomError(customError flowCustomErrorXML) storage.FlowCustomEr
 	return ce
 }
 
-func modeledFlowStepDecisionBranches(decision flowDecisionXML, raw flowXML, formulas map[string]string, variables map[string]flowVariableXML) ([]storage.FlowBranch, []diagnostic.Diagnostic) {
+func modeledFlowStepDecisionBranches(decision flowDecisionXML, raw flowXML, formulas map[string]string, variables map[string]flowVariableXML, visited map[string]bool) ([]storage.FlowBranch, []diagnostic.Diagnostic) {
 	var branches []storage.FlowBranch
 	var diagnostics []diagnostic.Diagnostic
 	for _, rule := range decision.Rules {
@@ -1664,21 +1741,34 @@ func modeledFlowStepDecisionBranches(decision flowDecisionXML, raw flowXML, form
 			if len(groups) > 1 {
 				branch.Name = fmt.Sprintf("%s#%d", branch.Name, groupIndex+1)
 			}
-			for _, conditionIndex := range group {
-				condition := rule.Conditions[conditionIndex]
-				left := firstNonBlank(flowVariableRecordField(condition.LeftValueReference, variables), flowRecordSourceFieldReference(condition.LeftValueReference), strings.TrimSpace(condition.LeftValueReference))
-				if left == "" {
-					diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("decision %q branch %q condition %q is not modeled", decision.Name, branch.Name, condition.LeftValueReference)})
+			if flowConditionGroupsNeedFormula([][]int{group}, rule.Conditions, formulas) {
+				formula := flowConditionGroupsToFormula([][]int{group}, rule.Conditions, formulas, variables)
+				if formula == "" {
+					diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("decision %q branch %q condition logic %q is not supported", decision.Name, branch.Name, rule.ConditionLogic)})
 					continue
 				}
-				branch.Criteria = append(branch.Criteria, storage.WorkflowCriteriaItem{
-					Field:     left,
-					Operation: flowOperator(strings.TrimSpace(condition.Operator)),
-					Value:     flowLiteralValue(condition.RightValue),
-				})
+				// Formula resources are executable values, not object fields. Keep
+				// the branch formula intact so the DML frame evaluator can resolve
+				// its $Record references instead of looking up the resource name as
+				// a schema field.
+				branch.Formula = formula
+			} else {
+				for _, conditionIndex := range group {
+					condition := rule.Conditions[conditionIndex]
+					left := firstNonBlank(flowVariableRecordField(condition.LeftValueReference, variables), flowRecordSourceFieldReference(condition.LeftValueReference), strings.TrimSpace(condition.LeftValueReference))
+					if left == "" {
+						diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("decision %q branch %q condition %q is not modeled", decision.Name, branch.Name, condition.LeftValueReference)})
+						continue
+					}
+					branch.Criteria = append(branch.Criteria, storage.WorkflowCriteriaItem{
+						Field:     left,
+						Operation: flowOperator(strings.TrimSpace(condition.Operator)),
+						Value:     flowLiteralValue(condition.RightValue),
+					})
+				}
 			}
 			var branchDiagnostics []diagnostic.Diagnostic
-			branch, branchDiagnostics = flowPopulateBranchFromTargetWithStop(branch, target, "", raw, formulas, variables, make(map[string]bool))
+			branch, branchDiagnostics = flowPopulateBranchFromTargetWithStop(branch, target, "", raw, formulas, variables, cloneFlowVisited(visited))
 			diagnostics = append(diagnostics, branchDiagnostics...)
 			if flowBranchHasEffects(branch) {
 				branches = append(branches, branch)
@@ -1689,7 +1779,7 @@ func modeledFlowStepDecisionBranches(decision flowDecisionXML, raw flowXML, form
 	if defaultTarget != "" {
 		branch := storage.FlowBranch{Name: firstNonBlank(decision.Name+"_Default", decision.Name), Default: true}
 		var branchDiagnostics []diagnostic.Diagnostic
-		branch, branchDiagnostics = flowPopulateBranchFromTargetWithStop(branch, defaultTarget, "", raw, formulas, variables, make(map[string]bool))
+		branch, branchDiagnostics = flowPopulateBranchFromTargetWithStop(branch, defaultTarget, "", raw, formulas, variables, cloneFlowVisited(visited))
 		diagnostics = append(diagnostics, branchDiagnostics...)
 		if flowBranchHasEffects(branch) {
 			branches = append(branches, branch)
@@ -1706,16 +1796,20 @@ func modeledFlowAssignmentUpdate(assignment flowAssignmentXML, item flowAssignme
 	if operator == "assigncount" || operator == "add" {
 		return storage.WorkflowFieldUpdate{}, false
 	}
+	if _, variable := variables[strings.ToLower(strings.TrimSpace(item.AssignToReference))]; variable {
+		return storage.WorkflowFieldUpdate{}, false
+	}
 	field := flowRecordFieldReference(item.AssignToReference)
 	if field == "" {
 		return storage.WorkflowFieldUpdate{}, false
 	}
+	formula := flowExpressionValue(item.Value, formulas)
 	return storage.WorkflowFieldUpdate{
 		Name:         firstNonBlank(assignment.Name, assignment.Label, field),
 		Field:        field,
 		LiteralValue: flowLiteralValue(item.Value),
-		Formula:      flowExpressionValue(item.Value, formulas),
-		SourceField:  flowSourceFieldValue(item.Value, variables),
+		Formula:      formula,
+		SourceField:  flowSourceFieldValueUnlessFormula(item.Value, formula, variables),
 	}, true
 }
 
@@ -1727,12 +1821,18 @@ func modeledFlowAssignment(assignment flowAssignmentXML, item flowAssignmentItem
 	if target == "" {
 		return storage.FlowAssignment{}, false
 	}
+	formula := flowExpressionValue(item.Value, formulas)
+	sourceField := ""
+	if formula == "" {
+		sourceField = firstNonBlank(flowLookupSourceFieldValue(item.Value, variables, lookups), strings.TrimSpace(item.Value.ElementReference))
+	}
 	return storage.FlowAssignment{
 		Name:         firstNonBlank(assignment.Name, assignment.Label, target),
 		Target:       target,
 		Operator:     strings.TrimSpace(item.Operator),
 		LiteralValue: flowLiteralOrVariableValue(item.Value, variables),
-		SourceField:  firstNonBlank(flowLookupSourceFieldValue(item.Value, variables, lookups), strings.TrimSpace(item.Value.ElementReference)),
+		Formula:      formula,
+		SourceField:  sourceField,
 	}, true
 }
 
@@ -1752,18 +1852,19 @@ func modeledFlowRecordUpdates(update flowRecordUpdateXML, formulas map[string]st
 		if field == "" {
 			return nil, false
 		}
+		formula := flowExpressionValue(assignment.Value, formulas)
 		updates = append(updates, storage.WorkflowFieldUpdate{
 			Name:         firstNonBlank(update.Name, update.Label, field),
 			Field:        field,
 			LiteralValue: flowLiteralValue(assignment.Value),
-			Formula:      flowExpressionValue(assignment.Value, formulas),
-			SourceField:  flowSourceFieldValue(assignment.Value, variables),
+			Formula:      formula,
+			SourceField:  flowSourceFieldValueUnlessFormula(assignment.Value, formula, variables),
 		})
 	}
 	return updates, true
 }
 
-func modeledFlowRecordUpdate(update flowRecordUpdateXML, formulas map[string]string, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) (storage.FlowRecordUpdate, bool) {
+func modeledFlowRecordUpdate(update flowRecordUpdateXML, formulas map[string]string, variables map[string]flowVariableXML, constants map[string]flowValueXML, lookups []flowRecordLookupXML) (storage.FlowRecordUpdate, bool) {
 	name := firstNonBlank(update.Name, update.Label)
 	inputReference := strings.TrimSpace(update.InputReference)
 	objectName := strings.TrimSpace(update.Object)
@@ -1800,8 +1901,8 @@ func modeledFlowRecordUpdate(update flowRecordUpdateXML, formulas map[string]str
 		out.Criteria = append(out.Criteria, storage.WorkflowCriteriaItem{
 			Field:       field,
 			Operation:   flowOperator(strings.TrimSpace(filter.Operator)),
-			Value:       flowLiteralValue(filter.Value),
-			SourceField: flowLookupSourceFieldValue(filter.Value, variables, lookups),
+			Value:       flowLiteralOrVariableOrConstantValue(filter.Value, variables, constants),
+			SourceField: flowLookupCriteriaSourceFieldValue(filter.Value, variables, constants, lookups),
 		})
 	}
 	for _, assignment := range update.Fields {
@@ -1809,12 +1910,13 @@ func modeledFlowRecordUpdate(update flowRecordUpdateXML, formulas map[string]str
 		if field == "" {
 			return storage.FlowRecordUpdate{}, false
 		}
+		formula := flowExpressionValue(assignment.Value, formulas)
 		out.InputAssignments = append(out.InputAssignments, storage.WorkflowFieldUpdate{
 			Name:         field,
 			Field:        field,
 			LiteralValue: flowLiteralOrVariableValue(assignment.Value, variables),
-			Formula:      flowExpressionValue(assignment.Value, formulas),
-			SourceField:  flowLookupSourceFieldValue(assignment.Value, variables, lookups),
+			Formula:      formula,
+			SourceField:  flowLookupSourceFieldValueUnlessFormula(assignment.Value, formula, variables, lookups),
 		})
 	}
 	return out, true
@@ -2014,6 +2116,8 @@ func flowProcessTypeNonDML(processType string) bool {
 	switch strings.ToLower(strings.TrimSpace(processType)) {
 	case "appprocess", "orchestrator":
 		return true
+	case "flow":
+		return true
 	default:
 		return false
 	}
@@ -2065,12 +2169,22 @@ func modeledFlowActionCall(action flowActionCallXML, formulas map[string]string,
 		if name == "" {
 			return storage.FlowAction{}, false
 		}
+		formula := flowExpressionValue(input.Value, formulas)
+		sourceField := flowLookupSourceFieldValueUnlessFormula(input.Value, formula, variables, lookups)
+		if sourceField == "" && strings.TrimSpace(formula) == "" {
+			reference := strings.TrimSpace(input.Value.ElementReference)
+			if _, ok := variables[strings.ToLower(reference)]; ok {
+				sourceField = reference
+			} else if strings.EqualFold(reference, "$Record") || strings.EqualFold(reference, "$Record__Prior") {
+				sourceField = reference
+			}
+		}
 		out.Inputs = append(out.Inputs, storage.WorkflowFieldUpdate{
 			Name:         name,
 			Field:        name,
 			LiteralValue: flowLiteralOrVariableValue(input.Value, variables),
-			Formula:      flowExpressionValue(input.Value, formulas),
-			SourceField:  flowLookupSourceFieldValue(input.Value, variables, lookups),
+			Formula:      formula,
+			SourceField:  sourceField,
 		})
 	}
 	return out, true

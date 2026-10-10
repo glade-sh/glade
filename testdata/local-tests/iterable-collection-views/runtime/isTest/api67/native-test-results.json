@@ -1,0 +1,65 @@
+[
+  {
+    "FullName": "CRT6774f840b34fb1R001.R001",
+    "MethodName": "R001",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|R001|true",
+    "StackTrace": "Class.CRT6774f840b34fb1R001.R001: line 14, column 1"
+  },
+  {
+    "FullName": "CRT6774f840b34fb1R002.R002",
+    "MethodName": "R002",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|R002|true",
+    "StackTrace": "Class.CRT6774f840b34fb1R002.R002: line 14, column 1"
+  },
+  {
+    "FullName": "CRT6774f840b34fb1R003.R003",
+    "MethodName": "R003",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|R003|1",
+    "StackTrace": "Class.CRT6774f840b34fb1R003.R003: line 14, column 1"
+  },
+  {
+    "FullName": "CRT6774f840b34fb1R004.R004",
+    "MethodName": "R004",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|R004|1",
+    "StackTrace": "Class.CRT6774f840b34fb1R004.R004: line 14, column 1"
+  },
+  {
+    "FullName": "CRT6774f840b34fb1R005.R005",
+    "MethodName": "R005",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|R005|EXC|System.QueryException|Invalid bind expression type of ANY for column of type String",
+    "StackTrace": "Class.CRT6774f840b34fb1R005.R005: line 14, column 1"
+  },
+  {
+    "FullName": "CRT6774f840b34fb1R006.R006",
+    "MethodName": "R006",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|R006|EXC|System.QueryException|Invalid bind expression type of ANY for column of type String",
+    "StackTrace": "Class.CRT6774f840b34fb1R006.R006: line 14, column 1"
+  },
+  {
+    "FullName": "CRT6774f840b34fb1R007.R007",
+    "MethodName": "R007",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|R007|EXC|System.TypeException|Invalid conversion from runtime type Set<Integer> to Set<String>",
+    "StackTrace": "Class.CRT6774f840b34fb1R007.R007: line 14, column 1"
+  },
+  {
+    "FullName": "CRT6774f840b34fb1R008.R008",
+    "MethodName": "R008",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|R008|true",
+    "StackTrace": "Class.CRT6774f840b34fb1R008.R008: line 14, column 1"
+  },
+  {
+    "FullName": "CRT6774f840b34fb1R009.R009",
+    "MethodName": "R009",
+    "Outcome": "Fail",
+    "Message": "System.AssertException: Assertion Failed: P|R009|true",
+    "StackTrace": "Class.CRT6774f840b34fb1R009.R009: line 14, column 1"
+  }
+]

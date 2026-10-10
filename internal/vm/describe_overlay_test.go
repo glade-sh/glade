@@ -150,7 +150,8 @@ System.assertEquals(SObjectDescribeOptions.DEFERRED, deferred.getSObjectDescribe
 
 Map<String, Schema.SObjectField> firstFields = Widget__c.SObjectType.getDescribe().fields.getMap();
 Integer fieldCount = firstFields.size();
-firstFields.clear();
+// Schema describe R076: fields.getMap() is read-only; the conformance row
+// checks the uncatchable mutation error.
 System.assertEquals(fieldCount, Widget__c.SObjectType.getDescribe().fields.getMap().size());
 
 List<Schema.RecordTypeInfo> firstRecordTypes = Widget__c.SObjectType.getDescribe().getRecordTypeInfos();
@@ -158,9 +159,12 @@ Integer recordTypeCount = firstRecordTypes.size();
 firstRecordTypes.clear();
 System.assertEquals(recordTypeCount, Widget__c.SObjectType.getDescribe().getRecordTypeInfos().size());
 
-List<Schema.FieldSetMember> firstMembers = Widget__c.SObjectType.getDescribe().fieldSets.getMap().get('Summary').getFields();
+Schema.FieldSet firstFieldSet = Widget__c.SObjectType.getDescribe().fieldSets.getMap().get('Summary');
+List<Schema.FieldSetMember> firstMembers = firstFieldSet.getFields();
 Integer memberCount = firstMembers.size();
 firstMembers.clear();
+// Schema describe R220: repeated getters on this field set share its list.
+System.assertEquals(0, firstFieldSet.getFields().size());
 System.assertEquals(memberCount, Widget__c.SObjectType.getDescribe().fieldSets.getMap().get('Summary').getFields().size());
 
 Map<String, Schema.FieldSet> firstFieldSets = Widget__c.SObjectType.getDescribe().fieldSets.getMap();

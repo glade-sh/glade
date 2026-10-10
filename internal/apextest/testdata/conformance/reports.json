@@ -1,0 +1,3529 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "source": {
+    "oracle": "Owned reporting observations and controls at API 62.0 and 67.0, including fact, JSON, position and legacy JSON controls.",
+    "transport": "exception"
+  },
+  "oldTicketRows": {},
+  "cases": [
+    {
+      "id": "R001",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); r=x.getColumn();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/Column",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R002",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); r=x.getOperator();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/Operator",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R003",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); r=x.getValue();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/Value",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R004",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); r=x.getFilterType();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/FilterType",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R005",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); r=x.getEntityName();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/EntityName",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R006",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45'); r=x.getColumn();",
+      "expected": "ACCOUNT_NAME",
+      "compile": false,
+      "group": "builders/filter/constructor/Column",
+      "basis": "org"
+    },
+    {
+      "id": "R007",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45'); r=x.getOperator();",
+      "expected": "equals",
+      "compile": false,
+      "group": "builders/filter/constructor/Operator",
+      "basis": "org"
+    },
+    {
+      "id": "R008",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45'); r=x.getValue();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/filter/constructor/Value",
+      "basis": "org"
+    },
+    {
+      "id": "R009",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45'); r=x.getFilterType();",
+      "expected": "fieldValue",
+      "compile": false,
+      "group": "builders/filter/constructor/FilterType",
+      "basis": "org"
+    },
+    {
+      "id": "R010",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45'); r=x.getEntityName();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/EntityName",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R011",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(null,null,null); r=x.getColumn();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/Column",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R012",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(null,null,null); r=x.getOperator();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/Operator",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R013",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(null,null,null); r=x.getValue();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/Value",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R014",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(null,null,null); r=x.getFilterType();",
+      "expected": "fieldValue",
+      "compile": false,
+      "group": "builders/filter/constructor/FilterType",
+      "basis": "org"
+    },
+    {
+      "id": "R015",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(null,null,null); r=x.getEntityName();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/EntityName",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R016",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('','bogus',''); r=x.getColumn();",
+      "expected": "",
+      "compile": false,
+      "group": "builders/filter/constructor/Column",
+      "basis": "org"
+    },
+    {
+      "id": "R017",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('','bogus',''); r=x.getOperator();",
+      "expected": "bogus",
+      "compile": false,
+      "group": "builders/filter/constructor/Operator",
+      "basis": "org"
+    },
+    {
+      "id": "R018",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('','bogus',''); r=x.getValue();",
+      "expected": "",
+      "compile": false,
+      "group": "builders/filter/constructor/Value",
+      "basis": "org"
+    },
+    {
+      "id": "R019",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('','bogus',''); r=x.getFilterType();",
+      "expected": "fieldValue",
+      "compile": false,
+      "group": "builders/filter/constructor/FilterType",
+      "basis": "org"
+    },
+    {
+      "id": "R020",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('','bogus',''); r=x.getEntityName();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/EntityName",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R021",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45',Reports.ReportFilterType.fieldValue); r=x.getColumn();",
+      "expected": "ACCOUNT_NAME",
+      "compile": false,
+      "group": "builders/filter/constructor/Column",
+      "basis": "org"
+    },
+    {
+      "id": "R022",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45',Reports.ReportFilterType.fieldValue); r=x.getOperator();",
+      "expected": "equals",
+      "compile": false,
+      "group": "builders/filter/constructor/Operator",
+      "basis": "org"
+    },
+    {
+      "id": "R023",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45',Reports.ReportFilterType.fieldValue); r=x.getValue();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/filter/constructor/Value",
+      "basis": "org"
+    },
+    {
+      "id": "R024",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45',Reports.ReportFilterType.fieldValue); r=x.getFilterType();",
+      "expected": "fieldValue",
+      "compile": false,
+      "group": "builders/filter/constructor/FilterType",
+      "basis": "org"
+    },
+    {
+      "id": "R025",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45',Reports.ReportFilterType.fieldValue); r=x.getEntityName();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/constructor/EntityName",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R026",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45',Reports.ReportFilterType.fieldToField,'Account'); r=x.getColumn();",
+      "expected": "ACCOUNT_NAME",
+      "compile": false,
+      "group": "builders/filter/constructor/Column",
+      "basis": "org"
+    },
+    {
+      "id": "R027",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45',Reports.ReportFilterType.fieldToField,'Account'); r=x.getOperator();",
+      "expected": "equals",
+      "compile": false,
+      "group": "builders/filter/constructor/Operator",
+      "basis": "org"
+    },
+    {
+      "id": "R028",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45',Reports.ReportFilterType.fieldToField,'Account'); r=x.getValue();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/filter/constructor/Value",
+      "basis": "org"
+    },
+    {
+      "id": "R029",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45',Reports.ReportFilterType.fieldToField,'Account'); r=x.getFilterType();",
+      "expected": "fieldToField",
+      "compile": false,
+      "group": "builders/filter/constructor/FilterType",
+      "basis": "org"
+    },
+    {
+      "id": "R030",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('ACCOUNT_NAME','equals','A45',Reports.ReportFilterType.fieldToField,'Account'); r=x.getEntityName();",
+      "expected": "Account",
+      "compile": false,
+      "group": "builders/filter/constructor/EntityName",
+      "basis": "org"
+    },
+    {
+      "id": "R031",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setColumn(null); r=x.getColumn();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/set-Column",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R032",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setColumn(''); r=x.getColumn();",
+      "expected": "",
+      "compile": false,
+      "group": "builders/filter/set-Column",
+      "basis": "org"
+    },
+    {
+      "id": "R033",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setColumn('A45'); r=x.getColumn();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/filter/set-Column",
+      "basis": "org"
+    },
+    {
+      "id": "R034",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setColumn('quote\\'|slash\\\\\\nline'); r=x.getColumn();",
+      "expected": "quote'|slash\\\\nline",
+      "compile": false,
+      "group": "builders/filter/set-Column",
+      "basis": "org"
+    },
+    {
+      "id": "R035",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setOperator(null); r=x.getOperator();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/set-Operator",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R036",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setOperator(''); r=x.getOperator();",
+      "expected": "",
+      "compile": false,
+      "group": "builders/filter/set-Operator",
+      "basis": "org"
+    },
+    {
+      "id": "R037",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setOperator('A45'); r=x.getOperator();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/filter/set-Operator",
+      "basis": "org"
+    },
+    {
+      "id": "R038",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setOperator('quote\\'|slash\\\\\\nline'); r=x.getOperator();",
+      "expected": "quote'|slash\\\\nline",
+      "compile": false,
+      "group": "builders/filter/set-Operator",
+      "basis": "org"
+    },
+    {
+      "id": "R039",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setValue(null); r=x.getValue();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/set-Value",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R040",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setValue(''); r=x.getValue();",
+      "expected": "",
+      "compile": false,
+      "group": "builders/filter/set-Value",
+      "basis": "org"
+    },
+    {
+      "id": "R041",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setValue('A45'); r=x.getValue();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/filter/set-Value",
+      "basis": "org"
+    },
+    {
+      "id": "R042",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setValue('quote\\'|slash\\\\\\nline'); r=x.getValue();",
+      "expected": "quote'|slash\\\\nline",
+      "compile": false,
+      "group": "builders/filter/set-Value",
+      "basis": "org"
+    },
+    {
+      "id": "R043",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setEntityName(null); r=x.getEntityName();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/set-EntityName",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R044",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setEntityName(''); r=x.getEntityName();",
+      "expected": "",
+      "compile": false,
+      "group": "builders/filter/set-EntityName",
+      "basis": "org"
+    },
+    {
+      "id": "R045",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setEntityName('A45'); r=x.getEntityName();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/filter/set-EntityName",
+      "basis": "org"
+    },
+    {
+      "id": "R046",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setEntityName('quote\\'|slash\\\\\\nline'); r=x.getEntityName();",
+      "expected": "quote'|slash\\\\nline",
+      "compile": false,
+      "group": "builders/filter/set-EntityName",
+      "basis": "org"
+    },
+    {
+      "id": "R047",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setFilterType(Reports.ReportFilterType.fieldValue); r=x.getFilterType();",
+      "expected": "fieldValue",
+      "compile": false,
+      "group": "builders/filter/type-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R048",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setFilterType(Reports.ReportFilterType.fieldToField); r=x.getFilterType();",
+      "expected": "fieldToField",
+      "compile": false,
+      "group": "builders/filter/type-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R049",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setFilterType('fieldValue'); r=x.getFilterType();",
+      "expected": "fieldValue",
+      "compile": false,
+      "group": "builders/filter/type-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R050",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setFilterType('bogus'); r=x.getFilterType();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/filter/type-conversion",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R051",
+      "code": "Reports.SortColumn x=new Reports.SortColumn(); r=x.getSortColumn();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/SortColumn/default-SortColumn",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R052",
+      "code": "Reports.SortColumn x=new Reports.SortColumn(); x.setSortColumn('ACCOUNT_NAME'); r=x.getSortColumn();",
+      "expected": "ACCOUNT_NAME",
+      "compile": false,
+      "group": "builders/SortColumn/set-SortColumn",
+      "basis": "org"
+    },
+    {
+      "id": "R053",
+      "code": "Reports.SortColumn x=new Reports.SortColumn(); x.setSortColumn(''); r=x.getSortColumn();",
+      "expected": "",
+      "compile": false,
+      "group": "builders/SortColumn/set-SortColumn",
+      "basis": "org"
+    },
+    {
+      "id": "R054",
+      "code": "Reports.SortColumn x=new Reports.SortColumn(); x.setSortColumn(null); r=x.getSortColumn();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/SortColumn/set-SortColumn",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R055",
+      "code": "Reports.SortColumn x=new Reports.SortColumn(); r=x.getSortOrder();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/SortColumn/default-SortOrder",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R056",
+      "code": "Reports.SortColumn x=new Reports.SortColumn(); x.setSortOrder(Reports.ColumnSortOrder.ASCENDING); r=x.getSortOrder();",
+      "expected": "ASCENDING",
+      "compile": false,
+      "group": "builders/SortColumn/set-SortOrder",
+      "basis": "org"
+    },
+    {
+      "id": "R057",
+      "code": "Reports.SortColumn x=new Reports.SortColumn(); x.setSortOrder(Reports.ColumnSortOrder.DESCENDING); r=x.getSortOrder();",
+      "expected": "DESCENDING",
+      "compile": false,
+      "group": "builders/SortColumn/set-SortOrder",
+      "basis": "org"
+    },
+    {
+      "id": "R058",
+      "code": "Reports.SortColumn x=new Reports.SortColumn(); x.setSortOrder('ASCENDING'); r=x.getSortOrder();",
+      "expected": "ASCENDING",
+      "compile": false,
+      "group": "builders/SortColumn/set-SortOrder",
+      "basis": "org"
+    },
+    {
+      "id": "R059",
+      "code": "Reports.SortColumn x=new Reports.SortColumn(); x.setSortOrder('bogus'); r=x.getSortOrder();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/SortColumn/set-SortOrder",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R060",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); r=x.getName();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/GroupingInfo/default-Name",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R061",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); x.setName('ACCOUNT_TYPE'); r=x.getName();",
+      "expected": "ACCOUNT_TYPE",
+      "compile": false,
+      "group": "builders/GroupingInfo/set-Name",
+      "basis": "org"
+    },
+    {
+      "id": "R062",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); x.setName(null); r=x.getName();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/GroupingInfo/set-Name",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R063",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); r=x.getSortOrder();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/GroupingInfo/default-SortOrder",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R064",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); x.setSortOrder(Reports.ColumnSortOrder.ASCENDING); r=x.getSortOrder();",
+      "expected": "ASCENDING",
+      "compile": false,
+      "group": "builders/GroupingInfo/set-SortOrder",
+      "basis": "org"
+    },
+    {
+      "id": "R065",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); x.setSortOrder('bogus'); r=x.getSortOrder();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/GroupingInfo/set-SortOrder",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R066",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); r=x.getDateGranularity();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/GroupingInfo/default-DateGranularity",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R067",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); x.setDateGranularity(Reports.DateGranularity.DAY); r=x.getDateGranularity();",
+      "expected": "DAY",
+      "compile": false,
+      "group": "builders/GroupingInfo/set-DateGranularity",
+      "basis": "org"
+    },
+    {
+      "id": "R068",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); x.setDateGranularity('bogus'); r=x.getDateGranularity();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/GroupingInfo/set-DateGranularity",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R069",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); r=x.getSortAggregate();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/GroupingInfo/default-SortAggregate",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R070",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); x.setSortAggregate('RowCount'); r=x.getSortAggregate();",
+      "expected": "RowCount",
+      "compile": false,
+      "group": "builders/GroupingInfo/set-SortAggregate",
+      "basis": "org"
+    },
+    {
+      "id": "R071",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); x.setSortAggregate(null); r=x.getSortAggregate();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/GroupingInfo/set-SortAggregate",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R072",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); r=x.getColumn();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/StandardDateFilter/default-Column",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R073",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); x.setColumn('A45'); r=x.getColumn();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/StandardDateFilter/set-Column",
+      "basis": "org"
+    },
+    {
+      "id": "R074",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); x.setColumn(null); r=x.getColumn();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/StandardDateFilter/set-Column",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R075",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); r=x.getDurationValue();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/StandardDateFilter/default-DurationValue",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R076",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); x.setDurationValue('A45'); r=x.getDurationValue();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/StandardDateFilter/set-DurationValue",
+      "basis": "org"
+    },
+    {
+      "id": "R077",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); x.setDurationValue(null); r=x.getDurationValue();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/StandardDateFilter/set-DurationValue",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R078",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); r=x.getStartDate();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/StandardDateFilter/default-StartDate",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R079",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); x.setStartDate('A45'); r=x.getStartDate();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/StandardDateFilter/set-StartDate",
+      "basis": "org"
+    },
+    {
+      "id": "R080",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); x.setStartDate(null); r=x.getStartDate();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/StandardDateFilter/set-StartDate",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R081",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); r=x.getEndDate();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/StandardDateFilter/default-EndDate",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R082",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); x.setEndDate('A45'); r=x.getEndDate();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/StandardDateFilter/set-EndDate",
+      "basis": "org"
+    },
+    {
+      "id": "R083",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter(); x.setEndDate(null); r=x.getEndDate();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/StandardDateFilter/set-EndDate",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R084",
+      "code": "Reports.TopRows x=new Reports.TopRows(); r=x.getRowLimit();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/TopRows/default-RowLimit",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R085",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setRowLimit(-1); r=x.getRowLimit();",
+      "expected": "-1",
+      "compile": false,
+      "group": "builders/TopRows/set-RowLimit",
+      "basis": "org"
+    },
+    {
+      "id": "R086",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setRowLimit(0); r=x.getRowLimit();",
+      "expected": "0",
+      "compile": false,
+      "group": "builders/TopRows/set-RowLimit",
+      "basis": "org"
+    },
+    {
+      "id": "R087",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setRowLimit(1); r=x.getRowLimit();",
+      "expected": "1",
+      "compile": false,
+      "group": "builders/TopRows/set-RowLimit",
+      "basis": "org"
+    },
+    {
+      "id": "R088",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setRowLimit(2000); r=x.getRowLimit();",
+      "expected": "2000",
+      "compile": false,
+      "group": "builders/TopRows/set-RowLimit",
+      "basis": "org"
+    },
+    {
+      "id": "R089",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setRowLimit(2147483647); r=x.getRowLimit();",
+      "expected": "2147483647",
+      "compile": false,
+      "group": "builders/TopRows/set-RowLimit",
+      "basis": "org"
+    },
+    {
+      "id": "R090",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setRowLimit(null); r=x.getRowLimit();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/TopRows/set-RowLimit",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R091",
+      "code": "Reports.TopRows x=new Reports.TopRows(); r=x.getDirection();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/TopRows/default-Direction",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R092",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setDirection(Reports.ColumnSortOrder.ASCENDING); r=x.getDirection();",
+      "expected": "ASCENDING",
+      "compile": false,
+      "group": "builders/TopRows/set-Direction",
+      "basis": "org"
+    },
+    {
+      "id": "R093",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setDirection(Reports.ColumnSortOrder.DESCENDING); r=x.getDirection();",
+      "expected": "DESCENDING",
+      "compile": false,
+      "group": "builders/TopRows/set-Direction",
+      "basis": "org"
+    },
+    {
+      "id": "R094",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setDirection('ASCENDING'); r=x.getDirection();",
+      "expected": "ASCENDING",
+      "compile": false,
+      "group": "builders/TopRows/set-Direction",
+      "basis": "org"
+    },
+    {
+      "id": "R095",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setDirection('bogus'); r=x.getDirection();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/TopRows/set-Direction",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R096",
+      "code": "Reports.ReportType x=new Reports.ReportType(); r=x.getType();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/ReportType/default-Type",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R097",
+      "code": "Reports.ReportType x=new Reports.ReportType(); x.setType('AccountList'); r=x.getType();",
+      "expected": "AccountList",
+      "compile": false,
+      "group": "builders/ReportType/set-Type",
+      "basis": "org"
+    },
+    {
+      "id": "R098",
+      "code": "Reports.ReportType x=new Reports.ReportType(); x.setType(''); r=x.getType();",
+      "expected": "",
+      "compile": false,
+      "group": "builders/ReportType/set-Type",
+      "basis": "org"
+    },
+    {
+      "id": "R099",
+      "code": "Reports.ReportType x=new Reports.ReportType(); x.setType(null); r=x.getType();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/ReportType/set-Type",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R100",
+      "code": "Reports.ReportType x=new Reports.ReportType(); r=x.getLabel();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/ReportType/default-Label",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R101",
+      "code": "Reports.ReportType x=new Reports.ReportType(); x.setLabel('A45 Accounts'); r=x.getLabel();",
+      "expected": "A45 Accounts",
+      "compile": false,
+      "group": "builders/ReportType/set-Label",
+      "basis": "org"
+    },
+    {
+      "id": "R102",
+      "code": "Reports.ReportType x=new Reports.ReportType(); x.setLabel(''); r=x.getLabel();",
+      "expected": "",
+      "compile": false,
+      "group": "builders/ReportType/set-Label",
+      "basis": "org"
+    },
+    {
+      "id": "R103",
+      "code": "Reports.ReportType x=new Reports.ReportType(); x.setLabel(null); r=x.getLabel();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/ReportType/set-Label",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R104",
+      "code": "Reports.SortColumn x=new Reports.SortColumn('ACCOUNT_NAME',Reports.ColumnSortOrder.DESCENDING); r=x.getSortOrder();",
+      "expected": "DESCENDING",
+      "compile": false,
+      "group": "builders/SortColumn/parameter-constructor",
+      "basis": "org"
+    },
+    {
+      "id": "R105",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo('CREATED_DATE',Reports.ColumnSortOrder.ASCENDING,Reports.DateGranularity.DAY,'RowCount'); r=x.getDateGranularity();",
+      "expected": "DAY",
+      "compile": false,
+      "group": "builders/GroupingInfo/parameter-constructor",
+      "basis": "org"
+    },
+    {
+      "id": "R106",
+      "code": "Reports.StandardDateFilter x=new Reports.StandardDateFilter('CREATED_DATE','CUSTOM','2000-01-01','2000-12-31'); r=x.getStartDate();",
+      "expected": "2000-01-01",
+      "compile": false,
+      "group": "builders/StandardDateFilter/parameter-constructor",
+      "basis": "org"
+    },
+    {
+      "id": "R107",
+      "code": "Reports.TopRows x=new Reports.TopRows(0,Reports.ColumnSortOrder.ASCENDING); r=x.getRowLimit();",
+      "expected": "0",
+      "compile": false,
+      "group": "builders/TopRows/parameter-constructor",
+      "basis": "org"
+    },
+    {
+      "id": "R108",
+      "code": "Reports.ReportType x=new Reports.ReportType('AccountList','Accounts'); r=x.getType();",
+      "expected": "AccountList",
+      "compile": false,
+      "group": "builders/ReportType/parameter-constructor",
+      "basis": "org"
+    },
+    {
+      "id": "R109",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setName('A45'); r=x.getName();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/metadata/string-Name",
+      "basis": "org"
+    },
+    {
+      "id": "R110",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setName(null); r=x.getName();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/string-Name",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R111",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setDeveloperName('A45'); r=x.getDeveloperName();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/metadata/string-DeveloperName",
+      "basis": "org"
+    },
+    {
+      "id": "R112",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setDeveloperName(null); r=x.getDeveloperName();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/string-DeveloperName",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R113",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setDescription('A45'); r=x.getDescription();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/metadata/string-Description",
+      "basis": "org"
+    },
+    {
+      "id": "R114",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setDescription(null); r=x.getDescription();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/string-Description",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R115",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setScope('A45'); r=x.getScope();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/metadata/string-Scope",
+      "basis": "org"
+    },
+    {
+      "id": "R116",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setScope(null); r=x.getScope();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/string-Scope",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R117",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setCurrencyCode('A45'); r=x.getCurrencyCode();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/metadata/string-CurrencyCode",
+      "basis": "org"
+    },
+    {
+      "id": "R118",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setCurrencyCode(null); r=x.getCurrencyCode();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/string-CurrencyCode",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R119",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setDivision('A45'); r=x.getDivision();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/metadata/string-Division",
+      "basis": "org"
+    },
+    {
+      "id": "R120",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setDivision(null); r=x.getDivision();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/string-Division",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R121",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setReportBooleanFilter('A45'); r=x.getReportBooleanFilter();",
+      "expected": "A45",
+      "compile": false,
+      "group": "builders/metadata/string-ReportBooleanFilter",
+      "basis": "org"
+    },
+    {
+      "id": "R122",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setReportBooleanFilter(null); r=x.getReportBooleanFilter();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/string-ReportBooleanFilter",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R123",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setHasDetailRows(true); r=x.getHasDetailRows();",
+      "expected": "true",
+      "compile": false,
+      "group": "builders/metadata/boolean-HasDetailRows",
+      "basis": "org"
+    },
+    {
+      "id": "R124",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setHasDetailRows(false); r=x.getHasDetailRows();",
+      "expected": "false",
+      "compile": false,
+      "group": "builders/metadata/boolean-HasDetailRows",
+      "basis": "org"
+    },
+    {
+      "id": "R125",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setHasDetailRows(null); r=x.getHasDetailRows();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/boolean-HasDetailRows",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R126",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setHasRecordCount(true); r=x.getHasRecordCount();",
+      "expected": "true",
+      "compile": false,
+      "group": "builders/metadata/boolean-HasRecordCount",
+      "basis": "org"
+    },
+    {
+      "id": "R127",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setHasRecordCount(false); r=x.getHasRecordCount();",
+      "expected": "false",
+      "compile": false,
+      "group": "builders/metadata/boolean-HasRecordCount",
+      "basis": "org"
+    },
+    {
+      "id": "R128",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setHasRecordCount(null); r=x.getHasRecordCount();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/boolean-HasRecordCount",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R129",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setShowGrandTotal(true); r=x.getShowGrandTotal();",
+      "expected": "true",
+      "compile": false,
+      "group": "builders/metadata/boolean-ShowGrandTotal",
+      "basis": "org"
+    },
+    {
+      "id": "R130",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setShowGrandTotal(false); r=x.getShowGrandTotal();",
+      "expected": "false",
+      "compile": false,
+      "group": "builders/metadata/boolean-ShowGrandTotal",
+      "basis": "org"
+    },
+    {
+      "id": "R131",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setShowGrandTotal(null); r=x.getShowGrandTotal();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/boolean-ShowGrandTotal",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R132",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setShowSubtotals(true); r=x.getShowSubtotals();",
+      "expected": "true",
+      "compile": false,
+      "group": "builders/metadata/boolean-ShowSubtotals",
+      "basis": "org"
+    },
+    {
+      "id": "R133",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setShowSubtotals(false); r=x.getShowSubtotals();",
+      "expected": "false",
+      "compile": false,
+      "group": "builders/metadata/boolean-ShowSubtotals",
+      "basis": "org"
+    },
+    {
+      "id": "R134",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setShowSubtotals(null); r=x.getShowSubtotals();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/boolean-ShowSubtotals",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R135",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setAggregates(new List<String>()); r=JSON.serialize(x.getAggregates());",
+      "expected": "[]",
+      "compile": false,
+      "group": "builders/metadata/list-Aggregates",
+      "basis": "org"
+    },
+    {
+      "id": "R136",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setAggregates(new List<String>{'A45','A45'}); r=JSON.serialize(x.getAggregates());",
+      "expected": "[\"A45\",\"A45\"]",
+      "compile": false,
+      "group": "builders/metadata/list-Aggregates",
+      "basis": "org"
+    },
+    {
+      "id": "R137",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setAggregates(null); r=JSON.serialize(x.getAggregates());",
+      "expected": "[]",
+      "compile": false,
+      "group": "builders/metadata/list-Aggregates",
+      "basis": "org"
+    },
+    {
+      "id": "R138",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setDetailColumns(new List<String>()); r=JSON.serialize(x.getDetailColumns());",
+      "expected": "[]",
+      "compile": false,
+      "group": "builders/metadata/list-DetailColumns",
+      "basis": "org"
+    },
+    {
+      "id": "R139",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setDetailColumns(new List<String>{'A45','A45'}); r=JSON.serialize(x.getDetailColumns());",
+      "expected": "[\"A45\",\"A45\"]",
+      "compile": false,
+      "group": "builders/metadata/list-DetailColumns",
+      "basis": "org"
+    },
+    {
+      "id": "R140",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setDetailColumns(null); r=JSON.serialize(x.getDetailColumns());",
+      "expected": "[]",
+      "compile": false,
+      "group": "builders/metadata/list-DetailColumns",
+      "basis": "org"
+    },
+    {
+      "id": "R141",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setHistoricalSnapshotDates(new List<String>()); r=JSON.serialize(x.getHistoricalSnapshotDates());",
+      "expected": "[]",
+      "compile": false,
+      "group": "builders/metadata/list-HistoricalSnapshotDates",
+      "basis": "org"
+    },
+    {
+      "id": "R142",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setHistoricalSnapshotDates(new List<String>{'A45','A45'}); r=JSON.serialize(x.getHistoricalSnapshotDates());",
+      "expected": "[\"A45\",\"A45\"]",
+      "compile": false,
+      "group": "builders/metadata/list-HistoricalSnapshotDates",
+      "basis": "org"
+    },
+    {
+      "id": "R143",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setHistoricalSnapshotDates(null); r=JSON.serialize(x.getHistoricalSnapshotDates());",
+      "expected": "[]",
+      "compile": false,
+      "group": "builders/metadata/list-HistoricalSnapshotDates",
+      "basis": "org"
+    },
+    {
+      "id": "R144",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setReportFormat(Reports.ReportFormat.TABULAR); r=x.getReportFormat();",
+      "expected": "TABULAR",
+      "compile": false,
+      "group": "builders/metadata/format-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R145",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setReportFormat(Reports.ReportFormat.SUMMARY); r=x.getReportFormat();",
+      "expected": "SUMMARY",
+      "compile": false,
+      "group": "builders/metadata/format-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R146",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setReportFormat(Reports.ReportFormat.MATRIX); r=x.getReportFormat();",
+      "expected": "MATRIX",
+      "compile": false,
+      "group": "builders/metadata/format-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R147",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setReportFormat(Reports.ReportFormat.MULTI_BLOCK); r=x.getReportFormat();",
+      "expected": "MULTI_BLOCK",
+      "compile": false,
+      "group": "builders/metadata/format-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R148",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setReportFormat('TABULAR'); r=x.getReportFormat();",
+      "expected": "TABULAR",
+      "compile": false,
+      "group": "builders/metadata/format-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R149",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setReportFormat('bogus'); r=x.getReportFormat();",
+      "expected": "null",
+      "compile": false,
+      "group": "builders/metadata/format-conversion",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "R150",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setReportFilters(new List<Reports.ReportFilter>()); r=x.getReportFilters().size();",
+      "expected": "0",
+      "compile": false,
+      "group": "builders/metadata/typed-list-ReportFilters",
+      "basis": "org"
+    },
+    {
+      "id": "R151",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setGroupingsDown(new List<Reports.GroupingInfo>()); r=x.getGroupingsDown().size();",
+      "expected": "0",
+      "compile": false,
+      "group": "builders/metadata/typed-list-GroupingsDown",
+      "basis": "org"
+    },
+    {
+      "id": "R152",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setSortBy(new List<Reports.SortColumn>()); r=x.getSortBy().size();",
+      "expected": "0",
+      "compile": false,
+      "group": "builders/metadata/typed-list-SortBy",
+      "basis": "org"
+    },
+    {
+      "id": "R153",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{}',Reports.ReportResults.class); r=JSON.serialize(x.getAllData());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/empty/AllData",
+      "basis": "org"
+    },
+    {
+      "id": "R154",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{}',Reports.ReportResults.class); r=JSON.serialize(x.getHasDetailRows());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/empty/HasDetailRows",
+      "basis": "org"
+    },
+    {
+      "id": "R155",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{}',Reports.ReportResults.class); r=JSON.serialize(x.getFactMap());",
+      "expected": "{}",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/empty/FactMap",
+      "basis": "org"
+    },
+    {
+      "id": "R156",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{}',Reports.ReportResults.class); r=JSON.serialize(x.getReportMetadata());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/empty/ReportMetadata",
+      "basis": "org"
+    },
+    {
+      "id": "R157",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{}',Reports.ReportResults.class); r=JSON.serialize(x.getReportExtendedMetadata());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/empty/ReportExtendedMetadata",
+      "basis": "org"
+    },
+    {
+      "id": "R158",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{}',Reports.ReportResults.class); r=JSON.serialize(x.getGroupingsDown());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/empty/GroupingsDown",
+      "basis": "org"
+    },
+    {
+      "id": "R159",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{}',Reports.ReportResults.class); r=JSON.serialize(x.getGroupingsAcross());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/empty/GroupingsAcross",
+      "basis": "org"
+    },
+    {
+      "id": "R160",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{\"allData\":true,\"hasDetailRows\":false,\"factMap\":{},\"reportMetadata\":{\"name\":\"A45\"}}',Reports.ReportResults.class); r=JSON.serialize(x.getAllData());",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/populated/AllData",
+      "basis": "org"
+    },
+    {
+      "id": "R161",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{\"allData\":true,\"hasDetailRows\":false,\"factMap\":{},\"reportMetadata\":{\"name\":\"A45\"}}',Reports.ReportResults.class); r=JSON.serialize(x.getHasDetailRows());",
+      "expected": "false",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/populated/HasDetailRows",
+      "basis": "org"
+    },
+    {
+      "id": "R162",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{\"allData\":true,\"hasDetailRows\":false,\"factMap\":{},\"reportMetadata\":{\"name\":\"A45\"}}',Reports.ReportResults.class); r=JSON.serialize(x.getFactMap());",
+      "expected": "{}",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/populated/FactMap",
+      "basis": "org"
+    },
+    {
+      "id": "R163",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{\"allData\":true,\"hasDetailRows\":false,\"factMap\":{},\"reportMetadata\":{\"name\":\"A45\"}}',Reports.ReportResults.class); r=JSON.serialize(x.getReportMetadata());",
+      "expected": "{\"topRows\":null,\"standardFilters\":null,\"standardDateFilter\":null,\"sortBy\":null,\"showSubtotals\":null,\"showGrandTotal\":null,\"scope\":null,\"reportType\":null,\"reportFormat\":null,\"reportFilters\":null,\"reportBooleanFilter\":null,\"name\":\"A45\",\"id\":null,\"historicalSnapshotDates\":null,\"hasRecordCount\":null,\"hasDetailRows\":null,\"groupingsDown\":null,\"groupingsAcross\":null,\"division\":null,\"developerName\":null,\"detailColumns\":null,\"description\":null,\"customSummaryFormula\":null,\"currencyCode\":null,\"crossFilters\":null,\"buckets\":null,\"aggregates\":null}",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/populated/ReportMetadata",
+      "basis": "org"
+    },
+    {
+      "id": "R164",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{\"allData\":true,\"hasDetailRows\":false,\"factMap\":{},\"reportMetadata\":{\"name\":\"A45\"}}',Reports.ReportResults.class); r=JSON.serialize(x.getReportExtendedMetadata());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/populated/ReportExtendedMetadata",
+      "basis": "org"
+    },
+    {
+      "id": "R165",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{\"allData\":true,\"hasDetailRows\":false,\"factMap\":{},\"reportMetadata\":{\"name\":\"A45\"}}',Reports.ReportResults.class); r=JSON.serialize(x.getGroupingsDown());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/populated/GroupingsDown",
+      "basis": "org"
+    },
+    {
+      "id": "R166",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{\"allData\":true,\"hasDetailRows\":false,\"factMap\":{},\"reportMetadata\":{\"name\":\"A45\"}}',Reports.ReportResults.class); r=JSON.serialize(x.getGroupingsAcross());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/populated/GroupingsAcross",
+      "basis": "org"
+    },
+    {
+      "id": "R167",
+      "code": "Reports.ReportResults x=null; r=x.getAllData();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/null-receiver",
+      "basis": "org"
+    },
+    {
+      "id": "R168",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('null',Reports.ReportResults.class); r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/ReportResults/null-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R169",
+      "code": "Reports.ReportDescribeResult x=(Reports.ReportDescribeResult)JSON.deserialize('{}',Reports.ReportDescribeResult.class); r=JSON.serialize(x.getReportMetadata());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportDescribeResult/empty/ReportMetadata",
+      "basis": "org"
+    },
+    {
+      "id": "R170",
+      "code": "Reports.ReportDescribeResult x=(Reports.ReportDescribeResult)JSON.deserialize('{}',Reports.ReportDescribeResult.class); r=JSON.serialize(x.getReportExtendedMetadata());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportDescribeResult/empty/ReportExtendedMetadata",
+      "basis": "org"
+    },
+    {
+      "id": "R171",
+      "code": "Reports.ReportDescribeResult x=(Reports.ReportDescribeResult)JSON.deserialize('{}',Reports.ReportDescribeResult.class); r=JSON.serialize(x.getReportTypeMetadata());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportDescribeResult/empty/ReportTypeMetadata",
+      "basis": "org"
+    },
+    {
+      "id": "R172",
+      "code": "Reports.ReportDescribeResult x=(Reports.ReportDescribeResult)JSON.deserialize('{\"reportMetadata\":{\"name\":\"A45\"},\"reportExtendedMetadata\":{},\"reportTypeMetadata\":{}}',Reports.ReportDescribeResult.class); r=JSON.serialize(x.getReportMetadata());",
+      "expected": "{\"topRows\":null,\"standardFilters\":null,\"standardDateFilter\":null,\"sortBy\":null,\"showSubtotals\":null,\"showGrandTotal\":null,\"scope\":null,\"reportType\":null,\"reportFormat\":null,\"reportFilters\":null,\"reportBooleanFilter\":null,\"name\":\"A45\",\"id\":null,\"historicalSnapshotDates\":null,\"hasRecordCount\":null,\"hasDetailRows\":null,\"groupingsDown\":null,\"groupingsAcross\":null,\"division\":null,\"developerName\":null,\"detailColumns\":null,\"description\":null,\"customSummaryFormula\":null,\"currencyCode\":null,\"crossFilters\":null,\"buckets\":null,\"aggregates\":null}",
+      "compile": false,
+      "group": "admitted-dto/ReportDescribeResult/populated/ReportMetadata",
+      "basis": "org"
+    },
+    {
+      "id": "R173",
+      "code": "Reports.ReportDescribeResult x=(Reports.ReportDescribeResult)JSON.deserialize('{\"reportMetadata\":{\"name\":\"A45\"},\"reportExtendedMetadata\":{},\"reportTypeMetadata\":{}}',Reports.ReportDescribeResult.class); r=JSON.serialize(x.getReportExtendedMetadata());",
+      "expected": "{\"groupingColumnInfo\":null,\"detailColumnInfo\":null,\"aggregateColumnInfo\":null}",
+      "compile": false,
+      "group": "admitted-dto/ReportDescribeResult/populated/ReportExtendedMetadata",
+      "basis": "org"
+    },
+    {
+      "id": "R174",
+      "code": "Reports.ReportDescribeResult x=(Reports.ReportDescribeResult)JSON.deserialize('{\"reportMetadata\":{\"name\":\"A45\"},\"reportExtendedMetadata\":{},\"reportTypeMetadata\":{}}',Reports.ReportDescribeResult.class); r=JSON.serialize(x.getReportTypeMetadata());",
+      "expected": "{\"standardFilterInfos\":null,\"standardDateFilterDurationGroups\":null,\"scopeInfo\":null,\"divisionInfo\":null,\"categories\":null}",
+      "compile": false,
+      "group": "admitted-dto/ReportDescribeResult/populated/ReportTypeMetadata",
+      "basis": "org"
+    },
+    {
+      "id": "R175",
+      "code": "Reports.ReportDescribeResult x=null; r=x.getReportMetadata();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "admitted-dto/ReportDescribeResult/null-receiver",
+      "basis": "org"
+    },
+    {
+      "id": "R176",
+      "code": "Reports.ReportDescribeResult x=(Reports.ReportDescribeResult)JSON.deserialize('null',Reports.ReportDescribeResult.class); r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/ReportDescribeResult/null-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R177",
+      "code": "Reports.ReportExtendedMetadata x=(Reports.ReportExtendedMetadata)JSON.deserialize('{}',Reports.ReportExtendedMetadata.class); r=JSON.serialize(x.getDetailColumnInfo());",
+      "expected": "{}",
+      "compile": false,
+      "group": "admitted-dto/ReportExtendedMetadata/empty/DetailColumnInfo",
+      "basis": "org"
+    },
+    {
+      "id": "R178",
+      "code": "Reports.ReportExtendedMetadata x=(Reports.ReportExtendedMetadata)JSON.deserialize('{}',Reports.ReportExtendedMetadata.class); r=JSON.serialize(x.getAggregateColumnInfo());",
+      "expected": "{}",
+      "compile": false,
+      "group": "admitted-dto/ReportExtendedMetadata/empty/AggregateColumnInfo",
+      "basis": "org"
+    },
+    {
+      "id": "R179",
+      "code": "Reports.ReportExtendedMetadata x=(Reports.ReportExtendedMetadata)JSON.deserialize('{}',Reports.ReportExtendedMetadata.class); r=JSON.serialize(x.getGroupingColumnInfo());",
+      "expected": "{}",
+      "compile": false,
+      "group": "admitted-dto/ReportExtendedMetadata/empty/GroupingColumnInfo",
+      "basis": "org"
+    },
+    {
+      "id": "R180",
+      "code": "Reports.ReportExtendedMetadata x=(Reports.ReportExtendedMetadata)JSON.deserialize('{\"detailColumnInfo\":{},\"aggregateColumnInfo\":{},\"groupingColumnInfo\":{}}',Reports.ReportExtendedMetadata.class); r=JSON.serialize(x.getDetailColumnInfo());",
+      "expected": "{}",
+      "compile": false,
+      "group": "admitted-dto/ReportExtendedMetadata/populated/DetailColumnInfo",
+      "basis": "org"
+    },
+    {
+      "id": "R181",
+      "code": "Reports.ReportExtendedMetadata x=(Reports.ReportExtendedMetadata)JSON.deserialize('{\"detailColumnInfo\":{},\"aggregateColumnInfo\":{},\"groupingColumnInfo\":{}}',Reports.ReportExtendedMetadata.class); r=JSON.serialize(x.getAggregateColumnInfo());",
+      "expected": "{}",
+      "compile": false,
+      "group": "admitted-dto/ReportExtendedMetadata/populated/AggregateColumnInfo",
+      "basis": "org"
+    },
+    {
+      "id": "R182",
+      "code": "Reports.ReportExtendedMetadata x=(Reports.ReportExtendedMetadata)JSON.deserialize('{\"detailColumnInfo\":{},\"aggregateColumnInfo\":{},\"groupingColumnInfo\":{}}',Reports.ReportExtendedMetadata.class); r=JSON.serialize(x.getGroupingColumnInfo());",
+      "expected": "{}",
+      "compile": false,
+      "group": "admitted-dto/ReportExtendedMetadata/populated/GroupingColumnInfo",
+      "basis": "org"
+    },
+    {
+      "id": "R183",
+      "code": "Reports.ReportExtendedMetadata x=null; r=x.getDetailColumnInfo();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "admitted-dto/ReportExtendedMetadata/null-receiver",
+      "basis": "org"
+    },
+    {
+      "id": "R184",
+      "code": "Reports.ReportExtendedMetadata x=(Reports.ReportExtendedMetadata)JSON.deserialize('null',Reports.ReportExtendedMetadata.class); r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/ReportExtendedMetadata/null-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R185",
+      "code": "Reports.ReportFactWithDetails x=(Reports.ReportFactWithDetails)JSON.deserialize('{}',Reports.ReportFactWithDetails.class); r=JSON.serialize(x.getKey());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithDetails/empty/Key",
+      "basis": "org"
+    },
+    {
+      "id": "R186",
+      "code": "Reports.ReportFactWithDetails x=(Reports.ReportFactWithDetails)JSON.deserialize('{}',Reports.ReportFactWithDetails.class); r=JSON.serialize(x.getAggregates());",
+      "expected": "[]",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithDetails/empty/Aggregates",
+      "basis": "org"
+    },
+    {
+      "id": "R187",
+      "code": "Reports.ReportFactWithDetails x=(Reports.ReportFactWithDetails)JSON.deserialize('{}',Reports.ReportFactWithDetails.class); r=JSON.serialize(x.getRows());",
+      "expected": "[]",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithDetails/empty/Rows",
+      "basis": "org"
+    },
+    {
+      "id": "R188",
+      "code": "Reports.ReportFactWithDetails x=(Reports.ReportFactWithDetails)JSON.deserialize('{\"key\":\"T!T\",\"aggregates\":[],\"rows\":[]}',Reports.ReportFactWithDetails.class); r=JSON.serialize(x.getKey());",
+      "expected": "\"T!T\"",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithDetails/populated/Key",
+      "basis": "org"
+    },
+    {
+      "id": "R189",
+      "code": "Reports.ReportFactWithDetails x=(Reports.ReportFactWithDetails)JSON.deserialize('{\"key\":\"T!T\",\"aggregates\":[],\"rows\":[]}',Reports.ReportFactWithDetails.class); r=JSON.serialize(x.getAggregates());",
+      "expected": "[]",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithDetails/populated/Aggregates",
+      "basis": "org"
+    },
+    {
+      "id": "R190",
+      "code": "Reports.ReportFactWithDetails x=(Reports.ReportFactWithDetails)JSON.deserialize('{\"key\":\"T!T\",\"aggregates\":[],\"rows\":[]}',Reports.ReportFactWithDetails.class); r=JSON.serialize(x.getRows());",
+      "expected": "[]",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithDetails/populated/Rows",
+      "basis": "org"
+    },
+    {
+      "id": "R191",
+      "code": "Reports.ReportFactWithDetails x=null; r=x.getKey();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithDetails/null-receiver",
+      "basis": "org"
+    },
+    {
+      "id": "R192",
+      "code": "Reports.ReportFactWithDetails x=(Reports.ReportFactWithDetails)JSON.deserialize('null',Reports.ReportFactWithDetails.class); r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithDetails/null-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R193",
+      "code": "Reports.ReportFactWithSummaries x=(Reports.ReportFactWithSummaries)JSON.deserialize('{}',Reports.ReportFactWithSummaries.class); r=JSON.serialize(x.getKey());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithSummaries/empty/Key",
+      "basis": "org"
+    },
+    {
+      "id": "R194",
+      "code": "Reports.ReportFactWithSummaries x=(Reports.ReportFactWithSummaries)JSON.deserialize('{}',Reports.ReportFactWithSummaries.class); r=JSON.serialize(x.getAggregates());",
+      "expected": "[]",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithSummaries/empty/Aggregates",
+      "basis": "org"
+    },
+    {
+      "id": "R195",
+      "code": "Reports.ReportFactWithSummaries x=(Reports.ReportFactWithSummaries)JSON.deserialize('{\"key\":\"T!T\",\"aggregates\":[]}',Reports.ReportFactWithSummaries.class); r=JSON.serialize(x.getKey());",
+      "expected": "\"T!T\"",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithSummaries/populated/Key",
+      "basis": "org"
+    },
+    {
+      "id": "R196",
+      "code": "Reports.ReportFactWithSummaries x=(Reports.ReportFactWithSummaries)JSON.deserialize('{\"key\":\"T!T\",\"aggregates\":[]}',Reports.ReportFactWithSummaries.class); r=JSON.serialize(x.getAggregates());",
+      "expected": "[]",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithSummaries/populated/Aggregates",
+      "basis": "org"
+    },
+    {
+      "id": "R197",
+      "code": "Reports.ReportFactWithSummaries x=null; r=x.getKey();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithSummaries/null-receiver",
+      "basis": "org"
+    },
+    {
+      "id": "R198",
+      "code": "Reports.ReportFactWithSummaries x=(Reports.ReportFactWithSummaries)JSON.deserialize('null',Reports.ReportFactWithSummaries.class); r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/ReportFactWithSummaries/null-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R199",
+      "code": "Reports.SummaryValue x=(Reports.SummaryValue)JSON.deserialize('{}',Reports.SummaryValue.class); r=JSON.serialize(x.getLabel());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/SummaryValue/empty/Label",
+      "basis": "org"
+    },
+    {
+      "id": "R200",
+      "code": "Reports.SummaryValue x=(Reports.SummaryValue)JSON.deserialize('{}',Reports.SummaryValue.class); r=JSON.serialize(x.getValue());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/SummaryValue/empty/Value",
+      "basis": "org"
+    },
+    {
+      "id": "R201",
+      "code": "Reports.SummaryValue x=(Reports.SummaryValue)JSON.deserialize('{\"label\":\"A45 sum\",\"value\":12.5}',Reports.SummaryValue.class); r=JSON.serialize(x.getLabel());",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "admitted-dto/SummaryValue/populated/Label",
+      "basis": "org"
+    },
+    {
+      "id": "R202",
+      "code": "Reports.SummaryValue x=(Reports.SummaryValue)JSON.deserialize('{\"label\":\"A45 sum\",\"value\":12.5}',Reports.SummaryValue.class); r=JSON.serialize(x.getValue());",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "admitted-dto/SummaryValue/populated/Value",
+      "basis": "org"
+    },
+    {
+      "id": "R203",
+      "code": "Reports.SummaryValue x=null; r=x.getLabel();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "admitted-dto/SummaryValue/null-receiver",
+      "basis": "org"
+    },
+    {
+      "id": "R204",
+      "code": "Reports.SummaryValue x=(Reports.SummaryValue)JSON.deserialize('null',Reports.SummaryValue.class); r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/SummaryValue/null-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R205",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{}',Reports.DetailColumn.class); r=JSON.serialize(x.getName());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/DetailColumn/empty/Name",
+      "basis": "org"
+    },
+    {
+      "id": "R206",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{}',Reports.DetailColumn.class); r=JSON.serialize(x.getLabel());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/DetailColumn/empty/Label",
+      "basis": "org"
+    },
+    {
+      "id": "R207",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{}',Reports.DetailColumn.class); r=JSON.serialize(x.getDataType());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/DetailColumn/empty/DataType",
+      "basis": "org"
+    },
+    {
+      "id": "R208",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"name\":\"ACCOUNT_NAME\",\"label\":\"Account\",\"dataType\":\"string\"}',Reports.DetailColumn.class); r=JSON.serialize(x.getName());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:41]",
+      "compile": false,
+      "group": "admitted-dto/DetailColumn/populated/Name",
+      "basis": "org"
+    },
+    {
+      "id": "R209",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"name\":\"ACCOUNT_NAME\",\"label\":\"Account\",\"dataType\":\"string\"}',Reports.DetailColumn.class); r=JSON.serialize(x.getLabel());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:41]",
+      "compile": false,
+      "group": "admitted-dto/DetailColumn/populated/Label",
+      "basis": "org"
+    },
+    {
+      "id": "R210",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"name\":\"ACCOUNT_NAME\",\"label\":\"Account\",\"dataType\":\"string\"}',Reports.DetailColumn.class); r=JSON.serialize(x.getDataType());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:41]",
+      "compile": false,
+      "group": "admitted-dto/DetailColumn/populated/DataType",
+      "basis": "org"
+    },
+    {
+      "id": "R211",
+      "code": "Reports.DetailColumn x=null; r=x.getName();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "admitted-dto/DetailColumn/null-receiver",
+      "basis": "org"
+    },
+    {
+      "id": "R212",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('null',Reports.DetailColumn.class); r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/DetailColumn/null-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R213",
+      "code": "Reports.GroupingColumn x=(Reports.GroupingColumn)JSON.deserialize('{}',Reports.GroupingColumn.class); r=JSON.serialize(x.getName());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/GroupingColumn/empty/Name",
+      "basis": "org"
+    },
+    {
+      "id": "R214",
+      "code": "Reports.GroupingColumn x=(Reports.GroupingColumn)JSON.deserialize('{}',Reports.GroupingColumn.class); r=JSON.serialize(x.getLabel());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/GroupingColumn/empty/Label",
+      "basis": "org"
+    },
+    {
+      "id": "R215",
+      "code": "Reports.GroupingColumn x=(Reports.GroupingColumn)JSON.deserialize('{}',Reports.GroupingColumn.class); r=JSON.serialize(x.getGroupingLevel());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/GroupingColumn/empty/GroupingLevel",
+      "basis": "org"
+    },
+    {
+      "id": "R216",
+      "code": "Reports.GroupingColumn x=(Reports.GroupingColumn)JSON.deserialize('{}',Reports.GroupingColumn.class); r=JSON.serialize(x.getDataType());",
+      "expected": "null",
+      "compile": false,
+      "group": "admitted-dto/GroupingColumn/empty/DataType",
+      "basis": "org"
+    },
+    {
+      "id": "R217",
+      "code": "Reports.GroupingColumn x=(Reports.GroupingColumn)JSON.deserialize('{\"name\":\"ACCOUNT_TYPE\",\"label\":\"Type\",\"groupingLevel\":0,\"dataType\":\"picklist\"}',Reports.GroupingColumn.class); r=JSON.serialize(x.getName());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value picklist at [line:1, column:56]",
+      "compile": false,
+      "group": "admitted-dto/GroupingColumn/populated/Name",
+      "basis": "org"
+    },
+    {
+      "id": "R218",
+      "code": "Reports.GroupingColumn x=(Reports.GroupingColumn)JSON.deserialize('{\"name\":\"ACCOUNT_TYPE\",\"label\":\"Type\",\"groupingLevel\":0,\"dataType\":\"picklist\"}',Reports.GroupingColumn.class); r=JSON.serialize(x.getLabel());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value picklist at [line:1, column:56]",
+      "compile": false,
+      "group": "admitted-dto/GroupingColumn/populated/Label",
+      "basis": "org"
+    },
+    {
+      "id": "R219",
+      "code": "Reports.GroupingColumn x=(Reports.GroupingColumn)JSON.deserialize('{\"name\":\"ACCOUNT_TYPE\",\"label\":\"Type\",\"groupingLevel\":0,\"dataType\":\"picklist\"}',Reports.GroupingColumn.class); r=JSON.serialize(x.getGroupingLevel());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value picklist at [line:1, column:56]",
+      "compile": false,
+      "group": "admitted-dto/GroupingColumn/populated/GroupingLevel",
+      "basis": "org"
+    },
+    {
+      "id": "R220",
+      "code": "Reports.GroupingColumn x=(Reports.GroupingColumn)JSON.deserialize('{\"name\":\"ACCOUNT_TYPE\",\"label\":\"Type\",\"groupingLevel\":0,\"dataType\":\"picklist\"}',Reports.GroupingColumn.class); r=JSON.serialize(x.getDataType());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value picklist at [line:1, column:56]",
+      "compile": false,
+      "group": "admitted-dto/GroupingColumn/populated/DataType",
+      "basis": "org"
+    },
+    {
+      "id": "R221",
+      "code": "Reports.GroupingColumn x=null; r=x.getName();",
+      "expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "compile": false,
+      "group": "admitted-dto/GroupingColumn/null-receiver",
+      "basis": "org"
+    },
+    {
+      "id": "R222",
+      "code": "Reports.GroupingColumn x=(Reports.GroupingColumn)JSON.deserialize('null',Reports.GroupingColumn.class); r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/GroupingColumn/null-conversion",
+      "basis": "org"
+    },
+    {
+      "id": "R223",
+      "code": "r=Reports.ReportManager.describeReport((Id)null)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/describe/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R224",
+      "code": "r=Reports.ReportManager.describeReport(Id.valueOf('001000000000001'))==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/describe/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R225",
+      "code": "r=Reports.ReportManager.runReport((Id)null)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/run-default/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R226",
+      "code": "r=Reports.ReportManager.runReport(Id.valueOf('001000000000001'))==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/run-default/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R227",
+      "code": "r=Reports.ReportManager.runReport((Id)null,true)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/run-details/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R228",
+      "code": "r=Reports.ReportManager.runReport(Id.valueOf('001000000000001'),true)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/run-details/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R229",
+      "code": "r=Reports.ReportManager.runReport((Id)null,(Reports.ReportMetadata)null)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/run-metadata/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R230",
+      "code": "r=Reports.ReportManager.runReport(Id.valueOf('001000000000001'),(Reports.ReportMetadata)null)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/run-metadata/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R231",
+      "code": "r=Reports.ReportManager.runReport((Id)null,(Reports.ReportMetadata)null,false)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/run-metadata-details/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R232",
+      "code": "r=Reports.ReportManager.runReport(Id.valueOf('001000000000001'),(Reports.ReportMetadata)null,false)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/run-metadata-details/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R233",
+      "code": "r=Reports.ReportManager.runAsyncReport((Id)null)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/async-default/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R234",
+      "code": "r=Reports.ReportManager.runAsyncReport(Id.valueOf('001000000000001'))==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/async-default/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R235",
+      "code": "r=Reports.ReportManager.runAsyncReport((Id)null,false)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/async-details/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R236",
+      "code": "r=Reports.ReportManager.runAsyncReport(Id.valueOf('001000000000001'),false)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/async-details/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R237",
+      "code": "r=Reports.ReportManager.runAsyncReport((Id)null,(Reports.ReportMetadata)null)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/async-metadata/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R238",
+      "code": "r=Reports.ReportManager.runAsyncReport(Id.valueOf('001000000000001'),(Reports.ReportMetadata)null)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/async-metadata/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R239",
+      "code": "r=Reports.ReportManager.runAsyncReport((Id)null,(Reports.ReportMetadata)null,true)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/async-metadata-details/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R240",
+      "code": "r=Reports.ReportManager.runAsyncReport(Id.valueOf('001000000000001'),(Reports.ReportMetadata)null,true)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/async-metadata-details/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R241",
+      "code": "r=Reports.ReportManager.getReportInstance((Id)null)==null;",
+      "expected": "EXC|reports.ReportRunException|We ran into an error when running this report. Try to re-submit your query.",
+      "compile": false,
+      "group": "boundary-errors/reports/instance/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R242",
+      "code": "r=Reports.ReportManager.getReportInstance(Id.valueOf('001000000000001'))==null;",
+      "expected": "EXC|System.NoDataFoundException|The instance you requested does not exist.",
+      "compile": false,
+      "group": "boundary-errors/reports/instance/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R243",
+      "code": "r=Reports.ReportManager.getReportInstances((Id)null)==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/instances/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "R244",
+      "code": "r=Reports.ReportManager.getReportInstances(Id.valueOf('001000000000001'))==null;",
+      "expected": "EXC|System.NoDataFoundException|The data you\u2019re trying to access is unavailable.",
+      "compile": false,
+      "group": "boundary-errors/reports/instances/invalid-input",
+      "basis": "org"
+    },
+    {
+      "id": "C001",
+      "code": "if(false){Reports.ReportResults x; Map<String,Reports.ReportFact> m=x.getFactMap(); Reports.ReportFact f=m.get('T!T'); String k=f.getKey(); List<Reports.SummaryValue> a=f.getAggregates();} pq.out('C001','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "admitted-dto/fact-map/typed-getters",
+      "basis": "org"
+    },
+    {
+      "id": "C002",
+      "code": "if(false){Reports.ReportResults x; Reports.ReportFactWithDetails f=(Reports.ReportFactWithDetails)x.getFactMap().get('T!T'); List<Reports.ReportDetailRow> rows=f.getRows();} pq.out('C002','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "admitted-dto/fact-map/details-cast",
+      "basis": "org"
+    },
+    {
+      "id": "C003",
+      "code": "if(false){Reports.ReportResults x; Reports.ReportFactWithSummaries f=(Reports.ReportFactWithSummaries)x.getFactMap().get('T!T'); List<Reports.SummaryValue> a=f.getAggregates();} pq.out('C003','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "admitted-dto/fact-map/summaries-cast",
+      "basis": "org"
+    },
+    {
+      "id": "C004",
+      "code": "if(false){Reports.ReportDescribeResult x=Reports.ReportManager.describeReport((Id)null);} pq.out('C004','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "boundary-errors/reports/describe/type-shape",
+      "basis": "org"
+    },
+    {
+      "id": "C005",
+      "code": "if(false){Reports.ReportResults x=Reports.ReportManager.runReport((Id)null);} pq.out('C005','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "boundary-errors/reports/run-default/type-shape",
+      "basis": "org"
+    },
+    {
+      "id": "C006",
+      "code": "if(false){Reports.ReportResults x=Reports.ReportManager.runReport((Id)null,true);} pq.out('C006','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "boundary-errors/reports/run-details/type-shape",
+      "basis": "org"
+    },
+    {
+      "id": "C007",
+      "code": "if(false){Reports.ReportResults x=Reports.ReportManager.runReport((Id)null,(Reports.ReportMetadata)null);} pq.out('C007','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "boundary-errors/reports/run-metadata/type-shape",
+      "basis": "org"
+    },
+    {
+      "id": "C008",
+      "code": "if(false){Reports.ReportResults x=Reports.ReportManager.runReport((Id)null,(Reports.ReportMetadata)null,false);} pq.out('C008','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "boundary-errors/reports/run-metadata-details/type-shape",
+      "basis": "org"
+    },
+    {
+      "id": "C009",
+      "code": "if(false){Reports.ReportInstance x=Reports.ReportManager.runAsyncReport((Id)null);} pq.out('C009','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "boundary-errors/reports/async-default/type-shape",
+      "basis": "org"
+    },
+    {
+      "id": "C010",
+      "code": "if(false){Reports.ReportInstance x=Reports.ReportManager.runAsyncReport((Id)null,false);} pq.out('C010','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "boundary-errors/reports/async-details/type-shape",
+      "basis": "org"
+    },
+    {
+      "id": "C011",
+      "code": "if(false){Reports.ReportInstance x=Reports.ReportManager.runAsyncReport((Id)null,(Reports.ReportMetadata)null);} pq.out('C011','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "boundary-errors/reports/async-metadata/type-shape",
+      "basis": "org"
+    },
+    {
+      "id": "C012",
+      "code": "if(false){Reports.ReportInstance x=Reports.ReportManager.runAsyncReport((Id)null,(Reports.ReportMetadata)null,true);} pq.out('C012','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "boundary-errors/reports/async-metadata-details/type-shape",
+      "basis": "org"
+    },
+    {
+      "id": "C013",
+      "code": "if(false){Reports.ReportInstance x=Reports.ReportManager.getReportInstance((Id)null);} pq.out('C013','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "boundary-errors/reports/instance/type-shape",
+      "basis": "org"
+    },
+    {
+      "id": "C014",
+      "code": "if(false){List<Reports.ReportInstance> x=Reports.ReportManager.getReportInstances((Id)null);} pq.out('C014','typed');",
+      "expected": "typed",
+      "compile": true,
+      "group": "boundary-errors/reports/instances/type-shape",
+      "basis": "org"
+    },
+    {
+      "id": "C015",
+      "code": "if(false){Wave.ProjectionNode p=Wave.QueryBuilder.get('Name');} pq.out('C015','typed');",
+      "expected": "COMPILE_ERROR\tline 95: Type is not visible: ConnectApi.Wave",
+      "compile": true,
+      "group": "boundary-errors/wave/type-shape-1",
+      "basis": "org",
+      "owner": "ConnectApi (excluded; hosted boundary scope)",
+      "carry": "native Wave SDK compile depends on invisible ConnectApi.Wave; local Wave execution uses an explicit hosted-service boundary"
+    },
+    {
+      "id": "C016",
+      "code": "if(false){Wave.ProjectionNode p=Wave.QueryBuilder.count().alias('c');} pq.out('C016','typed');",
+      "expected": "COMPILE_ERROR\tline 95: Type is not visible: ConnectApi.Wave",
+      "compile": true,
+      "group": "boundary-errors/wave/type-shape-2",
+      "basis": "org",
+      "owner": "ConnectApi (excluded; hosted boundary scope)",
+      "carry": "native Wave SDK compile depends on invisible ConnectApi.Wave; local Wave execution uses an explicit hosted-service boundary"
+    },
+    {
+      "id": "C017",
+      "code": "if(false){Wave.ProjectionNode p=Wave.QueryBuilder.get('Revenue').sum().alias('s');} pq.out('C017','typed');",
+      "expected": "COMPILE_ERROR\tline 95: Type is not visible: ConnectApi.Wave",
+      "compile": true,
+      "group": "boundary-errors/wave/type-shape-3",
+      "basis": "org",
+      "owner": "ConnectApi (excluded; hosted boundary scope)",
+      "carry": "native Wave SDK compile depends on invisible ConnectApi.Wave; local Wave execution uses an explicit hosted-service boundary"
+    },
+    {
+      "id": "C018",
+      "code": "if(false){Wave.ProjectionNode p=Wave.QueryBuilder.get('Revenue').avg().alias('a');} pq.out('C018','typed');",
+      "expected": "COMPILE_ERROR\tline 95: Type is not visible: ConnectApi.Wave",
+      "compile": true,
+      "group": "boundary-errors/wave/type-shape-4",
+      "basis": "org",
+      "owner": "ConnectApi (excluded; hosted boundary scope)",
+      "carry": "native Wave SDK compile depends on invisible ConnectApi.Wave; local Wave execution uses an explicit hosted-service boundary"
+    },
+    {
+      "id": "C019",
+      "code": "if(false){Wave.QueryNode q=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion');} pq.out('C019','typed');",
+      "expected": "COMPILE_ERROR\tline 95: Type is not visible: ConnectApi.Wave",
+      "compile": true,
+      "group": "boundary-errors/wave/type-shape-5",
+      "basis": "org",
+      "owner": "ConnectApi (excluded; hosted boundary scope)",
+      "carry": "native Wave SDK compile depends on invisible ConnectApi.Wave; local Wave execution uses an explicit hosted-service boundary"
+    },
+    {
+      "id": "C020",
+      "code": "if(false){Wave.QueryNode q=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion').group(new List<String>{'Name'});} pq.out('C020','typed');",
+      "expected": "COMPILE_ERROR\tline 95: Type is not visible: ConnectApi.Wave",
+      "compile": true,
+      "group": "boundary-errors/wave/type-shape-6",
+      "basis": "org",
+      "owner": "ConnectApi (excluded; hosted boundary scope)",
+      "carry": "native Wave SDK compile depends on invisible ConnectApi.Wave; local Wave execution uses an explicit hosted-service boundary"
+    },
+    {
+      "id": "C021",
+      "code": "if(false){Wave.QueryNode q=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion').foreach(new List<Wave.ProjectionNode>{Wave.QueryBuilder.count().alias('c')}); String s=q.cap(0).build('q');} pq.out('C021','typed');",
+      "expected": "COMPILE_ERROR\tline 95: Type is not visible: ConnectApi.Wave",
+      "compile": true,
+      "group": "boundary-errors/wave/type-shape-7",
+      "basis": "org",
+      "owner": "ConnectApi (excluded; hosted boundary scope)",
+      "carry": "native Wave SDK compile depends on invisible ConnectApi.Wave; local Wave execution uses an explicit hosted-service boundary"
+    },
+    {
+      "id": "C022",
+      "code": "if(false){Wave.QueryNode q=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion'); Object o=q.execute('q');} pq.out('C022','typed');",
+      "expected": "COMPILE_ERROR\tline 95: Type is not visible: ConnectApi.Wave",
+      "compile": true,
+      "group": "boundary-errors/wave/type-shape-8",
+      "basis": "org",
+      "owner": "ConnectApi (excluded; hosted boundary scope)",
+      "carry": "native Wave SDK compile depends on invisible ConnectApi.Wave; local Wave execution uses an explicit hosted-service boundary"
+    },
+    {
+      "id": "C023",
+      "code": "try{Object r; r=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion').group().foreach(new List<Wave.ProjectionNode>{Wave.QueryBuilder.count().alias('c')}).execute('q')==null; pq.out('C023',r);}catch(Exception e){pq.err('C023',e);}",
+      "expected": "COMPILE_ERROR\tline 95: Type is not visible: ConnectApi.Wave",
+      "compile": true,
+      "group": "boundary-errors/wave/invalid-execution",
+      "basis": "org",
+      "owner": "ConnectApi (excluded; hosted boundary scope)",
+      "carry": "native Wave SDK compile depends on invisible ConnectApi.Wave; local Wave execution uses an explicit hosted-service boundary"
+    },
+    {
+      "id": "C024",
+      "code": "try{Object r; r=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion').group().foreach(new List<Wave.ProjectionNode>{Wave.QueryBuilder.count().alias('c')}).execute('')==null; pq.out('C024',r);}catch(Exception e){pq.err('C024',e);}",
+      "expected": "COMPILE_ERROR\tline 95: Type is not visible: ConnectApi.Wave",
+      "compile": true,
+      "group": "boundary-errors/wave/invalid-execution",
+      "basis": "org",
+      "owner": "ConnectApi (excluded; hosted boundary scope)",
+      "carry": "native Wave SDK compile depends on invisible ConnectApi.Wave; local Wave execution uses an explicit hosted-service boundary"
+    },
+    {
+      "id": "C025",
+      "code": "try{Object r; r=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion').group().foreach(new List<Wave.ProjectionNode>{Wave.QueryBuilder.count().alias('c')}).execute(null)==null; pq.out('C025',r);}catch(Exception e){pq.err('C025',e);}",
+      "expected": "COMPILE_ERROR\tline 95: Type is not visible: ConnectApi.Wave",
+      "compile": true,
+      "group": "boundary-errors/wave/invalid-execution",
+      "basis": "org",
+      "owner": "ConnectApi (excluded; hosted boundary scope)",
+      "carry": "native Wave SDK compile depends on invisible ConnectApi.Wave; local Wave execution uses an explicit hosted-service boundary"
+    },
+    {
+      "id": "C026",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter('A45');",
+      "expected": "COMPILE_ERROR\tline 6: Constructor not defined: [reports.ReportFilter].<Constructor>(String)",
+      "compile": true,
+      "group": "compile-error/builders/filter/wrong-arity",
+      "basis": "org",
+      "owner": "classes and lifecycle",
+      "carry": "constructorDiagnostic/checkIRConstructorCall in active A04-owned body_calls.go/body_ir.go rejects the captured constructor but formats its diagnostic differently"
+    },
+    {
+      "id": "C027",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setColumn(1);",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setColumn(Integer) from the type reports.ReportFilter",
+      "compile": true,
+      "group": "compile-error/builders/filter/wrong-type",
+      "basis": "org"
+    },
+    {
+      "id": "C028",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setRowLimit('1');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setRowLimit(String) from the type reports.TopRows",
+      "compile": true,
+      "group": "compile-error/builders/toprows/wrong-type",
+      "basis": "org"
+    },
+    {
+      "id": "C029",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setDetailColumns(new List<Integer>{1});",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setDetailColumns(List<Integer>) from the type reports.ReportMetadata",
+      "compile": true,
+      "group": "compile-error/builders/metadata/wrong-list",
+      "basis": "org"
+    },
+    {
+      "id": "C030",
+      "code": "Reports.ReportResults x; x.setAllData(true);",
+      "expected": "COMPILE_ERROR\tline 6: Method is not visible: void reports.ReportResults.setAllData(Boolean)",
+      "compile": true,
+      "group": "compile-error/admitted-dto/results/missing-setter",
+      "basis": "org"
+    },
+    {
+      "id": "C031",
+      "code": "Reports.ReportResults x; List<Reports.ReportFact> y=x.getFactMap();",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from Map<String,reports.ReportFact> to List<reports.ReportFact>",
+      "compile": true,
+      "group": "compile-error/admitted-dto/fact-map/wrong-return",
+      "basis": "org"
+    },
+    {
+      "id": "C032",
+      "code": "Reports.SummaryValue x; x.setValue(1);",
+      "expected": "COMPILE_ERROR\tline 6: Method is not visible: void reports.SummaryValue.setValue(Object)",
+      "compile": true,
+      "group": "compile-error/admitted-dto/summary/missing-setter",
+      "basis": "org"
+    },
+    {
+      "id": "C033",
+      "code": "Reports.ReportResults x=Reports.ReportManager.runReport();",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void runReport() from the type reports.ReportManager",
+      "compile": true,
+      "group": "compile-error/boundary-errors/reports/wrong-arity",
+      "basis": "org"
+    },
+    {
+      "id": "C034",
+      "code": "Reports.ReportMetadata x=Reports.ReportManager.describeReport((Id)null);",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from reports.ReportDescribeResult to reports.ReportMetadata",
+      "compile": true,
+      "group": "compile-error/boundary-errors/reports/wrong-return",
+      "basis": "org"
+    },
+    {
+      "id": "C035",
+      "code": "Wave.QueryNode q=Wave.QueryBuilder.load();",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void load() from the type wave.QueryBuilder",
+      "compile": true,
+      "group": "compile-error/boundary-errors/wave/wrong-arity",
+      "basis": "org"
+    },
+    {
+      "id": "C036",
+      "code": "Integer x=Wave.QueryBuilder.get('Name');",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from wave.ProjectionNode to Integer",
+      "compile": true,
+      "group": "compile-error/boundary-errors/wave/wrong-return",
+      "basis": "org"
+    },
+    {
+      "id": "C037",
+      "code": "Wave.QueryNode q; q.noSuchA45Method();",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void noSuchA45Method() from the type wave.QueryNode",
+      "compile": true,
+      "group": "compile-error/boundary-errors/wave/missing-method",
+      "basis": "org"
+    }
+  ],
+  "controls": [
+    {
+      "id": "K001",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setFilterType('FIELDVALUE'); r=x.getFilterType();",
+      "expected": "fieldValue",
+      "compile": false,
+      "group": "builders/enum-case",
+      "basis": "org"
+    },
+    {
+      "id": "K002",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setFilterType('fieldvalue'); r=x.getFilterType();",
+      "expected": "fieldValue",
+      "compile": false,
+      "group": "builders/enum-case",
+      "basis": "org"
+    },
+    {
+      "id": "K003",
+      "code": "Reports.SortColumn x=new Reports.SortColumn(); x.setSortOrder('ascending'); r=x.getSortOrder();",
+      "expected": "ASCENDING",
+      "compile": false,
+      "group": "builders/enum-case",
+      "basis": "org"
+    },
+    {
+      "id": "K004",
+      "code": "Reports.GroupingInfo x=new Reports.GroupingInfo(); x.setDateGranularity('day'); r=x.getDateGranularity();",
+      "expected": "DAY",
+      "compile": false,
+      "group": "builders/enum-case",
+      "basis": "org"
+    },
+    {
+      "id": "K005",
+      "code": "Reports.TopRows x=new Reports.TopRows(); x.setDirection('descending'); r=x.getDirection();",
+      "expected": "DESCENDING",
+      "compile": false,
+      "group": "builders/enum-case",
+      "basis": "org"
+    },
+    {
+      "id": "K006",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setReportFormat('tabular'); r=x.getReportFormat();",
+      "expected": "TABULAR",
+      "compile": false,
+      "group": "builders/enum-case",
+      "basis": "org"
+    },
+    {
+      "id": "K007",
+      "code": "Reports.ReportMetadata x=new Reports.ReportMetadata(); x.setAggregates(null); r=JSON.serialize(x.getAggregates());",
+      "expected": "[]",
+      "compile": false,
+      "group": "builders/metadata/null-list",
+      "basis": "org"
+    },
+    {
+      "id": "K008",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{}',Reports.ReportResults.class); r=x.getAllData()==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/raw-null",
+      "basis": "org"
+    },
+    {
+      "id": "K009",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{}',Reports.ReportResults.class); r=x.getHasDetailRows()==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/raw-null",
+      "basis": "org"
+    },
+    {
+      "id": "K010",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{}',Reports.ReportResults.class); r=x.getReportMetadata()==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/raw-null",
+      "basis": "org"
+    },
+    {
+      "id": "K011",
+      "code": "Reports.ReportResults x=(Reports.ReportResults)JSON.deserialize('{}',Reports.ReportResults.class); r=x.getFactMap()==null;",
+      "expected": "false",
+      "compile": false,
+      "group": "admitted-dto/raw-null",
+      "basis": "org"
+    },
+    {
+      "id": "K012",
+      "code": "Reports.ReportFactWithDetails x=(Reports.ReportFactWithDetails)JSON.deserialize('{}',Reports.ReportFactWithDetails.class); r=x.getAggregates()==null;",
+      "expected": "false",
+      "compile": false,
+      "group": "admitted-dto/raw-null",
+      "basis": "org"
+    },
+    {
+      "id": "K013",
+      "code": "Reports.ReportFactWithDetails x=(Reports.ReportFactWithDetails)JSON.deserialize('{}',Reports.ReportFactWithDetails.class); r=x.getRows()==null;",
+      "expected": "false",
+      "compile": false,
+      "group": "admitted-dto/raw-null",
+      "basis": "org"
+    },
+    {
+      "id": "K014",
+      "code": "Reports.ReportExtendedMetadata x=(Reports.ReportExtendedMetadata)JSON.deserialize('{}',Reports.ReportExtendedMetadata.class); r=x.getDetailColumnInfo()==null;",
+      "expected": "false",
+      "compile": false,
+      "group": "admitted-dto/raw-null",
+      "basis": "org"
+    },
+    {
+      "id": "K015",
+      "code": "Reports.ReportFactWithDetails x=null; Reports.ReportFact b=x; r=b==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/fact-hierarchy",
+      "basis": "org"
+    },
+    {
+      "id": "K016",
+      "code": "Reports.ReportFactWithSummaries x=null; Reports.ReportFact b=x; r=b==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/fact-hierarchy",
+      "basis": "org"
+    },
+    {
+      "id": "K017",
+      "code": "Reports.ReportFact b=null; Reports.ReportFactWithDetails x=(Reports.ReportFactWithDetails)b; r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/fact-hierarchy",
+      "basis": "org"
+    },
+    {
+      "id": "K018",
+      "code": "Reports.ReportFact b=null; Reports.ReportFactWithSummaries x=(Reports.ReportFactWithSummaries)b; r=x==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "admitted-dto/fact-hierarchy",
+      "basis": "org"
+    },
+    {
+      "id": "K019",
+      "code": "Reports.ReportFactWithDetails d; Reports.ReportFactWithSummaries s=d;",
+      "expected": "COMPILE_ERROR\tline 6: Illegal assignment from reports.ReportFactWithDetails to reports.ReportFactWithSummaries",
+      "compile": true,
+      "group": "admitted-dto/fact-hierarchy",
+      "basis": "org"
+    },
+    {
+      "id": "K020",
+      "code": "Reports.ReportFactWithDetails d; Reports.ReportFactWithSummaries s=(Reports.ReportFactWithSummaries)d;",
+      "expected": "COMPILE_ERROR\tline 6: Incompatible types since an instance of reports.ReportFactWithDetails is never an instance of reports.ReportFactWithSummaries",
+      "compile": true,
+      "group": "admitted-dto/fact-hierarchy",
+      "basis": "org"
+    },
+    {
+      "id": "K021",
+      "code": "Reports.SummaryValue x=(Reports.SummaryValue)JSON.deserialize('{\"value\":null}',Reports.SummaryValue.class); r=x.getValue()==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "typed-json/object-field",
+      "basis": "org"
+    },
+    {
+      "id": "K022",
+      "code": "Reports.SummaryValue x=(Reports.SummaryValue)JSON.deserialize('{\"value\":\"a\"}',Reports.SummaryValue.class); r=x.getValue()==null;",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-field",
+      "basis": "org"
+    },
+    {
+      "id": "K023",
+      "code": "Reports.SummaryValue x=(Reports.SummaryValue)JSON.deserialize('{\"value\":{}}',Reports.SummaryValue.class); r=x.getValue()==null;",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-field",
+      "basis": "org"
+    },
+    {
+      "id": "K024",
+      "code": "Reports.SummaryValue x=(Reports.SummaryValue)JSON.deserialize('{\"value\":[]}',Reports.SummaryValue.class); r=x.getValue()==null;",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-field",
+      "basis": "org"
+    },
+    {
+      "id": "K025",
+      "code": "Reports.SummaryValue x=(Reports.SummaryValue)JSON.deserialize('{\"value\":true}',Reports.SummaryValue.class); r=x.getValue()==null;",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-field",
+      "basis": "org"
+    },
+    {
+      "id": "K026",
+      "code": "A45JSONDTO x=(A45JSONDTO)JSON.deserialize('{\"value\":1}',A45JSONDTO.class); r=x.value==null;",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/user-object-field",
+      "basis": "org"
+    },
+    {
+      "id": "K027",
+      "code": "A45JSONDTO x=(A45JSONDTO)JSON.deserialize('{\"value\":null}',A45JSONDTO.class); r=x.value==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "typed-json/user-object-field",
+      "basis": "org"
+    },
+    {
+      "id": "K028",
+      "code": "A45JSONDTO x=(A45JSONDTO)JSON.deserialize('{}',A45JSONDTO.class); r=x.value==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "typed-json/user-object-field",
+      "basis": "org"
+    },
+    {
+      "id": "K029",
+      "code": "r=JSON.serialize(JSON.deserialize('1',Object.class));",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-target",
+      "basis": "org"
+    },
+    {
+      "id": "K030",
+      "code": "r=JSON.serialize(JSON.deserialize('null',Object.class));",
+      "expected": "null",
+      "compile": false,
+      "group": "typed-json/object-target",
+      "basis": "org"
+    },
+    {
+      "id": "K031",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"a\":1}',Map<String,Object>.class));",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-target",
+      "basis": "org"
+    },
+    {
+      "id": "K032",
+      "code": "r=JSON.serialize(JSON.deserialize('[1,null]',List<Object>.class));",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-target",
+      "basis": "org"
+    },
+    {
+      "id": "K033",
+      "code": "r=JSON.serialize(JSON.deserialize('[]',List<Object>.class));",
+      "expected": "[]",
+      "compile": false,
+      "group": "typed-json/object-target",
+      "basis": "org"
+    },
+    {
+      "id": "K034",
+      "code": "r=JSON.serialize(JSON.deserialize('{}',Map<String,Object>.class));",
+      "expected": "{}",
+      "compile": false,
+      "group": "typed-json/object-target",
+      "basis": "org"
+    },
+    {
+      "id": "K035",
+      "code": "r=JSON.serialize(JSON.deserializeUntyped('[1,null]'));",
+      "expected": "[1,null]",
+      "compile": false,
+      "group": "typed-json/untyped-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K036",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"dataType\":\"STRING_DATA\"}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType());",
+      "expected": "STRING_DATA",
+      "compile": false,
+      "group": "typed-json/enum-field",
+      "basis": "org"
+    },
+    {
+      "id": "K037",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"dataType\":\"string_data\"}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType());",
+      "expected": "STRING_DATA",
+      "compile": false,
+      "group": "typed-json/enum-field",
+      "basis": "org"
+    },
+    {
+      "id": "K038",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"dataType\":null}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType());",
+      "expected": "null",
+      "compile": false,
+      "group": "typed-json/enum-field",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "K039",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"dataType\":1}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value 1 at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/enum-field",
+      "basis": "org"
+    },
+    {
+      "id": "K040",
+      "code": "r=String.valueOf(JSON.deserialize('\"STRING_DATA\"',Reports.ColumnDataType.class));",
+      "expected": "EXC|System.JSONException|Malformed JSON: Expected '{' at the beginning of object",
+      "compile": false,
+      "group": "typed-json/enum-target",
+      "basis": "org"
+    },
+    {
+      "id": "K041",
+      "code": "r=String.valueOf(JSON.deserialize('\"string_data\"',Reports.ColumnDataType.class));",
+      "expected": "EXC|System.JSONException|Malformed JSON: Expected '{' at the beginning of object",
+      "compile": false,
+      "group": "typed-json/enum-target",
+      "basis": "org"
+    },
+    {
+      "id": "K042",
+      "code": "r=String.valueOf(JSON.deserialize('\"string\"',Reports.ColumnDataType.class));",
+      "expected": "EXC|System.JSONException|Malformed JSON: Expected '{' at the beginning of object",
+      "compile": false,
+      "group": "typed-json/enum-target",
+      "basis": "org"
+    },
+    {
+      "id": "K043",
+      "code": "r=String.valueOf(JSON.deserialize('null',Reports.ColumnDataType.class));",
+      "expected": "null",
+      "compile": false,
+      "group": "typed-json/enum-target",
+      "basis": "org",
+      "nativeNull": true
+    },
+    {
+      "id": "K044",
+      "code": "A45JSONDTO x=(A45JSONDTO)JSON.deserialize('{\"dataType\":\"string\"}',A45JSONDTO.class); r=String.valueOf(x.dataType);",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/user-enum-field",
+      "basis": "org"
+    },
+    {
+      "id": "K045",
+      "code": "A45JSONDTO x=(A45JSONDTO)JSON.deserialize('{\"dataType\":\"string_data\"}',A45JSONDTO.class); r=String.valueOf(x.dataType);",
+      "expected": "STRING_DATA",
+      "compile": false,
+      "group": "typed-json/user-enum-field",
+      "basis": "org"
+    },
+    {
+      "id": "K046",
+      "code": "A45JSONDTO x=(A45JSONDTO)JSON.deserialize('{\\n \"dataType\":\"string\"\\n}',A45JSONDTO.class); r=String.valueOf(x.dataType);",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:2, column:2]",
+      "compile": false,
+      "group": "typed-json/user-enum-field",
+      "basis": "org"
+    },
+    {
+      "id": "K047",
+      "code": "r=JSON.serialize(JSON.deserialize('[\"string\"]',List<Reports.ColumnDataType>.class));",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/enum-list",
+      "basis": "org"
+    },
+    {
+      "id": "K048",
+      "code": "Reports.SummaryValue x; x.setValue('a');",
+      "expected": "COMPILE_ERROR\tline 6: Method is not visible: void reports.SummaryValue.setValue(Object)",
+      "compile": true,
+      "group": "method-signature/private-setter",
+      "basis": "org"
+    },
+    {
+      "id": "K049",
+      "code": "Reports.SummaryValue x; x.setValue(null);",
+      "expected": "COMPILE_ERROR\tline 6: Method is not visible: void reports.SummaryValue.setValue(Object)",
+      "compile": true,
+      "group": "method-signature/private-setter",
+      "basis": "org"
+    },
+    {
+      "id": "K050",
+      "code": "Reports.SummaryValue x; x.setValue();",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setValue() from the type reports.SummaryValue",
+      "compile": true,
+      "group": "method-signature/private-setter",
+      "basis": "org"
+    },
+    {
+      "id": "K051",
+      "code": "Reports.ReportResults x; x.setAllData(null);",
+      "expected": "COMPILE_ERROR\tline 6: Method is not visible: void reports.ReportResults.setAllData(Boolean)",
+      "compile": true,
+      "group": "method-signature/private-setter",
+      "basis": "org"
+    },
+    {
+      "id": "K052",
+      "code": "Reports.ReportResults x; x.setAllData('a');",
+      "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void setAllData(String) from the type reports.ReportResults",
+      "compile": true,
+      "group": "method-signature/private-setter",
+      "basis": "org"
+    },
+    {
+      "id": "K053",
+      "code": "Reports.ReportFilter x=new Reports.ReportFilter(); x.setColumn('a'); pq.out('K053','ACCEPTED');",
+      "expected": "ACCEPTED",
+      "compile": true,
+      "group": "method-signature/private-setter",
+      "basis": "org"
+    },
+    {
+      "id": "K054",
+      "code": "r=JSON.serialize(JSON.deserialize('{}',Reports.ColumnDataType.class));",
+      "expected": "null",
+      "compile": false,
+      "group": "typed-json/enum-shape-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K055",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"x\":\"STRING_DATA\"}',Reports.ColumnDataType.class));",
+      "expected": "null",
+      "compile": false,
+      "group": "typed-json/enum-shape-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K056",
+      "code": "r=JSON.serialize(JSON.deserialize('[\"STRING_DATA\",\"string_data\",null]',List<Reports.ColumnDataType>.class));",
+      "expected": "[\"STRING_DATA\",\"STRING_DATA\",null]",
+      "compile": false,
+      "group": "typed-json/enum-shape-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K057",
+      "code": "r=JSON.serialize(JSON.deserialize('[\"STRING_DATA\",\"string\"]',List<Reports.ColumnDataType>.class));",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:15]",
+      "compile": false,
+      "group": "typed-json/enum-shape-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K058",
+      "code": "r=JSON.serialize(JSON.deserialize('[1]',List<Reports.ColumnDataType>.class));",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value 1 at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/enum-shape-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K059",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"dataType\":true}',Reports.DetailColumn.class));",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value true at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/enum-shape-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K060",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"dataType\":{}}',Reports.DetailColumn.class));",
+      "expected": "EXC|System.JSONException|Illegal value for primitive",
+      "compile": false,
+      "group": "typed-json/enum-shape-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K061",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"dataType\":[]}',Reports.DetailColumn.class));",
+      "expected": "EXC|System.JSONException|Illegal value for primitive",
+      "compile": false,
+      "group": "typed-json/enum-shape-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K062",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"Name\":\"First\",\"Name\":\"Second\"}',Object.class));",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/legacy-object-target",
+      "basis": "org"
+    },
+    {
+      "id": "K063",
+      "code": "r=JSON.serialize(JSON.deserializeStrict('{\"value\":1}',A45JSONDTO.class));",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/strict-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K064",
+      "code": "r=JSON.serialize(JSON.deserializeStrict('{\"value\":null}',A45JSONDTO.class));",
+      "expected": "{\"value\":null,\"dataType\":null}",
+      "compile": false,
+      "group": "typed-json/strict-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K065",
+      "code": "r=JSON.serialize(JSON.deserializeStrict('{\"dataType\":\"string\"}',Reports.DetailColumn.class));",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/strict-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K066",
+      "code": "r=JSON.serialize(JSON.deserializeStrict('\"STRING_DATA\"',Reports.ColumnDataType.class));",
+      "expected": "EXC|System.JSONException|Malformed JSON: Expected '{' at the beginning of object",
+      "compile": false,
+      "group": "typed-json/strict-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K067",
+      "code": "r=JSON.serialize(JSON.deserializeStrict('{}',Reports.ColumnDataType.class));",
+      "expected": "null",
+      "compile": false,
+      "group": "typed-json/strict-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K068",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"a\":null}',Map<String,Object>.class));",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-null-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K069",
+      "code": "r=JSON.serialize(JSON.deserialize('[null]',List<Object>.class));",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-null-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K070",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"label\":\"Account\",\"dataType\":\"string\"}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:19]",
+      "compile": false,
+      "group": "typed-json/enum-field-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K071",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{ \"label\" : \"Account\" , \"dataType\":\"string\"}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:23]",
+      "compile": false,
+      "group": "typed-json/enum-field-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K072",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"label\":\"Account\",\\n \"dataType\":\"string\"}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:19]",
+      "compile": false,
+      "group": "typed-json/enum-field-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K073",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"label\":\"Account\"\\n , \"dataType\":\"string\"}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:2, column:2]",
+      "compile": false,
+      "group": "typed-json/enum-field-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K074",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{ \"dataType\" : \"string\"}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:3]",
+      "compile": false,
+      "group": "typed-json/enum-field-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K075",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"label\":\"\ud83d\ude42\",\"dataType\":\"string\"}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType());",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:14]",
+      "compile": false,
+      "group": "typed-json/enum-field-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K076",
+      "code": "r=JSON.serialize(JSON.deserialize('[ \"STRING_DATA\" , \"string\"]',List<Reports.ColumnDataType>.class));",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:17]",
+      "compile": false,
+      "group": "typed-json/enum-array-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K077",
+      "code": "r=JSON.serialize(JSON.deserialize('[\"STRING_DATA\",\\n \"string\"]',List<Reports.ColumnDataType>.class));",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:15]",
+      "compile": false,
+      "group": "typed-json/enum-array-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K078",
+      "code": "r=JSON.serialize(JSON.deserialize('[\"STRING_DATA\"\\n , \"string\"]',List<Reports.ColumnDataType>.class));",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:2, column:2]",
+      "compile": false,
+      "group": "typed-json/enum-array-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K079",
+      "code": "r=JSON.serialize(JSON.deserialize('[\\n \"string\"]',List<Reports.ColumnDataType>.class));",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:2, column:2]",
+      "compile": false,
+      "group": "typed-json/enum-array-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K080",
+      "code": "A45ShadowNamespace Reports=new A45ShadowNamespace(); Reports.ReportManager=new A45ShadowCalls(); r=Reports.ReportManager.runReport();",
+      "expected": "shadow report",
+      "compile": false,
+      "group": "method-signature/namespace-value-shadow",
+      "basis": "org"
+    },
+    {
+      "id": "K081",
+      "code": "A45ShadowNamespace Wave=new A45ShadowNamespace(); Wave.QueryBuilder=new A45ShadowCalls(); r=Wave.QueryBuilder.load();",
+      "expected": "shadow load",
+      "compile": false,
+      "group": "method-signature/namespace-value-shadow",
+      "basis": "org"
+    },
+    {
+      "id": "K082",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"first\":\"STRING_DATA\",\"second\":\"string\"}',Map<String,Reports.ColumnDataType>.class));",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:23]",
+      "compile": false,
+      "group": "typed-json/enum-map-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K083",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"first\":\"STRING_DATA\",\\n \"second\":\"string\"}',Map<String,Reports.ColumnDataType>.class));",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:23]",
+      "compile": false,
+      "group": "typed-json/enum-map-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K084",
+      "code": "A45EnumCollections x=(A45EnumCollections)JSON.deserialize('{\"values\":[\"STRING_DATA\",\\n \"string\"]}',A45EnumCollections.class); r=JSON.serialize(x.values);",
+      "expected": "EXC|System.JSONException|The type reports.ColumnDataType does not have an enum value string at [line:1, column:25]",
+      "compile": false,
+      "group": "typed-json/enum-field-array-token-position",
+      "basis": "org"
+    },
+    {
+      "id": "K085",
+      "code": "Map<String,Object> parsed=(Map<String,Object>)Json.deserializeStrict('{\"Name\":\"Acme\"}',Map<String,Object>.class); r=parsed.get('Name');",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/legacy-alias-target",
+      "basis": "org"
+    },
+    {
+      "id": "K086",
+      "code": "Map<String,Object> parsed=(Map<String,Object>)System.JSON.deserialize('{\"Name\":\"Trail\"}',Map<String,Object>.class); r=parsed.get('Name');",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/legacy-alias-target",
+      "basis": "org"
+    },
+    {
+      "id": "K087",
+      "code": "Map<String,Object> parsed=(Map<String,Object>)json.deserialize('{\"Name\":\"Lower\"}',Map<String,Object>.class); r=parsed.get('Name');",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/legacy-alias-target",
+      "basis": "org"
+    },
+    {
+      "id": "K088",
+      "code": "Map<String,String> parsed=(Map<String,String>)Json.deserializeStrict('{\"Name\":\"Acme\"}',Map<String,String>.class); r=parsed.get('Name');",
+      "expected": "Acme",
+      "compile": false,
+      "group": "typed-json/legacy-alias-target",
+      "basis": "org"
+    },
+    {
+      "id": "K089",
+      "code": "Map<String,String> parsed=(Map<String,String>)System.JSON.deserialize('{\"Name\":\"Trail\"}',Map<String,String>.class); r=parsed.get('Name');",
+      "expected": "Trail",
+      "compile": false,
+      "group": "typed-json/legacy-alias-target",
+      "basis": "org"
+    },
+    {
+      "id": "K090",
+      "code": "Map<String,String> parsed=(Map<String,String>)json.deserialize('{\"Name\":\"Lower\"}',Map<String,String>.class); r=parsed.get('Name');",
+      "expected": "Lower",
+      "compile": false,
+      "group": "typed-json/legacy-alias-target",
+      "basis": "org"
+    },
+    {
+      "id": "K091",
+      "code": "Map<String,List<String>> parsed=(Map<String,List<String>>)JSON.deserialize('{\"Account\":[\"Id\",\"Name\"]}',Map<String,List<String>>.Class); r=parsed.get('Account')[1];",
+      "expected": "Name",
+      "compile": false,
+      "group": "typed-json/legacy-alias-nested-control",
+      "basis": "org"
+    },
+    {
+      "id": "K092",
+      "code": "A45LegacyJSONDTO x=(A45LegacyJSONDTO)JSON.deserialize('{\"name\":\"Widget\",\"status\":\"Ready\",\"rows\":[{\"label\":\"A\",\"count\":2}],\"extra\":{\"ok\":true},\"statusLabels\":{\"Ready\":\"go\"}}',A45LegacyJSONDTO.class); r=x.name+'|'+x.status+'|'+x.rows[0].label+'|'+x.rows[0].count+'|'+x.extra.size()+'|'+x.statusLabels.get(A45LegacyJSONDTO.Status.Ready);",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/legacy-controller-dto",
+      "basis": "org"
+    },
+    {
+      "id": "K093",
+      "code": "A45LegacyJSONDTO x=(A45LegacyJSONDTO)JSON.deserialize('{\"name\":\"Widget\",\"status\":\"Ready\",\"rows\":[{\"label\":\"A\",\"count\":2}],\"extra\":{},\"statusLabels\":{\"Ready\":\"go\"}}',A45LegacyJSONDTO.class); r=x.name+'|'+x.status+'|'+x.rows[0].label+'|'+x.rows[0].count+'|'+x.extra.size()+'|'+x.statusLabels.get(A45LegacyJSONDTO.Status.Ready);",
+      "expected": "Widget|Ready|A|2|0|go",
+      "compile": false,
+      "group": "typed-json/legacy-controller-dto",
+      "basis": "org"
+    },
+    {
+      "id": "K094",
+      "code": "Type mapType=Type.forName('Map<List<String>,Object>'); r=JSON.serialize(JSON.deserialize('{\"1\":\"one\"}',mapType));",
+      "expected": "EXC|System.JSONException|No mapping for apex type: List<String>",
+      "compile": false,
+      "group": "typed-json/legacy-map-key-target",
+      "basis": "org"
+    },
+    {
+      "id": "K095",
+      "code": "Type mapType=Type.forName('Map<List<String>,String>'); r=JSON.serialize(JSON.deserialize('{\"1\":\"one\"}',mapType));",
+      "expected": "EXC|System.JSONException|No mapping for apex type: List<String>",
+      "compile": false,
+      "group": "typed-json/legacy-map-key-target",
+      "basis": "org"
+    },
+    {
+      "id": "K096",
+      "code": "Type mapType=Type.forName('Map<List<String>,Object>'); r=JSON.serialize(JSON.deserialize('{}',mapType));",
+      "expected": "{}",
+      "compile": false,
+      "group": "typed-json/legacy-map-key-target",
+      "basis": "org"
+    },
+    {
+      "id": "K097",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"Ready\":\"go\"}',Map<A45LegacyJSONDTO.Status,String>.class));",
+      "expected": "{\"Ready\":\"go\"}",
+      "compile": false,
+      "group": "typed-json/legacy-enum-map-key-control",
+      "basis": "org"
+    },
+    {
+      "id": "K098",
+      "code": "Type mapType=Type.forName('Map<Integer,Object>'); r=JSON.serialize(JSON.deserialize('{\"not\":1}',mapType));",
+      "expected": "EXC|System.JSONException|For input string: \"not\" at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/object-value-key-conversion-order",
+      "basis": "org"
+    },
+    {
+      "id": "K099",
+      "code": "Type mapType=Type.forName('Map<Id,Object>'); r=JSON.serialize(JSON.deserialize('{\"not\":1}',mapType));",
+      "expected": "EXC|System.JSONException|bad id not at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/object-value-key-conversion-order",
+      "basis": "org"
+    },
+    {
+      "id": "K100",
+      "code": "Type mapType=Type.forName('Map<Boolean,Object>'); r=JSON.serialize(JSON.deserialize('{\"not\":1}',mapType));",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-value-key-conversion-order",
+      "basis": "org"
+    },
+    {
+      "id": "K101",
+      "code": "Type mapType=Type.forName('Map<A45LegacyJSONDTO.Status,Object>'); r=JSON.serialize(JSON.deserialize('{\"not\":1}',mapType));",
+      "expected": "EXC|System.JSONException|The type A45LegacyJSONDTO.Status does not have an enum value not at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/object-value-key-conversion-order",
+      "basis": "org"
+    },
+    {
+      "id": "K102",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"1\":null}',Map<Integer,Object>.class));",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-value-key-null-order",
+      "basis": "org"
+    },
+    {
+      "id": "K103",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"not\":\"x\"}',Map<Boolean,String>.class));",
+      "expected": "{\"false\":\"x\"}",
+      "compile": false,
+      "group": "typed-json/boolean-key-control",
+      "basis": "org"
+    },
+    {
+      "id": "K104",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"1\":\"one\",\\n \"not\":\"other\"}',Map<Integer,String>.class));",
+      "expected": "EXC|System.JSONException|For input string: \"not\" at [line:1, column:11]",
+      "compile": false,
+      "group": "typed-json/later-key-error-position",
+      "basis": "org"
+    },
+    {
+      "id": "K105",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"not\":\"x\"}',Map<Id,String>.class));",
+      "expected": "EXC|System.JSONException|bad id not at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/id-key-error-control",
+      "basis": "org"
+    },
+    {
+      "id": "K106",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"not\":\"x\"}',Map<A45LegacyJSONDTO.Status,String>.class));",
+      "expected": "EXC|System.JSONException|The type A45LegacyJSONDTO.Status does not have an enum value not at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/enum-key-error-control",
+      "basis": "org"
+    },
+    {
+      "id": "K107",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"TRUE\":\"x\"}',Map<Boolean,String>.class));",
+      "expected": "{\"true\":\"x\"}",
+      "compile": false,
+      "group": "typed-json/boolean-key-control",
+      "basis": "org"
+    },
+    {
+      "id": "K108",
+      "code": "r=JSON.serialize(JSON.deserialize('{\" true \":\"x\"}',Map<Boolean,String>.class));",
+      "expected": "{\"false\":\"x\"}",
+      "compile": false,
+      "group": "typed-json/boolean-key-control",
+      "basis": "org"
+    },
+    {
+      "id": "K109",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"1\":\"x\"}',Map<Boolean,String>.class));",
+      "expected": "{\"false\":\"x\"}",
+      "compile": false,
+      "group": "typed-json/boolean-key-control",
+      "basis": "org"
+    },
+    {
+      "id": "K110",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"t\":\"x\"}',Map<Boolean,String>.class));",
+      "expected": "{\"false\":\"x\"}",
+      "compile": false,
+      "group": "typed-json/boolean-key-control",
+      "basis": "org"
+    },
+    {
+      "id": "K111",
+      "code": "Type mapType=Type.forName('Map<Long,Object>'); r=JSON.serialize(JSON.deserialize('{\"not\":1}',mapType));",
+      "expected": "EXC|System.JSONException|For input string: \"not\" at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/object-value-scalar-key-order",
+      "basis": "org"
+    },
+    {
+      "id": "K112",
+      "code": "Type mapType=Type.forName('Map<Decimal,Object>'); r=JSON.serialize(JSON.deserialize('{\"not\":1}',mapType));",
+      "expected": "EXC|System.JSONException|Character n is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark. at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/object-value-scalar-key-order",
+      "basis": "org"
+    },
+    {
+      "id": "K113",
+      "code": "Type mapType=Type.forName('Map<Double,Object>'); r=JSON.serialize(JSON.deserialize('{\"not\":1}',mapType));",
+      "expected": "EXC|System.JSONException|For input string: \"not\" at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/object-value-scalar-key-order",
+      "basis": "org"
+    },
+    {
+      "id": "K114",
+      "code": "Type mapType=Type.forName('Map<Date,Object>'); r=JSON.serialize(JSON.deserialize('{\"not\":1}',mapType));",
+      "expected": "EXC|System.JSONException|Invalid format: \"not\" at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/object-value-scalar-key-order",
+      "basis": "org"
+    },
+    {
+      "id": "K115",
+      "code": "Type mapType=Type.forName('Map<Datetime,Object>'); r=JSON.serialize(JSON.deserialize('{\"not\":1}',mapType));",
+      "expected": "EXC|System.JSONException|Invalid format: \"not\" at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/object-value-scalar-key-order",
+      "basis": "org"
+    },
+    {
+      "id": "K116",
+      "code": "Type mapType=Type.forName('Map<Time,Object>'); r=JSON.serialize(JSON.deserialize('{\"not\":1}',mapType));",
+      "expected": "EXC|System.JSONException|Invalid format: \"not\" at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/object-value-scalar-key-order",
+      "basis": "org"
+    },
+    {
+      "id": "K117",
+      "code": "Type mapType=Type.forName('Map<Blob,Object>'); r=JSON.serialize(JSON.deserialize('{\"not\":1}',mapType));",
+      "expected": "EXC|System.JSONException|Apex Type unsupported in JSON: Object",
+      "compile": false,
+      "group": "typed-json/object-value-scalar-key-order",
+      "basis": "org"
+    },
+    {
+      "id": "K118",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"?not?\":1}',Map<Blob,Object>.class));",
+      "expected": "EXC|System.StringException|Unrecognized base64 character: ?",
+      "compile": false,
+      "group": "typed-json/blob-key-control",
+      "basis": "org"
+    },
+    {
+      "id": "K119",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"not\":\"x\"}',Map<Blob,String>.class));",
+      "expected": "{\"Blob[2]\":\"x\"}",
+      "compile": false,
+      "group": "typed-json/blob-key-control",
+      "basis": "org"
+    },
+    {
+      "id": "K120",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"\":1}',Map<Double,Object>.class));",
+      "expected": "EXC|System.JSONException|empty String at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/empty-numeric-key-control",
+      "basis": "org"
+    },
+    {
+      "id": "K121",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"\":1}',Map<Decimal,Object>.class));",
+      "expected": "EXC|System.JSONException|N/A at [line:1, column:2]",
+      "compile": false,
+      "group": "typed-json/empty-numeric-key-control",
+      "basis": "org"
+    },
+    {
+      "id": "K122",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"dataType\":null}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType())==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "review/null-identity/enum-field",
+      "basis": "org"
+    },
+    {
+      "id": "K123",
+      "code": "r=String.valueOf(JSON.deserialize('null',Reports.ColumnDataType.class))==null;",
+      "expected": "true",
+      "compile": false,
+      "group": "review/null-identity/enum-root",
+      "basis": "org"
+    },
+    {
+      "id": "K124",
+      "code": "r=String.valueOf('null')==null;",
+      "expected": "false",
+      "compile": false,
+      "group": "review/null-identity/string-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K125",
+      "code": "Reports.DetailColumn x=(Reports.DetailColumn)JSON.deserialize('{\"dataType\":\"STRING_DATA\"}',Reports.DetailColumn.class); r=String.valueOf(x.getDataType())==null;",
+      "expected": "false",
+      "compile": false,
+      "group": "review/null-identity/enum-value-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K126",
+      "code": "r=JSON.serialize(new Map<A45LegacyJSONDTO.Status,String>{A45LegacyJSONDTO.Status.Ready=>'go'});",
+      "expected": "{\"Ready\":\"go\"}",
+      "compile": false,
+      "group": "review/map-key/constructed-user-enum",
+      "basis": "org"
+    },
+    {
+      "id": "K127",
+      "code": "r=JSON.serialize(new Map<Reports.ColumnDataType,String>{Reports.ColumnDataType.STRING_DATA=>'go'});",
+      "expected": "{\"STRING_DATA\":\"go\"}",
+      "compile": false,
+      "group": "review/map-key/constructed-platform-enum",
+      "basis": "org"
+    },
+    {
+      "id": "K128",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"ready\":\"go\"}',Map<A45LegacyJSONDTO.Status,String>.class));",
+      "expected": "{\"Ready\":\"go\"}",
+      "compile": false,
+      "group": "review/map-key/normalized-user-enum",
+      "basis": "org"
+    },
+    {
+      "id": "K129",
+      "code": "r=JSON.serialize(new Map<String,String>{'Ready'=>'go'});",
+      "expected": "{\"Ready\":\"go\"}",
+      "compile": false,
+      "group": "review/map-key/string-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K130",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"BAD\":\"x\"}',Map<Id,String>.class));",
+      "expected": "EXC|System.JSONException|bad id BAD at [line:1, column:2]",
+      "compile": false,
+      "group": "review/map-key/invalid-id-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K131",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"bad id\":\"x\"}',Map<Id,String>.class));",
+      "expected": "EXC|System.JSONException|bad id bad id at [line:1, column:2]",
+      "compile": false,
+      "group": "review/map-key/invalid-id-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K132",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"\":\"x\"}',Map<Double,String>.class));",
+      "expected": "EXC|System.JSONException|empty String at [line:1, column:2]",
+      "compile": false,
+      "group": "review/map-key/empty-numeric-string-value",
+      "basis": "org"
+    },
+    {
+      "id": "K133",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"\":\"x\"}',Map<Decimal,String>.class));",
+      "expected": "EXC|System.JSONException|N/A at [line:1, column:2]",
+      "compile": false,
+      "group": "review/map-key/empty-numeric-string-value",
+      "basis": "org"
+    },
+    {
+      "id": "K134",
+      "code": "r=JSON.serialize(JSON.deserialize('{\" \":1}',Map<Double,Object>.class));",
+      "expected": "EXC|System.JSONException|empty String at [line:1, column:2]",
+      "compile": false,
+      "group": "review/map-key/blank-numeric-object-value",
+      "basis": "org"
+    },
+    {
+      "id": "K135",
+      "code": "r=JSON.serialize(JSON.deserialize('{\" \":1}',Map<Decimal,Object>.class));",
+      "expected": "EXC|System.JSONException|Character   is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark. at [line:1, column:2]",
+      "compile": false,
+      "group": "review/map-key/blank-numeric-object-value",
+      "basis": "org"
+    },
+    {
+      "id": "K136",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"1.5\":\"x\"}',Map<Double,String>.class));",
+      "expected": "{\"1.5\":\"x\"}",
+      "compile": false,
+      "group": "review/map-key/valid-numeric-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K137",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"1.5\":\"x\"}',Map<Decimal,String>.class));",
+      "expected": "{\"1.5\":\"x\"}",
+      "compile": false,
+      "group": "review/map-key/valid-numeric-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K138",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"001000000000001AAA\":\"x\"}',Map<Id,String>.class));",
+      "expected": "{\"001000000000001AAA\":\"x\"}",
+      "compile": false,
+      "group": "review/map-key/valid-id-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K139",
+      "code": "r=JSON.serialize(JSON.deserialize('{\" \":1}',Map<Integer,Object>.class));",
+      "expected": "EXC|System.JSONException|For input string: \" \" at [line:1, column:2]",
+      "compile": false,
+      "group": "review/map-key/blank-integer-neighbour",
+      "basis": "org"
+    },
+    {
+      "id": "K140",
+      "code": "r=JSON.serialize(JSON.deserialize('{\"\":\"x\"}',Map<String,String>.class));",
+      "expected": "{\"\":\"x\"}",
+      "compile": false,
+      "group": "review/map-key/empty-string-neighbour",
+      "basis": "org"
+    }
+  ],
+  "localBoundaries": [
+    {
+      "id": "LB001",
+      "code": "r=Reports.ReportManager.describeReport(Id.valueOf('00O000000000001'))==null;",
+      "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.describeReport requires the hosted Reports service",
+      "basis": "local-boundary"
+    },
+    {
+      "id": "LB002",
+      "code": "r=Reports.ReportManager.runReport(Id.valueOf('00O000000000001'),true)==null;",
+      "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.runReport requires the hosted Reports service",
+      "basis": "local-boundary"
+    },
+    {
+      "id": "LB003",
+      "code": "r=Reports.ReportManager.runReport(Id.valueOf('00O000000000001'),(Reports.ReportMetadata)null,false)==null;",
+      "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.runReport requires the hosted Reports service",
+      "basis": "local-boundary"
+    },
+    {
+      "id": "LB004",
+      "code": "r=Reports.ReportManager.runAsyncReport(Id.valueOf('00O000000000001'),(Reports.ReportMetadata)null,true)==null;",
+      "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.runAsyncReport requires the hosted Reports service",
+      "basis": "local-boundary"
+    },
+    {
+      "id": "LB005",
+      "code": "r=Reports.ReportManager.getReportInstances(Id.valueOf('00O000000000001'))==null;",
+      "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.getReportInstances requires the hosted Reports service",
+      "basis": "local-boundary"
+    },
+    {
+      "id": "LB006",
+      "code": "r=Reports.ReportManager.getReportInstance(Id.valueOf('0LG000000000001'))==null;",
+      "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.getReportInstance requires the hosted Reports service",
+      "basis": "local-boundary"
+    },
+    {
+      "id": "LB007",
+      "code": "r=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion').execute('q')==null;",
+      "expected": "EXC|System.UnsupportedOperationException|wave.QueryNode.execute requires the hosted CRM Analytics service",
+      "basis": "local-boundary"
+    },
+    {
+      "id": "LB008",
+      "code": "r=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion').execute('')==null;",
+      "expected": "EXC|System.UnsupportedOperationException|wave.QueryNode.execute requires the hosted CRM Analytics service",
+      "basis": "local-boundary"
+    },
+    {
+      "id": "LB009",
+      "code": "r=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion').execute(null)==null;",
+      "expected": "EXC|System.UnsupportedOperationException|wave.QueryNode.execute requires the hosted CRM Analytics service",
+      "basis": "local-boundary"
+    }
+  ],
+  "declarations": {
+    "A45JSONDTO": "public class A45JSONDTO { public Object value; public Reports.ColumnDataType dataType; }",
+    "A45ShadowCalls": "public class A45ShadowCalls { public String runReport(){return 'shadow report';} public String load(){return 'shadow load';} }",
+    "A45ShadowNamespace": "public class A45ShadowNamespace { public A45ShadowCalls ReportManager; public A45ShadowCalls QueryBuilder; }",
+    "A45EnumCollections": "public class A45EnumCollections { public List<Reports.ColumnDataType> values; }",
+    "A45LegacyJSONDTO": "public class A45LegacyJSONDTO {\n    public enum Status { Draft, Ready }\n    public class Row {\n        public String label;\n        public Integer count;\n    }\n    public String name;\n    public Status status;\n    public List<Row> rows;\n    public Map<String,Object> extra;\n    public Map<Status,String> statusLabels;\n}\n"
+  }
+}

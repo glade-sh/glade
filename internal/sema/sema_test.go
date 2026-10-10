@@ -230,7 +230,7 @@ func TestAnalyzeLoadsNestedSchemaCustomObjectsRelationshipTraversal(t *testing.T
 	root := t.TempDir()
 	for _, dir := range []string{
 		"src/main/default/classes",
-		"src/main/schema/customObjects/objects/OrderItemLine__c/fields",
+		"src/main/schema/customObjects/objects/BundleLine__c/fields",
 		"src/main/schema/customObjects/objects/Merchandise__c/fields",
 	} {
 		if err := os.MkdirAll(filepath.Join(root, dir), 0o755); err != nil {
@@ -243,7 +243,7 @@ func TestAnalyzeLoadsNestedSchemaCustomObjectsRelationshipTraversal(t *testing.T
 }`)
 	writeSemaFile(t, filepath.Join(root, "src/main/default/classes/UsesNestedSchema.cls"), `
 public class UsesNestedSchema {
-  public void run(OrderItemLine__c row) {
+  public void run(BundleLine__c row) {
     Id productId = row.Merchandise__r.Product2__c;
     Id accountId = row.Merchandise__r.Account2__c;
     System.assertEquals(productId, row.Merchandise__r.Product2__c);
@@ -251,10 +251,10 @@ public class UsesNestedSchema {
   }
 }
 `)
-	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/OrderItemLine__c/OrderItemLine__c.object-meta.xml"), `<CustomObject/>`)
-	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/OrderItemLine__c/fields/Merchandise__c.field-meta.xml"), `<CustomField><fullName>Merchandise__c</fullName><type>Lookup</type><referenceTo>Merchandise__c</referenceTo><relationshipName>OrderItemLines</relationshipName></CustomField>`)
+	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/BundleLine__c/BundleLine__c.object-meta.xml"), `<CustomObject/>`)
+	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/BundleLine__c/fields/Merchandise__c.field-meta.xml"), `<CustomField><fullName>Merchandise__c</fullName><type>Lookup</type><referenceTo>Merchandise__c</referenceTo><relationshipName>BundleLines</relationshipName></CustomField>`)
 	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/Merchandise__c/Merchandise__c.object-meta.xml"), `<CustomObject/>`)
-	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/Merchandise__c/fields/OrderItemLine__c.field-meta.xml"), `<CustomField><fullName>OrderItemLine__c</fullName><type>Lookup</type><referenceTo>OrderItemLine__c</referenceTo><relationshipName>Merchandise</relationshipName></CustomField>`)
+	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/Merchandise__c/fields/BundleLine__c.field-meta.xml"), `<CustomField><fullName>BundleLine__c</fullName><type>Lookup</type><referenceTo>BundleLine__c</referenceTo><relationshipName>Merchandise</relationshipName></CustomField>`)
 	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/Merchandise__c/fields/Product2__c.field-meta.xml"), `<CustomField><fullName>Product2__c</fullName><type>Lookup</type><referenceTo>Product2</referenceTo><relationshipName>Merchandise2</relationshipName></CustomField>`)
 	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/Merchandise__c/fields/Account2__c.field-meta.xml"), `<CustomField><fullName>Account2__c</fullName><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Merchandise2</relationshipName></CustomField>`)
 
@@ -1277,6 +1277,7 @@ public class UsesProductNamespaces {
     item.values.add(value);
     container.addMetadata(item);
     Id deploymentId = Metadata.Operations.enqueueDeployment(container, null);
+    // A44 C004 captures rejection of this two-argument signature.
     Metadata.DeployResult result = Metadata.Operations.checkDeployStatus(deploymentId, true);
     handleDeployResult(result.id, result.errorMessage, result.success);
     Cache.OrgPartition partition = cache.org.getpartition('local');
@@ -1297,8 +1298,45 @@ public class UsesProductNamespaces {
 	}}, schema.Schema{})
 
 	result := Analyze(index)
+	const want = "Method does not exist or incorrect signature: void checkDeployStatus(Id, Boolean) from the type Metadata.Operations"
+	for _, item := range result.Diagnostics {
+		if item.Severity != diagnostic.Error {
+			continue
+		}
+		if item.NativeMessage != want {
+			t.Fatalf("first error = %#v, want C004 native diagnostic %q", item, want)
+		}
+		return
+	}
+	t.Fatalf("missing C004 native rejection: %#v", result.Diagnostics)
+}
+
+func TestAnalyzeMetadataOperationsWithLegacyNestedMetadataType(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	metadataService := filepath.Join(root, "MetadataService.cls")
+	usesMetadata := filepath.Join(root, "UsesMetadata.cls")
+	writeSemaFile(t, metadataService, `
+public class MetadataService {
+  public virtual class Metadata {
+    public String fullName;
+  }
+}
+`)
+	writeSemaFile(t, usesMetadata, `
+public class UsesMetadata {
+  private static List<Metadata.Metadata> retrieveRecords() {
+    return Metadata.Operations.retrieve(
+      Metadata.MetadataType.CustomMetadata,
+      new List<String>{'Tag__mdt.HostedPaymentForm'}
+    );
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{metadataService, usesMetadata}}, schema.Schema{})
+	result := Analyze(index)
 	if result.HasErrors() {
-		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+		t.Fatalf("legacy nested Metadata type should not hide Metadata.Operations.retrieve: %#v", result.Diagnostics)
 	}
 }
 
@@ -1338,10 +1376,11 @@ public class UsesUserInfo {
 func TestAnalyzeDatabaseDMLCollectionOverloads(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
+	// A36 U001-U016: native external-field upsert accepts SObject, not Object.
 	writeSemaFile(t, filepath.Join(root, "UsesDatabaseDML.cls"), `
 public class UsesDatabaseDML {
   public static void insertAccountsViaDatabaseMethod(List<String> names, Boolean allOrNothing, System.AccessLevel accessLevel) {}
-  public static void run(List<Account> accounts, List<Object> objects, Object objectValue, Account account, Id recordId, List<Id> recordIds, Database.DMLOptions opts) {
+  public static void run(List<Account> accounts, List<SObject> objects, SObject objectValue, Account account, Id recordId, List<Id> recordIds, Database.DMLOptions opts) {
     insertAccountsViaDatabaseMethod(new List<String>{'Texas'}, false, AccessLevel.SYSTEM_MODE);
     List<Database.SaveResult> insertResults = Database.insert(accounts);
     List<Database.SaveResult> partialInsertResults = Database.insert(accounts, false);
@@ -1394,12 +1433,95 @@ public class UsesDatabaseDML {
 	}}, schema.Schema{Objects: []schema.Object{{
 		Name: "Account",
 		Fields: []schema.Field{
-			{Name: "External_Id__c", Type: "Text"},
+			// A36 R070-R083/C008: an external-key selector needs external-ID metadata.
+			{Name: "External_Id__c", Type: "Text", ExternalID: true},
 		},
 	}}})
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDMLNestedProjectTypesPreserveOwnership(t *testing.T) {
+	t.Parallel()
+	// A36 S001: project fixture and body captured at API 62/67. Platform
+	// constructors retain the exact native C005/C006/C011 diagnostic text.
+	const declaration = `public class Database {
+ public class SaveResult {
+  public String marker;
+  public SaveResult(String value){marker=value;}
+ }
+ public class UpsertResult {
+  public String marker;
+  public UpsertResult(String value){marker=value;}
+ }
+ public class Error {
+  public String marker;
+  public Error(String value){marker=value;}
+ }
+}
+`
+	const projectBody = `Database.SaveResult save=new Database.SaveResult('save');
+Database.UpsertResult up=new Database.UpsertResult('upsert');
+Database.Error err=new Database.Error('error');
+Object boxed=save; Database.SaveResult assigned=(Database.SaveResult)boxed;
+assigned=new Database.SaveResult('assigned');
+save.marker=assigned.marker;
+`
+	cases := []struct {
+		name, body, expected string
+		project              bool
+	}{
+		{name: "S001_project", body: projectBody, project: true},
+		{name: "C005_platform", body: "Database.SaveResult s=new Database.SaveResult();", expected: "line 6: Type cannot be constructed: Database.SaveResult"},
+		{name: "C006_platform", body: "Database.UpsertResult s=new Database.UpsertResult();", expected: "line 6: Type cannot be constructed: Database.UpsertResult"},
+		{name: "C011_platform", body: "Database.Error e=new Database.Error();", expected: "line 6: Type cannot be constructed: Database.Error"},
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					root := t.TempDir()
+					paths := []string{filepath.Join(root, "DMLShadowProbe.cls")}
+					writeSemaFile(t, paths[0], "public class DMLShadowProbe {\npublic static void run(){\n\n\n\n"+tc.body+"\n}\n}\n")
+					if tc.project {
+						path := filepath.Join(root, "Database.cls")
+						writeSemaFile(t, path, declaration)
+						paths = append(paths, path)
+					}
+					for _, path := range paths {
+						writeSemaFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
+					}
+					index := typesys.Build(project.Project{Root: root, ApexFiles: paths, SourceAPIVersion: api}, schema.Schema{})
+					if index.HasErrors() {
+						t.Fatalf("parser: %#v", index.Diagnostics)
+					}
+					for name, result := range map[string]Result{
+						"named":     Analyze(index),
+						"anonymous": AnalyzeAnonymous(index, strings.Repeat("\n", 5)+tc.body, api),
+					} {
+						var observed []string
+						for _, item := range result.Diagnostics {
+							if item.Severity != diagnostic.Error {
+								continue
+							}
+							if item.Range == nil {
+								t.Fatalf("%s diagnostic has no range: %#v", name, item)
+							}
+							observed = append(observed, "line "+strconv.Itoa(item.Range.Start.Line)+": "+item.Message)
+						}
+						var expected []string
+						if tc.expected != "" {
+							expected = []string{tc.expected}
+						}
+						if !reflect.DeepEqual(observed, expected) {
+							t.Fatalf("%s expected %q actual %q", name, expected, observed)
+						}
+					}
+				})
+			}
+		})
 	}
 }
 
@@ -1974,6 +2096,65 @@ public class UsesSecurityStripInaccessible {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+// Regression for the C011/C012 token guard: member access must first use the
+// ordinary value binding, including the reviewer's Holder AccessLevel field.
+func TestAnalyzeSecurityTokensRespectValueBindings(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name, source string
+	}{
+		{"field", "public Holder AccessLevel; public Integer run(){return AccessLevel.amount;}"},
+		{"property", "public Holder AccessType {get;set;} public Integer run(){return AccessType.amount;}"},
+		{"parameter", "public Integer run(Holder AccessLevel){return AccessLevel.amount;}"},
+		{"local", "public Integer run(){Holder AccessType=new Holder(); return AccessType.amount;}"},
+		{"methodReceiverField", "public Holder Security; public Integer run(){return Security.stripInaccessible();}"},
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					root := t.TempDir()
+					path := filepath.Join(root, "SecurityBindingProbe.cls")
+					writeSemaFile(t, path, "public class SecurityBindingProbe { public class Holder { public Integer amount; public Integer stripInaccessible(){return 1;} } "+tc.source+" }")
+					index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{path}}, schema.Schema{})
+					if result := Analyze(index); result.HasErrors() {
+						t.Fatalf("value binding rejected: %#v", result.Diagnostics)
+					}
+				})
+			}
+		})
+	}
+}
+
+// A synthetic member model checks the C016 guard independently of source
+// identifier syntax. These resolver boundaries are not native capture rows.
+func TestSecurityRowCauseGuardRequiresSObjectBinding(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			for _, tc := range []struct {
+				name, reason, expected string
+				sobject                bool
+			}{
+				{name: "ordinary-members", reason: "Missing__c"},
+				{name: "declared-share-reason", reason: "Oracle__c", sobject: true},
+				{name: "undeclared-share-reason", reason: "Missing__c", sobject: true, expected: "Variable does not exist: Missing__c"},
+			} {
+				t.Run(tc.name, func(t *testing.T) {
+					members := typeMembers{name: "A28Access__Share", effectiveAPIVersion: api, sobject: tc.sobject}
+					model := newSemaTypeMemberStateWithPlatform(&semaTypeMemberModel{
+						members: map[string]typeMembers{normalizeName(members.name): members},
+					}, nil).view()
+					analyzer := NewAnalyzer()
+					analyzer.queryDeclaredObjects = []schema.Object{{Name: "A28Access__c", EnableSharing: true, SharingModel: "Private", SharingReasons: []string{"Oracle__c"}}}
+					if got := analyzer.securityAccessFieldMessage("A28Access__Share.RowCause."+tc.reason, newIRSemaScope(nil), model); got != tc.expected {
+						t.Fatalf("guard message = %q, want %q", got, tc.expected)
+					}
+				})
+			}
+		})
 	}
 }
 
@@ -2630,7 +2811,7 @@ func TestAnalyzeURLStandardDeclarations(t *testing.T) {
 	writeSemaFile(t, filepath.Join(root, "UsesURL.cls"), `
 public class UsesURL {
   public String run() {
-    return new URL(URL.getSalesforceBaseUrl(), '/apexrest/example').toExternalForm();
+    return new URL(URL.getOrgDomainUrl(), '/apexrest/example').toExternalForm();
   }
 }
 `)
@@ -2692,8 +2873,9 @@ public class UsesSObjectErrors {
 func TestAnalyzePlatformExceptionSubtypeAssignableToException(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "UsesCacheException.cls"), `
-public class UsesCacheException {
+	// A06 C006: an ordinary helper cannot have a name ending in Exception.
+	writeSemaFile(t, filepath.Join(root, "CacheExceptionConsumer.cls"), `
+public class CacheExceptionConsumer {
   private static Boolean log(Exception excp) {
     return true;
   }
@@ -2707,7 +2889,7 @@ public class UsesCacheException {
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
-		filepath.Join(root, "UsesCacheException.cls"),
+		filepath.Join(root, "CacheExceptionConsumer.cls"),
 	}}, schema.Schema{})
 
 	result := Analyze(index)
@@ -3161,8 +3343,9 @@ public class FlowDefinitionView {
 			CustomSettingsType: "Hierarchy",
 		},
 		{
-			Name:         "Log__c",
-			SharingModel: "Private",
+			Name:           "Log__c",
+			SharingModel:   "Private",
+			SharingReasons: []string{"LoggedByUser__c"}, // A28 N015: declared reasons are accepted; C016 rejects missing ones.
 			Fields: []schema.Field{
 				{Name: "FlowLastModifiedByName__c", Type: "Text"},
 				{Name: "FlowTriggerSObjectType__c", Type: "Text"},
@@ -3172,6 +3355,105 @@ public class FlowDefinitionView {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeNamespacedSchemaDerivedShareAcceptsLocalAPIName(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	file := filepath.Join(root, "UsesNamespacedShare.cls")
+	writeSemaFile(t, file, `
+public class UsesNamespacedShare {
+  public Log__Share share(Log__c log, Id userId) {
+    return new Log__Share(
+      ParentId = log.Id,
+      UserOrGroupId = userId,
+      AccessLevel = 'Read',
+      RowCause = Schema.Log__Share.RowCause.Manual
+    );
+  }
+  public List<Log__Share> find(Id parentId) {
+    return [SELECT ParentId, UserOrGroupId, AccessLevel, RowCause FROM Log__Share WHERE ParentId = :parentId];
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:             root,
+		Namespace:        "Nebula",
+		SourceAPIVersion: "65.0",
+		ApexFiles:        []string{file},
+	}, schema.Schema{Objects: []schema.Object{{
+		Name:         "Nebula__Log__c",
+		SharingModel: "Private",
+	}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("namespaced local share alias should resolve: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeGeneratedShareFieldTokensUseEnableSharingMetadata(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	file := filepath.Join(root, "GladeTier0SalesforceE175Proof.cls")
+	writeSemaFile(t, file, `public class GladeTier0SalesforceE175Proof {
+  public Schema.SObjectField resolveAccessLevel() {
+    return Schema.GladeTier0__Share.AccessLevel;
+  }
+  public Schema.SObjectField resolveRowCause() {
+    return Schema.GladeTier0__Share.RowCause;
+  }
+}`)
+	writeSemaFile(t, file+"-meta.xml", `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
+	index := typesys.Build(project.Project{
+		Root:             root,
+		SourceAPIVersion: "67.0",
+		ApexFiles:        []string{file},
+	}, schema.Schema{Objects: []schema.Object{{
+		Name:          "GladeTier0__c",
+		EnableSharing: true,
+	}}})
+	prepared := prepareAnalysisIndex(index)
+	model := buildSemaTypeMemberState(prepared, nil).view()
+	share, ok := model.lookup(normalizeName("GladeTier0__Share"))
+	if !ok || !share.sobject {
+		t.Fatalf("EnableSharing metadata should add generated share object to semantic model: %#v", share)
+	}
+	for _, expression := range []string{
+		"Schema.GladeTier0__Share.AccessLevel",
+		"Schema.GladeTier0__Share.RowCause",
+	} {
+		if got := inferSemaArgTypeWithModel(expression, map[string]string{}, model); got != "Schema.SObjectField" {
+			t.Fatalf("%s semantic type = %q, want Schema.SObjectField", expression, got)
+		}
+	}
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("generated share field tokens should follow EnableSharing metadata: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeGeneratedShareFieldTokensWithUnknownSharingMetadata(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	file := filepath.Join(root, "GladeTier0SalesforceE175Proof.cls")
+	writeSemaFile(t, file, `public class GladeTier0SalesforceE175Proof {
+  public Schema.SObjectField resolveAccessLevel() {
+    return Schema.GladeTier0__Share.AccessLevel;
+  }
+  public Schema.SObjectField resolveRowCause() {
+    return Schema.GladeTier0__Share.RowCause;
+  }
+}`)
+	index := typesys.Build(project.Project{
+		Root:             root,
+		SourceAPIVersion: "67.0",
+		ApexFiles:        []string{file},
+	}, schema.Schema{Objects: []schema.Object{{Name: "GladeTier0__c"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("generated share field tokens should be retained when sharing metadata is absent: %#v", result.Diagnostics)
 	}
 }
 
@@ -6096,14 +6378,15 @@ public class UsesSingletonMethodResultAssert {
   public class Item {
     public Boolean enabled;
   }
+  // A04 named C043/S001 reject this property inside Cache; S002 accepts it here.
+  public static Cache Instance { get; private set; }
   public class Cache {
-    public static Cache Instance { get; private set; }
     public Root getRoot() {
       return null;
     }
   }
   public void run() {
-    Root result = Cache.Instance.getRoot();
+    Root result = UsesSingletonMethodResultAssert.Instance.getRoot();
     Assert.isFalse(result.buckets.get('key').items[0].enabled, 'enabled');
   }
 }
@@ -7356,7 +7639,7 @@ public class Product {
 `)
 	writeSemaFile(t, filepath.Join(root, "OrderLine.cls"), `
 public class OrderLine {
-  public void run(OrderItemLine__c line) {
+  public void run(BundleLine__c line) {
     Product product = Product.newInstance(line.Product2__r);
   }
 }
@@ -7364,7 +7647,7 @@ public class OrderLine {
 	index := typesys.Build(
 		project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Product.cls"), filepath.Join(root, "OrderLine.cls")}},
 		schema.Schema{Objects: []schema.Object{{
-			Name: "OrderItemLine__c",
+			Name: "BundleLine__c",
 			Fields: []schema.Field{{
 				Name:        "Product2__c",
 				Type:        "Lookup",
@@ -7437,6 +7720,9 @@ public class AffiliationTestData {
       Account.Name => TestContext.Instance.build(Account.SObjectType).insertRecord().Id
     };
   }
+  public Map<String, String> getFormulaFieldMap(FieldDefinition f) {
+    return new Map<String, String>{ f.DeveloperName => f.DataType };
+  }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
@@ -7451,6 +7737,7 @@ public class AffiliationTestData {
 			t.Fatalf("unexpected map literal chained-call diagnostic: %#v", result.Diagnostics)
 		}
 	}
+	assertNoDiagnosticContaining(t, result, "GLADESEMA027", "f.DeveloperName")
 }
 
 func TestAnalyzeSObjectAddErrorAndTriggerStaticFlags(t *testing.T) {
@@ -8277,13 +8564,13 @@ public class Hello {
   public void run(SObject record, SObject related) {
     record.putSObject('Parent__r', related);
   }
-  public void runCustom(CartItemLine__c record, SObject related) {
+  public void runCustom(BasketLine__c record, SObject related) {
     record.putSObject('Product__r', related);
   }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{
-		Objects: []schema.Object{{Name: "CartItemLine__c"}},
+		Objects: []schema.Object{{Name: "BasketLine__c"}},
 	})
 
 	result := Analyze(index)
@@ -8507,13 +8794,13 @@ public class Hello {
   private Map<Id, Decimal> getPrices(List<CartItem__c> records) {
     return new Map<Id, Decimal>();
   }
-  private Map<Id, Decimal> getPrices(List<CartItemLine__c> records) {
+  private Map<Id, Decimal> getPrices(List<BasketLine__c> records) {
     return new Map<Id, Decimal>();
   }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{
-		Objects: []schema.Object{{Name: "CartItem__c"}, {Name: "CartItemLine__c"}},
+		Objects: []schema.Object{{Name: "CartItem__c"}, {Name: "BasketLine__c"}},
 	})
 
 	result := Analyze(index)
@@ -8816,22 +9103,22 @@ public class Hello {
 func TestAnalyzeTypedListLiteralDoesNotReportUnknownNewlitCall(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "PaymentLine__c.cls"), `public class PaymentLine__c {}`)
+	writeSemaFile(t, filepath.Join(root, "ReceiptLine__c.cls"), `public class ReceiptLine__c {}`)
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
-  public void run(PaymentLine__c line) {
-    List<PaymentLine__c> lines = new List<PaymentLine__c>{ line };
+  public void run(ReceiptLine__c line) {
+    List<ReceiptLine__c> lines = new List<ReceiptLine__c>{ line };
   }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
-		filepath.Join(root, "PaymentLine__c.cls"),
+		filepath.Join(root, "ReceiptLine__c.cls"),
 		filepath.Join(root, "Hello.cls"),
 	}}, schema.Schema{})
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "newlit:List<PaymentLine__c>") {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "newlit:List<ReceiptLine__c>") {
 			t.Fatalf("unexpected newlit diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -9828,24 +10115,24 @@ public class ProductFabricator {
 func TestAnalyzeCallArgumentsIgnoreCommentedArgument(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "TestOrderItemLineManager.cls"), `
-public class TestOrderItemLineManager {
-  public static OrderItemLine__c insertNonDuesMembershipOLI(Id orderItemId, Id memberAcctId, Id membershipEnrollmentId) {
+	writeSemaFile(t, filepath.Join(root, "TestBundleLineManager.cls"), `
+public class TestBundleLineManager {
+  public static BundleLine__c insertExtraBundleLine(Id orderItemId, Id memberAcctId, Id enrollmentId) {
     return null;
   }
-  public static void run(OrderItemLine__c cartMembershipOIL) {
-    OrderItemLine__c nonDuesMembershipOIL =
-      TestOrderItemLineManager.insertNonDuesMembershipOLI
-        (cartMembershipOIL.OrderItem__c,
-         //cartMembershipOIL.ShipTo__c,
+  public static void run(BundleLine__c basketBundleLine) {
+    BundleLine__c extraBundleLine =
+      TestBundleLineManager.insertExtraBundleLine
+        (basketBundleLine.OrderItem__c,
+         //basketBundleLine.ShipTo__c,
          null,
-         cartMembershipOIL.Subscription__c);
+         basketBundleLine.Subscription__c);
   }
 }
 `)
-	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "TestOrderItemLineManager.cls")}}, schema.Schema{
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "TestBundleLineManager.cls")}}, schema.Schema{
 		Objects: []schema.Object{
-			{Name: "OrderItemLine__c", Fields: []schema.Field{
+			{Name: "BundleLine__c", Fields: []schema.Field{
 				{Name: "OrderItem__c", Type: "Lookup", ReferenceTo: []string{"OrderItem__c"}},
 				{Name: "Subscription__c", Type: "Lookup", ReferenceTo: []string{"Subscription__c"}},
 			}},
@@ -10302,7 +10589,7 @@ public class Hello {
 	}
 }
 
-func TestAnalyzeMethodCallNullUsesMostSpecificOverload(t *testing.T) {
+func TestAnalyzeMethodCallNullLiteralIsAmbiguous(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
@@ -10325,8 +10612,15 @@ public class Hello {
 	}}, schema.Schema{})
 
 	result := Analyze(index)
-	if result.HasErrors() {
-		t.Fatalf("expected no errors: %#v", result.Diagnostics)
+	// A02 R167: a String/Object overload pair rejects an untyped null.
+	found := false
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA022" && strings.Contains(diag.Message, "ambiguous") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected ambiguous null overload error: %#v", result.Diagnostics)
 	}
 }
 

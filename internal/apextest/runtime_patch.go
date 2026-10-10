@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -35,12 +36,16 @@ type runtimePatchAuthority struct {
 	key                      runtimeCacheKey
 	fingerprint              string
 	runtimeInputsFingerprint string
-	payloadFingerprint       string
-	sourceReferences         map[string]string
-	transitionApplied        bool
-	predecessorKey           runtimeCacheKey
-	predecessorFingerprint   string
-	affected                 []runtimePatchAffectedOwner
+	// deferredRuntimeInputs supplies the runtime inputs fingerprint of a cold
+	// build when runtimeInputsFingerprint is empty. Read both through
+	// runtimeInputs.
+	deferredRuntimeInputs  *runtimePatchDeferredRuntimeInputs
+	payloadFingerprint     string
+	sourceReferences       map[string]string
+	transitionApplied      bool
+	predecessorKey         runtimeCacheKey
+	predecessorFingerprint string
+	affected               []runtimePatchAffectedOwner
 }
 
 type runtimePatchAffectedOwner struct {
@@ -262,7 +267,7 @@ func newRuntimePatchAuthorityWithPerf(index typesys.Index, key runtimeCacheKey, 
 	if digests == nil || !runtimePatchDigestSetsEqual(index, digests.Digest) {
 		return nil
 	}
-	runtimeInputsFingerprint, ok := runtimePatchRuntimeInputsFingerprint(org, entry.PageNames, entry.Methods)
+	apiVersionFingerprint, ok := runtimePatchCompiledAPIVersionFingerprint(entry.Methods)
 	if !ok {
 		return nil
 	}
@@ -270,12 +275,88 @@ func newRuntimePatchAuthorityWithPerf(index typesys.Index, key runtimeCacheKey, 
 	if !ok {
 		return nil
 	}
-	return runtimePatchAuthorityFromRetainedSources(index, key, sources, runtimeInputsFingerprint, payloadFingerprint)
+	runtimeInputs := newRuntimePatchDeferredRuntimeInputs(org, entry.PageNames, apiVersionFingerprint, entry.restored)
+	return runtimePatchAuthorityFromRetainedSources(index, key, sources, runtimeInputs, payloadFingerprint)
 }
 
-func runtimePatchAuthorityFromRetainedSources(index typesys.Index, key runtimeCacheKey, sources *sourceCache, runtimeInputsFingerprint, payloadFingerprint string) *runtimePatchAuthority {
+// runtimePatchDeferredRuntimeInputs computes a cold build's runtime inputs
+// fingerprint on first need instead of JSON-encoding the whole org on every
+// cold build. First need is the earlier of a transition attempt reading it and
+// the template's first CloneOrg.
+//
+// It reads the org that the build handed to NewRestoredRuntimeTemplate. Clones
+// of the template share its object definitions, and a write into a shared
+// definition would change what this fingerprint reads. The template runs the
+// computation before its first CloneOrg returns, so it always reads the org as
+// built: until then the only references to the org are the opaque template,
+// this holder and the builder's local, which is only encoded for the disk
+// cache.
+type runtimePatchDeferredRuntimeInputs struct {
+	once                  sync.Once
+	org                   storage.OrgState
+	pageNames             []string
+	apiVersionFingerprint string
+	failClosed            bool
+	fingerprint           string
+	verify                func(string)
+}
+
+// runtimePatchAmbientFingerprintCalls counts ambient org fingerprints.
+var runtimePatchAmbientFingerprintCalls atomic.Int64
+
+// runtimePatchVerifyDeferredRuntimeInputs, when set by a test, receives each
+// deferred fingerprint together with the fingerprint of the org as built.
+var runtimePatchVerifyDeferredRuntimeInputs func(deferred, asBuilt string)
+
+func newRuntimePatchDeferredRuntimeInputs(org storage.OrgState, pageNames []string, apiVersionFingerprint string, template vm.RestoredRuntimeTemplate) *runtimePatchDeferredRuntimeInputs {
+	deferred := &runtimePatchDeferredRuntimeInputs{
+		org:                   org,
+		pageNames:             append([]string(nil), pageNames...),
+		apiVersionFingerprint: apiVersionFingerprint,
+	}
+	if verify := runtimePatchVerifyDeferredRuntimeInputs; verify != nil {
+		asBuilt := ""
+		if ambient, ok := runtimePatchAmbientFingerprint(org, pageNames); ok {
+			asBuilt = runtimePatchRuntimeInputsFingerprintFromParts(ambient, apiVersionFingerprint)
+		}
+		deferred.verify = func(value string) { verify(value, asBuilt) }
+	}
+	// A template that cannot hold the computation back, or was already
+	// cloned, may have been written through a clone: never trust it.
+	if !template.BeforeFirstCloneOrg(func() { deferred.value() }) {
+		deferred.failClosed = true
+	}
+	return deferred
+}
+
+func (deferred *runtimePatchDeferredRuntimeInputs) value() string {
+	deferred.once.Do(func() {
+		if !deferred.failClosed {
+			if ambient, ok := runtimePatchAmbientFingerprint(deferred.org, deferred.pageNames); ok {
+				deferred.fingerprint = runtimePatchRuntimeInputsFingerprintFromParts(ambient, deferred.apiVersionFingerprint)
+			}
+		}
+		if deferred.verify != nil {
+			deferred.verify(deferred.fingerprint)
+		}
+		deferred.org = storage.OrgState{}
+		deferred.pageNames = nil
+	})
+	return deferred.fingerprint
+}
+
+// runtimeInputs returns the authority's runtime inputs fingerprint, computing
+// a deferred one on first use. An empty result is never trusted.
+func (authority *runtimePatchAuthority) runtimeInputs() string {
+	if authority.runtimeInputsFingerprint != "" || authority.deferredRuntimeInputs == nil {
+		return authority.runtimeInputsFingerprint
+	}
+	return authority.deferredRuntimeInputs.value()
+}
+
+func runtimePatchAuthorityFromRetainedSources(index typesys.Index, key runtimeCacheKey, sources *sourceCache, runtimeInputs *runtimePatchDeferredRuntimeInputs, payloadFingerprint string) *runtimePatchAuthority {
 	fingerprint, ok := runtimePatchIndexFingerprint(index)
-	if !ok || runtimeInputsFingerprint == "" || payloadFingerprint == "" {
+	if !ok || runtimeInputs == nil || payloadFingerprint == "" {
 		return nil
 	}
 	digests, ok := runtimePatchIndexDigests(index)
@@ -290,7 +371,7 @@ func runtimePatchAuthorityFromRetainedSources(index typesys.Index, key runtimeCa
 		}
 		references[path] = runtimePatchStaticReferenceFingerprint(source)
 	}
-	return &runtimePatchAuthority{key: key, fingerprint: fingerprint, runtimeInputsFingerprint: runtimeInputsFingerprint, payloadFingerprint: payloadFingerprint, sourceReferences: references}
+	return &runtimePatchAuthority{key: key, fingerprint: fingerprint, deferredRuntimeInputs: runtimeInputs, payloadFingerprint: payloadFingerprint, sourceReferences: references}
 }
 
 func runtimePatchAuthorityFromTransition(index typesys.Index, key, predecessorKey runtimeCacheKey, predecessorFingerprint, runtimeInputsFingerprint string, previous *runtimePatchAuthority, affected []runtimePatchAffectedOwner, sources *sourceCache, entry runtimeCacheEntry, counters *runPerfCounters) *runtimePatchAuthority {
@@ -465,7 +546,7 @@ func tryRuntimePatchTransitionContext(ctx context.Context, previous, current typ
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
 	}
 	currentRuntimeInputsFingerprint := runtimePatchRuntimeInputsFingerprintFromParts(currentAmbientFingerprint, currentAPIVersionFingerprint)
-	if previousEntry.patchAuthority.runtimeInputsFingerprint != currentRuntimeInputsFingerprint ||
+	if previousEntry.patchAuthority.runtimeInputs() != currentRuntimeInputsFingerprint ||
 		!runtimePatchAffectedClosureValid(current, affected) {
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
 	}
@@ -554,6 +635,7 @@ func runtimePatchTransitionBaseSnapshot(key runtimeCacheKey, fingerprint string)
 		entry.BaseErr != nil || len(entry.TriggerErrors) != 0 {
 		return runtimeCacheEntry{}, false
 	}
+	touchRuntimeCacheKey(key)
 	return entry, true
 }
 
@@ -703,6 +785,7 @@ func buildRuntimePatchTransition(previous, current typesys.Index, digests *types
 	var resultEntry runtimeCacheEntry
 	var resultOutcome runtimePatchOutcome
 	cacheHit := false
+	var evicted []runtimeCacheKey
 	published := runtimePatchTransitionFlights.publish(flightEpoch, func() bool {
 		runtimeCacheMu.Lock()
 		defer runtimeCacheMu.Unlock()
@@ -715,6 +798,7 @@ func buildRuntimePatchTransition(previous, current typesys.Index, digests *types
 			if outcome, trusted := runtimePatchTrustedCacheOutcome(current, currentKey, currentFingerprint, currentRuntimeInputsFingerprint, previousKey, previousFingerprint, affected, existing); trusted {
 				cloned, clonedOK := cloneRuntimeCacheEntryChecked(existing)
 				if clonedOK && cloned.restored.Valid() {
+					touchRuntimeCacheKey(currentKey)
 					resultEntry = cloned
 					resultOutcome = outcome
 					cacheHit = true
@@ -723,11 +807,12 @@ func buildRuntimePatchTransition(previous, current typesys.Index, digests *types
 			}
 			delete(runtimeCache, currentKey)
 		}
-		runtimeCache[currentKey] = entry
+		evicted = storeRuntimeCacheEntryLocked(currentKey, entry)
 		resultEntry = clonedEntry
 		resultOutcome = runtimePatchAppliedOutcome(current, affected, currentKey, clonedEntry)
 		return true
 	})
+	dropEvictedRuntimeCacheCompanions(evicted)
 	if !published {
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
 	}
@@ -745,7 +830,7 @@ func runtimePatchBaseEntryTrusted(entry runtimeCacheEntry, key runtimeCacheKey, 
 	return entry.restored.Valid() && entry.patchAuthority != nil &&
 		entry.patchAuthority.key == key &&
 		entry.patchAuthority.fingerprint == fingerprint &&
-		entry.patchAuthority.runtimeInputsFingerprint == runtimeInputsFingerprint &&
+		entry.patchAuthority.runtimeInputs() == runtimeInputsFingerprint &&
 		runtimePatchAuthorityMatchesPayload(entry) &&
 		entry.BaseErr == nil && len(entry.TriggerErrors) == 0
 }
@@ -775,7 +860,7 @@ func runtimePatchValidateAffectedSources(previous, current typesys.Index, previo
 
 func runtimePatchTrustedCacheOutcome(index typesys.Index, key runtimeCacheKey, fingerprint, runtimeInputsFingerprint string, predecessorKey runtimeCacheKey, predecessorFingerprint string, affected []runtimePatchAffectedOwner, entry runtimeCacheEntry) (runtimePatchOutcome, bool) {
 	authority := entry.patchAuthority
-	if authority == nil || authority.key != key || authority.fingerprint != fingerprint || authority.runtimeInputsFingerprint != runtimeInputsFingerprint {
+	if authority == nil || authority.key != key || authority.fingerprint != fingerprint || authority.runtimeInputs() != runtimeInputsFingerprint {
 		return runtimePatchOutcome{}, false
 	}
 	if !runtimePatchAuthorityMatchesPayload(entry) {
@@ -1654,6 +1739,7 @@ func runtimePatchIndexFingerprint(index typesys.Index) (string, bool) {
 }
 
 func runtimePatchAmbientFingerprint(org storage.OrgState, pageNames []string) (string, bool) {
+	runtimePatchAmbientFingerprintCalls.Add(1)
 	ambientOrg := org
 	ambientOrg.Objects = maps.Clone(org.Objects)
 	delete(ambientOrg.Objects, "ApexClass")
@@ -1669,31 +1755,10 @@ func runtimePatchAmbientFingerprint(org storage.OrgState, pageNames []string) (s
 		object.Definition.Fields = org.Objects[name].Definition.Fields
 		ambientOrg.Objects[name] = object
 	}
-	payload := struct {
-		Org       storage.OrgState `json:"org"`
-		PageNames []string         `json:"pageNames,omitempty"`
-	}{
+	return runtimePatchAmbientDigest(runtimePatchAmbientPayload{
 		Org:       ambientOrg,
 		PageNames: append([]string(nil), pageNames...),
-	}
-	encoded, err := json.Marshal(payload)
-	if err != nil {
-		return "", false
-	}
-	digest := sha256.Sum256(encoded)
-	return hex.EncodeToString(digest[:]), true
-}
-
-func runtimePatchRuntimeInputsFingerprint(org storage.OrgState, pageNames []string, methods map[string]vm.Method) (string, bool) {
-	ambientFingerprint, ok := runtimePatchAmbientFingerprint(org, pageNames)
-	if !ok {
-		return "", false
-	}
-	apiVersionFingerprint, ok := runtimePatchCompiledAPIVersionFingerprint(methods)
-	if !ok {
-		return "", false
-	}
-	return runtimePatchRuntimeInputsFingerprintFromParts(ambientFingerprint, apiVersionFingerprint), true
+	})
 }
 
 func runtimePatchRuntimeInputsFingerprintFromParts(ambientFingerprint, apiVersionFingerprint string) string {

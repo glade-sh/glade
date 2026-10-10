@@ -1,0 +1,1525 @@
+{
+  "source": "Salesforce API native observation",
+  "objects": {
+    "Account": {
+      "sourceRows": [
+        "r_pickall_Account_values",
+        "r_pickall_Account_names",
+        "r_layout_Account_Full_View",
+        "r_layout_Account_Full_Create",
+        "r_layout_Account_Compact_View"
+      ],
+      "picklists": {
+        "AccountSource": {
+          "values": [
+            {
+              "value": "Web",
+              "label": "Web",
+              "active": true
+            },
+            {
+              "value": "Phone Inquiry",
+              "label": "Phone Inquiry",
+              "active": true
+            },
+            {
+              "value": "Partner Referral",
+              "label": "Partner Referral",
+              "active": true
+            },
+            {
+              "value": "Purchased List",
+              "label": "Purchased List",
+              "active": true
+            },
+            {
+              "value": "Other",
+              "label": "Other",
+              "active": true
+            }
+          ]
+        },
+        "BillingGeocodeAccuracy": {
+          "values": [
+            {
+              "value": "Address",
+              "label": "Address",
+              "active": true
+            },
+            {
+              "value": "NearAddress",
+              "label": "Near Address",
+              "active": true
+            },
+            {
+              "value": "Block",
+              "label": "Block",
+              "active": true
+            },
+            {
+              "value": "Street",
+              "label": "Street",
+              "active": true
+            },
+            {
+              "value": "ExtendedZip",
+              "label": "Extended Zip",
+              "active": true
+            },
+            {
+              "value": "Zip",
+              "label": "Zip",
+              "active": true
+            },
+            {
+              "value": "Neighborhood",
+              "label": "Neighborhood",
+              "active": true
+            },
+            {
+              "value": "City",
+              "label": "City",
+              "active": true
+            },
+            {
+              "value": "County",
+              "label": "County",
+              "active": true
+            },
+            {
+              "value": "State",
+              "label": "State",
+              "active": true
+            },
+            {
+              "value": "Unknown",
+              "label": "Unknown",
+              "active": true
+            }
+          ]
+        },
+        "CleanStatus": {
+          "values": [
+            {
+              "value": "Matched",
+              "label": "In Sync",
+              "active": true
+            },
+            {
+              "value": "Different",
+              "label": "Different",
+              "active": true
+            },
+            {
+              "value": "Acknowledged",
+              "label": "Reviewed",
+              "active": true
+            },
+            {
+              "value": "NotFound",
+              "label": "Not Found",
+              "active": true
+            },
+            {
+              "value": "Inactive",
+              "label": "Inactive",
+              "active": true
+            },
+            {
+              "value": "Pending",
+              "label": "Not Compared",
+              "active": true
+            },
+            {
+              "value": "SelectMatch",
+              "label": "Select Match",
+              "active": true
+            },
+            {
+              "value": "Skipped",
+              "label": "Skipped",
+              "active": true
+            }
+          ]
+        },
+        "Industry": {
+          "values": [
+            {
+              "value": "Agriculture",
+              "label": "Agriculture",
+              "active": true
+            },
+            {
+              "value": "Apparel",
+              "label": "Apparel",
+              "active": true
+            },
+            {
+              "value": "Banking",
+              "label": "Banking",
+              "active": true
+            },
+            {
+              "value": "Biotechnology",
+              "label": "Biotechnology",
+              "active": true
+            },
+            {
+              "value": "Chemicals",
+              "label": "Chemicals",
+              "active": true
+            },
+            {
+              "value": "Communications",
+              "label": "Communications",
+              "active": true
+            },
+            {
+              "value": "Construction",
+              "label": "Construction",
+              "active": true
+            },
+            {
+              "value": "Consulting",
+              "label": "Consulting",
+              "active": true
+            },
+            {
+              "value": "Education",
+              "label": "Education",
+              "active": true
+            },
+            {
+              "value": "Electronics",
+              "label": "Electronics",
+              "active": true
+            },
+            {
+              "value": "Energy",
+              "label": "Energy",
+              "active": true
+            },
+            {
+              "value": "Engineering",
+              "label": "Engineering",
+              "active": true
+            },
+            {
+              "value": "Entertainment",
+              "label": "Entertainment",
+              "active": true
+            },
+            {
+              "value": "Environmental",
+              "label": "Environmental",
+              "active": true
+            },
+            {
+              "value": "Finance",
+              "label": "Finance",
+              "active": true
+            },
+            {
+              "value": "Food & Beverage",
+              "label": "Food & Beverage",
+              "active": true
+            },
+            {
+              "value": "Government",
+              "label": "Government",
+              "active": true
+            },
+            {
+              "value": "Healthcare",
+              "label": "Healthcare",
+              "active": true
+            },
+            {
+              "value": "Hospitality",
+              "label": "Hospitality",
+              "active": true
+            },
+            {
+              "value": "Insurance",
+              "label": "Insurance",
+              "active": true
+            },
+            {
+              "value": "Machinery",
+              "label": "Machinery",
+              "active": true
+            },
+            {
+              "value": "Manufacturing",
+              "label": "Manufacturing",
+              "active": true
+            },
+            {
+              "value": "Media",
+              "label": "Media",
+              "active": true
+            },
+            {
+              "value": "Not For Profit",
+              "label": "Not For Profit",
+              "active": true
+            },
+            {
+              "value": "Recreation",
+              "label": "Recreation",
+              "active": true
+            },
+            {
+              "value": "Retail",
+              "label": "Retail",
+              "active": true
+            },
+            {
+              "value": "Shipping",
+              "label": "Shipping",
+              "active": true
+            },
+            {
+              "value": "Technology",
+              "label": "Technology",
+              "active": true
+            },
+            {
+              "value": "Telecommunications",
+              "label": "Telecommunications",
+              "active": true
+            },
+            {
+              "value": "Transportation",
+              "label": "Transportation",
+              "active": true
+            },
+            {
+              "value": "Utilities",
+              "label": "Utilities",
+              "active": true
+            },
+            {
+              "value": "Other",
+              "label": "Other",
+              "active": true
+            }
+          ]
+        },
+        "Ownership": {
+          "values": [
+            {
+              "value": "Public",
+              "label": "Public",
+              "active": true
+            },
+            {
+              "value": "Private",
+              "label": "Private",
+              "active": true
+            },
+            {
+              "value": "Subsidiary",
+              "label": "Subsidiary",
+              "active": true
+            },
+            {
+              "value": "Other",
+              "label": "Other",
+              "active": true
+            }
+          ]
+        },
+        "Rating": {
+          "values": [
+            {
+              "value": "Hot",
+              "label": "Hot",
+              "active": true
+            },
+            {
+              "value": "Warm",
+              "label": "Warm",
+              "active": true
+            },
+            {
+              "value": "Cold",
+              "label": "Cold",
+              "active": true
+            }
+          ]
+        },
+        "ShippingGeocodeAccuracy": {
+          "values": [
+            {
+              "value": "Address",
+              "label": "Address",
+              "active": true
+            },
+            {
+              "value": "NearAddress",
+              "label": "Near Address",
+              "active": true
+            },
+            {
+              "value": "Block",
+              "label": "Block",
+              "active": true
+            },
+            {
+              "value": "Street",
+              "label": "Street",
+              "active": true
+            },
+            {
+              "value": "ExtendedZip",
+              "label": "Extended Zip",
+              "active": true
+            },
+            {
+              "value": "Zip",
+              "label": "Zip",
+              "active": true
+            },
+            {
+              "value": "Neighborhood",
+              "label": "Neighborhood",
+              "active": true
+            },
+            {
+              "value": "City",
+              "label": "City",
+              "active": true
+            },
+            {
+              "value": "County",
+              "label": "County",
+              "active": true
+            },
+            {
+              "value": "State",
+              "label": "State",
+              "active": true
+            },
+            {
+              "value": "Unknown",
+              "label": "Unknown",
+              "active": true
+            }
+          ]
+        },
+        "Type": {
+          "values": [
+            {
+              "value": "Prospect",
+              "label": "Prospect",
+              "active": true
+            },
+            {
+              "value": "Customer - Direct",
+              "label": "Customer - Direct",
+              "active": true
+            },
+            {
+              "value": "Customer - Channel",
+              "label": "Customer - Channel",
+              "active": true
+            },
+            {
+              "value": "Channel Partner / Reseller",
+              "label": "Channel Partner / Reseller",
+              "active": true
+            },
+            {
+              "value": "Installation Partner",
+              "label": "Installation Partner",
+              "active": true
+            },
+            {
+              "value": "Technology Partner",
+              "label": "Technology Partner",
+              "active": true
+            },
+            {
+              "value": "Other",
+              "label": "Other",
+              "active": true
+            }
+          ]
+        }
+      },
+      "componentLabels": {
+        "OwnerId": "Owner ID",
+        "Rating": "Account Rating",
+        "Name": "Account Name",
+        "Phone": "Account Phone",
+        "ParentId": "Parent Account ID",
+        "Fax": "Account Fax",
+        "AccountNumber": "Account Number",
+        "Website": "Website",
+        "Site": "Account Site",
+        "TickerSymbol": "Ticker Symbol",
+        "Type": "Account Type",
+        "Ownership": "Ownership",
+        "Industry": "Industry",
+        "NumberOfEmployees": "Employees",
+        "AnnualRevenue": "Annual Revenue",
+        "Sic": "SIC Code",
+        "BillingStreet": "Billing Street",
+        "BillingCity": "Billing City",
+        "BillingState": "Billing State/Province",
+        "BillingPostalCode": "Billing Zip/Postal Code",
+        "BillingCountry": "Billing Country",
+        "ShippingStreet": "Shipping Street",
+        "ShippingCity": "Shipping City",
+        "ShippingState": "Shipping State/Province",
+        "ShippingPostalCode": "Shipping Zip/Postal Code",
+        "ShippingCountry": "Shipping Country",
+        "CreatedById": "Created By ID",
+        "CreatedDate": "Created Date",
+        "LastModifiedById": "Last Modified By ID",
+        "LastModifiedDate": "Last Modified Date",
+        "Description": "Account Description"
+      }
+    },
+    "Contact": {
+      "sourceRows": [
+        "r_pickall_Contact_values",
+        "r_pickall_Contact_names",
+        "r_layout_Contact_Full_View",
+        "r_layout_Contact_Full_Create",
+        "r_layout_Contact_Compact_View"
+      ],
+      "picklists": {
+        "CleanStatus": {
+          "values": [
+            {
+              "value": "Matched",
+              "label": "In Sync",
+              "active": true
+            },
+            {
+              "value": "Different",
+              "label": "Different",
+              "active": true
+            },
+            {
+              "value": "Acknowledged",
+              "label": "Reviewed",
+              "active": true
+            },
+            {
+              "value": "NotFound",
+              "label": "Not Found",
+              "active": true
+            },
+            {
+              "value": "Inactive",
+              "label": "Inactive",
+              "active": true
+            },
+            {
+              "value": "Pending",
+              "label": "Not Compared",
+              "active": true
+            },
+            {
+              "value": "SelectMatch",
+              "label": "Select Match",
+              "active": true
+            },
+            {
+              "value": "Skipped",
+              "label": "Skipped",
+              "active": true
+            }
+          ]
+        },
+        "ContactSource": {
+          "values": [
+            {
+              "value": "Auto Create",
+              "label": "Auto Create",
+              "active": true
+            },
+            {
+              "value": "Email Message",
+              "label": "Email Message",
+              "active": true
+            },
+            {
+              "value": "Meeting Digest",
+              "label": "Meeting Digest",
+              "active": true
+            },
+            {
+              "value": "Seller Home",
+              "label": "Seller Home",
+              "active": true
+            }
+          ]
+        },
+        "LeadSource": {
+          "values": [
+            {
+              "value": "Web",
+              "label": "Web",
+              "active": true
+            },
+            {
+              "value": "Phone Inquiry",
+              "label": "Phone Inquiry",
+              "active": true
+            },
+            {
+              "value": "Partner Referral",
+              "label": "Partner Referral",
+              "active": true
+            },
+            {
+              "value": "Purchased List",
+              "label": "Purchased List",
+              "active": true
+            },
+            {
+              "value": "Other",
+              "label": "Other",
+              "active": true
+            }
+          ]
+        },
+        "MailingGeocodeAccuracy": {
+          "values": [
+            {
+              "value": "Address",
+              "label": "Address",
+              "active": true
+            },
+            {
+              "value": "NearAddress",
+              "label": "Near Address",
+              "active": true
+            },
+            {
+              "value": "Block",
+              "label": "Block",
+              "active": true
+            },
+            {
+              "value": "Street",
+              "label": "Street",
+              "active": true
+            },
+            {
+              "value": "ExtendedZip",
+              "label": "Extended Zip",
+              "active": true
+            },
+            {
+              "value": "Zip",
+              "label": "Zip",
+              "active": true
+            },
+            {
+              "value": "Neighborhood",
+              "label": "Neighborhood",
+              "active": true
+            },
+            {
+              "value": "City",
+              "label": "City",
+              "active": true
+            },
+            {
+              "value": "County",
+              "label": "County",
+              "active": true
+            },
+            {
+              "value": "State",
+              "label": "State",
+              "active": true
+            },
+            {
+              "value": "Unknown",
+              "label": "Unknown",
+              "active": true
+            }
+          ]
+        },
+        "OtherGeocodeAccuracy": {
+          "values": [
+            {
+              "value": "Address",
+              "label": "Address",
+              "active": true
+            },
+            {
+              "value": "NearAddress",
+              "label": "Near Address",
+              "active": true
+            },
+            {
+              "value": "Block",
+              "label": "Block",
+              "active": true
+            },
+            {
+              "value": "Street",
+              "label": "Street",
+              "active": true
+            },
+            {
+              "value": "ExtendedZip",
+              "label": "Extended Zip",
+              "active": true
+            },
+            {
+              "value": "Zip",
+              "label": "Zip",
+              "active": true
+            },
+            {
+              "value": "Neighborhood",
+              "label": "Neighborhood",
+              "active": true
+            },
+            {
+              "value": "City",
+              "label": "City",
+              "active": true
+            },
+            {
+              "value": "County",
+              "label": "County",
+              "active": true
+            },
+            {
+              "value": "State",
+              "label": "State",
+              "active": true
+            },
+            {
+              "value": "Unknown",
+              "label": "Unknown",
+              "active": true
+            }
+          ]
+        },
+        "Salutation": {
+          "values": [
+            {
+              "value": "Mr.",
+              "label": "Mr.",
+              "active": true
+            },
+            {
+              "value": "Ms.",
+              "label": "Ms.",
+              "active": true
+            },
+            {
+              "value": "Mrs.",
+              "label": "Mrs.",
+              "active": true
+            },
+            {
+              "value": "Dr.",
+              "label": "Dr.",
+              "active": true
+            },
+            {
+              "value": "Prof.",
+              "label": "Prof.",
+              "active": true
+            },
+            {
+              "value": "Mx.",
+              "label": "Mx.",
+              "active": true
+            }
+          ]
+        }
+      },
+      "componentLabels": {
+        "OwnerId": "Owner ID",
+        "Phone": "Business Phone",
+        "Salutation": "Salutation",
+        "FirstName": "First Name",
+        "LastName": "Last Name",
+        "HomePhone": "Home Phone",
+        "AccountId": "Account ID",
+        "MobilePhone": "Mobile Phone",
+        "Title": "Title",
+        "OtherPhone": "Other Phone",
+        "Department": "Department",
+        "Fax": "Business Fax",
+        "Birthdate": "Birthdate",
+        "Email": "Email",
+        "ReportsToId": "Reports To ID",
+        "AssistantName": "Assistant's Name",
+        "LeadSource": "Lead Source",
+        "AssistantPhone": "Asst. Phone",
+        "MailingStreet": "Mailing Street",
+        "MailingCity": "Mailing City",
+        "MailingState": "Mailing State/Province",
+        "MailingPostalCode": "Mailing Zip/Postal Code",
+        "MailingCountry": "Mailing Country",
+        "OtherStreet": "Other Street",
+        "OtherCity": "Other City",
+        "OtherState": "Other State/Province",
+        "OtherPostalCode": "Other Zip/Postal Code",
+        "OtherCountry": "Other Country",
+        "CreatedById": "Created By ID",
+        "CreatedDate": "Created Date",
+        "LastModifiedById": "Last Modified By ID",
+        "LastModifiedDate": "Last Modified Date",
+        "Description": "Contact Description"
+      }
+    },
+    "Opportunity": {
+      "sourceRows": [
+        "r_pickall_Opportunity_values",
+        "r_pickall_Opportunity_names",
+        "r_layout_Opportunity_Full_View",
+        "r_layout_Opportunity_Full_Create",
+        "r_layout_Opportunity_Compact_View"
+      ],
+      "picklists": {
+        "ForecastCategory": {
+          "values": [
+            {
+              "value": "Omitted",
+              "label": "Omitted",
+              "active": true
+            },
+            {
+              "value": "Pipeline",
+              "label": "Pipeline",
+              "active": true
+            },
+            {
+              "value": "BestCase",
+              "label": "Best Case",
+              "active": true
+            },
+            {
+              "value": "MostLikely",
+              "label": "Most Likely",
+              "active": true
+            },
+            {
+              "value": "Forecast",
+              "label": "Commit",
+              "active": true
+            },
+            {
+              "value": "Closed",
+              "label": "Closed",
+              "active": true
+            }
+          ]
+        },
+        "ForecastCategoryName": {
+          "values": [
+            {
+              "value": "Omitted",
+              "label": "Omitted",
+              "active": true
+            },
+            {
+              "value": "Pipeline",
+              "label": "Pipeline",
+              "active": true
+            },
+            {
+              "value": "Best Case",
+              "label": "Best Case",
+              "active": true
+            },
+            {
+              "value": "Commit",
+              "label": "Commit",
+              "active": true
+            },
+            {
+              "value": "Closed",
+              "label": "Closed",
+              "active": true
+            }
+          ]
+        },
+        "LeadSource": {
+          "values": [
+            {
+              "value": "Web",
+              "label": "Web",
+              "active": true
+            },
+            {
+              "value": "Phone Inquiry",
+              "label": "Phone Inquiry",
+              "active": true
+            },
+            {
+              "value": "Partner Referral",
+              "label": "Partner Referral",
+              "active": true
+            },
+            {
+              "value": "Purchased List",
+              "label": "Purchased List",
+              "active": true
+            },
+            {
+              "value": "Other",
+              "label": "Other",
+              "active": true
+            }
+          ]
+        },
+        "StageName": {
+          "values": [
+            {
+              "value": "Prospecting",
+              "label": "Prospecting",
+              "active": true
+            },
+            {
+              "value": "Qualification",
+              "label": "Qualification",
+              "active": true
+            },
+            {
+              "value": "Needs Analysis",
+              "label": "Needs Analysis",
+              "active": true
+            },
+            {
+              "value": "Value Proposition",
+              "label": "Value Proposition",
+              "active": true
+            },
+            {
+              "value": "Id. Decision Makers",
+              "label": "Id. Decision Makers",
+              "active": true
+            },
+            {
+              "value": "Perception Analysis",
+              "label": "Perception Analysis",
+              "active": true
+            },
+            {
+              "value": "Proposal/Price Quote",
+              "label": "Proposal/Price Quote",
+              "active": true
+            },
+            {
+              "value": "Negotiation/Review",
+              "label": "Negotiation/Review",
+              "active": true
+            },
+            {
+              "value": "Closed Won",
+              "label": "Closed Won",
+              "active": true
+            },
+            {
+              "value": "Closed Lost",
+              "label": "Closed Lost",
+              "active": true
+            }
+          ]
+        },
+        "Type": {
+          "values": [
+            {
+              "value": "Existing Customer - Upgrade",
+              "label": "Existing Customer - Upgrade",
+              "active": true
+            },
+            {
+              "value": "Existing Customer - Replacement",
+              "label": "Existing Customer - Replacement",
+              "active": true
+            },
+            {
+              "value": "Existing Customer - Downgrade",
+              "label": "Existing Customer - Downgrade",
+              "active": true
+            },
+            {
+              "value": "New Customer",
+              "label": "New Customer",
+              "active": true
+            }
+          ]
+        }
+      },
+      "componentLabels": {
+        "OwnerId": "Owner ID",
+        "Amount": "Amount",
+        "IsPrivate": "Private",
+        "ExpectedRevenue": "Expected Amount",
+        "Name": "Name",
+        "CloseDate": "Close Date",
+        "AccountId": "Account ID",
+        "NextStep": "Next Step",
+        "Type": "Opportunity Type",
+        "StageName": "Stage",
+        "LeadSource": "Lead Source",
+        "Probability": "Probability (%)",
+        "CampaignId": "Campaign ID",
+        "CreatedById": "Created By ID",
+        "CreatedDate": "Created Date",
+        "LastModifiedById": "Last Modified By ID",
+        "LastModifiedDate": "Last Modified Date",
+        "Description": "Description"
+      }
+    },
+    "Case": {
+      "sourceRows": [
+        "r_pickall_Case_values",
+        "r_pickall_Case_names",
+        "r_defaults_Case_master"
+      ],
+      "picklists": {
+        "Origin": {
+          "values": [
+            {
+              "value": "Phone",
+              "label": "Phone",
+              "active": true
+            },
+            {
+              "value": "Email",
+              "label": "Email",
+              "active": true
+            },
+            {
+              "value": "Web",
+              "label": "Web",
+              "active": true
+            }
+          ]
+        },
+        "Priority": {
+          "values": [
+            {
+              "value": "High",
+              "label": "High",
+              "active": true,
+              "default": false
+            },
+            {
+              "value": "Medium",
+              "label": "Medium",
+              "active": true,
+              "default": true
+            },
+            {
+              "value": "Low",
+              "label": "Low",
+              "active": true,
+              "default": false
+            }
+          ]
+        },
+        "Reason": {
+          "values": [
+            {
+              "value": "Installation",
+              "label": "Installation",
+              "active": true
+            },
+            {
+              "value": "Equipment Complexity",
+              "label": "Equipment Complexity",
+              "active": true
+            },
+            {
+              "value": "Performance",
+              "label": "Performance",
+              "active": true
+            },
+            {
+              "value": "Breakdown",
+              "label": "Breakdown",
+              "active": true
+            },
+            {
+              "value": "Equipment Design",
+              "label": "Equipment Design",
+              "active": true
+            },
+            {
+              "value": "Feedback",
+              "label": "Feedback",
+              "active": true
+            },
+            {
+              "value": "Other",
+              "label": "Other",
+              "active": true
+            }
+          ]
+        },
+        "Status": {
+          "values": [
+            {
+              "value": "New",
+              "label": "New",
+              "active": true,
+              "default": true
+            },
+            {
+              "value": "Working",
+              "label": "Working",
+              "active": true,
+              "default": false
+            },
+            {
+              "value": "Escalated",
+              "label": "Escalated",
+              "active": true,
+              "default": false
+            },
+            {
+              "value": "Closed",
+              "label": "Closed",
+              "active": true,
+              "default": false
+            }
+          ],
+          "defaultAttributes": {
+            "closed": false,
+            "picklistAtrributesValueType": "CaseStatus"
+          }
+        },
+        "Type": {
+          "values": [
+            {
+              "value": "Mechanical",
+              "label": "Mechanical",
+              "active": true
+            },
+            {
+              "value": "Electrical",
+              "label": "Electrical",
+              "active": true
+            },
+            {
+              "value": "Electronic",
+              "label": "Electronic",
+              "active": true
+            },
+            {
+              "value": "Structural",
+              "label": "Structural",
+              "active": true
+            },
+            {
+              "value": "Other",
+              "label": "Other",
+              "active": true
+            }
+          ]
+        }
+      },
+      "componentLabels": {}
+    },
+    "Lead": {
+      "sourceRows": [
+        "r_pickall_Lead_values",
+        "r_pickall_Lead_names",
+        "r_defaults_Lead_master"
+      ],
+      "picklists": {
+        "CleanStatus": {
+          "values": [
+            {
+              "value": "Matched",
+              "label": "In Sync",
+              "active": true
+            },
+            {
+              "value": "Different",
+              "label": "Different",
+              "active": true
+            },
+            {
+              "value": "Acknowledged",
+              "label": "Reviewed",
+              "active": true
+            },
+            {
+              "value": "NotFound",
+              "label": "Not Found",
+              "active": true
+            },
+            {
+              "value": "Inactive",
+              "label": "Inactive",
+              "active": true
+            },
+            {
+              "value": "Pending",
+              "label": "Not Compared",
+              "active": true
+            },
+            {
+              "value": "SelectMatch",
+              "label": "Select Match",
+              "active": true
+            },
+            {
+              "value": "Skipped",
+              "label": "Skipped",
+              "active": true
+            }
+          ]
+        },
+        "GeocodeAccuracy": {
+          "values": [
+            {
+              "value": "Address",
+              "label": "Address",
+              "active": true
+            },
+            {
+              "value": "NearAddress",
+              "label": "Near Address",
+              "active": true
+            },
+            {
+              "value": "Block",
+              "label": "Block",
+              "active": true
+            },
+            {
+              "value": "Street",
+              "label": "Street",
+              "active": true
+            },
+            {
+              "value": "ExtendedZip",
+              "label": "Extended Zip",
+              "active": true
+            },
+            {
+              "value": "Zip",
+              "label": "Zip",
+              "active": true
+            },
+            {
+              "value": "Neighborhood",
+              "label": "Neighborhood",
+              "active": true
+            },
+            {
+              "value": "City",
+              "label": "City",
+              "active": true
+            },
+            {
+              "value": "County",
+              "label": "County",
+              "active": true
+            },
+            {
+              "value": "State",
+              "label": "State",
+              "active": true
+            },
+            {
+              "value": "Unknown",
+              "label": "Unknown",
+              "active": true
+            }
+          ]
+        },
+        "Industry": {
+          "values": [
+            {
+              "value": "Agriculture",
+              "label": "Agriculture",
+              "active": true
+            },
+            {
+              "value": "Apparel",
+              "label": "Apparel",
+              "active": true
+            },
+            {
+              "value": "Banking",
+              "label": "Banking",
+              "active": true
+            },
+            {
+              "value": "Biotechnology",
+              "label": "Biotechnology",
+              "active": true
+            },
+            {
+              "value": "Chemicals",
+              "label": "Chemicals",
+              "active": true
+            },
+            {
+              "value": "Communications",
+              "label": "Communications",
+              "active": true
+            },
+            {
+              "value": "Construction",
+              "label": "Construction",
+              "active": true
+            },
+            {
+              "value": "Consulting",
+              "label": "Consulting",
+              "active": true
+            },
+            {
+              "value": "Education",
+              "label": "Education",
+              "active": true
+            },
+            {
+              "value": "Electronics",
+              "label": "Electronics",
+              "active": true
+            },
+            {
+              "value": "Energy",
+              "label": "Energy",
+              "active": true
+            },
+            {
+              "value": "Engineering",
+              "label": "Engineering",
+              "active": true
+            },
+            {
+              "value": "Entertainment",
+              "label": "Entertainment",
+              "active": true
+            },
+            {
+              "value": "Environmental",
+              "label": "Environmental",
+              "active": true
+            },
+            {
+              "value": "Finance",
+              "label": "Finance",
+              "active": true
+            },
+            {
+              "value": "Food & Beverage",
+              "label": "Food & Beverage",
+              "active": true
+            },
+            {
+              "value": "Government",
+              "label": "Government",
+              "active": true
+            },
+            {
+              "value": "Healthcare",
+              "label": "Healthcare",
+              "active": true
+            },
+            {
+              "value": "Hospitality",
+              "label": "Hospitality",
+              "active": true
+            },
+            {
+              "value": "Insurance",
+              "label": "Insurance",
+              "active": true
+            },
+            {
+              "value": "Machinery",
+              "label": "Machinery",
+              "active": true
+            },
+            {
+              "value": "Manufacturing",
+              "label": "Manufacturing",
+              "active": true
+            },
+            {
+              "value": "Media",
+              "label": "Media",
+              "active": true
+            },
+            {
+              "value": "Not For Profit",
+              "label": "Not For Profit",
+              "active": true
+            },
+            {
+              "value": "Recreation",
+              "label": "Recreation",
+              "active": true
+            },
+            {
+              "value": "Retail",
+              "label": "Retail",
+              "active": true
+            },
+            {
+              "value": "Shipping",
+              "label": "Shipping",
+              "active": true
+            },
+            {
+              "value": "Technology",
+              "label": "Technology",
+              "active": true
+            },
+            {
+              "value": "Telecommunications",
+              "label": "Telecommunications",
+              "active": true
+            },
+            {
+              "value": "Transportation",
+              "label": "Transportation",
+              "active": true
+            },
+            {
+              "value": "Utilities",
+              "label": "Utilities",
+              "active": true
+            },
+            {
+              "value": "Other",
+              "label": "Other",
+              "active": true
+            }
+          ]
+        },
+        "LeadSource": {
+          "values": [
+            {
+              "value": "Web",
+              "label": "Web",
+              "active": true
+            },
+            {
+              "value": "Phone Inquiry",
+              "label": "Phone Inquiry",
+              "active": true
+            },
+            {
+              "value": "Partner Referral",
+              "label": "Partner Referral",
+              "active": true
+            },
+            {
+              "value": "Purchased List",
+              "label": "Purchased List",
+              "active": true
+            },
+            {
+              "value": "Other",
+              "label": "Other",
+              "active": true
+            }
+          ]
+        },
+        "Rating": {
+          "values": [
+            {
+              "value": "Hot",
+              "label": "Hot",
+              "active": true
+            },
+            {
+              "value": "Warm",
+              "label": "Warm",
+              "active": true
+            },
+            {
+              "value": "Cold",
+              "label": "Cold",
+              "active": true
+            }
+          ]
+        },
+        "Salutation": {
+          "values": [
+            {
+              "value": "Mr.",
+              "label": "Mr.",
+              "active": true
+            },
+            {
+              "value": "Ms.",
+              "label": "Ms.",
+              "active": true
+            },
+            {
+              "value": "Mrs.",
+              "label": "Mrs.",
+              "active": true
+            },
+            {
+              "value": "Dr.",
+              "label": "Dr.",
+              "active": true
+            },
+            {
+              "value": "Prof.",
+              "label": "Prof.",
+              "active": true
+            },
+            {
+              "value": "Mx.",
+              "label": "Mx.",
+              "active": true
+            }
+          ]
+        },
+        "Status": {
+          "values": [
+            {
+              "value": "Open - Not Contacted",
+              "label": "Open - Not Contacted",
+              "active": true,
+              "default": true
+            },
+            {
+              "value": "Working - Contacted",
+              "label": "Working - Contacted",
+              "active": true,
+              "default": false
+            },
+            {
+              "value": "Closed - Converted",
+              "label": "Closed - Converted",
+              "active": true,
+              "default": false
+            },
+            {
+              "value": "Closed - Not Converted",
+              "label": "Closed - Not Converted",
+              "active": true,
+              "default": false
+            }
+          ],
+          "defaultAttributes": {
+            "converted": false,
+            "picklistAtrributesValueType": "LeadStatus"
+          }
+        }
+      },
+      "componentLabels": {}
+    }
+  },
+  "configurationScope": "Picklist values/availability and layout field/column inputs. Case/Lead layouts exercise only the captured create-default reference metadata; their layout positions are not parity claims."
+}

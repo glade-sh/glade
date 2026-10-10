@@ -40,6 +40,7 @@ var nodeIntegrationTests = map[string][]string{
 		"TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare",
 	},
 	"github.com/glade-sh/glade/internal/lwc/compile": {
+		"TestBuildCompileConfigAPIVersionMatrix",
 		"TestCompileProjectLWCBundles",
 		"TestCompileRewritesTemplateStylesheetImports",
 		"TestCompileEmitsSiblingJSModules",
@@ -47,6 +48,10 @@ var nodeIntegrationTests = map[string][]string{
 		"TestCompileEmitsAdditionalHTMLTemplateModules",
 		"TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate",
 		"TestCompileEnablesLwcOnDirective",
+		"TestComplexTemplateExpressionsFollowBundleAPIVersion",
+		"TestHTMLDetailsNameFollowsBundleAPIVersion",
+		"TestLWCModuleAvailabilityFollowsBundleAPIVersion",
+		"TestCompilePreservesDeclaredAPI67",
 	},
 	"github.com/glade-sh/glade/internal/lwcbrowser": {
 		"TestSetupBundleIncludesLabelsSibling",
@@ -70,6 +75,9 @@ var nodeIntegrationTests = map[string][]string{
 }
 
 var nodeIntegrationRunNames = []string{
+	"TestBuildCompileConfigAPIVersionMatrix", "TestLWCModuleAvailabilityFollowsBundleAPIVersion",
+	"TestComplexTemplateExpressionsFollowBundleAPIVersion", "TestHTMLDetailsNameFollowsBundleAPIVersion",
+	"TestCompilePreservesDeclaredAPI67",
 	"TestCompileProjectLWCBundles", "TestCompileRewritesTemplateStylesheetImports", "TestCompileEmitsSiblingJSModules",
 	"TestCompileEmitsUtilityOnlyLWCModules", "TestCompileEmitsAdditionalHTMLTemplateModules",
 	"TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate", "TestCompileEnablesLwcOnDirective",
@@ -1845,7 +1853,7 @@ func browserWorkflowProblem(workflow string) string {
 		`export PATH="$RUNNER_TEMP/browser-bin:$PATH"`,
 		`/usr/bin/time -v -o "$GITHUB_WORKSPACE/ci-artifacts/browser/resource-usage.txt"`,
 		"go test -json -vet=off -p=1 -count=1 -timeout=25m",
-		"-run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$'",
+		"-run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$'",
 		"./internal/lwcruntime ./internal/lwcbrowser",
 		`tee "$GITHUB_WORKSPACE/ci-artifacts/browser/go-test.json"`,
 		"PIPESTATUS[@]",
@@ -1856,6 +1864,7 @@ func browserWorkflowProblem(workflow string) string {
 		`node_events_path = artifact_dir / "node-test.log"`,
 		"TestBrowserRuntimeSuite",
 		"TestGeneratedPhase3BaseComponentsRunInBrowser",
+		"TestLWCAPI67RegistrationRunsInBrowser",
 		`action in {"pass", "fail", "skip"}`,
 		`if action == "skip":`,
 		`elif actions[0] != "pass":`,
@@ -2073,9 +2082,14 @@ func TestCIBrowserWorkflowContract(t *testing.T) {
 		"checkout overwrites early evidence": func(s string) string {
 			return strings.Replace(s, "          path: source\n", "", 1)
 		},
-		"missing Chromium": func(s string) string { return strings.Replace(s, "playwright install chromium", "playwright install", 1) },
+		"missing Chromium": func(s string) string {
+			return strings.Replace(s, "playwright install chromium", "playwright install", 1)
+		},
 		"missing selector": func(s string) string {
 			return strings.Replace(s, "|TestGeneratedPhase3BaseComponentsRunInBrowser", "", 1)
+		},
+		"missing API67 selector": func(s string) string {
+			return strings.Replace(s, "|TestLWCAPI67RegistrationRunsInBrowser", "", 1)
 		},
 		"weakened skip": func(s string) string {
 			return strings.Replace(s, `action in {"pass", "fail", "skip"}`, `action in {"pass", "fail"}`, 1)
@@ -2310,6 +2324,7 @@ func TestCIBrowserTAPValidationFixtures(t *testing.T) {
 	goEvents := strings.Join([]string{
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcruntime","Test":"TestBrowserRuntimeSuite"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestGeneratedPhase3BaseComponentsRunInBrowser"}`,
+		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestLWCAPI67RegistrationRunsInBrowser"}`,
 	}, "\n") + "\n"
 	cases := []struct {
 		name    string
@@ -2638,6 +2653,9 @@ exit "$FIXTURE_NATIVE_RC"
 }
 
 func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
+	if got := len(nodeIntegrationExpectedPairs()); got != 35 {
+		t.Fatalf("node integration expected pair count = %d, want 35", got)
+	}
 	out, err, artifacts, calls := runNodeIntegrationFixture(t, nodeIntegrationEvents("pass"), 0, nil)
 	if err != nil {
 		t.Fatalf("node integration fixture failed: %v\n%s", err, out)
@@ -2665,8 +2683,13 @@ func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
 		}
 	}
 	summary, err := os.ReadFile(filepath.Join(artifacts, "validation-summary.json"))
-	if err != nil || !strings.Contains(string(summary), `"tests": 30`) || !strings.Contains(string(summary), `"valid": true`) {
-		t.Errorf("validation summary invalid: err=%v data=%s", err, summary)
+	if err != nil {
+		t.Fatalf("read validation summary: %v", err)
+	}
+	for _, marker := range []string{`"tests": 35`, `"passed": 35`, `"skipped": 0`, `"failed": 0`, `"valid": true`} {
+		if !strings.Contains(string(summary), marker) {
+			t.Errorf("validation summary missing %s: %s", marker, summary)
+		}
 	}
 }
 
@@ -2697,6 +2720,97 @@ func TestCINodeIntegrationCommandRequiresFreshExecution(t *testing.T) {
 	}
 }
 
+// Exercise the actual validator without the shell wrapper. This keeps the
+// validator contract test usable where legacy Bash heredocs require /tmp.
+// It does not qualify the wrapper or the native Node integration lane.
+func TestCINodeIntegrationValidatorBodyControls(t *testing.T) {
+	script, err := os.ReadFile("ci-go-test.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	extract := func(function, delimiter string) string {
+		t.Helper()
+		_, body, ok := strings.Cut(string(script), function+"() {")
+		if !ok {
+			t.Fatalf("missing %s", function)
+		}
+		_, body, ok = strings.Cut(body, "<<'"+delimiter+"'\n")
+		if !ok {
+			t.Fatalf("missing %s body", function)
+		}
+		body, _, ok = strings.Cut(body, "\n"+delimiter+"\n}")
+		if !ok {
+			t.Fatalf("missing %s boundary", function)
+		}
+		return body + "\n"
+	}
+	expected := extract("write_node_integration_expected", "EOF")
+	validator := extract("validate_node_integration_events", "PY")
+	pairs := nodeIntegrationExpectedPairs()
+	if len(pairs) != 35 {
+		t.Fatalf("expected pairs = %d, want 35", len(pairs))
+	}
+	var want strings.Builder
+	for _, pair := range pairs {
+		fmt.Fprintf(&want, "%s\t%s\n", pair[0], pair[1])
+	}
+	if expected != want.String() {
+		t.Fatal("actual expected set does not match 35 sorted fixture pairs")
+	}
+	valid := nodeIntegrationEvents("pass")
+	first := pairs[0]
+	terminal := fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":0.01}\n", first[0], first[1])
+	for _, tc := range []struct {
+		name, events, rejection string
+		pass                    bool
+	}{
+		{"complete35", valid, "", true},
+		{"missing", strings.Replace(valid, terminal, "", 1), "terminal count is 34, want 35", false},
+		{"duplicate", valid + terminal, "terminal count is 36, want 35", false},
+		{"skipped", strings.Replace(valid, `"Action":"pass"`, `"Action":"skip"`, 1), "skip event for selected test", false},
+		{"failed", strings.Replace(valid, `"Action":"pass"`, `"Action":"fail"`, 1), "non-pass terminal results:", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			eventsPath := filepath.Join(dir, "events.json")
+			expectedPath := filepath.Join(dir, "expected.txt")
+			discoveryPath := filepath.Join(dir, "discovery.txt")
+			summaryPath := filepath.Join(dir, "summary.json")
+			for path, body := range map[string]string{eventsPath: tc.events, expectedPath: expected} {
+				if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			cmd := exec.Command("python3", "-c", validator, eventsPath, expectedPath, discoveryPath, summaryPath)
+			out, err := cmd.CombinedOutput()
+			if !tc.pass {
+				if err == nil || !strings.Contains(string(out), "node integration validation rejected:") || !strings.Contains(string(out), tc.rejection) {
+					t.Fatalf("invalid stream did not reach rejection gate: %v\n%s", err, out)
+				}
+				if _, err := os.Stat(summaryPath); !os.IsNotExist(err) {
+					t.Fatalf("invalid stream left summary: %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("complete35 rejected: %v\n%s", err, out)
+			}
+			body, err := os.ReadFile(summaryPath)
+			var summary struct {
+				Valid                          bool
+				Tests, Passed, Skipped, Failed int
+			}
+			if err != nil || json.Unmarshal(body, &summary) != nil || !summary.Valid || summary.Tests != 35 || summary.Passed != 35 || summary.Skipped != 0 || summary.Failed != 0 {
+				t.Fatalf("invalid complete35 summary: %v %s", err, body)
+			}
+			discovery, err := os.ReadFile(discoveryPath)
+			if err != nil || string(discovery) != expected {
+				t.Fatalf("complete35 discovery does not match exact expected set: %v %s", err, discovery)
+			}
+		})
+	}
+}
+
 func TestCINodeIntegrationValidatorRejectsInvalidEvidence(t *testing.T) {
 	valid := nodeIntegrationEvents("pass")
 	pairs := nodeIntegrationExpectedPairs()
@@ -2707,15 +2821,15 @@ func TestCINodeIntegrationValidatorRejectsInvalidEvidence(t *testing.T) {
 		nativeRC int
 		mutate   func(string) error
 	}{
-		"skip":          {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"skip"`, 1)},
-		"fail":          {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"fail"`, 1)},
-		"missing":       {events: strings.Replace(valid, terminal, "", 1)},
-		"extra":         {events: valid + `{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server","Test":"TestUnexpected"}` + "\n"},
-		"duplicate":     {events: valid + terminal},
-		"malformed":     {events: valid + "{not-json}\n"},
-		"wrong package": {events: strings.Replace(valid, first[0], "example.invalid/wrong", 1)},
-		"nested skip":   {events: valid + fmt.Sprintf("{\"Action\":\"skip\",\"Package\":%q,\"Test\":%q}\n", first[0], first[1]+"/nested")},
-		"native":        {events: valid, nativeRC: 23},
+		"skipped terminal":   {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"skip"`, 1)},
+		"failed terminal":    {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"fail"`, 1)},
+		"missing terminal":   {events: strings.Replace(valid, terminal, "", 1)},
+		"extra":              {events: valid + `{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server","Test":"TestUnexpected"}` + "\n"},
+		"duplicate terminal": {events: valid + terminal},
+		"malformed":          {events: valid + "{not-json}\n"},
+		"wrong package":      {events: strings.Replace(valid, first[0], "example.invalid/wrong", 1)},
+		"nested skip":        {events: valid + fmt.Sprintf("{\"Action\":\"skip\",\"Package\":%q,\"Test\":%q}\n", first[0], first[1]+"/nested")},
+		"native":             {events: valid, nativeRC: 23},
 		"tee": {events: valid, mutate: func(binDir string) error {
 			return os.WriteFile(filepath.Join(binDir, "tee"), []byte("#!/usr/bin/env bash\ncat >/dev/null\nexit 17\n"), 0o700)
 		}},
@@ -2749,21 +2863,36 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 			t.Errorf("node-integration job missing %q", marker)
 		}
 	}
-	if strings.Count(node, "npm ci --prefix third_party/lwc") != 1 || strings.Count(workflow, "npm ci --prefix third_party/lwc") != 2 {
-		t.Errorf("third_party/lwc npm install ownership count workflow/node = %d/%d, want 2/1 (distribution smoke plus node lane)", strings.Count(workflow, "npm ci --prefix third_party/lwc"), strings.Count(node, "npm ci --prefix third_party/lwc"))
+	if strings.Count(node, "npm ci --prefix third_party/lwc") != 1 || strings.Count(workflow, "npm ci --prefix third_party/lwc") != 4 {
+		t.Errorf("third_party/lwc npm install ownership count workflow/node = %d/%d, want 4/1 (distribution smoke, node lane, and two conformance lanes)", strings.Count(workflow, "npm ci --prefix third_party/lwc"), strings.Count(node, "npm ci --prefix third_party/lwc"))
 	}
-	for _, name := range []string{"gladecli", "server-and-playground"} {
-		if strings.Contains(jobs[name], "actions/setup-node") || strings.Contains(jobs[name], "npm ci") {
-			t.Errorf("pure job %s mutates Node dependencies", name)
+	if strings.Contains(jobs["gladecli"], "actions/setup-node") || strings.Contains(jobs["gladecli"], "npm ci") {
+		t.Error("pure gladecli job mutates Node dependencies")
+	}
+	if got := strings.Count(workflow, "npm ci --prefix lwcruntime"); got != 2 {
+		t.Errorf("browser conformance npm install count = %d, want one per conformance lane", got)
+	}
+	for name, lane := range map[string]string{"server-and-playground": "server-and-playground", "test": "remaining-go"} {
+		job := jobs[name]
+		previous := -1
+		for _, marker := range []string{
+			"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
+			`node-version: "22"`,
+			"npm ci --prefix third_party/lwc",
+			"npm ci --prefix lwcruntime",
+			"./lwcruntime/node_modules/.bin/playwright install --with-deps chromium",
+			"scripts/ci-go-test.sh lane " + lane,
+		} {
+			index := strings.Index(job, marker)
+			if strings.Count(job, marker) != 1 || index <= previous {
+				t.Errorf("conformance job %s must contain %q exactly once after its prerequisites", name, marker)
+			}
+			previous = index
 		}
-	}
-	testJob := jobs["test"]
-	if !strings.Contains(testJob, "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0") || !strings.Contains(testJob, `node-version: "22"`) {
-		t.Error("pure test job must retain Node 22 runtime")
-	}
-	for _, forbidden := range []string{"cache: npm", "cache-dependency-path:", "npm ci --prefix third_party/lwc"} {
-		if strings.Contains(testJob, forbidden) {
-			t.Errorf("pure test job contains forbidden Node mutation %q", forbidden)
+		for _, forbidden := range []string{"cache: npm", "cache-dependency-path:"} {
+			if strings.Contains(job, forbidden) {
+				t.Errorf("conformance job %s contains an unowned npm cache %q", name, forbidden)
+			}
 		}
 	}
 }
@@ -2807,7 +2936,7 @@ func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 		"gladecli":              "^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$",
 		"server-and-playground": "^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents)$",
 		"repoguard":             "",
-		"remaining-go":          "^(?:TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$",
+		"remaining-go":          "^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$",
 	}
 	for lane, skip := range wantSkip {
 		t.Run(lane, func(t *testing.T) {
@@ -3087,7 +3216,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	}
 	scriptText := string(script)
 	for _, want := range []string{
-		`export GOMAXPROCS="${GOMAXPROCS:-2}"`,
+		`printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS:-default}"`,
 		"run_with_heartbeat",
 		"run_core_tests",
 		"run_full_tests",
@@ -3112,6 +3241,11 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	} {
 		if !strings.Contains(scriptText, want) {
 			t.Fatalf("ci-go-test.sh missing %q", want)
+		}
+	}
+	for _, forbidden := range []string{"hostname", "export GOMAXPROCS=", "-p=", "-parallel="} {
+		if strings.Contains(scriptText, forbidden) {
+			t.Errorf("ci-go-test.sh retains environment-specific execution policy %q", forbidden)
 		}
 	}
 	if strings.Contains(scriptText, `grep '^Test' || true`) {
@@ -3193,8 +3327,8 @@ func TestCIPackageLanesRouteThroughCheckedManifest(t *testing.T) {
 	for _, packages := range document.Lanes {
 		totalPackages += len(packages)
 	}
-	if totalPackages != 65 {
-		t.Fatalf("manifest package union = %d, want 65", totalPackages)
+	if totalPackages != 66 {
+		t.Fatalf("manifest package union = %d, want 66", totalPackages)
 	}
 	remaining := document.Lanes["remaining-go"]
 	if len(remaining) == 0 {
@@ -3250,13 +3384,12 @@ func TestCIPackageLaneCommandRunsOnlyRequestedManifestPackagesAndPreservesStatus
 	cases := []struct {
 		lane        string
 		wantTimeout string
-		wantP       string
 	}{
 		{lane: "gladecli", wantTimeout: "-timeout=30m"},
 		{lane: "sema", wantTimeout: "-timeout=30m"},
 		{lane: "server-and-playground", wantTimeout: "-timeout=30m"},
 		{lane: "repoguard", wantTimeout: "-timeout=30m"},
-		{lane: "remaining-go", wantTimeout: "-timeout=20m", wantP: "-p=2"},
+		{lane: "remaining-go", wantTimeout: "-timeout=20m"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.lane, func(t *testing.T) {
@@ -3319,15 +3452,11 @@ exit 23
 					t.Errorf("lane executed package %s owned by %s", field, owner)
 				}
 			}
+			if strings.Contains(lines[0], "-parallel=") || strings.Contains(lines[0], "-p=") {
+				t.Errorf("lane call overrides environment concurrency limits: %s", lines[0])
+			}
 			if !strings.Contains(lines[0], tc.wantTimeout) {
 				t.Errorf("lane call missing timeout %s: %s", tc.wantTimeout, lines[0])
-			}
-			if tc.wantP != "" {
-				if !strings.Contains(lines[0], tc.wantP) {
-					t.Errorf("lane call missing parallelism %s: %s", tc.wantP, lines[0])
-				}
-			} else if strings.Contains(lines[0], "-p=") {
-				t.Errorf("lane call has unexpected parallelism: %s", lines[0])
 			}
 		})
 	}
@@ -3366,7 +3495,7 @@ func TestCIVetHasOneAuthoritativeGateAndNoImplicitLaneWork(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, want := range []string{
-		`go test -json -vet=off "$@"`,
+		`"${test_command[@]}" test -json -vet=off "$@"`,
 		`GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${apex_package}"`,
 	} {
 		if !strings.Contains(string(script), want) {
@@ -3494,7 +3623,6 @@ func TestCILocalReleaseModeIsExactOnceAndFailClosed(t *testing.T) {
 		"run_local_release_lane \"apextest\" \"apex\"",
 		"run_local_release_lane \"server-and-playground\" \"server-playground\"",
 		"run_local_release_lane \"remaining-go\" \"remaining\"",
-		"'^(?:TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$'",
 		"terminate_owned_children",
 	} {
 		if !strings.Contains(script, want) {
@@ -3676,10 +3804,8 @@ func TestCILocalReleaseExecutesExactAuthoritativeInventory(t *testing.T) {
 				seen[field]++
 			}
 		}
-		hasBrowserPackages := strings.Contains(line, "./internal/lwcbrowser") && strings.Contains(line, "./internal/lwcruntime")
-		hasSkip := strings.Contains(line, "-skip ^(?:TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$")
-		if hasBrowserPackages != hasSkip {
-			t.Fatalf("local-release browser lane ownership mismatch: %s", line)
+		if strings.Contains(line, "-skip") {
+			t.Fatalf("local-release must include every test: %s", line)
 		}
 	}
 	if !reflect.DeepEqual(seen, want) {
@@ -3692,12 +3818,12 @@ func TestCILocalReleaseExecutesExactAuthoritativeInventory(t *testing.T) {
 		packageArg string
 		timeout    string
 	}{
-		{"./internal/repoguard", "-timeout=15m"},
+		{"./internal/repoguard", "-timeout=30m"},
 		{"./internal/gladecli", "-timeout=30m"},
-		{"./internal/sema", "-timeout=45m"},
-		{"./internal/apextest", "-timeout=45m"},
+		{"./internal/sema", "-timeout=30m"},
+		{"./internal/apextest", "-timeout=90m"},
 		{"./internal/playground", "-timeout=30m"},
-		{"./cmd/glade", "-timeout=30m"},
+		{"./cmd/glade", "-timeout=70m"},
 	} {
 		for _, line := range strings.Split(strings.TrimSpace(calls), "\n") {
 			ownsPackage := false
@@ -4204,4 +4330,131 @@ func assertProcessesExit(t *testing.T, pids []int) {
 		}
 	}
 	t.Fatalf("owned processes survived wrapper signal: %v", alive)
+}
+
+func TestCILocalReleaseDataWeaveDeferralsAreExactAndVisible(t *testing.T) {
+	identities := [][2]string{
+		{"internal/gladecli", "TestDataWeaveToolchainCLIInstalledJSON"},
+		{"internal/gladehome", "TestDataWeaveInstallExecuteAndTamper"},
+		{"internal/dataweave", "TestOfficialEngineSourceAndDenials"},
+		{"internal/dataweave", "TestOfficialEngineExplicitProjectModules"},
+		{"internal/dataweave", "TestOfficialEngineTypedApexInputsAndOutput"},
+		{"internal/dataweave", "TestOfficialEngineUnprovedJavaOutputIsHostError"},
+		{"internal/dataweave", "TestOfficialEngineQueryRelationshipWriterBoundary"},
+		{"internal/dataweave", "TestOfficialEngineExtendedTypedValues"},
+		{"internal/dataweave", "TestVerifyEngineRequiresExactSourceOffers"},
+		{"internal/dataweave", "TestPinnedEngineInstallation"},
+		{"internal/apextest", "TestRunDataWeaveSourceSourceNames"},
+		{"internal/apextest", "TestRunDataWeaveSourceChangedSource"},
+		{"internal/apextest", "TestRunDataWeaveSourceBuiltinImports"},
+		{"internal/apextest", "TestRunDataWeaveSourceRestrictedWordsInLiterals"},
+		{"internal/apextest", "TestRunDataWeaveSourceLocalFunctionShadow"},
+		{"internal/apextest", "TestRunDataWeaveSourceReadURLDeadBranch"},
+		{"internal/apextest", "TestRunDataWeaveSourceEnvironmentDeadBranch"},
+		{"internal/apextest", "TestRunDataWeaveSourceReadURLAlias"},
+		{"internal/apextest", "TestRunDataWeaveSourceEnvironmentAlias"},
+		{"internal/apextest", "TestRunDataWeaveSourceProjectModule"},
+		{"internal/apextest", "TestRunDataWeaveTypedAdmitted"},
+		{"internal/apextest", "TestRunC5BulkTypedProof"},
+		{"internal/apextest", "TestRunC5LegacyAdmitted"},
+		{"internal/apextest", "TestRunC5QueryProvenanceAdmitted"},
+		{"internal/vm", "TestExecDataWeaveScriptResultCarriers"},
+		{"internal/vm", "TestNestedSOQLAPIVersion66"},
+		{"internal/vm", "TestNestedSOQLAPIVersion65ThrowsDataWeaveScriptException"},
+		{"internal/vm", "TestExecDataWeaveScriptErrorThrowsScriptException"},
+		{"internal/vm", "TestExecDataWeaveExcelOutputErrorThrowsScriptException"},
+		{"internal/vm", "TestExecDataWeaveMultipleInputsReturnsXMLString"},
+		{"internal/vm", "TestExecDataWeaveJsonDateFormatPreservesRecipeFieldOrder"},
+		{"internal/vm", "TestExecDataWeaveRecipeConversionsReturnStructuredValues"},
+		{"internal/apextest", "TestRunDataWeaveScriptResourceExecutesRuntimeStub"},
+	}
+	inputs := []string{"GLADE_DATAWEAVE_TEST_JAVA_HOME", "GLADE_DATAWEAVE_TEST_ENGINE", "GLADE_DATAWEAVE_TEST_CLASSPATH", "GLADE_DATAWEAVE_TEST_INSTALLED_ENGINE", "GLADE_DATAWEAVE_TEST_INSTALL_DIRECTORY", "GLADE_DATAWEAVE_APEX_TEST_HOME"}
+	check := func(t *testing.T, identity [2]string, configured bool, action, terminal string, valid bool, deferred int, override ...string) {
+		t.Helper()
+		dir := t.TempDir()
+		pkg := "github.com/glade-sh/glade/" + identity[0]
+		events, metadata, summaryPath := filepath.Join(dir, "events.json"), filepath.Join(dir, "metadata"), filepath.Join(dir, "summary.json")
+		cause := "explicit DataWeave engine and Java17 test toolchain required"
+		switch identity[1] {
+		case "TestDataWeaveToolchainCLIInstalledJSON", "TestDataWeaveInstallExecuteAndTamper":
+			cause = "explicit Java17 JDK and verified DataWeave engine required"
+		case "TestOfficialEngineQueryRelationshipWriterBoundary":
+			cause = "query relationship contract requires explicit real DataWeave toolchain; configured acceptance must execute this test"
+		case "TestVerifyEngineRequiresExactSourceOffers":
+			cause = "explicit provisioned engine required"
+		case "TestPinnedEngineInstallation":
+			cause = "explicit engine installation destination required"
+		}
+		if identity[0] == "internal/apextest" || identity[0] == "internal/vm" {
+			cause = "requires explicitly installed DataWeave toolchain"
+		}
+		if len(override) != 0 {
+			cause = override[0]
+		}
+		rows := ""
+		if cause != "" {
+			rows += fmt.Sprintf("{\"Action\":\"output\",\"Package\":%q,\"Test\":%q,\"Output\":%q}\n", pkg, identity[1], "    fixture_test.go:51: "+cause+"\n")
+		}
+		rows += fmt.Sprintf("{\"Action\":%q,\"Package\":%q,\"Test\":%q}\n", action, pkg, identity[1])
+		if terminal != "" {
+			rows += fmt.Sprintf("{\"Action\":%q,\"Package\":%q}\n", terminal, pkg)
+		}
+		if err := os.WriteFile(events, []byte(rows), 0600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(metadata, []byte(pkg+"\thas-tests\n"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("bash", "-c", `source ./ci-go-test.sh; validate_local_release_package_summary lane fixture "$1" "$2" "$3" "$4"`, "fixture", events, summaryPath, metadata, "./"+identity[0])
+		cmd.Env = os.Environ()
+		for _, name := range inputs {
+			value := ""
+			if configured {
+				value = "/configured"
+			}
+			cmd.Env = append(cmd.Env, name+"="+value)
+		}
+		output, err := cmd.CombinedOutput()
+		if (err == nil) != valid {
+			t.Fatalf("valid=%v err=%v output=%s", valid, err, output)
+		}
+		raw, err := os.ReadFile(summaryPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var summary struct {
+			Valid    bool                                                 `json:"valid"`
+			Deferred []struct{ Package, Test, Reason, SkipReason string } `json:"deferred"`
+		}
+		if err := json.Unmarshal(raw, &summary); err != nil {
+			t.Fatal(err)
+		}
+		if summary.Valid != valid || len(summary.Deferred) != deferred {
+			t.Fatalf("summary=%s", raw)
+		}
+		if deferred != 0 {
+			entry := summary.Deferred[0]
+			if entry.Package != pkg || entry.Test != identity[1] || entry.SkipReason != cause || !strings.Contains(entry.Reason, "missing explicit prerequisites") || !strings.Contains(string(output), entry.Reason) {
+				t.Fatalf("deferral not visible: %s / %s", raw, output)
+			}
+		}
+	}
+	for _, identity := range identities {
+		t.Run(identity[1], func(t *testing.T) { check(t, identity, false, "skip", "pass", true, 1) })
+	}
+	base := identities[0]
+	t.Run("unknown skip rejected", func(t *testing.T) { check(t, [2]string{base[0], "TestUnknown"}, false, "skip", "pass", false, 0) })
+	t.Run("subtest skip rejected", func(t *testing.T) { check(t, [2]string{base[0], base[1] + "/nested"}, false, "skip", "pass", false, 0) })
+	t.Run("configured skip rejected", func(t *testing.T) { check(t, base, true, "skip", "pass", false, 0) })
+	t.Run("configured failure rejected", func(t *testing.T) { check(t, base, true, "fail", "fail", false, 0) })
+	t.Run("missing input failure rejected", func(t *testing.T) { check(t, base, false, "fail", "fail", false, 0) })
+	t.Run("missing package result rejected", func(t *testing.T) { check(t, base, false, "skip", "", false, 1) })
+	t.Run("unrelated skip cause rejected", func(t *testing.T) { check(t, base, false, "skip", "pass", false, 0, "unrelated runtime problem") })
+	t.Run("missing skip cause rejected", func(t *testing.T) { check(t, base, false, "skip", "pass", false, 0, "") })
+	t.Run("test failure despite package pass rejected", func(t *testing.T) { check(t, base, false, "fail", "pass", false, 0) })
+	for _, identity := range identities[22:] {
+		t.Run(identity[1]+" configured skip rejected", func(t *testing.T) { check(t, identity, true, "skip", "pass", false, 0) })
+		t.Run(identity[1]+" missing input failure rejected", func(t *testing.T) { check(t, identity, false, "fail", "fail", false, 0) })
+	}
+
 }

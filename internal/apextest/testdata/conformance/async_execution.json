@@ -1,0 +1,2661 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "Declarations": {
+    "AsyncA38Batch": "public class AsyncA38Batch implements Database.Batchable<Integer>,Database.Stateful,Database.AllowsCallouts {\n public List<Integer> values;\n public Integer total=0;\n public Boolean finished=false;\n public AsyncA38Batch(List<Integer> xs){values=xs;}\n public Iterable<Integer> start(Database.BatchableContext c){return values;}\n public void execute(Database.BatchableContext c,List<Integer> scope){\n  for(Integer n:scope) if(n!=null) total+=n;\n }\n public void finish(Database.BatchableContext c){\n  finished=true;\n  if(c!=null) insert new Account(Name='A38-batch',Description=String.valueOf(total));\n }\n public static Boolean submit(Integer scope){\n  Savepoint s=Database.setSavepoint();\n  try { return Database.executeBatch(new AsyncA38Batch(new List<Integer>{1}),scope)!=null; }\n  finally { Database.rollback(s); Database.releaseSavepoint(s); }\n }\n public static Boolean submitNull(){\n  Savepoint s=Database.setSavepoint();\n  try { return Database.executeBatch(null)!=null; }\n  finally { Database.rollback(s); Database.releaseSavepoint(s); }\n }\n}\n",
+    "AsyncA38DrainTest": "@IsTest private class AsyncA38DrainTest {\n private static List<String> descriptions(){List<String> xs=new List<String>(); for(Account a:[SELECT Description FROM Account WHERE Name='A38-queue']) xs.add(a.Description); return xs;}\n // Native Pass/Fail observes whether a drain and its reads throw.\n // Values read here are not captured rows and carry no inferred expectations.\n @IsTest static void futureDrain(){\n  Test.startTest(); AsyncA38Future.fire(2,'future',new List<Integer>{1,2}); Test.stopTest();\n  Account observed=[SELECT Description FROM Account WHERE Name='A38-future'];\n }\n @IsTest static void queueDrain(){\n  Test.startTest(); Id job=System.enqueueJob(new AsyncA38Queue('root')); Test.stopTest();\n  List<String> observed=descriptions();\n  AsyncApexJob observedJob=[SELECT Status,JobType,NumberOfErrors FROM AsyncApexJob WHERE Id=:job];\n }\n @IsTest static void queueOptionsDrain(){\n  AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=2; o.MinimumQueueableDelayInMinutes=0;\n  Test.startTest(); System.enqueueJob(new AsyncA38Queue('options'),o); Test.stopTest();\n  List<String> observed=descriptions();\n }\n @IsTest static void queueChainDrain(){\n  AsyncA38Queue q=new AsyncA38Queue('root'); q.chain=true;\n  AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=2;\n  Test.startTest(); System.enqueueJob(q,o); Test.stopTest();\n  List<String> observed=descriptions();\n }\n @IsTest static void statefulBatchDrain(){\n  Test.startTest(); Id job=Database.executeBatch(new AsyncA38Batch(new List<Integer>{1,2,3}),200); Test.stopTest();\n  Account observed=[SELECT Description FROM Account WHERE Name='A38-batch'];\n  AsyncApexJob observedJob=[SELECT Status,JobType,NumberOfErrors FROM AsyncApexJob WHERE Id=:job];\n }\n @IsTest static void statelessBatchDrain(){\n  Test.startTest(); Database.executeBatch(new AsyncA38Stateless(),200); Test.stopTest();\n  Account observed=[SELECT Description FROM Account WHERE Name='A38-stateless'];\n }\n @IsTest static void scheduledDrain(){\n  Test.startTest(); System.schedule('A38-test-schedule','0 0 0 1 1 ? 2099',new AsyncA38Schedule()); Test.stopTest();\n  Account observed=[SELECT Id FROM Account WHERE Name='A38-schedule'];\n }\n @IsTest static void finalizerDrain(){\n  AsyncA38Queue q=new AsyncA38Queue('finalized'); q.finalizer=true;\n  Test.startTest(); System.enqueueJob(q); Test.stopTest();\n  Integer queueRows=[SELECT COUNT() FROM Account WHERE Name='A38-queue'];\n  Account observed=[SELECT Description FROM Account WHERE Name='A38-finalizer'];\n }\n // API67 native run observed ListException at index 1 with two mock jobs.\n // Retain that exception boundary separately from the normal move route.\n @IsTest static void flexQueueBoundary(){\n  Test.startTest(); Test.enqueueBatchJobs(2); List<Id> jobs=Test.getFlexQueueOrder();\n  Integer observedSize=jobs.size();\n  Boolean observedMove=FlexQueue.moveJobToFront(jobs[1]);\n  List<Id> observedOrder=Test.getFlexQueueOrder(); Test.stopTest();\n }\n @IsTest static void flexQueueMovesDrain(){\n  Test.startTest(); Test.enqueueBatchJobs(7); List<Id> jobs=Test.getFlexQueueOrder();\n  Boolean front=FlexQueue.moveJobToFront(jobs[1]);\n  Boolean movedEnd=FlexQueue.moveJobToEnd(jobs[1]);\n  Boolean before=FlexQueue.moveBeforeJob(jobs[1],jobs[0]);\n  Boolean after=FlexQueue.moveAfterJob(jobs[1],jobs[0]);\n  List<Id> observedOrder=Test.getFlexQueueOrder(); Test.stopTest();\n }\n}\n",
+    "AsyncA38Finalizer": "public class AsyncA38Finalizer implements Finalizer {\n public Boolean called=false;\n public void execute(FinalizerContext c){\n  called=true;\n  insert new Account(Name='A38-finalizer',Description=c.getResult().name()+'|'+String.valueOf(c.getException()==null)+'|'+String.valueOf(c.getAsyncApexJobId()!=null)+'|'+String.valueOf(c.getRequestId()!=null));\n }\n}\n",
+    "AsyncA38Future": "public class AsyncA38Future {\n @future public static void fire(Integer n,String text,List<Integer> xs) {\n  insert new Account(Name='A38-future',Description=String.valueOf(n)+'|'+text+'|'+xs);\n }\n @future public static void collections(Set<String> xs,Map<String,Integer> m) {}\n public static void submit(Integer n,String text,List<Integer> xs) {\n  Savepoint s=Database.setSavepoint();\n  try { fire(n,text,xs); } finally { Database.rollback(s); Database.releaseSavepoint(s); }\n }\n public static void submitCollections(Set<String> xs,Map<String,Integer> m) {\n  Savepoint s=Database.setSavepoint();\n  try { collections(xs,m); } finally { Database.rollback(s); Database.releaseSavepoint(s); }\n }\n}\n",
+    "AsyncA38Queue": "public class AsyncA38Queue implements Queueable {\n public String text;\n public Boolean chain=false;\n public Boolean finalizer=false;\n public AsyncA38Queue(String value){text=value;}\n public void execute(QueueableContext c){\n  if(finalizer) System.attachFinalizer(new AsyncA38Finalizer());\n  if(chain && c!=null) System.enqueueJob(new AsyncA38Queue('child'));\n  if(chain && c==null) {\n   Savepoint s=Database.setSavepoint();\n   try { System.enqueueJob(new AsyncA38Queue('child')); }\n   finally { Database.rollback(s); Database.releaseSavepoint(s); }\n  }\n  insert new Account(Name='A38-queue',Description=text);\n }\n public static Boolean submitDelay(Integer delay){\n  Savepoint s=Database.setSavepoint();\n  try { return System.enqueueJob(new AsyncA38Queue('delay'),delay)!=null; }\n  finally { Database.rollback(s); Database.releaseSavepoint(s); }\n }\n public static Boolean submitOptions(AsyncOptions options){\n  Savepoint s=Database.setSavepoint();\n  try { return System.enqueueJob(new AsyncA38Queue('options'),options)!=null; }\n  finally { Database.rollback(s); Database.releaseSavepoint(s); }\n }\n}\n",
+    "AsyncA38Schedule": "public class AsyncA38Schedule implements Schedulable {\n public Boolean called=false;\n public void execute(SchedulableContext c){called=true; insert new Account(Name='A38-schedule');}\n public static Boolean submit(String cron){return submitName('A38-owned-cron',cron);}\n public static Boolean submitName(String name,String cron){\n  Savepoint s=Database.setSavepoint();\n  try { return System.schedule(name,cron,new AsyncA38Schedule())!=null; }\n  finally { Database.rollback(s); Database.releaseSavepoint(s); }\n }\n public static Boolean submitDuplicate(){\n  Savepoint s=Database.setSavepoint();\n  try {\n   System.schedule('A38-owned-duplicate','0 0 0 1 1 ? 2099',new AsyncA38Schedule());\n   return System.schedule('A38-owned-duplicate','0 0 0 1 1 ? 2099',new AsyncA38Schedule())!=null;\n  } finally { Database.rollback(s); Database.releaseSavepoint(s); }\n }\n}\n",
+    "AsyncA38Stateless": "public class AsyncA38Stateless implements Database.Batchable<Integer> {\n public Integer total=0;\n public Iterable<Integer> start(Database.BatchableContext c){return new List<Integer>{1,2};}\n public void execute(Database.BatchableContext c,List<Integer> scope){for(Integer n:scope) total+=n;}\n public void finish(Database.BatchableContext c){if(c!=null) insert new Account(Name='A38-stateless',Description=String.valueOf(total));}\n}\n",
+    "AsyncA38OverloadedBatch": "public class AsyncA38OverloadedBatch implements Database.Batchable<Integer> {\n public Iterable<Integer> start(Database.BatchableContext c){return new List<Integer>();}\n public void execute(Database.BatchableContext c,List<Integer> scope){}\n public void execute(Database.BatchableContext c,String scope){}\n public void finish(Database.BatchableContext c){}\n}\n",
+    "AsyncA38ScheduledContext": "public class AsyncA38ScheduledContext implements Schedulable {\n public static String triggerId;\n public static List<String> entries=new List<String>{'seed'};\n public void execute(SchedulableContext context){\n  String before=String.valueOf(triggerId)+'|'+String.join(entries,',');\n  triggerId=context.getTriggerId();\n  entries.add('child');\n  insert new Account(Name='A38-context-schedule',Description=before+'|'+String.valueOf(triggerId==context.getTriggerId())+'|'+String.join(entries,','));\n }\n}\n",
+    "AsyncA38ScheduleBatchCronBatch": "public class AsyncA38ScheduleBatchCronBatch implements Database.Batchable<Integer> {\n public List<Integer> values;\n public AsyncA38ScheduleBatchCronBatch(List<Integer> values){this.values=values;}\n public List<Integer> start(Database.BatchableContext bc){return values;}\n public void execute(Database.BatchableContext bc,List<Integer> scope){\n  for(Integer value:scope) insert new Account(Name='A38-cron-batch-'+value);\n }\n public void finish(Database.BatchableContext bc){insert new Account(Name='A38-cron-batch-finish');}\n}\n",
+    "AsyncA38ScheduleBatchCronSchedule": "public class AsyncA38ScheduleBatchCronSchedule implements Schedulable {\n public void execute(SchedulableContext sc){insert new Account(Name='A38-cron-schedule');}\n}\n"
+  },
+  "Cases": [
+    {
+      "ID": "R001",
+      "Code": "AsyncA38Future.submit(null,null,null); r=true;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R002",
+      "Code": "AsyncA38Future.submit(0,'',new List<Integer>()); r=true;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R003",
+      "Code": "AsyncA38Future.submit(1,'one',new List<Integer>{1}); r=true;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R004",
+      "Code": "AsyncA38Future.submit(-1,'minus',new List<Integer>{null,1}); r=true;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R005",
+      "Code": "AsyncA38Future.submitCollections(null,null); r=true;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R006",
+      "Code": "AsyncA38Future.submitCollections(new Set<String>(),new Map<String,Integer>()); r=true;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R007",
+      "Code": "AsyncA38Future.submitCollections(new Set<String>{'a',null},new Map<String,Integer>{'a'=>1}); r=true;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R008",
+      "Code": "r=System.isFuture();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R009",
+      "Code": "r=System.isQueueable();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R010",
+      "Code": "r=System.isBatch();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R011",
+      "Code": "r=System.isScheduled();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R012",
+      "Code": "r=Test.isRunningTest();",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R016",
+      "Code": "r=new AsyncA38Future() instanceof Object;",
+      "Expected": "COMPILE_ERROR\tline 18: Operation instanceof is always true since an instance of AsyncA38Future is always an instance of Object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 18
+    },
+    {
+      "ID": "R017",
+      "Code": "r=AsyncA38Future.class.getName();",
+      "Expected": "AsyncA38Future",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R018",
+      "Code": "AsyncOptions o=new AsyncOptions(); r=o.MaximumQueueableStackDepth;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R019",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=null; r=o.MaximumQueueableStackDepth;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R020",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=-1; r=o.MaximumQueueableStackDepth;",
+      "Expected": "-1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R021",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=0; r=o.MaximumQueueableStackDepth;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R022",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=1; r=o.MaximumQueueableStackDepth;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R023",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=2; r=o.MaximumQueueableStackDepth;",
+      "Expected": "2",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R024",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=5; r=o.MaximumQueueableStackDepth;",
+      "Expected": "5",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R025",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=10; r=o.MaximumQueueableStackDepth;",
+      "Expected": "10",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R026",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=11; r=o.MaximumQueueableStackDepth;",
+      "Expected": "11",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R027",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=2147483647; r=o.MaximumQueueableStackDepth;",
+      "Expected": "2147483647",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R028",
+      "Code": "AsyncOptions o=new AsyncOptions(); r=o.MinimumQueueableDelayInMinutes;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R029",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=null; r=o.MinimumQueueableDelayInMinutes;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R030",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=-1; r=o.MinimumQueueableDelayInMinutes;",
+      "Expected": "-1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R031",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=0; r=o.MinimumQueueableDelayInMinutes;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R032",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=1; r=o.MinimumQueueableDelayInMinutes;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R033",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=2; r=o.MinimumQueueableDelayInMinutes;",
+      "Expected": "2",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R034",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=5; r=o.MinimumQueueableDelayInMinutes;",
+      "Expected": "5",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R035",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=10; r=o.MinimumQueueableDelayInMinutes;",
+      "Expected": "10",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R036",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=11; r=o.MinimumQueueableDelayInMinutes;",
+      "Expected": "11",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R037",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=2147483647; r=o.MinimumQueueableDelayInMinutes;",
+      "Expected": "2147483647",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R038",
+      "Code": "r=new AsyncOptions().DuplicateSignature;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R039",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=null; o.MinimumQueueableDelayInMinutes=null; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "null|null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R040",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=null; o.MinimumQueueableDelayInMinutes=0; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "null|0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R041",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=null; o.MinimumQueueableDelayInMinutes=10; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "null|10",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R042",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=0; o.MinimumQueueableDelayInMinutes=null; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "0|null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R043",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=0; o.MinimumQueueableDelayInMinutes=0; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "0|0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R044",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=0; o.MinimumQueueableDelayInMinutes=10; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "0|10",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R045",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=1; o.MinimumQueueableDelayInMinutes=null; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "1|null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R046",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=1; o.MinimumQueueableDelayInMinutes=0; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "1|0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R047",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=1; o.MinimumQueueableDelayInMinutes=10; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "1|10",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R048",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=5; o.MinimumQueueableDelayInMinutes=null; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "5|null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R049",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=5; o.MinimumQueueableDelayInMinutes=0; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "5|0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R050",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=5; o.MinimumQueueableDelayInMinutes=10; r=String.valueOf(o.MaximumQueueableStackDepth)+'|'+o.MinimumQueueableDelayInMinutes;",
+      "Expected": "5|10",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R051",
+      "Code": "r=AsyncInfo.getCurrentQueueableStackDepth();",
+      "Expected": "EXC|System.AsyncException|getCurrentQueueableStackDepth is not allowed outside a Queueable of Finalizer execution",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R052",
+      "Code": "r=AsyncInfo.getMaximumQueueableStackDepth();",
+      "Expected": "EXC|System.AsyncException|getMaximumQueueableStackDepth is not allowed outside a Queueable of Finalizer execution",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R053",
+      "Code": "r=AsyncInfo.getMinimumQueueableDelayInMinutes();",
+      "Expected": "EXC|System.AsyncException|getMinimumQueueableDelayInMinutes is not allowed outside a Queueable of Finalizer execution",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R054",
+      "Code": "r=AsyncInfo.hasMaxStackDepth();",
+      "Expected": "EXC|System.AsyncException|hasMaxStackDepth is not allowed outside a Queueable of Finalizer execution",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R055",
+      "Code": "r=AsyncA38Queue.submitDelay(null);",
+      "Expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R056",
+      "Code": "r=AsyncA38Queue.submitDelay(-1);",
+      "Expected": "EXC|System.InvalidParameterValueException|Delay must be greater than or equal to 0 minutes",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R057",
+      "Code": "r=AsyncA38Queue.submitDelay(0);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R058",
+      "Code": "r=AsyncA38Queue.submitDelay(1);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R059",
+      "Code": "r=AsyncA38Queue.submitDelay(10);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R060",
+      "Code": "r=AsyncA38Queue.submitDelay(11);",
+      "Expected": "EXC|System.InvalidParameterValueException|Delay must be less than or equal to 10 minutes",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R061",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=null; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R062",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=-1; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "EXC|System.InvalidParameterValueException|System.InvalidParameterValueException: Stack depth must be greater than 0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R063",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=0; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "EXC|System.AsyncException|Maximum stack depth has been reached.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R064",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=1; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R065",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=10; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R066",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=11; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R067",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=null; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R068",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=-1; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "EXC|System.InvalidParameterValueException|Delay must be greater than or equal to 0 minutes",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R069",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=0; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R070",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=1; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R071",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=10; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R072",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes=11; r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "EXC|System.InvalidParameterValueException|Delay must be less than or equal to 10 minutes",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R073",
+      "Code": "r=AsyncA38Queue.submitOptions(null);",
+      "Expected": "EXC|System.NullPointerException|Argument 2 cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R074",
+      "Code": "r=System.enqueueJob(null);",
+      "Expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R075",
+      "Code": "r=System.enqueueJob(null,0);",
+      "Expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R076",
+      "Code": "r=System.enqueueJob(null,new AsyncOptions());",
+      "Expected": "EXC|System.NullPointerException|Argument cannot be null.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R077",
+      "Code": "AsyncOptions o; r=o.MaximumQueueableStackDepth;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R078",
+      "Code": "AsyncOptions o; o.MinimumQueueableDelayInMinutes=1; r=true;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R079",
+      "Code": "Object o=new AsyncOptions(); r=((AsyncOptions)o).MaximumQueueableStackDepth;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R080",
+      "Code": "Object o=new Object(); r=(AsyncOptions)o;",
+      "Expected": "COMPILE_ERROR\tline 32: Type cannot be constructed: Object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 32
+    },
+    {
+      "ID": "R081",
+      "Code": "Object o=null; r=(AsyncOptions)o;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R082",
+      "Code": "Object o=new AsyncA38Queue(null); r=(Queueable)o;",
+      "Expected": "AsyncA38Queue:[chain=false, finalizer=false, text=null]",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R083",
+      "Code": "Object o=new Object(); r=(Queueable)o;",
+      "Expected": "COMPILE_ERROR\tline 34: Type cannot be constructed: Object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 34
+    },
+    {
+      "ID": "R084",
+      "Code": "Object o=null; r=(Queueable)o;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R085",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue(null); r=q.text;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R086",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue(null); q.execute(null); r=q.text;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R087",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue(''); r=q.text;",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R088",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue(''); q.execute(null); r=q.text;",
+      "Expected": "",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R089",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue('text'); r=q.text;",
+      "Expected": "text",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R090",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue('text'); q.execute(null); r=q.text;",
+      "Expected": "text",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R091",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue('\u03b1'); r=q.text;",
+      "Expected": "\u03b1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R092",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue('\u03b1'); q.execute(null); r=q.text;",
+      "Expected": "\u03b1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R093",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue('line\\nnext'); r=q.text;",
+      "Expected": "line\\nnext",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R094",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue('line\\nnext'); q.execute(null); r=q.text;",
+      "Expected": "line\\nnext",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R095",
+      "Code": "Queueable q=new AsyncA38Queue(null); r=q instanceof AsyncA38Queue;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R096",
+      "Code": "Object q=new AsyncA38Queue(null); r=q instanceof Queueable;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R097",
+      "Code": "Queueable q; q.execute(null); r=true;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R098",
+      "Code": "QueueableContext c; r=c.getJobId();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R099",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue(null); q.chain=true; q.execute(null); r=true;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R100",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue(null); q.chain=false; q.execute(null); r=q.text;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R101",
+      "Code": "r=AsyncA38Queue.submitDelay(0);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R102",
+      "Code": "QueueableDuplicateSignature.Builder b=new QueueableDuplicateSignature.Builder(); for(String v:new List<String>{''}){b.addString(v);} r=b.build()!=null;",
+      "Expected": "COMPILE_ERROR\tline 52: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 52
+    },
+    {
+      "ID": "R103",
+      "Code": "QueueableDuplicateSignature.Builder b=new QueueableDuplicateSignature.Builder(); for(String v:new List<String>{'a'}){b.addString(v);} r=b.build()!=null;",
+      "Expected": "COMPILE_ERROR\tline 52: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 52
+    },
+    {
+      "ID": "R104",
+      "Code": "QueueableDuplicateSignature.Builder b=new QueueableDuplicateSignature.Builder(); for(String v:new List<String>{'a','b'}){b.addString(v);} r=b.build()!=null;",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "R105",
+      "Code": "QueueableDuplicateSignature.Builder b=new QueueableDuplicateSignature.Builder(); for(String v:new List<String>{null}){b.addString(v);} r=b.build()!=null;",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "R106",
+      "Code": "r=new QueueableDuplicateSignature.Builder().addInteger(null).build()!=null;",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "R107",
+      "Code": "r=new QueueableDuplicateSignature.Builder().addInteger(-1).build()!=null;",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "R108",
+      "Code": "r=new QueueableDuplicateSignature.Builder().addInteger(0).build()!=null;",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "R109",
+      "Code": "r=new QueueableDuplicateSignature.Builder().addInteger(1).build()!=null;",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "R110",
+      "Code": "r=new QueueableDuplicateSignature.Builder().addInteger(2147483647).build()!=null;",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "R111",
+      "Code": "r=new QueueableDuplicateSignature.Builder().build()!=null;",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "R112",
+      "Code": "r=new QueueableDuplicateSignature.Builder().addId(null).build()!=null;",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "R113",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.DuplicateSignature=new QueueableDuplicateSignature.Builder().addString('A38').build(); r=AsyncA38Queue.submitOptions(o);",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "R114",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(null); Iterable<Integer> xs=b.start(null); r=xs;",
+      "Expected": "null",
+      "Compile": false,
+      "NativeNull": true,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R115",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>()); b.execute(null,null); r=b.total;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R116",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(null); b.finish(null); r=b.finished;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R117",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>()); Iterable<Integer> xs=b.start(null); r=xs;",
+      "Expected": "()",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R118",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>()); b.execute(null,new List<Integer>()); r=b.total;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R119",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>()); b.finish(null); r=b.finished;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R120",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>{1}); Iterable<Integer> xs=b.start(null); r=xs;",
+      "Expected": "(1)",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R121",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>()); b.execute(null,new List<Integer>{1}); r=b.total;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R122",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>{1}); b.finish(null); r=b.finished;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R123",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>{null}); Iterable<Integer> xs=b.start(null); r=xs;",
+      "Expected": "(null)",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R124",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>()); b.execute(null,new List<Integer>{null}); r=b.total;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R125",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>{null}); b.finish(null); r=b.finished;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R126",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>{1,2,3}); Iterable<Integer> xs=b.start(null); r=xs;",
+      "Expected": "(1, 2, 3)",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R127",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>()); b.execute(null,new List<Integer>{1,2,3}); r=b.total;",
+      "Expected": "6",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R128",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>{1,2,3}); b.finish(null); r=b.finished;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R129",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>{-1,0,1}); Iterable<Integer> xs=b.start(null); r=xs;",
+      "Expected": "(-1, 0, 1)",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R130",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>()); b.execute(null,new List<Integer>{-1,0,1}); r=b.total;",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R131",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>{-1,0,1}); b.finish(null); r=b.finished;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R132",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>()); b.execute(null,(List<Integer>)b.start(null)); b.finish(null); r=String.valueOf(b.total)+'|'+b.finished;",
+      "Expected": "0|true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R133",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>{1}); b.execute(null,(List<Integer>)b.start(null)); b.finish(null); r=String.valueOf(b.total)+'|'+b.finished;",
+      "Expected": "1|true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R134",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>{1,2,3}); b.execute(null,(List<Integer>)b.start(null)); b.finish(null); r=String.valueOf(b.total)+'|'+b.finished;",
+      "Expected": "6|true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R135",
+      "Code": "Database.BatchableContext c; r=c.getJobId();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R136",
+      "Code": "Database.BatchableContext c; r=c.getChildJobId();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R137",
+      "Code": "Database.Batchable<Integer> b; r=b.start(null);",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R138",
+      "Code": "Database.Batchable<Integer> b; b.execute(null,new List<Integer>()); r=true;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R139",
+      "Code": "Database.Batchable<Integer> b; b.finish(null); r=true;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R140",
+      "Code": "r=new AsyncA38Batch(null) instanceof Database.Stateful;",
+      "Expected": "COMPILE_ERROR\tline 32: Operation instanceof is always true since an instance of AsyncA38Batch is always an instance of Database.Stateful",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 32
+    },
+    {
+      "ID": "R141",
+      "Code": "r=new AsyncA38Batch(null) instanceof Database.AllowsCallouts;",
+      "Expected": "COMPILE_ERROR\tline 32: Operation instanceof is always true since an instance of AsyncA38Batch is always an instance of Database.AllowsCallouts",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 32
+    },
+    {
+      "ID": "R142",
+      "Code": "r=new AsyncA38Stateless() instanceof Database.Stateful;",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R143",
+      "Code": "r=AsyncA38Batch.submitNull();",
+      "Expected": "EXC|System.NullPointerException|Argument 'batchable' cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R144",
+      "Code": "r=AsyncA38Batch.submit(null);",
+      "Expected": "EXC|System.InvalidParameterValueException|batchSize must not be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R145",
+      "Code": "r=AsyncA38Batch.submit(-1);",
+      "Expected": "EXC|System.InvalidParameterValueException|batchSize must be greater than or equal to one",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R146",
+      "Code": "r=AsyncA38Batch.submit(0);",
+      "Expected": "EXC|System.InvalidParameterValueException|batchSize must be greater than or equal to one",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R147",
+      "Code": "r=AsyncA38Batch.submit(1);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R148",
+      "Code": "r=AsyncA38Batch.submit(2);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R149",
+      "Code": "r=AsyncA38Batch.submit(200);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R150",
+      "Code": "r=AsyncA38Batch.submit(2000);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R151",
+      "Code": "r=AsyncA38Batch.submit(2001);",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R152",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>{1}); b.execute(null,new List<Integer>{1}); b.execute(null,new List<Integer>{2}); r=b.total;",
+      "Expected": "3",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R153",
+      "Code": "AsyncA38Stateless b=new AsyncA38Stateless(); b.execute(null,new List<Integer>{1}); b.execute(null,new List<Integer>{2}); r=b.total;",
+      "Expected": "3",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R154",
+      "Code": "r=AsyncA38Schedule.submit('0 0 0 1 1 ? 2099');",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R155",
+      "Code": "r=AsyncA38Schedule.submit('0 0 0 ? * MON');",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R156",
+      "Code": "r=AsyncA38Schedule.submit('0 0 * * * ?');",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R157",
+      "Code": "r=AsyncA38Schedule.submit('0 0 0 * * ?');",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R158",
+      "Code": "r=AsyncA38Schedule.submit('0 0 0 31 2 ? 2099');",
+      "Expected": "EXC|System.AsyncException|Based on configured schedule, the given trigger 'SCHEDULED_APEX_JOB_TYPE.000000000000000' will never fire.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R159",
+      "Code": "r=AsyncA38Schedule.submit('0 60 0 * * ?');",
+      "Expected": "EXC|System.StringException|Minute and Second values must be between 0 and 59",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R160",
+      "Code": "r=AsyncA38Schedule.submit('0 0 24 * * ?');",
+      "Expected": "EXC|System.StringException|Hour values must be between 0 and 23",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R161",
+      "Code": "r=AsyncA38Schedule.submit('0 0 0 * * *');",
+      "Expected": "EXC|System.StringException|Support for specifying both a day-of-week AND a day-of-month parameter is not implemented.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R162",
+      "Code": "r=AsyncA38Schedule.submit('0 0 0 ? * ?');",
+      "Expected": "EXC|System.StringException|'?' can only be specified for Day-of-Month -OR- Day-of-Week.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R163",
+      "Code": "r=AsyncA38Schedule.submit('not cron');",
+      "Expected": "EXC|System.StringException|Illegal characters for this position: 'NOT'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R164",
+      "Code": "r=AsyncA38Schedule.submit('');",
+      "Expected": "EXC|System.StringException|Unexpected end of expression.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R165",
+      "Code": "r=AsyncA38Schedule.submit(null);",
+      "Expected": "EXC|System.StringException|cron expression cannot be 'null'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R168",
+      "Code": "r=AsyncA38Schedule.submitName('A38-owned-name','0 0 0 1 1 ? 2099');",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R169",
+      "Code": "r=AsyncA38Schedule.submitName('A38 name with spaces','0 0 0 1 1 ? 2099');",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R170",
+      "Code": "AsyncA38Schedule s=new AsyncA38Schedule(); s.execute(null); r=s.called;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R171",
+      "Code": "Schedulable s=new AsyncA38Schedule(); s.execute(null); r=((AsyncA38Schedule)s).called;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R172",
+      "Code": "Schedulable s; s.execute(null); r=true;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R173",
+      "Code": "SchedulableContext c; r=c.getTriggerId();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R174",
+      "Code": "r=System.schedule('A38-null-scheduler','0 0 0 1 1 ? 2099',null);",
+      "Expected": "EXC|System.NullPointerException|schedulable object cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R175",
+      "Code": "System.abortJob(null); r=true;",
+      "Expected": "EXC|System.StringException|jobId expression cannot be 'null'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R176",
+      "Code": "System.abortJob('707000000000001'); r=true;",
+      "Expected": "EXC|System.StringException|Job does not exist or is already aborted.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R177",
+      "Code": "r=AsyncA38Schedule.submitDuplicate();",
+      "Expected": "EXC|System.AsyncException|The Apex job named \"A38-owned-duplicate\" is already scheduled for execution.",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R178",
+      "Code": "System.attachFinalizer(null); r=true;",
+      "Expected": "EXC|System.HandledException|System.attachFinalizer(Finalizer) is not allowed in this context",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R179",
+      "Code": "System.attachFinalizer(new AsyncA38Finalizer()); r=true;",
+      "Expected": "EXC|System.HandledException|System.attachFinalizer(Finalizer) is not allowed in this context",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R180",
+      "Code": "AsyncA38Finalizer f=new AsyncA38Finalizer(); f.execute(null); r=f.called;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R181",
+      "Code": "Finalizer f=new AsyncA38Finalizer(); r=f instanceof AsyncA38Finalizer;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R182",
+      "Code": "Finalizer f; f.execute(null); r=true;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R183",
+      "Code": "FinalizerContext c; r=c.getAsyncApexJobId();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R184",
+      "Code": "FinalizerContext c; r=c.getRequestId();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R185",
+      "Code": "FinalizerContext c; r=c.getResult();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R186",
+      "Code": "FinalizerContext c; r=c.getException();",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R187",
+      "Code": "r=ParentJobResult.SUCCESS.name();",
+      "Expected": "SUCCESS",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R188",
+      "Code": "r=ParentJobResult.UNHANDLED_EXCEPTION.name();",
+      "Expected": "UNHANDLED_EXCEPTION",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R189",
+      "Code": "r=ParentJobResult.values();",
+      "Expected": "(SUCCESS, UNHANDLED_EXCEPTION)",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R190",
+      "Code": "r=ParentJobResult.valueOf('SUCCESS');",
+      "Expected": "SUCCESS",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R191",
+      "Code": "r=ParentJobResult.valueOf('UNHANDLED_EXCEPTION');",
+      "Expected": "UNHANDLED_EXCEPTION",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R192",
+      "Code": "r=ParentJobResult.valueOf('success');",
+      "Expected": "SUCCESS",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R193",
+      "Code": "r=ParentJobResult.valueOf(null);",
+      "Expected": "EXC|System.NoSuchElementException|No enum value found called null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R199",
+      "Code": "r=Test.getFlexQueueOrder();",
+      "Expected": "EXC|System.TypeException|Test.getFlexQueueOrder() can only be called from test methods",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R200",
+      "Code": "r=FlexQueue.moveJobToFront(null);",
+      "Expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R201",
+      "Code": "r=FlexQueue.moveJobToEnd(null);",
+      "Expected": "EXC|System.NullPointerException|Argument 1 cannot be null",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "R202",
+      "Code": "r=FlexQueue.moveJobBefore(null,null);",
+      "Expected": "COMPILE_ERROR\tline 47: Method does not exist or incorrect signature: void moveJobBefore(NULL, NULL) from the type FlexQueue",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 47
+    },
+    {
+      "ID": "R203",
+      "Code": "r=FlexQueue.moveJobAfter(null,null);",
+      "Expected": "COMPILE_ERROR\tline 47: Method does not exist or incorrect signature: void moveJobAfter(NULL, NULL) from the type FlexQueue",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 47
+    },
+    {
+      "ID": "C001",
+      "Code": "class F { @future public void go(){} } pq.out('C001',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Future methods must be declared as static",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C002",
+      "Code": "class F { @future public static Integer go(){return 1;} } pq.out('C002',true);",
+      "Expected": "COMPILE_ERROR\tline 6: static can only be used on methods of a top level type",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C003",
+      "Code": "class F { @future public static void go(Account a){} } pq.out('C003',true);",
+      "Expected": "COMPILE_ERROR\tline 6: static can only be used on methods of a top level type",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C004",
+      "Code": "class F { @future public static void go(List<Account> a){} } pq.out('C004',true);",
+      "Expected": "COMPILE_ERROR\tline 6: static can only be used on methods of a top level type",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C005",
+      "Code": "class F { @future(callout=true) public static void go(){} } pq.out('C005',true);",
+      "Expected": "COMPILE_ERROR\tline 6: static can only be used on methods of a top level type",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C006",
+      "Code": "class F { @future public static void go(Set<Id> ids){} } pq.out('C006',true);",
+      "Expected": "COMPILE_ERROR\tline 6: static can only be used on methods of a top level type",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C007",
+      "Code": "class F { @future public static void go(Map<String,Integer> a){} } pq.out('C007',true);",
+      "Expected": "COMPILE_ERROR\tline 6: static can only be used on methods of a top level type",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C008",
+      "Code": "class F { @future public static void go(Object a){} } pq.out('C008',true);",
+      "Expected": "COMPILE_ERROR\tline 6: static can only be used on methods of a top level type",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C009",
+      "Code": "class Q implements Queueable {} pq.out('C009',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Class Q must implement the method: void System.Queueable.execute(System.QueueableContext)",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C010",
+      "Code": "class Q implements Queueable { public void execute(Object c){} } pq.out('C010',true);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C011",
+      "Code": "class Q implements Queueable { public Integer execute(QueueableContext c){return 1;} } pq.out('C011',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Class Q must implement the method: void System.Queueable.execute(System.QueueableContext)",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C012",
+      "Code": "QueueableContext c=new QueueableContext(); pq.out('C012',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: System.QueueableContext",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C013",
+      "Code": "System.QueueableContextImpl c=new System.QueueableContextImpl(); pq.out('C013',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.QueueableContextImpl].<Constructor>()",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C014",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MaximumQueueableStackDepth=1.5; pq.out('C014',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from Decimal to Integer",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C015",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.MinimumQueueableDelayInMinutes='1'; pq.out('C015',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Illegal assignment from String to Integer",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C016",
+      "Code": "AsyncOptions o=new AsyncOptions(); o.getMaximumQueueableStackDepth(); pq.out('C016',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void getMaximumQueueableStackDepth() from the type System.AsyncOptions",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C017",
+      "Code": "AsyncInfo x=new AsyncInfo(); pq.out('C017',true);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C018",
+      "Code": "System.enqueueJob(new Object()); pq.out('C018',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Object",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C019",
+      "Code": "class B implements Database.Batchable<Integer> {} pq.out('C019',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Only top-level classes can implement Database.Batchable<Integer>",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C020",
+      "Code": "class B implements Database.Batchable<Integer> { public Iterable<Integer> start(Database.BatchableContext c){return new List<Integer>();} public void execute(Database.BatchableContext c,List<String> s){} public void finish(Database.BatchableContext c){} } pq.out('C020',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Only top-level classes can implement Database.Batchable<Integer>",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C021",
+      "Code": "Database.BatchableContext c=new Database.BatchableContext(); pq.out('C021',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Database.BatchableContext",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C022",
+      "Code": "System.BatchableContextImpl c=new System.BatchableContextImpl(); pq.out('C022',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: System.BatchableContextImpl",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C023",
+      "Code": "Database.executeBatch(new Object()); pq.out('C023',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Object",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C024",
+      "Code": "Database.executeBatch(new AsyncA38Batch(null),1.5); pq.out('C024',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void executeBatch(AsyncA38Batch, Decimal) from the type Database",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C025",
+      "Code": "class S implements Schedulable {} pq.out('C025',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Class S must implement the method: void System.Schedulable.execute(System.SchedulableContext)",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C026",
+      "Code": "class S implements Schedulable { public void execute(Object c){} } pq.out('C026',true);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C027",
+      "Code": "SchedulableContext c=new SchedulableContext(); pq.out('C027',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: System.SchedulableContext",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C028",
+      "Code": "System.SchedulableContextImpl c=new System.SchedulableContextImpl(); pq.out('C028',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Constructor not defined: [System.SchedulableContextImpl].<Constructor>()",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C029",
+      "Code": "System.schedule('x','0 0 0 1 1 ? 2099',new Object()); pq.out('C029',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Object",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C030",
+      "Code": "class F implements Finalizer {} pq.out('C030',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Class F must implement the method: void System.Finalizer.execute(System.FinalizerContext)",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C031",
+      "Code": "class F implements Finalizer { public void execute(Object c){} } pq.out('C031',true);",
+      "Expected": "true",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "C032",
+      "Code": "FinalizerContext c=new FinalizerContext(); pq.out('C032',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: System.FinalizerContext",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C033",
+      "Code": "System.FinalizerContextImpl c=new System.FinalizerContextImpl(); pq.out('C033',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Method is not visible: void System.FinalizerContextImpl.<init>()",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C034",
+      "Code": "System.attachFinalizer(new Object()); pq.out('C034',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Type cannot be constructed: Object",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "C035",
+      "Code": "ParentJobResult r=ParentJobResult.FAILED; pq.out('C035',true);",
+      "Expected": "COMPILE_ERROR\tline 6: Variable does not exist: FAILED",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    }
+  ],
+  "NativeCases": [
+    {
+      "ID": "F001",
+      "Code": "Test.enqueueBatchJobs(null); r=Test.getFlexQueueOrder().size();",
+      "Expected": "EXC|System.InvalidParameterValueException|Number of Jobs must not be null or less than 1"
+    },
+    {
+      "ID": "F002",
+      "Code": "Test.enqueueBatchJobs(-1); r=Test.getFlexQueueOrder().size();",
+      "Expected": "EXC|System.InvalidParameterValueException|Number of Jobs must not be null or less than 1"
+    },
+    {
+      "ID": "F003",
+      "Code": "Test.enqueueBatchJobs(0); r=Test.getFlexQueueOrder().size();",
+      "Expected": "EXC|System.InvalidParameterValueException|Number of Jobs must not be null or less than 1"
+    },
+    {
+      "ID": "F004",
+      "Code": "Test.enqueueBatchJobs(1); r=Test.getFlexQueueOrder().size();",
+      "Expected": "0"
+    },
+    {
+      "ID": "F005",
+      "Code": "Test.enqueueBatchJobs(2); r=Test.getFlexQueueOrder().size();",
+      "Expected": "0"
+    },
+    {
+      "ID": "F006",
+      "Code": "Test.enqueueBatchJobs(3); r=Test.getFlexQueueOrder().size();",
+      "Expected": "0"
+    },
+    {
+      "ID": "F007",
+      "Code": "Test.enqueueBatchJobs(6); r=Test.getFlexQueueOrder().size();",
+      "Expected": "1"
+    },
+    {
+      "ID": "F008",
+      "Code": "Test.enqueueBatchJobs(7); r=Test.getFlexQueueOrder().size();",
+      "Expected": "2"
+    },
+    {
+      "ID": "F009",
+      "Code": "Test.enqueueBatchJobs(7); List<Id> initial=Test.getFlexQueueOrder(); Id moved=initial[1]; Id anchor=initial[0]; String text=String.valueOf(initial.size()); text+='|'+FlexQueue.moveJobToFront(moved); for(Id job:Test.getFlexQueueOrder()) text+='|'+initial.indexOf(job); text+='|'+FlexQueue.moveJobToEnd(moved); for(Id job:Test.getFlexQueueOrder()) text+='|'+initial.indexOf(job); text+='|'+FlexQueue.moveBeforeJob(moved,anchor); for(Id job:Test.getFlexQueueOrder()) text+='|'+initial.indexOf(job); text+='|'+FlexQueue.moveAfterJob(moved,anchor); for(Id job:Test.getFlexQueueOrder()) text+='|'+initial.indexOf(job); r=text;",
+      "Expected": "2|true|-1|-1|true|-1|-1|true|-1|-1|true|-1|-1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F010",
+      "Code": "List<Id> submitted=Test.enqueueBatchJobs(7); List<Id> a=Test.getFlexQueueOrder(); List<Id> b=Test.getFlexQueueOrder(); r=String.valueOf(submitted.size())+'|'+a.size()+'|'+b.size()+'|'+(a[0]==b[0])+'|'+a.indexOf(a[0])+'|'+a.indexOf(b[0])+'|'+submitted.contains(a[0])+'|'+String.valueOf(a[0]).length();",
+      "Expected": "7|2|2|true|-1|-1|false|18",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F011",
+      "Code": "Test.enqueueBatchJobs(7); List<Id> a=Test.getFlexQueueOrder(); Boolean moved=FlexQueue.moveJobToFront(a[1]); List<Id> b=Test.getFlexQueueOrder(); r=String.valueOf(moved)+'|'+(a[1]==b[0])+'|'+(a[0]==b[1]);",
+      "Expected": "true|true|true"
+    },
+    {
+      "ID": "F012",
+      "Code": "Test.enqueueBatchJobs(6); r=FlexQueue.moveJobToFront('707000000000001');",
+      "Expected": "EXC|System.NoSuchElementException|Job with id 707000000000001AAA not found in the queue"
+    },
+    {
+      "ID": "F013",
+      "Code": "r=FlexQueue.moveBeforeJob(null,null);",
+      "Expected": "EXC|System.NullPointerException|Argument 1 cannot be null"
+    },
+    {
+      "ID": "F014",
+      "Code": "r=FlexQueue.moveAfterJob(null,null);",
+      "Expected": "EXC|System.NullPointerException|Argument 1 cannot be null"
+    },
+    {
+      "ID": "F015",
+      "Code": "r=FlexQueue.moveJobToFront('707000000000001');",
+      "Expected": "EXC|System.NoSuchElementException|Job with id 707000000000001AAA not found in the queue"
+    },
+    {
+      "ID": "F016",
+      "Code": "r=FlexQueue.moveJobToEnd('707000000000001');",
+      "Expected": "EXC|System.NoSuchElementException|Job with id 707000000000001AAA not found in the queue"
+    },
+    {
+      "ID": "F017",
+      "Code": "r=FlexQueue.moveBeforeJob('707000000000001','707000000000002');",
+      "Expected": "EXC|System.NoSuchElementException|Job with id 707000000000001AAA not found in the queue"
+    },
+    {
+      "ID": "F018",
+      "Code": "r=FlexQueue.moveAfterJob('707000000000001','707000000000002');",
+      "Expected": "EXC|System.NoSuchElementException|Job with id 707000000000001AAA not found in the queue"
+    },
+    {
+      "ID": "F019",
+      "Code": "List<Id> ids=new List<Id>{'707000000000001AAA'}; r=String.valueOf(ids.indexOf(ids[0]))+'|'+ids.contains(ids[0]);",
+      "Expected": "0|true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F020",
+      "Code": "Test.enqueueBatchJobs(7); List<Id> ids=new List<Id>(Test.getFlexQueueOrder()); r=String.valueOf(ids.indexOf(ids[0]))+'|'+ids.contains(ids[0]);",
+      "Expected": "-1|false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F021",
+      "Code": "Test.enqueueBatchJobs(7); List<Id> ids=Test.getFlexQueueOrder().clone(); r=String.valueOf(ids.indexOf(ids[0]))+'|'+ids.contains(ids[0]);",
+      "Expected": "-1|false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F022",
+      "Code": "Test.enqueueBatchJobs(7); List<Id> original=Test.getFlexQueueOrder(); List<Id> ids=new List<Id>(); ids.add(original[0]); r=String.valueOf(ids.indexOf(ids[0]))+'|'+ids.contains(ids[0])+'|'+original.indexOf(original[0]);",
+      "Expected": "0|true|-1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F023",
+      "Code": "Test.enqueueBatchJobs(7); List<Id> ids=Test.getFlexQueueOrder(); Id job=ids[0]; ids.add(job); r=String.valueOf(ids.size())+'|'+ids.indexOf(job)+'|'+ids.contains(job);",
+      "Expected": "3|2|true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F024",
+      "Code": "List<Id> ids=Test.enqueueBatchJobs(7); r=String.valueOf(ids.indexOf(ids[0]))+'|'+ids.contains(ids[0]);",
+      "Expected": "-1|false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "N093",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue('line\\nnext'); r=q.text;",
+      "Expected": "line\\nnext"
+    },
+    {
+      "ID": "N094",
+      "Code": "AsyncA38Queue q=new AsyncA38Queue('line\\nnext'); q.execute(null); r=q.text;",
+      "Expected": "line\\nnext"
+    },
+    {
+      "ID": "F025",
+      "Code": "r=new System.QueueableDuplicateSignature.Builder().addInteger(1).build()!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F026",
+      "Code": "r=new System.QueueableDuplicateSignature.Builder().build()!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F027",
+      "Code": "r=new AsyncA38Stateless() instanceof Database.AllowsCallouts;",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F028",
+      "Code": "Database.Batchable<Integer> b=new AsyncA38Batch(new List<Integer>()); b.execute(null,null); r=true;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F029",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>()); b.execute(null,new List<Integer>{1}); r=b.total;",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F030",
+      "Code": "r=new AsyncA38Queue('A38').text;",
+      "Expected": "A38",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F031",
+      "Code": "AsyncA38Batch b=new AsyncA38Batch(new List<Integer>()); b.execute(null,(List<Integer>)null); r=true;",
+      "Expected": "EXC|System.NullPointerException|Attempt to de-reference a null object",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F032",
+      "Code": "AsyncA38Stateless b=null; r=b instanceof Database.Stateful;",
+      "Expected": "false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F033",
+      "Code": "AsyncA38OverloadedBatch b=new AsyncA38OverloadedBatch(); b.execute(null,'A38'); r=true;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F034",
+      "Code": "Test.startTest(); Id job=System.schedule('A38-year-2099','0 0 0 1 1 ? 2099',new AsyncA38Schedule()); Test.stopTest(); CronTrigger cron=[SELECT State FROM CronTrigger WHERE Id=:job]; r=String.valueOf([SELECT COUNT() FROM Account WHERE Name='A38-schedule'])+'|'+cron.State;",
+      "Expected": "1|WAITING",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F035",
+      "Code": "Test.startTest(); Id job=System.schedule('A38-year-2050','0 0 0 1 1 ? 2050',new AsyncA38Schedule()); Test.stopTest(); CronTrigger cron=[SELECT State FROM CronTrigger WHERE Id=:job]; r=String.valueOf([SELECT COUNT() FROM Account WHERE Name='A38-schedule'])+'|'+cron.State;",
+      "Expected": "1|WAITING",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F036",
+      "Code": "System.schedule('A38-before-start','0 0 0 1 1 ? 2099',new AsyncA38Schedule()); Test.startTest(); Test.stopTest(); r=[SELECT COUNT() FROM Account WHERE Name='A38-schedule'];",
+      "Expected": "1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F037",
+      "Code": "Test.startTest(); Test.stopTest(); System.schedule('A38-after-stop','0 0 0 1 1 ? 2099',new AsyncA38Schedule()); r=[SELECT COUNT() FROM Account WHERE Name='A38-schedule'];",
+      "Expected": "0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F038",
+      "Code": "r=new System.QueueableDuplicateSignature.Builder().addString('A38').build()!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F039",
+      "Code": "r=new System.QueueableDuplicateSignature.Builder().addId('001000000000001').build()!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F040",
+      "Code": "System.schedule('A38-before-start-timing','0 0 0 1 1 ? 2099',new AsyncA38Schedule()); Integer before=[SELECT COUNT() FROM Account WHERE Name='A38-schedule']; Test.startTest(); Integer during=[SELECT COUNT() FROM Account WHERE Name='A38-schedule']; Test.stopTest(); r=String.valueOf(before)+'|'+during+'|'+[SELECT COUNT() FROM Account WHERE Name='A38-schedule'];",
+      "Expected": "0|0|1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F041",
+      "Code": "AsyncA38ScheduledContext.triggerId='caller'; Test.startTest(); Id job=System.schedule('A38-context-2050','0 0 0 1 1 ? 2050',new AsyncA38ScheduledContext()); Test.stopTest(); Account observed=[SELECT Description FROM Account WHERE Name='A38-context-schedule']; CronTrigger cron=[SELECT State FROM CronTrigger WHERE Id=:job]; r=String.valueOf(AsyncA38ScheduledContext.triggerId==job)+'|'+String.join(AsyncA38ScheduledContext.entries,',')+'|'+observed.Description+'|'+cron.State;",
+      "Expected": "true|seed,child|caller|seed|true|seed,child|WAITING",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F042",
+      "Code": "Test.startTest(); System.schedule('A38-null-context-2050','0 0 0 1 1 ? 2050',new AsyncA38ScheduledContext()); Test.stopTest(); r=String.valueOf(AsyncA38ScheduledContext.triggerId!=null)+'|'+[SELECT COUNT() FROM Account WHERE Name='A38-context-schedule'];",
+      "Expected": "true|1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "F043",
+      "Code": "AsyncA38ScheduledContext.entries.add('caller'); Test.startTest(); System.schedule('A38-list-context-2050','0 0 0 1 1 ? 2050',new AsyncA38ScheduledContext()); Test.stopTest(); Account observed=[SELECT Description FROM Account WHERE Name='A38-context-schedule']; r=String.join(AsyncA38ScheduledContext.entries,',')+'|'+observed.Description;",
+      "Expected": "seed,caller,child|null|seed,caller|true|seed,caller,child",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T001",
+      "Code": "Test.startTest();\n  Id job=System.schedule('A38-recurring-train','0 0 0 * * ?',new AsyncA38Schedule());\n  Test.stopTest();\n  CronTrigger cron=[SELECT State FROM CronTrigger WHERE Id=:job];\n  r=String.valueOf([SELECT COUNT() FROM Account WHERE Name='A38-schedule'])+'|'+cron.State;",
+      "Expected": "1|WAITING",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T005",
+      "Code": "System.QueueableDuplicateSignature sig=new System.QueueableDuplicateSignature.Builder().addString('job').addInteger(42).addId('001000000000001AAA').build();\n  r=String.valueOf(sig!=null)+'|'+sig.toString().contains('String:job')+'|'+sig.toString().contains('Integer:42')+'|'+sig.toString().contains('Id:001000000000001AAA');",
+      "Expected": "true|false|false|false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    }
+  ],
+  "NamedObservations": {
+    "R012": "true",
+    "R199": "()"
+  },
+  "NativeTests": [
+    {
+      "Method": "finalizerDrain",
+      "Outcome": "Pass",
+      "Message": ""
+    },
+    {
+      "Method": "flexQueueBoundary",
+      "Outcome": "Fail",
+      "Message": "System.ListException: List index out of bounds: 1"
+    },
+    {
+      "Method": "flexQueueMovesDrain",
+      "Outcome": "Pass",
+      "Message": ""
+    },
+    {
+      "Method": "futureDrain",
+      "Outcome": "Pass",
+      "Message": ""
+    },
+    {
+      "Method": "queueChainDrain",
+      "Outcome": "Pass",
+      "Message": ""
+    },
+    {
+      "Method": "queueDrain",
+      "Outcome": "Pass",
+      "Message": ""
+    },
+    {
+      "Method": "queueOptionsDrain",
+      "Outcome": "Pass",
+      "Message": ""
+    },
+    {
+      "Method": "scheduledDrain",
+      "Outcome": "Pass",
+      "Message": ""
+    },
+    {
+      "Method": "statefulBatchDrain",
+      "Outcome": "Pass",
+      "Message": ""
+    },
+    {
+      "Method": "statelessBatchDrain",
+      "Outcome": "Pass",
+      "Message": ""
+    }
+  ],
+  "Remaining": [],
+  "Oracle": "Owned asynchronous execution observations at API 62.0 and 67.0, including native tests, signatures, boundaries, limits and execution stages.",
+  "Controls": [
+    {
+      "ID": "Q001",
+      "Code": "AsyncA38OverloadedBatch b=new AsyncA38OverloadedBatch(); b.execute(null,null); r=true;",
+      "Expected": "COMPILE_ERROR\tline 6: Ambiguous method signature: void execute(NULL, NULL)",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "T002",
+      "Code": "QueueableDuplicateSignature sig = QueueableDuplicateSignature.builder().addString('job').addInteger(42).addId('001000000000001AAA').build(); r=String.valueOf(sig!=null)+'|'+sig.toString().contains('String:job')+'|'+sig.toString().contains('Integer:42')+'|'+sig.toString().contains('Id:001000000000001AAA');",
+      "Expected": "true|false|false|false",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T004",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); r=String.valueOf(b.getSize())+'|'+b.getMaxSize()+'|'+b.getRemainingSize();",
+      "Expected": "0|32|32",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T006",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('nightly'); b.addInteger(7); b.addId('001000000000001AAA'); r=String.valueOf(b.getSize())+'|'+b.getMaxSize()+'|'+b.getRemainingSize()+'|'+(b.build()!=null);",
+      "Expected": "26|32|6|true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T007",
+      "Code": "QueueableDuplicateSignature sig=QueueableDuplicateSignature.builder().addString('job').addInteger(42).addId('001000000000001AAA').build(); r=String.valueOf(sig)+'|'+sig.toString();",
+      "Expected": "'job'_42_001000000000001|'job'_42_001000000000001",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T008",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString(''); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "EXC|System.InvalidParameterValueException|Cannot add an empty string to a deduplication signature",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T009",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addInteger(0); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "4|28|0",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T010",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addId('001000000000001AAA'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "15|17|001000000000001",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T011",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('\u00e9'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "2|30|'\u00e9'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T012",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('a\\'b'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "3|29|'a\\'b'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T013",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString(null); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "EXC|System.InvalidParameterValueException|Cannot add null to a deduplication signature",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T014",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addInteger(null); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "EXC|System.InvalidParameterValueException|Cannot add null to a deduplication signature",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T015",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addId(null); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "EXC|System.InvalidParameterValueException|Cannot add null to a deduplication signature",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T016",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('123456789012345678901234567890123'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "EXC|System.DuplicateMessageException|Deduplication signature exceeds the maximum length of 32 bytes",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T017",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('12345678901234567890123456789012345'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "EXC|System.DuplicateMessageException|Deduplication signature exceeds the maximum length of 32 bytes",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T018",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('123456789012345678901234567890'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize();",
+      "Expected": "30|2",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T019",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('1234567890123456789012345678901'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize();",
+      "Expected": "31|1",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T020",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); for(Integer i=0;i<5;i++) b.addInteger(i); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize();",
+      "Expected": "20|12",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T021",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); for(Integer i=0;i<6;i++) b.addInteger(i); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize();",
+      "Expected": "24|8",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T022",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addId('001000000000001AAA'); b.addId('001000000000002AAA'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize();",
+      "Expected": "30|2",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T023",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('nightly'); b.addInteger(7); b.addId('001000000000001AAA'); b.addString('x'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize();",
+      "Expected": "27|5",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T024",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); for(Integer i=0;i<5;i++) b.addInteger(i); r=b.build().toString();",
+      "Expected": "0_1_2_3_4",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T025",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); for(Integer i=0;i<6;i++) b.addInteger(i); r=b.build().toString();",
+      "Expected": "0_1_2_3_4_5",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T026",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addId('001000000000001AAA'); b.addId('001000000000002AAA'); r=b.build().toString();",
+      "Expected": "001000000000001_001000000000002",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T027",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('123456789012345678901234567890'); r=b.build().toString();",
+      "Expected": "'123456789012345678901234567890'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T003",
+      "Code": "QueueableDuplicateSignature.Builder builder = QueueableDuplicateSignature.builder();\nSystem.assertEquals(0, builder.getSize());\nSystem.assertEquals(10, builder.getMaxSize());\nSystem.assertEquals(10, builder.getRemainingSize());\nbuilder.addString('nightly');\nbuilder.addInteger(7);\nbuilder.addId('001000000000001AAA');\nSystem.assertEquals(3, builder.getSize());\nSystem.assertEquals(7, builder.getRemainingSize());\nQueueableDuplicateSignature signature = builder.build();\nSystem.assert(signature.toString().contains('String:nightly'));\nSystem.assert(signature.toString().contains('Integer:7'));\nSystem.assert(signature.toString().contains('Id:001000000000001AAA'));",
+      "Expected": "COMPILE_ERROR\tline 6: Invalid type: QueueableDuplicateSignature.Builder",
+      "Compile": true,
+      "NativeNull": false,
+      "NativeLine": 6
+    },
+    {
+      "ID": "T028",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); for(Integer i=0;i<9;i++) b.addInteger(i); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "EXC|System.DuplicateMessageException|Deduplication signature exceeds the maximum length of 32 bytes",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T029",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('\ud83d\ude00'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "4|28|'\ud83d\ude00'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T030",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('123456789012'); b.addInteger(7); b.addId('001000000000001AAA'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "31|1|'123456789012'_7_001000000000001",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T031",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('123456789'); b.addInteger(7); b.addId('001000000000001AAA'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "28|4|'123456789'_7_001000000000001",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T032",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); for(Integer i=0;i<8;i++) b.addInteger(i); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "32|0|0_1_2_3_4_5_6_7",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T033",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('123456789012345'); b.addString('123456789012345'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "30|2|'123456789012345'_'123456789012345'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T034",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); for(Integer i=0;i<9;i++) b.addInteger(i); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize();",
+      "Expected": "EXC|System.DuplicateMessageException|Deduplication signature exceeds the maximum length of 32 bytes",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T035",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('123456789012345678901234567890123'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize();",
+      "Expected": "EXC|System.DuplicateMessageException|Deduplication signature exceeds the maximum length of 32 bytes",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T036",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('123456789012345678901234567890'); b.addString('x'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "31|1|'123456789012345678901234567890'_'x'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T037",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('12345678901234567890123456789012'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "32|0|'12345678901234567890123456789012'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T038",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('nightly'); b.addInteger(7); b.addId('001000000000001AAA'); r=b.build().toString();",
+      "Expected": "'nightly'_7_001000000000001",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T039",
+      "Code": "System.QueueableDuplicateSignature.Builder b=QueueableDuplicateSignature.builder(); r=String.valueOf(b.getSize())+'|'+b.getMaxSize()+'|'+b.getRemainingSize();",
+      "Expected": "0|32|32",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T040",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); for(Integer i=0;i<8;i++) b.addInteger(i); try{b.addInteger(8);}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage()+'|'+b.getSize()+'|'+b.getRemainingSize()+'|'+b.build().toString();}",
+      "Expected": "System.DuplicateMessageException|Deduplication signature exceeds the maximum length of 32 bytes|32|0|0_1_2_3_4_5_6_7",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T041",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addInteger(Integer.valueOf('-2147483648')); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "4|28|-2147483648",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T042",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addId('001000000000001'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "15|17|001000000000001",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T043",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); b.addString('a\\\\b'); r=String.valueOf(b.getSize())+'|'+b.getRemainingSize()+'|'+b.build().toString();",
+      "Expected": "3|29|'a\\\\b'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T044",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); r=b.build()!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "T045",
+      "Code": "System.QueueableDuplicateSignature.Builder b=new System.QueueableDuplicateSignature.Builder(); r=b.addString('alias').build().toString();",
+      "Expected": "'alias'",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    }
+  ],
+  "ShadowDeclarations": {
+    "QueueableDuplicateSignature": "public class QueueableDuplicateSignature {\n public class Builder {\n  public String text='project';\n  public Builder addString(String value){text+=':'+value;return this;}\n  public String build(){return text;}\n }\n}\n"
+  },
+  "ShadowCases": [
+    {
+      "ID": "S001",
+      "Code": "QueueableDuplicateSignature.Builder b=new QueueableDuplicateSignature.Builder(); r=b.text;",
+      "Expected": "project",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S002",
+      "Code": "r=new QueueableDuplicateSignature.Builder().addString('A38').build();",
+      "Expected": "project:A38",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S003",
+      "Code": "Object o=new QueueableDuplicateSignature.Builder(); r=((QueueableDuplicateSignature.Builder)o).text;",
+      "Expected": "project",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    },
+    {
+      "ID": "S004",
+      "Code": "r=new System.QueueableDuplicateSignature.Builder().addString('A38').build()!=null;",
+      "Expected": "true",
+      "Compile": false,
+      "NativeNull": false,
+      "NativeLine": 0
+    }
+  ],
+  "CronControls": [
+    {
+      "ID": "T046",
+      "Code": "String batchName='A38-cron-T046-batch';\nTest.startTest();\nString batchId=System.scheduleBatch(new AsyncA38ScheduleBatchCronBatch(new List<Integer>{1,2,3}),batchName,1,2);\nString stopResult='OK';\ntry{Test.stopTest();}catch(Exception e){stopResult='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nList<CronTrigger> batchCrons=[SELECT Id,State FROM CronTrigger WHERE CronJobDetail.Name=:batchName ORDER BY State];\nList<String> batchStates=new List<String>(); for(CronTrigger cron:batchCrons) batchStates.add(cron.State);\nInteger batchComplete=[SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name=:batchName AND State='Complete'];\nInteger batchWaiting=[SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name=:batchName AND State='WAITING'];\nInteger batchRows=[SELECT COUNT() FROM Account WHERE Name IN ('A38-cron-batch-1','A38-cron-batch-2','A38-cron-batch-3')];\nInteger finishRows=[SELECT COUNT() FROM Account WHERE Name='A38-cron-batch-finish'];\nr='stop='+stopResult+'|batchCron='+batchCrons.size()+'|batchStates='+String.join(batchStates,',')+'|batchComplete='+batchComplete+'|batchWaiting='+batchWaiting+'|batchRows='+batchRows+'|finishRows='+finishRows;",
+      "Expected": "stop=OK|batchCron=1|batchStates=WAITING|batchComplete=0|batchWaiting=1|batchRows=0|finishRows=0",
+      "MatchFields": [
+        "stop",
+        "batchCron",
+        "batchStates",
+        "batchComplete",
+        "batchWaiting"
+      ]
+    },
+    {
+      "ID": "T047",
+      "Code": "String batchName='A38-cron-T047-batch';\nString scheduleName='A38-cron-T047-schedule';\nTest.startTest();\nString scheduleId=System.schedule(scheduleName,'0 0 0 * * ?',new AsyncA38ScheduleBatchCronSchedule());\nString batchId=System.scheduleBatch(new AsyncA38ScheduleBatchCronBatch(new List<Integer>{1,2,3}),batchName,1,2);\nString stopResult='OK';\ntry{Test.stopTest();}catch(Exception e){stopResult='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nList<CronTrigger> batchCrons=[SELECT Id,State FROM CronTrigger WHERE CronJobDetail.Name=:batchName ORDER BY State];\nList<String> batchStates=new List<String>(); for(CronTrigger cron:batchCrons) batchStates.add(cron.State);\nInteger batchComplete=[SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name=:batchName AND State='Complete'];\nInteger batchWaiting=[SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name=:batchName AND State='WAITING'];\nInteger batchRows=[SELECT COUNT() FROM Account WHERE Name IN ('A38-cron-batch-1','A38-cron-batch-2','A38-cron-batch-3')];\nInteger finishRows=[SELECT COUNT() FROM Account WHERE Name='A38-cron-batch-finish'];\nList<CronTrigger> scheduleCrons=[SELECT Id,State FROM CronTrigger WHERE CronJobDetail.Name=:scheduleName ORDER BY State];\nList<String> scheduleStates=new List<String>(); for(CronTrigger cron:scheduleCrons) scheduleStates.add(cron.State);\nInteger scheduleComplete=[SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name=:scheduleName AND State='Complete'];\nInteger scheduleWaiting=[SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name=:scheduleName AND State='WAITING'];\nInteger scheduleRows=[SELECT COUNT() FROM Account WHERE Name='A38-cron-schedule'];\nr='stop='+stopResult+'|batchCron='+batchCrons.size()+'|batchStates='+String.join(batchStates,',')+'|batchComplete='+batchComplete+'|batchWaiting='+batchWaiting+'|batchRows='+batchRows+'|finishRows='+finishRows+'|scheduleCron='+scheduleCrons.size()+'|scheduleStates='+String.join(scheduleStates,',')+'|scheduleComplete='+scheduleComplete+'|scheduleWaiting='+scheduleWaiting+'|scheduleRows='+scheduleRows;",
+      "Expected": "stop=OK|batchCron=1|batchStates=WAITING|batchComplete=0|batchWaiting=1|batchRows=0|finishRows=0|scheduleCron=1|scheduleStates=WAITING|scheduleComplete=0|scheduleWaiting=1|scheduleRows=1",
+      "MatchFields": [
+        "stop",
+        "batchCron",
+        "batchStates",
+        "batchComplete",
+        "batchWaiting",
+        "scheduleCron",
+        "scheduleStates",
+        "scheduleComplete",
+        "scheduleWaiting",
+        "scheduleRows"
+      ]
+    },
+    {
+      "ID": "T048",
+      "Code": "String batchName='A38-cron-T048-batch';\nTest.startTest();\nString batchId=System.scheduleBatch(new AsyncA38ScheduleBatchCronBatch(new List<Integer>{1}),batchName,1,2);\nString stopResult='OK';\ntry{Test.stopTest();}catch(Exception e){stopResult='EXC|'+e.getTypeName()+'|'+e.getMessage();}\nList<CronTrigger> batchCrons=[SELECT Id,State FROM CronTrigger WHERE CronJobDetail.Name=:batchName ORDER BY State];\nList<String> batchStates=new List<String>(); for(CronTrigger cron:batchCrons) batchStates.add(cron.State);\nInteger batchComplete=[SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name=:batchName AND State='Complete'];\nInteger batchWaiting=[SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name=:batchName AND State='WAITING'];\nInteger batchRows=[SELECT COUNT() FROM Account WHERE Name IN ('A38-cron-batch-1','A38-cron-batch-2','A38-cron-batch-3')];\nInteger finishRows=[SELECT COUNT() FROM Account WHERE Name='A38-cron-batch-finish'];\nr='stop='+stopResult+'|batchCron='+batchCrons.size()+'|batchStates='+String.join(batchStates,',')+'|batchComplete='+batchComplete+'|batchWaiting='+batchWaiting+'|batchRows='+batchRows+'|finishRows='+finishRows;",
+      "Expected": "stop=OK|batchCron=1|batchStates=WAITING|batchComplete=0|batchWaiting=1|batchRows=0|finishRows=0",
+      "MatchFields": [
+        "stop",
+        "batchCron",
+        "batchStates",
+        "batchComplete",
+        "batchWaiting"
+      ]
+    }
+  ]
+}

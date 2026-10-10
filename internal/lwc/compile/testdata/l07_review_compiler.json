@@ -1,0 +1,405 @@
+[
+  {
+    "id": "ctrl_boundary_invalid_wire_long",
+    "group": "review-source-position",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "60.0": "COMPILE_ERROR",
+      "61.0": "COMPILE_ERROR",
+      "62.0": "COMPILE_ERROR",
+      "63.0": "COMPILE_ERROR",
+      "64.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": "[Line: 1, Col: 120] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "60.0": "[Line: 1, Col: 120] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "61.0": "[Line: 1, Col: 120] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "62.0": "[Line: 1, Col: 120] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "63.0": "[Line: 1, Col: 120] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "64.0": "[Line: 1, Col: 120] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "65.0": "[Line: 1, Col: 120] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "66.0": "[Line: 1, Col: 120] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "67.0": "[Line: 1, Col: 120] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter."
+    },
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "60.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "61.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "62.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "63.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "64.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "65.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "66.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "ctrl_boundary_invalid_wire_short",
+    "group": "review-source-position",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; export default class FamilyL01048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "60.0": "COMPILE_ERROR",
+      "61.0": "COMPILE_ERROR",
+      "62.0": "COMPILE_ERROR",
+      "63.0": "COMPILE_ERROR",
+      "64.0": "COMPILE_ERROR",
+      "65.0": "COMPILE_ERROR",
+      "66.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": "[Line: 1, Col: 113] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "60.0": "[Line: 1, Col: 113] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "61.0": "[Line: 1, Col: 113] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "62.0": "[Line: 1, Col: 113] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "63.0": "[Line: 1, Col: 113] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "64.0": "[Line: 1, Col: 113] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "65.0": "[Line: 1, Col: 113] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "66.0": "[Line: 1, Col: 113] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "67.0": "[Line: 1, Col: 113] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter."
+    },
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL01048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "60.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL01048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "61.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL01048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "62.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL01048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "63.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL01048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "64.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL01048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "65.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL01048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "66.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL01048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL01048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "ctrl_getRecord_wire_long",
+    "group": "review-source-position",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "60.0": "COMPILE_OK",
+      "61.0": "COMPILE_OK",
+      "62.0": "COMPILE_OK",
+      "63.0": "COMPILE_OK",
+      "64.0": "COMPILE_OK",
+      "65.0": "COMPILE_OK",
+      "66.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {},
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "60.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "61.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "62.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "63.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "64.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "65.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "66.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "ctrl_getRecord_wire_short",
+    "group": "review-source-position",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "60.0": "COMPILE_OK",
+      "61.0": "COMPILE_OK",
+      "62.0": "COMPILE_OK",
+      "63.0": "COMPILE_OK",
+      "64.0": "COMPILE_OK",
+      "65.0": "COMPILE_OK",
+      "66.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {},
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "60.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "61.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "62.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "63.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "64.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "65.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "66.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01048 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_getRecord_reference",
+    "group": "reads",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyCompile extends LightningElement {value=getRecord;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": "[Line: 1, Col: 171] LWC1503: \"getRecord\" is a wire adapter and can only be used via the @wire decorator.",
+      "67.0": "[Line: 1, Col: 164] LWC1503: \"getRecord\" is a wire adapter and can only be used via the @wire decorator."
+    },
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile000 extends LightningElement {value=getRecord;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01000 extends LightningElement {value=getRecord;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_getRecord_alias",
+    "group": "reads",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { getRecord as owned } from 'lightning/uiRecordApi'; export default class FamilyCompile extends LightningElement {value=owned;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": "[Line: 1, Col: 180] LWC1503: \"owned\" is a wire adapter and can only be used via the @wire decorator.",
+      "67.0": "[Line: 1, Col: 173] LWC1503: \"owned\" is a wire adapter and can only be used via the @wire decorator."
+    },
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { getRecord as owned } from 'lightning/uiRecordApi'; export default class FamilyL09Compile001 extends LightningElement {value=owned;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { getRecord as owned } from 'lightning/uiRecordApi'; export default class FamilyL01001 extends LightningElement {value=owned;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_getRecord_wire",
+    "group": "reads",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyCompile extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {},
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile002 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { getRecord } from 'lightning/uiRecordApi'; export default class FamilyL01002 extends LightningElement {@wire(getRecord, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_getRecords_reference",
+    "group": "reads",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { getRecords } from 'lightning/uiRecordApi'; export default class FamilyCompile extends LightningElement {value=getRecords;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": "[Line: 1, Col: 172] LWC1503: \"getRecords\" is a wire adapter and can only be used via the @wire decorator.",
+      "67.0": "[Line: 1, Col: 165] LWC1503: \"getRecords\" is a wire adapter and can only be used via the @wire decorator."
+    },
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { getRecords } from 'lightning/uiRecordApi'; export default class FamilyL09Compile003 extends LightningElement {value=getRecords;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { getRecords } from 'lightning/uiRecordApi'; export default class FamilyL01003 extends LightningElement {value=getRecords;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_getRecords_alias",
+    "group": "reads",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { getRecords as owned } from 'lightning/uiRecordApi'; export default class FamilyCompile extends LightningElement {value=owned;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": "[Line: 1, Col: 181] LWC1503: \"owned\" is a wire adapter and can only be used via the @wire decorator.",
+      "67.0": "[Line: 1, Col: 174] LWC1503: \"owned\" is a wire adapter and can only be used via the @wire decorator."
+    },
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { getRecords as owned } from 'lightning/uiRecordApi'; export default class FamilyL09Compile004 extends LightningElement {value=owned;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { getRecords as owned } from 'lightning/uiRecordApi'; export default class FamilyL01004 extends LightningElement {value=owned;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_getRecords_wire",
+    "group": "reads",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { getRecords } from 'lightning/uiRecordApi'; export default class FamilyCompile extends LightningElement {@wire(getRecords, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {},
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { getRecords } from 'lightning/uiRecordApi'; export default class FamilyL09Compile005 extends LightningElement {@wire(getRecords, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { getRecords } from 'lightning/uiRecordApi'; export default class FamilyL01005 extends LightningElement {@wire(getRecords, { recordId: \"$recordId\", fields: [\"Account.Name\"] }) value;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_createRecord_reference",
+    "group": "writes",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { createRecord } from 'lightning/uiRecordApi'; export default class FamilyCompile extends LightningElement {value=createRecord;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {},
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { createRecord } from 'lightning/uiRecordApi'; export default class FamilyL09Compile012 extends LightningElement {value=createRecord;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { createRecord } from 'lightning/uiRecordApi'; export default class FamilyL01012 extends LightningElement {value=createRecord;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_createRecord_alias",
+    "group": "writes",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { createRecord as owned } from 'lightning/uiRecordApi'; export default class FamilyCompile extends LightningElement {value=owned;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {},
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { createRecord as owned } from 'lightning/uiRecordApi'; export default class FamilyL09Compile013 extends LightningElement {value=owned;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { createRecord as owned } from 'lightning/uiRecordApi'; export default class FamilyL01013 extends LightningElement {value=owned;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_getRecordNotifyChange_reference",
+    "group": "cache-notifications",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { getRecordNotifyChange } from 'lightning/uiRecordApi'; export default class FamilyCompile extends LightningElement {value=getRecordNotifyChange;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {},
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { getRecordNotifyChange } from 'lightning/uiRecordApi'; export default class FamilyL09Compile033 extends LightningElement {value=getRecordNotifyChange;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { getRecordNotifyChange } from 'lightning/uiRecordApi'; export default class FamilyL01033 extends LightningElement {value=getRecordNotifyChange;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_getRecordNotifyChange_alias",
+    "group": "cache-notifications",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; import { getRecordNotifyChange as owned } from 'lightning/uiRecordApi'; export default class FamilyCompile extends LightningElement {value=owned;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_OK",
+      "67.0": "COMPILE_OK"
+    },
+    "diagnostic_expected": {},
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; import { getRecordNotifyChange as owned } from 'lightning/uiRecordApi'; export default class FamilyL09Compile034 extends LightningElement {value=owned;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; import { getRecordNotifyChange as owned } from 'lightning/uiRecordApi'; export default class FamilyL01034 extends LightningElement {value=owned;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_boundary_duplicate_binding",
+    "group": "writes",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { createRecord, createRecord } from 'lightning/uiRecordApi';\nimport { LightningElement, wire } from 'lwc'; export default class FamilyCompile extends LightningElement {}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": "[Line: 1, Col: 23] LWC1503: Parsing error: Identifier 'createRecord' has already been declared. (1:23)",
+      "67.0": "[Line: 1, Col: 23] LWC1503: Parsing error: Identifier 'createRecord' has already been declared. (1:23)"
+    },
+    "sources": {
+      "59.0": "import { createRecord, createRecord } from 'lightning/uiRecordApi';\nimport { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile046 extends LightningElement {}",
+      "67.0": "import { createRecord, createRecord } from 'lightning/uiRecordApi';\nimport { LightningElement, wire } from 'lwc'; export default class FamilyL01046 extends LightningElement {}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_boundary_invalid_import",
+    "group": "input-helpers",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { generateRecordInputForCreate as } from 'lightning/uiRecordApi';\nimport { LightningElement, wire } from 'lwc'; export default class FamilyCompile extends LightningElement {}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": "[Line: 1, Col: 41] LWC1503: Parsing error: Unexpected token (1:41)",
+      "67.0": "[Line: 1, Col: 41] LWC1503: Parsing error: Unexpected token (1:41)"
+    },
+    "sources": {
+      "59.0": "import { generateRecordInputForCreate as } from 'lightning/uiRecordApi';\nimport { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile047 extends LightningElement {}",
+      "67.0": "import { generateRecordInputForCreate as } from 'lightning/uiRecordApi';\nimport { LightningElement, wire } from 'lwc'; export default class FamilyL01047 extends LightningElement {}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  },
+  {
+    "id": "c_boundary_invalid_wire",
+    "group": "cache-notifications",
+    "kind": "compile",
+    "basis": "org",
+    "js": "import { LightningElement, wire } from 'lwc'; export default class FamilyCompile extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+    "template": "<template><span>L09</span></template>",
+    "expected": {
+      "59.0": "COMPILE_ERROR",
+      "67.0": "COMPILE_ERROR"
+    },
+    "diagnostic_expected": {
+      "59.0": "[Line: 1, Col: 120] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter.",
+      "67.0": "[Line: 1, Col: 113] LWC1503: \"notifyRecordUpdateAvailable\" is not a known adapter."
+    },
+    "sources": {
+      "59.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL09Compile048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}",
+      "67.0": "import { LightningElement, wire } from 'lwc'; export default class FamilyL01048 extends LightningElement {@wire(notifyRecordUpdateAvailable,) value;}"
+    },
+    "oracle": "Salesforce API 59/67 compiler observation"
+  }
+]
