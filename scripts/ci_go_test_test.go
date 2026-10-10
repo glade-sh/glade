@@ -982,6 +982,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	for _, want := range []string{
 		"if: github.event_name != 'pull_request' || github.event.pull_request.changed_files >= 300",
 		initPin,
+		"tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.1/codeql-bundle-linux64.tar.zst",
 		"id:",
 		"- go/allocation-size-overflow",
 	} {

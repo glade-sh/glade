@@ -166,6 +166,9 @@ jobs:
         if: github.event_name != 'pull_request' || github.event.pull_request.changed_files >= 300
         uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
+          # Full analysis on 2.27.2 exceeded 45 minutes in run 38060841848.
+          # Use the complete 2.27.1 bundle from successful main runs.
+          tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.1/codeql-bundle-linux64.tar.zst
           languages: go
           config: |
             queries:
