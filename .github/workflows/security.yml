@@ -140,7 +140,8 @@ jobs:
           fi
           echo "[cache] build bytes=$bytes"
       - name: Initialize pull request CodeQL
-        if: github.event_name == 'pull_request'
+        # The pinned action cannot use diff-informed analysis at 300+ files.
+        if: github.event_name == 'pull_request' && github.event.pull_request.changed_files < 300
         uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           languages: go
@@ -162,7 +163,7 @@ jobs:
                     - go/incorrect-integer-conversion
           build-mode: manual
       - name: Initialize full-branch CodeQL
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' || github.event.pull_request.changed_files >= 300
         uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           languages: go

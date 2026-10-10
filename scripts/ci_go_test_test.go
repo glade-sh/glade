@@ -928,7 +928,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	codeql := jobs["codeql"]
 	for _, want := range []string{
 		"name: CodeQL",
-		"timeout-minutes: 15",
+		"timeout-minutes: 45",
 		"languages: go",
 		"config: |",
 		"- uses: security-extended",
@@ -964,7 +964,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	prInit := workflowStepBlock(t, codeql, "name: Initialize pull request CodeQL")
 	for _, want := range []string{
-		"if: github.event_name == 'pull_request'",
+		"if: github.event_name == 'pull_request' && github.event.pull_request.changed_files < 300",
 		initPin,
 		"- go/allocation-size-overflow",
 		"- go/incorrect-integer-conversion",
@@ -980,7 +980,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	fullInit := workflowStepBlock(t, codeql, "name: Initialize full-branch CodeQL")
 	for _, want := range []string{
-		"if: github.event_name != 'pull_request'",
+		"if: github.event_name != 'pull_request' || github.event.pull_request.changed_files >= 300",
 		initPin,
 		"id:",
 		"- go/allocation-size-overflow",
