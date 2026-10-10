@@ -3083,6 +3083,9 @@ func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing
 	if !strings.Contains(job, "timeout-minutes: 100") || !strings.Contains(job, "fail-fast: false") {
 		t.Error("compile shards need the enclosing timeout and independent failure collection")
 	}
+	if !strings.Contains(job, "      NO_COLOR: \"1\"") {
+		t.Error("conformance diagnostics must stay plain text when CI enables terminal colors")
+	}
 	if strings.Count(job, "          - lane:") != 9 || !strings.Contains(job, "          - lane: remaining-go\n            name: test\n") {
 		t.Error("test matrix must contain one remaining-go row and eight compile shards")
 	}
