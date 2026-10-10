@@ -140,11 +140,13 @@ jobs:
           fi
           echo "[cache] build bytes=$bytes"
       - name: Initialize pull request CodeQL
+        id: codeql-pr
         # The pinned action cannot use diff-informed analysis at 300+ files.
         if: github.event_name == 'pull_request' && github.event.pull_request.changed_files < 300
         uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           languages: go
+          db-location: ${{ runner.temp }}/codeql_databases
           config: |
             queries:
               - uses: security-extended
@@ -163,13 +165,12 @@ jobs:
                     - go/incorrect-integer-conversion
           build-mode: manual
       - name: Initialize full-branch CodeQL
+        id: codeql-full
         if: github.event_name != 'pull_request' || github.event.pull_request.changed_files >= 300
         uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
-          # Full analysis on 2.27.2 exceeded 45 minutes in run 38060841848.
-          # Use the complete 2.27.1 bundle from successful main runs.
-          tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.1/codeql-bundle-linux64.tar.zst
           languages: go
+          db-location: ${{ runner.temp }}/codeql_databases
           config: |
             queries:
               - uses: security-extended
@@ -194,8 +195,55 @@ jobs:
           build-mode: manual
       - name: Build Glade for CodeQL
         run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade
+      - name: Sample CodeQL evaluator resources
+        run: |
+          (
+            while true; do
+              date -u +%Y-%m-%dT%H:%M:%SZ
+              ps -C java -o pid,ppid,rss,pcpu,etime,comm || true
+              cat /proc/pressure/memory /proc/pressure/io
+              vmstat 1 2 | tail -1
+              sleep 30
+            done
+          ) > "$RUNNER_TEMP/codeql-resources.log" 2>&1 &
+          echo "$!" > "$RUNNER_TEMP/codeql-resource-sampler.pid"
       - name: Analyze CodeQL
+        # Preserve evaluator evidence before the job's cleanup deadline.
+        timeout-minutes: 30
         uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        env:
+          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"run-queries":["--evaluator-log=${{ runner.temp }}/codeql-evaluator.jsonl","--evaluator-log-minify","--tuple-counting","--timeout=600"]}}'
+      - name: Stop CodeQL resource sampler
+        if: always()
+        run: |
+          if [[ -f "$RUNNER_TEMP/codeql-resource-sampler.pid" ]]; then
+            sampler_pid="$(cat "$RUNNER_TEMP/codeql-resource-sampler.pid")"
+            kill "$sampler_pid" 2>/dev/null || true
+          fi
+      - name: Summarize CodeQL evaluator diagnostics
+        if: always()
+        timeout-minutes: 3
+        env:
+          CODEQL_CLI: ${{ steps.codeql-pr.outputs.codeql-path || steps.codeql-full.outputs.codeql-path }}
+        run: |
+          if [[ -x "$CODEQL_CLI" && -f "$RUNNER_TEMP/codeql-evaluator.jsonl" ]]; then
+            if ! "$CODEQL_CLI" generate log-summary --format=text "$RUNNER_TEMP/codeql-evaluator.jsonl" "$RUNNER_TEMP/codeql-evaluator-summary.txt"; then
+              echo "::warning::CodeQL evaluator summary failed; preserving the raw log."
+            fi
+          fi
+      - name: Upload CodeQL evaluator diagnostics
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: codeql-evaluator-diagnostics
+          path: |
+            ${{ runner.temp }}/codeql-evaluator.jsonl
+            ${{ runner.temp }}/codeql-evaluator-summary.txt
+            ${{ runner.temp }}/codeql-resources.log
+            ${{ runner.temp }}/codeql_databases/go/log/
+            ${{ runner.temp }}/codeql_databases/log/
+          retention-days: 7
 
   gosec:
     name: gosec

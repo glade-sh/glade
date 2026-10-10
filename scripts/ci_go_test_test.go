@@ -1151,11 +1151,15 @@ func TestSecurityWorkflowContract(t *testing.T) {
 			t.Errorf("pull-request CodeQL init step does not exclude %q", query)
 		}
 	}
+	for _, init := range []string{prInit, workflowStepBlock(t, codeql, "name: Initialize full-branch CodeQL")} {
+		if !strings.Contains(init, "db-location: ${{ runner.temp }}/codeql_databases") {
+			t.Error("CodeQL init must use the archived database location")
+		}
+	}
 	fullInit := workflowStepBlock(t, codeql, "name: Initialize full-branch CodeQL")
 	for _, want := range []string{
 		"if: github.event_name != 'pull_request' || github.event.pull_request.changed_files >= 300",
 		initPin,
-		"tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.1/codeql-bundle-linux64.tar.zst",
 		"id:",
 		"- go/allocation-size-overflow",
 	} {
@@ -1165,6 +1169,9 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	if strings.Contains(fullInit, "disable-default-queries:") {
 		t.Error("full-branch CodeQL init step must retain the default query suite")
+	}
+	if strings.Contains(fullInit, "tools:") {
+		t.Error("full-branch CodeQL init step must use the action's default bundle")
 	}
 	for _, query := range fullBranchWaivers {
 		if !strings.Contains(fullInit, "- "+query) {
@@ -1179,9 +1186,41 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		t.Fatalf("codeql analyze step count = %d, want 1", count)
 	}
 	analyze := workflowStepBlock(t, codeql, "name: Analyze CodeQL")
-	for _, unwanted := range []string{"threads:", "category:", "CODEQL_ACTION_EXTRA_OPTIONS"} {
+	for _, unwanted := range []string{"threads:", "category:", "continue-on-error:"} {
 		if strings.Contains(analyze, unwanted) {
 			t.Errorf("CodeQL analyze step unexpectedly contains %q", unwanted)
+		}
+	}
+	for _, want := range []string{
+		"timeout-minutes: 30",
+		`CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"run-queries":["--evaluator-log=${{ runner.temp }}/codeql-evaluator.jsonl","--evaluator-log-minify","--tuple-counting","--timeout=600"]}}'`,
+	} {
+		if !strings.Contains(analyze, want) {
+			t.Errorf("CodeQL analyze step missing diagnostic option %q", want)
+		}
+	}
+	summary := workflowStepBlock(t, codeql, "name: Summarize CodeQL evaluator diagnostics")
+	for _, want := range []string{"if: always()", "steps.codeql-pr.outputs.codeql-path || steps.codeql-full.outputs.codeql-path", `generate log-summary --format=text "$RUNNER_TEMP/codeql-evaluator.jsonl" "$RUNNER_TEMP/codeql-evaluator-summary.txt"`} {
+		if !strings.Contains(summary, want) {
+			t.Errorf("CodeQL evaluator summary step missing %q", want)
+		}
+	}
+	sampler := workflowStepBlock(t, codeql, "name: Sample CodeQL evaluator resources")
+	for _, want := range []string{"ps -C java -o pid,ppid,rss,pcpu,etime,comm", "/proc/pressure/memory /proc/pressure/io", "vmstat 1 2", "sleep 30", "codeql-resource-sampler.pid"} {
+		if !strings.Contains(sampler, want) {
+			t.Errorf("CodeQL resource sampler missing %q", want)
+		}
+	}
+	stopSampler := workflowStepBlock(t, codeql, "name: Stop CodeQL resource sampler")
+	for _, want := range []string{"if: always()", `kill "$sampler_pid"`} {
+		if !strings.Contains(stopSampler, want) {
+			t.Errorf("CodeQL resource sampler cleanup missing %q", want)
+		}
+	}
+	upload := workflowStepBlock(t, codeql, "name: Upload CodeQL evaluator diagnostics")
+	for _, want := range []string{"if: always()", "name: codeql-evaluator-diagnostics", "${{ runner.temp }}/codeql-evaluator.jsonl", "${{ runner.temp }}/codeql-resources.log", "${{ runner.temp }}/codeql_databases/go/log/", "retention-days: 7"} {
+		if !strings.Contains(upload, want) {
+			t.Errorf("CodeQL evaluator upload step missing %q", want)
 		}
 	}
 	for _, unwanted := range []string{"strategy:", "matrix.", "fromJSON("} {
