@@ -3538,9 +3538,9 @@ func TestCIGoTestLogModesPreserveFullDefaultAndCoreExcludesApex(t *testing.T) {
 		wantRace      bool
 		wantTestCalls int
 	}{
-		{name: "default", wantApex: true, wantTestCalls: 6},
-		{name: "test", args: []string{"test"}, wantApex: true, wantTestCalls: 6},
-		{name: "core", args: []string{"core"}, wantTestCalls: 5},
+		{name: "default", wantApex: true, wantTestCalls: 7},
+		{name: "test", args: []string{"test"}, wantApex: true, wantTestCalls: 7},
+		{name: "core", args: []string{"core"}, wantTestCalls: 6},
 		{name: "race", args: []string{"race"}, wantApex: true, wantRace: true, wantTestCalls: 6},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -3605,6 +3605,9 @@ tee "$output"
 				if strings.Contains(call, " -skip ") || strings.Contains(call, " -skip=") {
 					t.Errorf("aggregate mode filtered package coverage: %s", call)
 				}
+				if !tc.wantRace && strings.Contains(call, "./internal/visualforce") && call != "test -json -vet=off -timeout=70m ./internal/visualforce" {
+					t.Errorf("Visualforce must run separately with its own timeout: %s", call)
+				}
 			}
 			packageExecutions := make(map[string]int)
 			for _, call := range testCalls {
@@ -3614,7 +3617,7 @@ tee "$output"
 					}
 				}
 			}
-			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/semanticcache", "./internal/server", "./cmd/glade"} {
+			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/semanticcache", "./internal/server", "./internal/visualforce", "./cmd/glade"} {
 				if got := packageExecutions[pkg]; got != 1 {
 					t.Errorf("package lane %s executions = %d, want 1; calls:\n%s", pkg, got, b)
 				}
@@ -4001,8 +4004,8 @@ func TestCIGoTestLogAlwaysPreservesNativeStatus(t *testing.T) {
 		wantRC     int
 		wantCalls  int
 	}{
-		{name: "both success", wantCalls: 5},
-		{name: "native success renderer fail", rendererRC: 7, wantCalls: 5},
+		{name: "both success", wantCalls: 6},
+		{name: "native success renderer fail", rendererRC: 7, wantCalls: 6},
 		{name: "native fail renderer success", nativeRC: 23, wantRC: 23, wantCalls: 1},
 		{name: "both fail", nativeRC: 23, rendererRC: 7, wantRC: 23, wantCalls: 1},
 	} {
@@ -4064,6 +4067,13 @@ exit "$FIXTURE_RENDERER_RC"
 			}
 			if got := strings.Count(string(callData), "test -json"); got != tc.wantCalls {
 				t.Fatalf("native test calls = %d, want %d; calls:\n%s", got, tc.wantCalls, callData)
+			}
+			wantVisualforceCalls := 0
+			if tc.nativeRC == 0 {
+				wantVisualforceCalls = 1
+			}
+			if got := strings.Count(string(callData), "./internal/visualforce"); got != wantVisualforceCalls {
+				t.Errorf("Visualforce calls = %d, want %d after native status %d; calls:\n%s", got, wantVisualforceCalls, tc.nativeRC, callData)
 			}
 			if tc.rendererRC != 0 && !strings.Contains(string(out), "renderer failed with status 7") {
 				t.Fatalf("renderer failure was not logged:\n%s", out)
