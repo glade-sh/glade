@@ -742,9 +742,8 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(securityWorkflow, /golang\.org\/x\/vuln\/cmd\/govulncheck@v1\.6\.0/);
   assert.match(securityWorkflow, /github\/codeql-action\/init@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /- uses: security-extended/);
-  assert.match(securityWorkflow, /timeout-minutes: 60/);
-  assert.match(securityWorkflow, /name: CodeQL\n    if: always\(\)\n    needs: codeql-scan/);
-  assert.match(securityWorkflow, /if \[\[ "\$CODEQL_RESULT" != "success" \]\]/);
+  assert.match(securityWorkflow, /timeout-minutes: 45/);
+  assert.match(securityWorkflow, /codeql:\n    name: CodeQL\n    runs-on: ubuntu-latest/);
   assert.match(securityWorkflow, /- go\/allocation-size-overflow/);
   assert.match(securityWorkflow, /- go\/incorrect-integer-conversion/);
   assert.match(securityWorkflow, /github\/codeql-action\/analyze@[0-9a-f]{40}/);

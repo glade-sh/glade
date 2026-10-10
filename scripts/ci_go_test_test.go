@@ -1065,7 +1065,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	jobs := workflowJobBlocks(t, workflowText)
 
-	wantJobs := []string{"codeql", "codeql-scan", "dependency-review", "gosec", "govulncheck", "npm-audit", "scorecard"}
+	wantJobs := []string{"codeql", "dependency-review", "gosec", "govulncheck", "npm-audit", "scorecard"}
 	gotJobs := make([]string, 0, len(jobs))
 	for name := range jobs {
 		gotJobs = append(gotJobs, name)
@@ -1075,9 +1075,6 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		t.Fatalf("security.yml jobs = %v, want %v", gotJobs, wantJobs)
 	}
 	for _, jobName := range wantJobs {
-		if jobName == "codeql" {
-			continue
-		}
 		for _, marker := range []string{"runs-on: ubuntu-latest", "uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"} {
 			if !strings.Contains(jobs[jobName], marker) {
 				t.Errorf("%s job missing preserved marker %q", jobName, marker)
@@ -1101,11 +1098,10 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		t.Fatal("security.yml must not use the moving ossf/scorecard-action@v2 tag")
 	}
 
-	codeql := jobs["codeql-scan"]
+	codeql := jobs["codeql"]
 	for _, want := range []string{
-		"name: CodeQL (${{ matrix.partition }})",
-		"timeout-minutes: 60",
-		"fail-fast: false",
+		"name: CodeQL",
+		"timeout-minutes: 45",
 		"languages: go",
 		"config: |",
 		"- uses: security-extended",
@@ -1128,6 +1124,8 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		"go/bad-redirect-check",
 		"go/incorrect-integer-conversion",
 		"go/uncontrolled-allocation-size",
+		"go/unsafe-quoting",
+		"go/unvalidated-url-redirection",
 	}
 	prWaivers := []string{
 		"go/incomplete-hostname-regexp",
@@ -1140,7 +1138,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	if count := strings.Count(codeql, initPin); count != 2 {
 		t.Fatalf("codeql init step count = %d, want 2", count)
 	}
-	prInit := workflowStepBlock(t, codeql, "name: Initialize pull request CodeQL")
+	prInit := workflowStepBlockText(codeql, "      - name: Initialize pull request CodeQL")
 	for _, want := range []string{
 		"if: github.event_name == 'pull_request' && github.event.pull_request.changed_files < 300",
 		initPin,
@@ -1161,7 +1159,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 			t.Error("CodeQL init must use the archived database location")
 		}
 	}
-	fullInit := workflowStepBlock(t, codeql, "name: Initialize full-branch CodeQL")
+	fullInit := workflowStepBlockText(codeql, "      - name: Initialize full-branch CodeQL")
 	for _, want := range []string{
 		"if: github.event_name != 'pull_request' || github.event.pull_request.changed_files >= 300",
 		initPin,
@@ -1199,27 +1197,71 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	if strings.Contains(codeql, "\n    continue-on-error:") || strings.Contains(analyze, "continue-on-error:") {
 		t.Error("CodeQL scan and analysis must fail on query errors")
 	}
-	for _, want := range []string{"timeout-minutes: 55", "category: codeql-go-${{ matrix.partition }}"} {
+	for _, want := range []string{"timeout-minutes: 40", "category: codeql-go"} {
 		if !strings.Contains(analyze, want) {
 			t.Errorf("CodeQL analyze step missing %q", want)
 		}
 	}
 	upload := workflowStepBlock(t, codeql, "name: Upload failed CodeQL logs")
-	for _, want := range []string{"if: failure()", "name: codeql-logs-${{ matrix.partition }}", "${{ runner.temp }}/codeql_databases/go/log/", "retention-days: 7"} {
+	for _, want := range []string{"if: failure()", "name: codeql-logs", "${{ runner.temp }}/codeql_databases/go/log/", "retention-days: 7"} {
 		if !strings.Contains(upload, want) {
 			t.Errorf("CodeQL failed log upload step missing %q", want)
 		}
 	}
-	aggregate := jobs["codeql"]
-	for _, want := range []string{"name: CodeQL", "if: always()", "needs: codeql-scan", "CODEQL_RESULT: ${{ needs.codeql-scan.result }}", `if [[ "$CODEQL_RESULT" != "success" ]]`, "exit 1"} {
-		if !strings.Contains(aggregate, want) {
-			t.Errorf("CodeQL aggregate missing required-partition gate %q", want)
+	assertCodeQLProfileWaivers(t, prInit, prWaivers)
+	assertCodeQLProfileWaivers(t, fullInit, fullBranchWaivers)
+	// The completed full-profile scan in run 38072152005 resolved these 27
+	// queries. Its two isolated queries are the only additional full waivers.
+	fullProfileQueries := []string{
+		"go/request-forgery",
+		"go/html-template-escaping-bypass-xss",
+		"go/weak-crypto-key",
+		"go/path-injection",
+		"go/zipslip",
+		"go/unsafe-unzip-symlink",
+		"go/stack-trace-exposure",
+		"go/xml/xpath-injection",
+		"go/insecure-randomness",
+		"go/insecure-hostkeycallback",
+		"go/disabled-certificate-check",
+		"go/constant-oauth2-state",
+		"go/missing-jwt-signature-check",
+		"go/clear-text-logging",
+		"go/cookie-httponly-not-set",
+		"go/sql-injection",
+		"go/command-injection",
+		"go/insecure-tls",
+		"go/weak-cryptographic-algorithm",
+		"go/cookie-secure-not-set",
+		"go/email-injection",
+		"go/suspicious-character-in-regex",
+		"go/incomplete-url-scheme-check",
+		"go/log-injection",
+		"go/diagnostics/extraction-errors",
+		"go/diagnostics/successfully-extracted-files",
+		"go/summary/lines-of-code",
+		"go/unsafe-quoting",
+		"go/unvalidated-url-redirection",
+	}
+	retained := 0
+	for _, query := range fullProfileQueries {
+		if !strings.Contains(fullInit, "- "+query+"\n") {
+			retained++
 		}
 	}
-	if strings.Contains(aggregate, "continue-on-error:") {
-		t.Error("CodeQL aggregate must fail when any partition fails")
+	if retained != 27 {
+		t.Errorf("full CodeQL profile retains %d observed queries, want 27", retained)
 	}
-	assertCodeQLPartitionCoverage(t, codeql, map[string][]string{prInit: prWaivers, fullInit: fullBranchWaivers})
+	for _, query := range []string{"go/unsafe-quoting", "go/unvalidated-url-redirection"} {
+		if strings.Contains(prInit, query) {
+			t.Errorf("small-PR CodeQL profile must retain %s", query)
+		}
+	}
+	for _, unwanted := range []string{"strategy:", "matrix:", "needs:", "if: always()"} {
+		if strings.Contains(codeql, unwanted) {
+			t.Errorf("CodeQL job must run one required scan, found %q", unwanted)
+		}
+	}
 	if strings.Contains(codeql, "queries: +security-extended") {
 		t.Error("codeql job must use inline config so the pathological allocation-size query can be filtered")
 	}
@@ -1227,7 +1269,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		t.Error("codeql job must not use autobuild")
 	}
 
-	for _, jobName := range []string{"govulncheck", "codeql-scan", "gosec"} {
+	for _, jobName := range []string{"govulncheck", "codeql", "gosec"} {
 		setupGo := workflowStepBlock(t, jobs[jobName], "uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0")
 		if !strings.Contains(setupGo, "cache: false") {
 			t.Errorf("%s setup-go step missing cache: false", jobName)
@@ -1244,7 +1286,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	coverageMarkers := map[string][]string{
 		"govulncheck":       {"go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./... # v1.6.0"},
-		"codeql-scan":       {"actions: read", "contents: read", "security-events: write"},
+		"codeql":            {"actions: read", "contents: read", "security-events: write"},
 		"gosec":             {"actions: read", "contents: read", "security-events: write", gosecPin, "args: -no-fail -fmt sarif -out gosec.sarif ./...", "github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1", "sarif_file: gosec.sarif"},
 		"npm-audit":         {"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", `node-version: "22"`, "npm audit --omit=dev --audit-level=high", "working-directory: third_party/lwc", "working-directory: contrib/vscode-glade"},
 		"dependency-review": {"if: github.event_name == 'pull_request'", "contents: read", "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0", "fail-on-severity: high"},
@@ -1259,96 +1301,24 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 }
 
-// The first CodeQL query filter determines the default selection; subsequent
-// filters override matching queries. Check the actual matrix against both
-// historical profiles, including an arbitrary query outside the listed IDs.
-func assertCodeQLPartitionCoverage(t *testing.T, job string, profiles map[string][]string) {
+func assertCodeQLProfileWaivers(t *testing.T, init string, waivers []string) {
 	t.Helper()
-	type partition struct {
-		name, filter string
-		ids          []string
+	if strings.Count(init, "- exclude:") != 1 || strings.Contains(init, "- include:") {
+		t.Fatal("CodeQL profile must use one explicit exclusion filter")
 	}
-	var partitions []partition
-	for _, line := range strings.Split(job, "\n") {
+	wantExcluded := make(map[string]bool)
+	for _, id := range waivers {
+		wantExcluded[id] = true
+	}
+	excluded := make(map[string]bool)
+	for _, line := range strings.Split(init, "\n") {
 		line = strings.TrimSpace(line)
-		switch {
-		case strings.HasPrefix(line, "- partition:"):
-			partitions = append(partitions, partition{name: strings.TrimSpace(strings.TrimPrefix(line, "- partition:"))})
-		case strings.HasPrefix(line, "filter:") && len(partitions) > 0:
-			partitions[len(partitions)-1].filter = strings.TrimSpace(strings.TrimPrefix(line, "filter:"))
-		case strings.HasPrefix(line, "query_ids:") && len(partitions) > 0:
-			ids := strings.Trim(strings.TrimSpace(strings.TrimPrefix(line, "query_ids:")), "'")
-			if err := json.Unmarshal([]byte(ids), &partitions[len(partitions)-1].ids); err != nil {
-				t.Fatalf("parse CodeQL partition IDs: %v", err)
-			}
+		if strings.HasPrefix(line, "- go/") {
+			excluded[strings.TrimPrefix(line, "- ")] = true
 		}
 	}
-	wantNames := []string{"remaining", "unsafe-quoting", "url-redirection"}
-	wantPartitions := map[string]partition{
-		"remaining":       {filter: "exclude", ids: []string{"go/unsafe-quoting", "go/unvalidated-url-redirection"}},
-		"unsafe-quoting":  {filter: "include", ids: []string{"go/unsafe-quoting"}},
-		"url-redirection": {filter: "include", ids: []string{"go/unvalidated-url-redirection"}},
-	}
-	var names []string
-	for _, part := range partitions {
-		names = append(names, part.name)
-		want := wantPartitions[part.name]
-		if part.filter != want.filter || !reflect.DeepEqual(part.ids, want.ids) {
-			t.Fatalf("CodeQL partition %s = %s %v, want %s %v", part.name, part.filter, part.ids, want.filter, want.ids)
-		}
-	}
-	sort.Strings(names)
-	if !reflect.DeepEqual(names, wantNames) {
-		t.Fatalf("CodeQL partitions = %v, want %v", names, wantNames)
-	}
-	for init, waivers := range profiles {
-		const partitionFilter = "query-filters:\n              - ${{ matrix.filter }}:\n                  id: ${{ matrix.query_ids }}\n              - exclude:"
-		if !strings.Contains(init, partitionFilter) {
-			t.Fatal("CodeQL partition filter must precede the historical exclusions")
-		}
-		wantExcluded := make(map[string]bool)
-		for _, id := range waivers {
-			wantExcluded[id] = true
-		}
-		excluded := make(map[string]bool)
-		for _, line := range strings.Split(init, "\n") {
-			line = strings.TrimSpace(line)
-			if strings.HasPrefix(line, "- go/") {
-				excluded[strings.TrimPrefix(line, "- ")] = true
-			}
-		}
-		if !reflect.DeepEqual(excluded, wantExcluded) {
-			t.Fatalf("CodeQL historical exclusions changed: got %v, want %v", excluded, wantExcluded)
-		}
-		universe := map[string]bool{"go/unrelated-retained-query": true}
-		for id := range excluded {
-			universe[id] = true
-		}
-		for _, part := range partitions {
-			for _, id := range part.ids {
-				universe[id] = true
-			}
-		}
-		for id := range universe {
-			selected := 0
-			for _, part := range partitions {
-				matches := false
-				for _, partID := range part.ids {
-					matches = matches || partID == id
-				}
-				included := (part.filter == "include" && matches) || (part.filter == "exclude" && !matches)
-				if included && !excluded[id] {
-					selected++
-				}
-			}
-			want := 1
-			if excluded[id] {
-				want = 0
-			}
-			if selected != want {
-				t.Errorf("CodeQL query %s selected by %d partitions, want %d", id, selected, want)
-			}
-		}
+	if !reflect.DeepEqual(excluded, wantExcluded) {
+		t.Fatalf("CodeQL profile exclusions = %v, want %v", excluded, wantExcluded)
 	}
 }
 

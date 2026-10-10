@@ -77,23 +77,10 @@ jobs:
       - name: Run Go vulnerability reachability scan
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./... # v1.6.0
 
-  codeql-scan:
-    name: CodeQL (${{ matrix.partition }})
+  codeql:
+    name: CodeQL
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - partition: remaining
-            filter: exclude
-            query_ids: '["go/unsafe-quoting", "go/unvalidated-url-redirection"]'
-          - partition: unsafe-quoting
-            filter: include
-            query_ids: '["go/unsafe-quoting"]'
-          - partition: url-redirection
-            filter: include
-            query_ids: '["go/unvalidated-url-redirection"]'
+    timeout-minutes: 45
     permissions:
       actions: read
       contents: read
@@ -163,8 +150,6 @@ jobs:
             queries:
               - uses: security-extended
             query-filters:
-              - ${{ matrix.filter }}:
-                  id: ${{ matrix.query_ids }}
               - exclude:
                   id:
                     # These three did not finish in PR diff-informed run
@@ -188,8 +173,6 @@ jobs:
             queries:
               - uses: security-extended
             query-filters:
-              - ${{ matrix.filter }}:
-                  id: ${{ matrix.query_ids }}
               - exclude:
                   id:
                     # These three did not finish in PR diff-informed run
@@ -207,39 +190,29 @@ jobs:
                     - go/bad-redirect-check
                     - go/incorrect-integer-conversion
                     - go/uncontrolled-allocation-size
+                    # Both queries hit the 55-minute Analyze limit on separate
+                    # runners in run 38072152005; the other 27 queries completed.
+                    # Small PR diff-informed analysis retains both queries.
+                    - go/unsafe-quoting
+                    - go/unvalidated-url-redirection
           build-mode: manual
       - name: Build Glade for CodeQL
         run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade
       - name: Analyze CodeQL
-        timeout-minutes: 55
+        timeout-minutes: 40
         uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
-          category: codeql-go-${{ matrix.partition }}
+          category: codeql-go
       - name: Upload failed CodeQL logs
         if: failure()
         timeout-minutes: 2
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: codeql-logs-${{ matrix.partition }}
+          name: codeql-logs
           path: |
             ${{ runner.temp }}/codeql_databases/go/log/
             ${{ runner.temp }}/codeql_databases/log/
           retention-days: 7
-
-  codeql:
-    name: CodeQL
-    if: always()
-    needs: codeql-scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require every CodeQL partition
-        env:
-          CODEQL_RESULT: ${{ needs.codeql-scan.result }}
-        run: |
-          if [[ "$CODEQL_RESULT" != "success" ]]; then
-            echo "CodeQL partitions did not all succeed: $CODEQL_RESULT"
-            exit 1
-          fi
 
   gosec:
     name: gosec
