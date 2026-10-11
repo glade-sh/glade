@@ -175,7 +175,7 @@ func TestCILWCHistoryRechecksNestedResults(t *testing.T) {
 func TestCILWCHistoryWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	input, matrix, refresh := jobs["lwc-compile-history-input"], jobs["test"], jobs["lwc-compile-history"]
-	for _, marker := range []string{"needs: lwc-compile-history-input", "name: lwc-compile-history-input", "CI_LWC_COMPILE_HISTORY_PATH", "name: Download shared LWC duration history"} {
+	for _, marker := range []string{"needs: [lwc-compile-history-input, visualforce-history-input]", "name: lwc-compile-history-input", "CI_LWC_COMPILE_HISTORY_PATH", "name: Download shared LWC duration history"} {
 		if !strings.Contains(matrix, marker) {
 			t.Errorf("matrix does not consume shared input: missing %q", marker)
 		}

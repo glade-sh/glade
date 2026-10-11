@@ -793,8 +793,8 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 			t.Errorf("single-writer refresh job missing %q", want)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 17 {
-		t.Errorf("cache save count = %d, want existing DAG writers plus Apex, sema and LWC history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 18 {
+		t.Errorf("cache save count = %d, want existing DAG writers plus Apex, sema, LWC and Visualforce history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 	if strings.Count(workflow, "shard: [0, 1]") != 2 {
 		t.Error("workflow must contain the Apex and sema two-native-shard matrices")
@@ -811,7 +811,7 @@ func TestCIDurationHistoryUsesOneImmutablePredecessorKeyPerRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	jobs := workflowJobBlocks(t, string(data))
-	for _, name := range []string{"sema", "apextest", "lwc-compile-history-input"} {
+	for _, name := range []string{"sema", "apextest", "lwc-compile-history-input", "visualforce-history-input"} {
 		if name == "apextest" {
 			name = "apextest-history-input"
 		}
@@ -1654,8 +1654,10 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 		wantOpaqueNPM = 3
 		wantBenchmarkNPM = 3
 		// The timing bootstrap has its own benchmark isolation condition.
-		input := workflowJobBlocksText(workflow)["lwc-compile-history-input"]
-		npmWorkflow = strings.Replace(workflow, input, "", 1)
+		for _, name := range []string{"lwc-compile-history-input", "visualforce-history-input"} {
+			input := workflowJobBlocksText(workflow)[name]
+			npmWorkflow = strings.Replace(npmWorkflow, input, "", 1)
+		}
 	}
 	if got := strings.Count(workflow, "          cache: npm"); got != wantOpaqueNPM {
 		return fmt.Sprintf("setup-node opaque npm caches = %d, want %d normal-only caches", got, wantOpaqueNPM)
@@ -1708,7 +1710,7 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 	guard := "    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}"
 	for _, jobName := range []string{
 		"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
-		"test", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest",
+		"test", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest", "lwc-compile-history-input", "visualforce-history-input",
 	} {
 		job := jobs[jobName]
 		if strings.Count(job, guard) != 1 {
@@ -1763,7 +1765,7 @@ func TestCIBenchmarkCachePairContractRejectsAnyCacheBeforeValidation(t *testing.
 			workflowName: "ci.yml",
 			jobNames: []string{
 				"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
-				"test", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest",
+				"test", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest", "lwc-compile-history-input", "visualforce-history-input",
 			},
 			validationCommand: `scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`,
 		},
@@ -1848,6 +1850,7 @@ func ciRequiredAggregateProblem(workflow string) string {
       - apextest
       - apextest-history
       - lwc-compile-history
+      - visualforce-history
       - gladecli
       - node-integration
       - nested-sources
@@ -3185,8 +3188,8 @@ func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing
 	if !strings.Contains(job, "      NO_COLOR: \"1\"") {
 		t.Error("conformance diagnostics must stay plain text when CI enables terminal colors")
 	}
-	if strings.Count(job, "          - lane:") != 9 || !strings.Contains(job, "          - lane: remaining-go\n            name: test\n") {
-		t.Error("test matrix must contain one remaining-go row and eight compile shards")
+	if strings.Count(job, "          - lane:") != 13 || !strings.Contains(job, "          - lane: remaining-go\n            name: test\n") {
+		t.Error("test matrix must contain one remaining-go row, eight compile shards and four Visualforce shards")
 	}
 	for index := range 8 {
 		row := fmt.Sprintf("          - lane: lwc-compile-%d\n            name: LWC compile (%d)\n            shard: %d\n", index, index, index)
@@ -3195,7 +3198,7 @@ func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing
 		}
 	}
 	compile := workflowStepBlockText(job, "      - name: Test LWC compile shard")
-	for _, marker := range []string{"if: matrix.lane != 'remaining-go'", `scripts/ci-go-test.sh lwc-compile-shard "${{ matrix.shard }}"`, "ci-artifacts/lwc-compile-${{ matrix.shard }}/resource-usage.json"} {
+	for _, marker := range []string{"if: startsWith(matrix.lane, 'lwc-compile-')", `scripts/ci-go-test.sh lwc-compile-shard "${{ matrix.shard }}"`, "ci-artifacts/lwc-compile-${{ matrix.shard }}/resource-usage.json"} {
 		if !strings.Contains(compile, marker) {
 			t.Errorf("compile step missing %q", marker)
 		}
@@ -3207,7 +3210,7 @@ func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing
 		}
 	}
 	upload := workflowStepBlockText(job, "      - name: Upload LWC compile shard events")
-	for _, marker := range []string{"if: always() && matrix.lane != 'remaining-go'", "name: go-test-lwc-compile-shard-${{ matrix.shard }}", "path: ci-artifacts/lwc-compile-${{ matrix.shard }}/", "if-no-files-found: error"} {
+	for _, marker := range []string{"if: always() && startsWith(matrix.lane, 'lwc-compile-')", "name: go-test-lwc-compile-shard-${{ matrix.shard }}", "path: ci-artifacts/lwc-compile-${{ matrix.shard }}/", "if-no-files-found: error"} {
 		if !strings.Contains(upload, marker) {
 			t.Errorf("compile evidence upload missing %q", marker)
 		}
@@ -3337,7 +3340,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		"apextest", "apextest-history", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
 		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "vet",
 	}
-	wantJobs = append(wantJobs, "apextest-history-input", "lwc-compile-history-input", "lwc-compile-history")
+	wantJobs = append(wantJobs, "apextest-history-input", "lwc-compile-history-input", "lwc-compile-history", "visualforce-history-input", "visualforce-history")
 	sort.Strings(wantJobs)
 	gotJobs := make([]string, 0, len(jobs))
 	for name := range jobs {
@@ -3352,20 +3355,20 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if !strings.Contains(job, "runs-on: ubuntu-latest") {
 			t.Errorf("%s is not an ubuntu-latest job", name)
 		}
-		if input, serialized := map[string]string{"apextest": "apextest-history-input", "test": "lwc-compile-history-input"}[name]; serialized {
+		if input, serialized := map[string]string{"apextest": "apextest-history-input", "test": "[lwc-compile-history-input, visualforce-history-input]"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
 				t.Errorf("%s must depend on %s", name, input)
 			}
 			continue
 		}
-		if !map[string]bool{"apextest-history": true, "lwc-compile-history": true, "required-ci": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true}[name] && strings.Contains(job, "needs:") {
+		if !map[string]bool{"apextest-history": true, "lwc-compile-history": true, "visualforce-history": true, "required-ci": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true}[name] && strings.Contains(job, "needs:") {
 			t.Errorf("root job %s must not be serialized with needs", name)
 		}
 	}
 	for _, name := range []string{"site", "vet", "gladecli", "node-integration", "nested-sources", "sema", "sema-full", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
 		timeout := "30"
 		if name == "test" {
-			timeout = "100" // 20m remaining packages, 70m Visualforce, and setup.
+			timeout = "100" // Preserve the browser-shard budgets and setup allowance.
 		}
 		if !strings.Contains(jobs[name], "timeout-minutes: "+timeout) {
 			t.Errorf("%s timeout is not %s minutes", name, timeout)
@@ -3415,7 +3418,6 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 		"ci-artifacts/go-test/test-server-and-playground.json",
 		"ci-artifacts/go-test/test-repoguard.json",
 		"ci-artifacts/go-test/test-remaining-go.json",
-		"ci-artifacts/go-test/test-remaining-go-visualforce.json",
 	} {
 		if count := strings.Count(workflow, path); count != 1 {
 			t.Errorf("raw event path %q count = %d, want 1", path, count)
@@ -3477,8 +3479,8 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 			t.Errorf("%s lacks the ci-test digest seed fallback", jobName)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 17 {
-		t.Errorf("cache save count = %d, want existing DAG and three history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 18 {
+		t.Errorf("cache save count = %d, want existing DAG and four history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 }
 
@@ -3769,12 +3771,6 @@ exit 23
 			}
 			lines := strings.Split(strings.TrimSpace(string(callData)), "\n")
 			wantCalls := 1
-			if tc.lane == "remaining-go" {
-				wantCalls = 2
-				if len(lines) == 2 && lines[1] != "test -json -vet=off -timeout=70m ./internal/visualforce" {
-					t.Fatalf("Visualforce invocation = %q", lines[1])
-				}
-			}
 			if len(lines) != wantCalls {
 				t.Fatalf("native executions = %d, want %d; calls:\n%s", len(lines), wantCalls, callData)
 			}
@@ -3787,8 +3783,8 @@ exit 23
 			}
 			var wantPackages []string
 			for _, pkg := range manifest.Lanes[tc.lane] {
-				if tc.lane == "remaining-go" && pkg == "github.com/glade-sh/glade/internal/lwc/compile" {
-					continue // Dedicated LWC compile shards own this package in CI.
+				if tc.lane == "remaining-go" && (pkg == "github.com/glade-sh/glade/internal/lwc/compile" || pkg == "github.com/glade-sh/glade/internal/visualforce") {
+					continue // Dedicated browser shards own these packages in CI.
 				}
 				wantPackages = append(wantPackages, toArgument(pkg))
 			}
