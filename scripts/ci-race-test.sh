@@ -425,6 +425,10 @@ elif [[ "${package}" == "./internal/gladecli" ]]; then
 elif [[ "${package}" == "./internal/server" || "${package}" == "./internal/lwc/compile" ]]; then
 	planner_shards=8
 fi
+planner_args=(--package "${package_name}" --shards "${planner_shards}" --tests "${planner_tests}")
+if [[ "${package}" == "./internal/lwc/compile" && -s "${CI_LWC_COMPILE_HISTORY_PATH:-}" ]]; then
+	planner_args+=(--history "${CI_LWC_COMPILE_HISTORY_PATH}")
+fi
 if [[ -n "${shard_planner}" ]]; then
 	if [[ "${shard_planner}" == */* ]]; then
 		[[ -x "${shard_planner}" ]] || { printf '[ci] shard planner is not executable: %s\n' "${shard_planner}" >&2; exit 2; }
@@ -432,9 +436,9 @@ if [[ -n "${shard_planner}" ]]; then
 		printf '[ci] shard planner was not found: %s\n' "${shard_planner}" >&2
 		exit 2
 	fi
-	"${shard_planner}" --package "${package_name}" --shards "${planner_shards}" --tests "${planner_tests}" >"${plan}"
+	"${shard_planner}" "${planner_args[@]}" >"${plan}"
 else
-	go run ./scripts/internal/cishard --package "${package_name}" --shards "${planner_shards}" --tests "${planner_tests}" >"${plan}"
+	go run ./scripts/internal/cishard "${planner_args[@]}" >"${plan}"
 fi
 
 python3 - "${planner_tests}" "${plan}" "${artifact_dir}" "${package_name}" "${plan_mode}" "${planner_shards}" <<'PY'

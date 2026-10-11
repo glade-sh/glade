@@ -21,6 +21,11 @@ jobs:
   plan:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    env:
+      CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
     outputs:
       packages: ${{ steps.classify.outputs.packages }}
       early-packages: ${{ steps.classify.outputs.early-packages }}
@@ -97,6 +102,58 @@ jobs:
         with:
           path: ${{ steps.race-npm-cache.outputs.dir }}
           key: ${{ steps.race-npm-cache-restore.outputs.cache-primary-key }}
+      - name: Find validated LWC timing evidence
+        id: lwc-history
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE_SHA: ${{ github.event.before }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          refs=("$GITHUB_SHA" "$BEFORE_SHA")
+          if base="$(git merge-base HEAD "refs/remotes/origin/$DEFAULT_BRANCH")"; then
+            refs+=("$base")
+          fi
+          for ref in "${refs[@]}"; do
+            if [[ ! "$ref" =~ ^[0-9a-f]{40}$ || "$ref" == 0000000000000000000000000000000000000000 ]]; then continue; fi
+            if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$ref" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
+              echo "::warning::LWC timing lookup unavailable for $ref"
+              continue
+            fi
+            if [[ -n "$run_id" ]]; then
+              echo "run_id=$run_id" >>"$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "::warning::Validated LWC timings unavailable; using deterministic scheduling fallback"
+      - name: Download LWC timing evidence
+        if: steps.lwc-history.outputs.run_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.lwc-history.outputs.run_id }}
+          pattern: go-test-lwc-compile-shard-*
+          path: /tmp/race-lwc-predecessor
+      - name: Validate LWC duration history
+        if: steps.lwc-history.outputs.run_id != ''
+        run: |
+          if ! scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7}; then
+            rm -f "$CI_LWC_COMPILE_HISTORY_PATH"
+            echo "::warning::LWC timing evidence unavailable or invalid; using deterministic scheduling fallback"
+          fi
+      - name: Stage shared LWC duration history
+        run: |
+          mkdir -p ci-artifacts/race-lwc-history-input
+          if [[ -s "$CI_LWC_COMPILE_HISTORY_PATH" ]]; then
+            cp "$CI_LWC_COMPILE_HISTORY_PATH" ci-artifacts/race-lwc-history-input/lwc-compile-duration-history.json
+          fi
+          : >ci-artifacts/race-lwc-history-input/ready
+      - name: Upload shared LWC duration history
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-lwc-history-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/race-lwc-history-input/
+          if-no-files-found: error
       - name: Upload race plan
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -158,12 +215,19 @@ jobs:
       GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
       GLADE_LWC_COMPILE: "1"
       NO_COLOR: "1"
+      CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.9"
           cache: false
+      - name: Download shared LWC duration history
+        if: matrix.package == './internal/lwc/compile'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: race-lwc-history-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-lwc-compile-duration-history
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"

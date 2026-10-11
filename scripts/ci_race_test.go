@@ -351,7 +351,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 			t.Errorf("race workflow missing %q", marker)
 		}
 	}
-	for _, forbidden := range []string{"pull_request:", "pull_request_target:", "continue-on-error:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
+	for _, forbidden := range []string{"pull_request:", "pull_request_target:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
 		if strings.Contains(workflow, forbidden) {
 			t.Errorf("race workflow contains forbidden %q", forbidden)
 		}
@@ -469,6 +469,54 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	}
 	if strings.Contains(raceJob, "actions/cache/save") || strings.Contains(raceJob, "cache: npm") {
 		t.Fatal("dynamic race matrix must be restore-only for npm cache")
+	}
+}
+
+func TestCIRaceWorkflowSharesValidatedLWCHistory(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", ".github", "workflows", "race.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow := string(data)
+	planEnd := strings.Index(workflow, "  race-browser:")
+	browserEnd := strings.Index(workflow, "  race-browser-aggregate:")
+	if planEnd < 0 || browserEnd <= planEnd {
+		t.Fatal("missing Race history producer or browser consumer")
+	}
+	plan, browser := workflow[:planEnd], workflow[planEnd:browserEnd]
+	for _, marker := range []string{
+		"actions: read", `refs=("$GITHUB_SHA" "$BEFORE_SHA")`,
+		`git merge-base HEAD "refs/remotes/origin/$DEFAULT_BRANCH"`,
+		`-f head_sha="$ref" -f status=success`,
+		"pattern: go-test-lwc-compile-shard-*",
+		`scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7}`,
+		`rm -f "$CI_LWC_COMPILE_HISTORY_PATH"`,
+		"using deterministic scheduling fallback",
+		"name: race-lwc-history-input-${{ github.run_id }}-${{ github.run_attempt }}",
+	} {
+		if !strings.Contains(plan, marker) {
+			t.Errorf("Race history input missing %q", marker)
+		}
+	}
+	for _, marker := range []string{
+		"CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json",
+		"name: Download shared LWC duration history\n        if: matrix.package == './internal/lwc/compile'",
+		"name: race-lwc-history-input-${{ github.run_id }}-${{ github.run_attempt }}",
+		"path: /tmp/glade-lwc-compile-duration-history",
+	} {
+		if !strings.Contains(browser, marker) {
+			t.Errorf("Race browser history consumer missing %q", marker)
+		}
+	}
+	if strings.Contains(browser, "gh api") || strings.Contains(browser, "cache/restore") {
+		t.Fatal("Race workers must consume one immutable plan input")
+	}
+	downloadStart := strings.Index(plan, "      - name: Download LWC timing evidence")
+	downloadEnd := strings.Index(plan, "      - name: Validate LWC duration history")
+	if downloadStart < 0 || downloadEnd <= downloadStart ||
+		!strings.Contains(plan[downloadStart:downloadEnd], "continue-on-error: true") ||
+		strings.Count(workflow, "continue-on-error:") != 1 {
+		t.Fatal("only optional timing artifact download may continue after an error")
 	}
 }
 

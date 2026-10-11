@@ -6,9 +6,125 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 )
+
+func TestCIRaceLWCHistoryBalancesAllDiscoveredTests(t *testing.T) {
+	root := t.TempDir()
+	head := strings.Repeat("c", 40)
+	const packageName = "github.com/glade-sh/glade/internal/lwc/compile"
+	names := make([]string, 0, 39)
+	historyTests := make([]map[string]any, 0, 27)
+	for index := 0; index < 27; index++ {
+		name := fmt.Sprintf("TestConformance%02d", index)
+		names = append(names, name)
+		duration := 1000
+		if index < 8 {
+			duration = 100000
+		}
+		historyTests = append(historyTests, map[string]any{"name": name, "durationMillis": duration})
+	}
+	// Normal CI's conformance history does not contain the twelve tests
+	// owned by its Node lane. Race must still discover and execute them all.
+	for index := 0; index < 12; index++ {
+		names = append(names, fmt.Sprintf("TestNode%02d", index))
+	}
+	history, err := json.Marshal(map[string]any{"version": 1, "package": packageName, "complete": true, "tests": historyTests})
+	if err != nil {
+		t.Fatal(err)
+	}
+	historyPath := filepath.Join(root, "history.json")
+	if err := os.WriteFile(historyPath, history, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	planner := filepath.Join(root, "cishard")
+	if out, err := exec.Command(realGoCommand(t), "build", "-o", planner, "./internal/cishard").CombinedOutput(); err != nil {
+		t.Fatalf("build real planner: %v\n%s", err, out)
+	}
+	goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$*" == *"-list ."* ]]; then
+  printf '%b' "$CI_RACE_TEST_NAMES"
+  printf 'ok   github.com/glade-sh/glade/internal/lwc/compile 0.001s\n'
+  exit 0
+fi
+while IFS= read -r name; do
+  [[ -n "$name" ]] || continue
+  if [[ "$*" == *"$name"* ]]; then
+    printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwc/compile","Test":"%s","Elapsed":0.01}\n' "$name"
+  fi
+done <<<"$CI_RACE_TEST_NAMES"
+printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwc/compile"}\n'
+`)
+	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
+	git := writeRaceFixture(t, "fake-git", "#!/usr/bin/env bash\nprintf '%s\\n' "+head+"\n")
+	roots := make([]string, 8)
+	for index := range roots {
+		workdir := filepath.Join(root, fmt.Sprintf("runner-%d", index))
+		if err := os.MkdirAll(workdir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		out, err := runRacePackage(t, workdir, []string{
+			"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
+			"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_CALL_LOG=" + filepath.Join(workdir, "calls.log"),
+			"CI_RACE_GIT_COMMAND=" + git, "CI_RACE_HEAD_SHA=" + head,
+			"CI_LWC_COMPILE_HISTORY_PATH=" + historyPath,
+			"CI_RACE_TEST_NAMES=" + strings.Join(names, "\n") + "\n",
+			fmt.Sprintf("CI_RACE_SHARD_INDEX=%d", index),
+		}, "./internal/lwc/compile", "internal-lwc-compile")
+		if err != nil {
+			t.Fatalf("weighted runner %d: %v\n%s", index, err, out)
+		}
+		roots[index] = filepath.Join(workdir, "ci-artifacts/race/internal-lwc-compile")
+	}
+	data, err := os.ReadFile(filepath.Join(roots[0], "plan.json"))
+	var plan struct {
+		HistoryUsed bool `json:"historyUsed"`
+		Shards      []struct {
+			Tests    []string `json:"tests"`
+			Duration int64    `json:"estimatedDurationMillis"`
+		} `json:"shards"`
+	}
+	if err != nil || json.Unmarshal(data, &plan) != nil || !plan.HistoryUsed || len(plan.Shards) != 8 {
+		t.Fatalf("weighted plan: %s err=%v", data, err)
+	}
+	var union []string
+	for index, shard := range plan.Shards {
+		longTests := 0
+		for _, name := range shard.Tests {
+			if name >= "TestConformance00" && name <= "TestConformance07" {
+				longTests++
+			}
+		}
+		if longTests != 1 || shard.Duration >= 200000 {
+			t.Fatalf("weighted shard %d did not separate long cases: %#v", index, shard)
+		}
+		union = append(union, shard.Tests...)
+	}
+	sort.Strings(union)
+	if strings.Join(union, "\n") != strings.Join(names, "\n") {
+		t.Fatalf("weighted plan changed the complete mixed discovery: %v", union)
+	}
+	aggregate, err := filepath.Abs("ci-race-shard-aggregate.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	output := filepath.Join(root, "union.json")
+	args := append([]string{aggregate, "./internal/lwc/compile", output, head}, roots...)
+	if out, err := exec.Command("bash", args...).CombinedOutput(); err != nil {
+		t.Fatalf("weighted aggregate rejected full coverage: %v\n%s", err, out)
+	}
+	data, err = os.ReadFile(output)
+	var result struct {
+		Valid      bool `json:"valid"`
+		Discovered int  `json:"discovered_count"`
+	}
+	if err != nil || json.Unmarshal(data, &result) != nil || !result.Valid || result.Discovered != 39 {
+		t.Fatalf("weighted union summary=%s err=%v", data, err)
+	}
+}
 
 func TestCIRaceApextestDeferredPolicy(t *testing.T) {
 	for _, fixture := range []struct {
@@ -129,6 +245,16 @@ func TestCIRaceBrowserRunnersAndAggregateCoverDiscovery(t *testing.T) {
 			}
 
 			root := t.TempDir()
+			historyPath := filepath.Join(root, "history.json")
+			if topology.pkg == "./internal/visualforce" {
+				// A history configured for LWC must not reach another package's
+				// planner. The fixture rejects any unexpected --history flag.
+				if err := os.WriteFile(historyPath, []byte("LWC-only history"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			// LWC exercises the unchanged default plan when its optional
+			// history file does not exist yet.
 			head := strings.Repeat("a", 40)
 			goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
 set -euo pipefail
@@ -160,6 +286,7 @@ printf '{"Action":"pass","Package":"%s"}\n' "$CI_RACE_TEST_PACKAGE"
 					"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
 					"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_CALL_LOG=" + log,
 					"CI_RACE_GIT_COMMAND=" + git, "CI_RACE_HEAD_SHA=" + head,
+					"CI_LWC_COMPILE_HISTORY_PATH=" + historyPath,
 					"CI_RACE_TEST_NAMES=" + strings.Join(names, "\n") + "\n", "CI_RACE_TEST_PACKAGE=" + packageName,
 					fmt.Sprintf("CI_RACE_SHARD_INDEX=%d", index),
 				}, topology.pkg, topology.slug)
