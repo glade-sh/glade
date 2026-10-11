@@ -1210,22 +1210,29 @@ run_lwc_compile_matrix_shard() {
 	local index="${1:-}"
 	local artifact_suffix="invalid"
 	[[ "${index}" =~ ^[0-7]$ ]] && artifact_suffix="${index}"
-	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/lwc/compile" "./internal/lwc/compile" "remaining-go" "LWC compile" "${CI_LWC_COMPILE_ARTIFACT_DIR:-ci-artifacts/lwc-compile-${artifact_suffix}}" "" "1" "lwc-compile" "8"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/lwc/compile" "./internal/lwc/compile" "remaining-go" "LWC compile" "${CI_LWC_COMPILE_ARTIFACT_DIR:-ci-artifacts/lwc-compile-${artifact_suffix}}" "${CI_LWC_COMPILE_HISTORY_PATH:-}" "1" "lwc-compile" "8"
 }
 
 refresh_test_history() {
-	local shard_zero="${1:-}"
-	local shard_one="${2:-}"
-	local output="${3:-}"
-	local package_name="$4"
-	local label="$5"
-	local prefix="$6"
-	local expected_count="$7"
-	if [[ -z "${shard_zero}" || -z "${shard_one}" || -z "${output}" ]]; then
-		echo "usage: scripts/ci-go-test.sh ${prefix}-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT" >&2
+	local package_name="$1"
+	local label="$2"
+	local prefix="$3"
+	local expected_count="$4"
+	local shard_count="$5"
+	local output="$6"
+	shift 6
+	if [[ -z "${output}" || "$#" -ne "${shard_count}" ]]; then
+		echo "[ci] ${prefix} history requires ${shard_count} shard directories and an output" >&2
 		return 2
 	fi
-	python3 - "${shard_zero}" "${shard_one}" "${output}" "${package_name}" "${label}" "${prefix}" "${expected_count}" "${script_dir}/ci-go-test.sh" <<'PY'
+	local shard_dir
+	for shard_dir in "$@"; do
+		if [[ -z "${shard_dir}" ]]; then
+			echo "[ci] ${prefix} history requires nonempty shard directories" >&2
+			return 2
+		fi
+	done
+	python3 - "${package_name}" "${label}" "${prefix}" "${expected_count}" "${shard_count}" "${output}" "${script_dir}/ci-go-test.sh" "$@" <<'PY'
 import json
 import math
 import os
@@ -1234,16 +1241,17 @@ import sys
 import tempfile
 import subprocess
 
-PACKAGE = sys.argv[4]
-LABEL = sys.argv[5]
-PREFIX = sys.argv[6]
-EXPECTED_COUNT = int(sys.argv[7])
-SCRIPT = sys.argv[8]
+PACKAGE = sys.argv[1]
+LABEL = sys.argv[2]
+PREFIX = sys.argv[3]
+EXPECTED_COUNT = int(sys.argv[4])
+SHARD_COUNT = int(sys.argv[5])
+SCRIPT = sys.argv[7]
 TEST_NAME = re.compile(r"Test[A-Za-z0-9_]*\Z")
 MAX_MILLIS = (1 << 63) - 1
 
-shard_dirs = sys.argv[1:3]
-output_path = sys.argv[3]
+shard_dirs = sys.argv[8:]
+output_path = sys.argv[6]
 try:
     os.unlink(output_path)
 except FileNotFoundError:
@@ -1306,12 +1314,12 @@ def validate_shard(shard, index, label):
 
 try:
     discoveries = [load_discovery(os.path.join(path, "discovery.txt")) for path in shard_dirs]
-    if discoveries[0] != discoveries[1]:
+    if any(discovery != discoveries[0] for discovery in discoveries[1:]):
         reject("shard discoveries do not match")
     discovery = discoveries[0]
 
     plans = [load_json(os.path.join(path, "plan.json")) for path in shard_dirs]
-    if plans[0] != plans[1]:
+    if any(plan != plans[0] for plan in plans[1:]):
         reject("shard plans do not match")
     plan = plans[0]
     require_exact_keys(plan, ("version", "package", "historyUsed", "shards"), "plan")
@@ -1320,8 +1328,8 @@ try:
     if not isinstance(plan["historyUsed"], bool):
         reject("plan historyUsed is not boolean")
     shards = plan["shards"]
-    if not isinstance(shards, list) or len(shards) != 2:
-        reject("plan does not contain exactly two shards")
+    if not isinstance(shards, list) or len(shards) != SHARD_COUNT:
+        reject(f"plan does not contain exactly {SHARD_COUNT} shards")
     planned = []
     for index, shard in enumerate(shards):
         planned.extend(validate_shard(shard, index, f"plan shard {index}"))
@@ -1340,13 +1348,28 @@ try:
         selected_tests = selected["tests"]
         summary = load_json(os.path.join(shard_dir, "validation-summary.json"))
         summary_keys = ("valid", "expected", "passed", "errors")
-        if PACKAGE == "github.com/glade-sh/glade/internal/apextest" and "deferred" in summary:
+        if PACKAGE in ("github.com/glade-sh/glade/internal/apextest", "github.com/glade-sh/glade/internal/lwc/compile") and "deferred" in summary:
             summary_keys += ("deferred",)
         require_exact_keys(summary, summary_keys, f"shard {index} validation summary")
         deferred = summary.get("deferred", [])
         if (not isinstance(deferred, list) or any(not isinstance(name, str) for name in deferred)
                 or deferred != sorted(set(deferred))):
             reject(f"shard {index} has an invalid deferred test list")
+        if deferred and PACKAGE != "github.com/glade-sh/glade/internal/apextest":
+            reject(f"shard {index} has deferred tests outside the Apex policy")
+        if PACKAGE == "github.com/glade-sh/glade/internal/lwc/compile":
+            # Recheck package terminals and nested skips/failures from raw
+            # events before accepting an eight-shard coverage/history union.
+            with tempfile.TemporaryDirectory(prefix="glade-lwc-history-") as directory:
+                metadata = os.path.join(directory, "metadata.tsv")
+                checked = os.path.join(directory, "package-summary.json")
+                with open(metadata, "w", encoding="utf-8") as target:
+                    target.write(PACKAGE + "\thas-tests\n")
+                result = subprocess.run(["bash", SCRIPT, "package-summary", "remaining-go", "history",
+                    os.path.join(shard_dir, "events.json"), checked, metadata, PACKAGE],
+                    capture_output=True, text=True)
+                if result.returncode != 0:
+                    reject(f"shard {index} package validation failed: {result.stderr.strip()}")
         if deferred:
             # Recheck the existing exact prerequisite/reason policy against raw
             # events, rather than trusting a claimed deferral in the summary.
@@ -1422,13 +1445,15 @@ try:
 
     if len(durations) + len(all_deferred) != len(discovery) or sorted(list(durations) + all_deferred) != discovery:
         reject("passing and deferred terminal union does not exactly match all discovered tests")
-    # With two shards, median is their arithmetic mean. The exact 1.5x
-    # boundary is accepted; only a strict excess fails the refresh.
-    median = (shard_elapsed[0] + shard_elapsed[1]) / 2.0
-    limit = 1.5 * median
-    for index, elapsed in enumerate(shard_elapsed):
-        if elapsed > limit:
-            reject(f"shard {index} elapsed {elapsed:.6f}s exceeds 1.5x two-shard median {median:.6f}s")
+    import statistics
+    median = statistics.median(shard_elapsed)
+    # Preserve the two-shard Apex/sema balance gate. LWC's indivisible long
+    # tests can exceed 1.5x its eight-shard median even with an optimal plan;
+    # rejecting that evidence would prevent the next run from balancing it.
+    if SHARD_COUNT == 2:
+        for index, elapsed in enumerate(shard_elapsed):
+            if elapsed > 1.5 * median:
+                reject(f"shard {index} elapsed {elapsed:.6f}s exceeds 1.5x two-shard median {median:.6f}s")
 
     history = {
         "version": 1,
@@ -1460,11 +1485,11 @@ PY
 }
 
 refresh_apextest_history() {
-	refresh_test_history "${1:-}" "${2:-}" "${3:-}" "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0"
+	refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "2" "${3:-}" "${1:-}" "${2:-}"
 }
 
 refresh_sema_history() {
-	refresh_test_history "${1:-}" "${2:-}" "${3:-}" "github.com/glade-sh/glade/internal/sema" "sema" "sema" "0"
+	refresh_test_history "github.com/glade-sh/glade/internal/sema" "sema" "sema" "0" "2" "${3:-}" "${1:-}" "${2:-}"
 }
 
 run_sema_full() {
@@ -1636,6 +1661,16 @@ main() {
 			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-shard INDEX (0-7)" >&2; return 2; fi
 			run_lwc_compile_matrix_shard "${2:-}"
 			;;
+		lwc-compile-history-refresh)
+			if [[ "$#" -ne 10 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR" >&2; return 2; fi
+			shift
+			refresh_test_history "github.com/glade-sh/glade/internal/lwc/compile" "LWC compile" "lwc-compile" "0" "8" "$@"
+			;;
+		package-summary)
+			if [[ "$#" -lt 7 ]]; then echo "usage: scripts/ci-go-test.sh package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE..." >&2; return 2; fi
+			shift
+			validate_local_release_package_summary "$@"
+			;;
 		sema-history-refresh)
 			if [[ "$#" -ne 4 ]]; then echo "usage: scripts/ci-go-test.sh sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT" >&2; return 2; fi
 			refresh_sema_history "${2:-}" "${3:-}" "${4:-}"
@@ -1649,7 +1684,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-shard 0|1|lwc-compile-shard 0-7|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

@@ -793,8 +793,8 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 			t.Errorf("single-writer refresh job missing %q", want)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 16 {
-		t.Errorf("cache save count = %d, want existing DAG writers plus Apex and sema history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 17 {
+		t.Errorf("cache save count = %d, want existing DAG writers plus Apex, sema and LWC history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 	if strings.Count(workflow, "shard: [0, 1]") != 2 {
 		t.Error("workflow must contain the Apex and sema two-native-shard matrices")
@@ -811,7 +811,7 @@ func TestCIDurationHistoryUsesOneImmutablePredecessorKeyPerRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	jobs := workflowJobBlocks(t, string(data))
-	for _, name := range []string{"sema", "apextest"} {
+	for _, name := range []string{"sema", "apextest", "lwc-compile-history-input"} {
 		if name == "apextest" {
 			name = "apextest-history-input"
 		}
@@ -1649,14 +1649,18 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 	}
 	wantOpaqueNPM := 1
 	wantBenchmarkNPM := 1
+	npmWorkflow := workflow
 	if name == "ci.yml" {
 		wantOpaqueNPM = 3
 		wantBenchmarkNPM = 3
+		// The timing bootstrap has its own benchmark isolation condition.
+		input := workflowJobBlocksText(workflow)["lwc-compile-history-input"]
+		npmWorkflow = strings.Replace(workflow, input, "", 1)
 	}
 	if got := strings.Count(workflow, "          cache: npm"); got != wantOpaqueNPM {
 		return fmt.Sprintf("setup-node opaque npm caches = %d, want %d normal-only caches", got, wantOpaqueNPM)
 	}
-	if got := workflowIfConditionCount(workflow, "inputs.benchmark_cache_pair == 0"); got != wantOpaqueNPM {
+	if got := workflowIfConditionCount(npmWorkflow, "inputs.benchmark_cache_pair == 0"); got != wantOpaqueNPM {
 		return fmt.Sprintf("normal-only setup-node conditions = %d, want %d", got, wantOpaqueNPM)
 	}
 	if got := strings.Count(workflow, "      - name: Set up Node for benchmark cache pair"); got != wantBenchmarkNPM {
@@ -1671,7 +1675,7 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 	if got := strings.Count(workflow, "          path: ${{ steps.benchmark-npm-cache.outputs.path }}"); got != wantBenchmarkNPM {
 		return fmt.Sprintf("explicit benchmark npm cache paths = %d, want %d", got, wantBenchmarkNPM)
 	}
-	if got := workflowIfConditionCount(workflow, "inputs.benchmark_cache_pair > 0"); got != wantBenchmarkNPM*3 {
+	if got := workflowIfConditionCount(npmWorkflow, "inputs.benchmark_cache_pair > 0"); got != wantBenchmarkNPM*3 {
 		return fmt.Sprintf("positive-pair benchmark npm conditions = %d, want %d", got, wantBenchmarkNPM*3)
 	}
 	if name == "browser.yml" {
@@ -1843,6 +1847,7 @@ func ciRequiredAggregateProblem(workflow string) string {
       - vet
       - apextest
       - apextest-history
+      - lwc-compile-history
       - gladecli
       - node-integration
       - nested-sources
@@ -3332,7 +3337,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		"apextest", "apextest-history", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
 		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "vet",
 	}
-	wantJobs = append(wantJobs, "apextest-history-input")
+	wantJobs = append(wantJobs, "apextest-history-input", "lwc-compile-history-input", "lwc-compile-history")
 	sort.Strings(wantJobs)
 	gotJobs := make([]string, 0, len(jobs))
 	for name := range jobs {
@@ -3347,13 +3352,13 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if !strings.Contains(job, "runs-on: ubuntu-latest") {
 			t.Errorf("%s is not an ubuntu-latest job", name)
 		}
-		if input, serialized := map[string]string{"apextest": "apextest-history-input"}[name]; serialized {
+		if input, serialized := map[string]string{"apextest": "apextest-history-input", "test": "lwc-compile-history-input"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
 				t.Errorf("%s must depend on %s", name, input)
 			}
 			continue
 		}
-		if !map[string]bool{"apextest-history": true, "required-ci": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true}[name] && strings.Contains(job, "needs:") {
+		if !map[string]bool{"apextest-history": true, "lwc-compile-history": true, "required-ci": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true}[name] && strings.Contains(job, "needs:") {
 			t.Errorf("root job %s must not be serialized with needs", name)
 		}
 	}
@@ -3472,8 +3477,8 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 			t.Errorf("%s lacks the ci-test digest seed fallback", jobName)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 16 {
-		t.Errorf("cache save count = %d, want existing DAG and two history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 17 {
+		t.Errorf("cache save count = %d, want existing DAG and three history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 }
 
