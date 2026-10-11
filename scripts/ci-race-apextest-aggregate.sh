@@ -6,16 +6,18 @@ if [[ "$#" -ne 5 ]]; then
 	exit 2
 fi
 
-python3 - "$@" <<'PY'
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+python3 - "$@" "${script_dir}/ci-go-test.sh" <<'PY'
 import hashlib
 import json
 import math
 import os
 import re
+import subprocess
 import sys
 import tempfile
 
-runner_a_dir, runner_b_dir, runner_c_dir, output_path, expected_head_sha = sys.argv[1:]
+runner_a_dir, runner_b_dir, runner_c_dir, output_path, expected_head_sha, summary_runner = sys.argv[1:]
 package = "github.com/glade-sh/glade/internal/apextest"
 runner_indexes = {"a": [0, 3, 5, 8, 11, 13], "b": [4, 7, 12, 15], "c": [1, 2, 6, 9, 10, 14]}
 assignments = [index for indexes in runner_indexes.values() for index in indexes]
@@ -64,6 +66,14 @@ def validate_resource(path, lane):
             raise SystemExit(f"race apextest aggregate has invalid resource evidence {lane}")
 
 def validate_events(path, expected_tests, index):
+    with tempfile.TemporaryDirectory(prefix="race-aggregate-summary-") as root:
+        metadata = os.path.join(root, "packages.tsv")
+        summary = os.path.join(root, "summary.json")
+        with open(metadata, "w", encoding="utf-8") as target:
+            target.write(package + "\thas-tests\n")
+        subprocess.run(["bash", summary_runner, "package-summary", "race", f"apextest-shard-{index}", path, summary, metadata, package], check=True)
+        deferred = load_json(summary, "package summary")["deferred"]
+    deferred_names = {row["test"] for row in deferred}
     terminals = {}
     try:
         with open(path, encoding="utf-8") as source:
@@ -83,8 +93,9 @@ def validate_events(path, expected_tests, index):
     if set(terminals) != set(expected_tests):
         raise SystemExit(f"race apextest aggregate shard {index} terminal set does not match selection")
     for name in expected_tests:
-        if terminals[name] != ["pass"]:
+        if terminals[name] != ["pass"] and not (name in deferred_names and terminals[name] == ["skip"]):
             raise SystemExit(f"race apextest aggregate shard {index} has non-passing or duplicate terminal for {name}")
+    return deferred
 
 def validate_runner(root, expected_runner):
     runner = load_json(os.path.join(root, "runner-validation.json"), "runner validation")
@@ -135,6 +146,7 @@ def validate_runner(root, expected_runner):
         raise SystemExit("race apextest aggregate binary identity or cleanup mismatch")
     validate_resource(os.path.join(root, "build-resource.json"), "race-internal-apextest-build")
 
+    deferred = []
     for index in range(16):
         shard_dir = os.path.join(root, f"shard-{index}")
         events_path = os.path.join(shard_dir, "events.json")
@@ -147,12 +159,12 @@ def validate_runner(root, expected_runner):
         if selection != plan["shards"][index]:
             raise SystemExit(f"race apextest aggregate shard {index} selection does not match plan")
         validate_resource(resource_path, f"race-internal-apextest-shard-{index}")
-        validate_events(events_path, shard_tests[index], index)
-    return runner, discovery, [len(shard_tests[index]) for index in range(16)]
+        deferred.extend(validate_events(events_path, shard_tests[index], index))
+    return runner, discovery, [len(shard_tests[index]) for index in range(16)], deferred
 
-runner_a, discovery_a, counts_a = validate_runner(runner_a_dir, "a")
-runner_b, discovery_b, counts_b = validate_runner(runner_b_dir, "b")
-runner_c, discovery_c, counts_c = validate_runner(runner_c_dir, "c")
+runner_a, discovery_a, counts_a, deferred_a = validate_runner(runner_a_dir, "a")
+runner_b, discovery_b, counts_b, deferred_b = validate_runner(runner_b_dir, "b")
+runner_c, discovery_c, counts_c, deferred_c = validate_runner(runner_c_dir, "c")
 for field in ("package", "head_sha", "discovered_count", "discovery_sha256", "plan_sha256", "binary_sha256", "binary_size_bytes"):
     if runner_a[field] != runner_b[field] or runner_a[field] != runner_c[field]:
         raise SystemExit(f"race apextest aggregate {field} identity mismatch")
@@ -160,7 +172,7 @@ if discovery_a != discovery_b or discovery_a != discovery_c:
     raise SystemExit("race apextest aggregate discovery mismatch")
 if any(runner["head_sha"] != expected_head_sha for runner in (runner_a, runner_b, runner_c)):
     raise SystemExit("race apextest aggregate runner checkout head does not match expected head")
-result = {"schema_version": 1, "package": package, "head_sha": runner_a["head_sha"], "discovered_count": len(discovery_a), "discovery_sha256": runner_a["discovery_sha256"], "plan_sha256": runner_a["plan_sha256"], "binary_sha256": runner_a["binary_sha256"], "shard_counts": counts_a, "valid": True}
+result = {"schema_version": 1, "package": package, "head_sha": runner_a["head_sha"], "discovered_count": len(discovery_a), "discovery_sha256": runner_a["discovery_sha256"], "plan_sha256": runner_a["plan_sha256"], "binary_sha256": runner_a["binary_sha256"], "shard_counts": counts_a, "deferred": deferred_a + deferred_b + deferred_c, "valid": True}
 output_dir = os.path.dirname(os.path.abspath(output_path))
 os.makedirs(output_dir, exist_ok=True)
 descriptor, temporary = tempfile.mkstemp(prefix=".apextest-aggregate.", dir=output_dir, text=True)

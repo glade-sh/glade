@@ -523,9 +523,168 @@ jobs:
             ci-artifacts/go-test/resource-server-and-playground.json
           if-no-files-found: error
 
+  lwc-compile-history-input:
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    timeout-minutes: 5
+    env:
+      CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
+      CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Validate benchmark cache pair
+        if: github.event_name == 'workflow_dispatch'
+        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
+      - name: Restore LWC compile duration history
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-lwc-compile-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}lwc-compile-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+      - name: Find predecessor LWC shard evidence
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0 }}
+        id: predecessor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ -s "$CI_LWC_COMPILE_HISTORY_PATH" ]]; then exit 0; fi
+          if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
+            echo "::warning::Predecessor timing lookup unavailable; using deterministic scheduling fallback"
+            exit 0
+          fi
+          echo "run_id=$run_id" >>"$GITHUB_OUTPUT"
+      - name: Download predecessor LWC shard evidence
+        if: steps.predecessor.outputs.run_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.predecessor.outputs.run_id }}
+          pattern: go-test-lwc-compile-shard-*
+          path: /tmp/lwc-compile-predecessor
+      - name: Bootstrap validated LWC duration history
+        if: steps.predecessor.outputs.run_id != ''
+        run: |
+          if ! scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/lwc-compile-predecessor/go-test-lwc-compile-shard-{0..7}; then
+            rm -f "$CI_LWC_COMPILE_HISTORY_PATH"
+            echo "::warning::Predecessor LWC timing evidence unavailable or invalid; using deterministic scheduling fallback"
+          fi
+      - name: Stage LWC compile duration history
+        run: |
+          mkdir -p ci-artifacts/lwc-compile-history-input
+          if [[ -s "$CI_LWC_COMPILE_HISTORY_PATH" ]]; then
+            cp "$CI_LWC_COMPILE_HISTORY_PATH" ci-artifacts/lwc-compile-history-input/lwc-compile-duration-history.json
+          fi
+          : >ci-artifacts/lwc-compile-history-input/ready
+      - name: Upload LWC compile duration history input
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: lwc-compile-history-input
+          path: ci-artifacts/lwc-compile-history-input/
+          if-no-files-found: error
+
+  visualforce-history-input:
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    timeout-minutes: 5
+    env:
+      CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
+      CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Validate benchmark cache pair
+        if: github.event_name == 'workflow_dispatch'
+        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
+      - name: Restore Visualforce duration history
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-visualforce-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}visualforce-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+      - name: Find predecessor Visualforce evidence
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0 }}
+        id: predecessor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ -s "$CI_VISUALFORCE_HISTORY_PATH" ]]; then exit 0; fi
+          if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
+            echo "::warning::Predecessor timing lookup unavailable; using deterministic scheduling fallback"
+            exit 0
+          fi
+          if [[ -z "$run_id" ]]; then exit 0; fi
+          if ! artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false) | .name')"; then
+            echo "::warning::Predecessor artifacts unavailable; using deterministic scheduling fallback"
+            exit 0
+          fi
+          complete=true
+          for index in {0..3}; do
+            if ! grep -Fxq "go-test-visualforce-shard-$index" <<<"$artifacts"; then complete=false; fi
+          done
+          if [[ "$complete" == true ]]; then
+            format=shards
+          elif grep -Fxq go-test-remaining-go <<<"$artifacts"; then
+            format=serial
+          else
+            echo "::warning::Predecessor Visualforce evidence unavailable; using deterministic scheduling fallback"
+            exit 0
+          fi
+          echo "run_id=$run_id" >>"$GITHUB_OUTPUT"
+          echo "format=$format" >>"$GITHUB_OUTPUT"
+      - name: Download predecessor Visualforce shard evidence
+        if: steps.predecessor.outputs.format == 'shards'
+        continue-on-error: true
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.predecessor.outputs.run_id }}
+          pattern: go-test-visualforce-shard-*
+          path: /tmp/visualforce-predecessor
+      - name: Download predecessor serial Visualforce evidence
+        if: steps.predecessor.outputs.format == 'serial'
+        continue-on-error: true
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.predecessor.outputs.run_id }}
+          name: go-test-remaining-go
+          path: /tmp/visualforce-predecessor
+      - name: Bootstrap validated Visualforce duration history
+        if: steps.predecessor.outputs.run_id != ''
+        run: |
+          if [[ "${{ steps.predecessor.outputs.format }}" == shards ]]; then
+            command=(scripts/ci-go-test.sh visualforce-history-refresh "$CI_VISUALFORCE_HISTORY_PATH" /tmp/visualforce-predecessor/go-test-visualforce-shard-{0..3})
+          else
+            command=(scripts/ci-go-test.sh visualforce-history-bootstrap "$CI_VISUALFORCE_HISTORY_PATH" /tmp/visualforce-predecessor/test-remaining-go-visualforce.json)
+          fi
+          if ! "${command[@]}"; then
+            rm -f "$CI_VISUALFORCE_HISTORY_PATH"
+            echo "::warning::Predecessor Visualforce timing evidence unavailable or invalid; using deterministic scheduling fallback"
+          fi
+      - name: Stage Visualforce duration history
+        run: |
+          mkdir -p ci-artifacts/visualforce-history-input
+          if [[ -s "$CI_VISUALFORCE_HISTORY_PATH" ]]; then
+            cp "$CI_VISUALFORCE_HISTORY_PATH" ci-artifacts/visualforce-history-input/visualforce-duration-history.json
+          fi
+          : >ci-artifacts/visualforce-history-input/ready
+      - name: Upload Visualforce duration history input
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: visualforce-history-input
+          path: ci-artifacts/visualforce-history-input/
+          if-no-files-found: error
+
   test:
     name: ${{ matrix.name }}
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    needs: [lwc-compile-history-input, visualforce-history-input]
     runs-on: ubuntu-latest
     timeout-minutes: 100
     strategy:
@@ -558,8 +717,22 @@ jobs:
           - lane: lwc-compile-7
             name: LWC compile (7)
             shard: 7
+          - lane: visualforce-0
+            name: Visualforce (0)
+            shard: 0
+          - lane: visualforce-1
+            name: Visualforce (1)
+            shard: 1
+          - lane: visualforce-2
+            name: Visualforce (2)
+            shard: 2
+          - lane: visualforce-3
+            name: Visualforce (3)
+            shard: 3
     env:
       GOMAXPROCS: "2"
+      CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
+      CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
       # CI enables colored Babel code frames; native diagnostic fixtures are plain text.
       NO_COLOR: "1"
       GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
@@ -572,6 +745,18 @@ jobs:
         with:
           go-version: "1.26.9"
           cache: false
+      - name: Download shared LWC duration history
+        if: startsWith(matrix.lane, 'lwc-compile-')
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: lwc-compile-history-input
+          path: /tmp/glade-lwc-compile-duration-history
+      - name: Download shared Visualforce duration history
+        if: startsWith(matrix.lane, 'visualforce-')
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: visualforce-history-input
+          path: /tmp/glade-visualforce-duration-history
       - name: Restore Go module cache
         id: restore-go-mod-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -632,8 +817,11 @@ jobs:
       - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go
         if: matrix.lane == 'remaining-go'
       - name: Test LWC compile shard
-        if: matrix.lane != 'remaining-go'
+        if: startsWith(matrix.lane, 'lwc-compile-')
         run: scripts/ci-resource-run.sh ci-artifacts/lwc-compile-${{ matrix.shard }}/resource-usage.json lwc-compile-${{ matrix.shard }} -- scripts/ci-go-test.sh lwc-compile-shard "${{ matrix.shard }}"
+      - name: Test Visualforce shard
+        if: startsWith(matrix.lane, 'visualforce-')
+        run: scripts/ci-resource-run.sh ci-artifacts/visualforce-${{ matrix.shard }}/resource-usage.json visualforce-${{ matrix.shard }} -- scripts/ci-go-test.sh visualforce-shard "${{ matrix.shard }}"
       - name: Save Go module cache
         if: success()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -656,16 +844,23 @@ jobs:
           path: |
             ci-artifacts/go-test/test-repoguard.json
             ci-artifacts/go-test/test-remaining-go.json
-            ci-artifacts/go-test/test-remaining-go-visualforce.json
             ci-artifacts/go-test/resource-repoguard.json
             ci-artifacts/go-test/resource-remaining-go.json
           if-no-files-found: error
       - name: Upload LWC compile shard events
-        if: always() && matrix.lane != 'remaining-go'
+        if: always() && startsWith(matrix.lane, 'lwc-compile-')
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: go-test-lwc-compile-shard-${{ matrix.shard }}
           path: ci-artifacts/lwc-compile-${{ matrix.shard }}/
+          if-no-files-found: error
+
+      - name: Upload Visualforce shard events
+        if: always() && startsWith(matrix.lane, 'visualforce-')
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: go-test-visualforce-shard-${{ matrix.shard }}
+          path: ci-artifacts/visualforce-${{ matrix.shard }}/
           if-no-files-found: error
 
   smoke-runtime:
@@ -920,6 +1115,60 @@ jobs:
           path: /tmp/glade-apextest-duration-history/apextest-duration-history.json
           if-no-files-found: error
 
+  lwc-compile-history:
+    needs: test
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download successful LWC compile shard evidence
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: go-test-lwc-compile-shard-*
+          path: /tmp/lwc-compile-history-input
+      - name: Refresh and guard LWC compile duration history
+        run: scripts/ci-go-test.sh lwc-compile-history-refresh /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json /tmp/lwc-compile-history-input/go-test-lwc-compile-shard-{0..7}
+      - name: Save LWC compile duration history
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-lwc-compile-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}lwc-compile-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-${{ hashFiles('go.sum') }}-${{ github.sha }}
+      - name: Upload LWC compile duration history evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: lwc-compile-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
+          if-no-files-found: error
+
+  visualforce-history:
+    needs: test
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download successful Visualforce shard evidence
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: go-test-visualforce-shard-*
+          path: /tmp/visualforce-history-input
+      - name: Refresh and guard Visualforce duration history
+        run: scripts/ci-go-test.sh visualforce-history-refresh /tmp/glade-visualforce-duration-history/visualforce-duration-history.json /tmp/visualforce-history-input/go-test-visualforce-shard-{0..3}
+      - name: Save Visualforce duration history
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-visualforce-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}visualforce-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-${{ hashFiles('go.sum') }}-${{ github.sha }}
+      - name: Upload Visualforce duration history evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: visualforce-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
+          if-no-files-found: error
+
   required-ci:
     name: Required CI
     needs:
@@ -927,6 +1176,8 @@ jobs:
       - vet
       - apextest
       - apextest-history
+      - lwc-compile-history
+      - visualforce-history
       - gladecli
       - node-integration
       - nested-sources

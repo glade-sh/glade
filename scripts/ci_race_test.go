@@ -177,7 +177,7 @@ func TestCIRaceClassifierPartitionsFullManifest(t *testing.T) {
 	if want := []string{"./internal/gladecli", "./internal/repoguard"}; !reflect.DeepEqual(early, want) {
 		t.Fatalf("early packages = %v, want %v", early, want)
 	}
-	combined := append(append(append([]string(nil), early...), generic...), "./internal/apextest")
+	combined := append(append(append([]string(nil), early...), generic...), "./internal/apextest", "./internal/visualforce", "./internal/lwc/compile")
 	sort.Strings(combined)
 	if !reflect.DeepEqual(combined, full) || len(combined) != len(slices.Compact(combined)) {
 		t.Fatalf("early, generic, and Apex packages do not exactly partition the full manifest")
@@ -337,7 +337,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	for _, marker := range []string{
 		"name: Race", "branches: [main]", "schedule:", "workflow_dispatch:",
 		"fetch-depth: 0", "scripts/ci-race-packages.sh", "fromJSON(needs.plan.outputs.packages)",
-		"fail-fast: false", "max-parallel: 14", "GOMAXPROCS: \"2\"", "go-version: \"1.26.9\"",
+		"fail-fast: false", "max-parallel: 6", "GOMAXPROCS: \"2\"", "go-version: \"1.26.9\"",
 		`scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "if: always()",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "ci-artifacts/race/", "if-no-files-found: error",
 		"npm ci --prefix third_party/lwc", "matrix.package == './internal/gladecli'",
@@ -351,7 +351,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 			t.Errorf("race workflow missing %q", marker)
 		}
 	}
-	for _, forbidden := range []string{"pull_request:", "pull_request_target:", "continue-on-error:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
+	for _, forbidden := range []string{"pull_request:", "pull_request_target:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
 		if strings.Contains(workflow, forbidden) {
 			t.Errorf("race workflow contains forbidden %q", forbidden)
 		}
@@ -437,10 +437,10 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 			t.Errorf("race explicit npm cache missing %q", marker)
 		}
 	}
-	const nodeConsumers = `contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server","./internal/visualforce"]'), matrix.package)`
-	const lwcConsumers = `contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package)`
-	const browserConsumers = `contains(fromJSON('["./internal/lwc/compile","./internal/lwcbrowser","./internal/server","./internal/visualforce"]'), matrix.package)`
-	for selector, want := range map[string]int{nodeConsumers: 1, lwcConsumers: 3, browserConsumers: 2} {
+	const nodeConsumers = `contains(fromJSON('["./internal/gladehome","./internal/lwcbrowser","./internal/server"]'), matrix.package)`
+	const lwcConsumers = `contains(fromJSON('["./internal/gladehome","./internal/lwcbrowser","./internal/server"]'), matrix.package)`
+	const browserConsumers = `contains(fromJSON('["./internal/lwcbrowser","./internal/server"]'), matrix.package)`
+	for selector, want := range map[string]int{lwcConsumers: 4, browserConsumers: 2} {
 		if got := strings.Count(raceJob, selector); got != want {
 			t.Errorf("race consumer selector %q count = %d, want %d", selector, got, want)
 		}
@@ -472,6 +472,54 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	}
 }
 
+func TestCIRaceWorkflowSharesValidatedLWCHistory(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", ".github", "workflows", "race.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow := string(data)
+	planEnd := strings.Index(workflow, "  race-browser:")
+	browserEnd := strings.Index(workflow, "  race-browser-aggregate:")
+	if planEnd < 0 || browserEnd <= planEnd {
+		t.Fatal("missing Race history producer or browser consumer")
+	}
+	plan, browser := workflow[:planEnd], workflow[planEnd:browserEnd]
+	for _, marker := range []string{
+		"actions: read", `refs=("$GITHUB_SHA" "$BEFORE_SHA")`,
+		`git merge-base HEAD "refs/remotes/origin/$DEFAULT_BRANCH"`,
+		`-f head_sha="$ref" -f status=success`,
+		"pattern: go-test-lwc-compile-shard-*",
+		`scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7}`,
+		`rm -f "$CI_LWC_COMPILE_HISTORY_PATH"`,
+		"using deterministic scheduling fallback",
+		"name: race-lwc-history-input-${{ github.run_id }}-${{ github.run_attempt }}",
+	} {
+		if !strings.Contains(plan, marker) {
+			t.Errorf("Race history input missing %q", marker)
+		}
+	}
+	for _, marker := range []string{
+		"CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json",
+		"name: Download shared LWC duration history\n        if: matrix.package == './internal/lwc/compile'",
+		"name: race-lwc-history-input-${{ github.run_id }}-${{ github.run_attempt }}",
+		"path: /tmp/glade-lwc-compile-duration-history",
+	} {
+		if !strings.Contains(browser, marker) {
+			t.Errorf("Race browser history consumer missing %q", marker)
+		}
+	}
+	if strings.Contains(browser, "gh api") || strings.Contains(browser, "cache/restore") {
+		t.Fatal("Race workers must consume one immutable plan input")
+	}
+	downloadStart := strings.Index(plan, "      - name: Download LWC timing evidence")
+	downloadEnd := strings.Index(plan, "      - name: Validate LWC duration history")
+	if downloadStart < 0 || downloadEnd <= downloadStart ||
+		!strings.Contains(plan[downloadStart:downloadEnd], "continue-on-error: true") ||
+		strings.Count(workflow, "continue-on-error:") != 1 {
+		t.Fatal("only optional timing artifact download may continue after an error")
+	}
+}
+
 func TestCIRacePackageRunnerPlaygroundGroupDiagnosticContract(t *testing.T) {
 	data, err := os.ReadFile("ci-race-test.sh")
 	if err != nil {
@@ -497,7 +545,12 @@ func writeRaceFixture(t *testing.T, name, contents string) string {
 
 func runRacePackage(t *testing.T, workdir string, env []string, pkg, slug string) (string, error) {
 	t.Helper()
-	if pkg == "./internal/apextest" || pkg == "./internal/gladecli" || pkg == "./internal/playground" || pkg == "./internal/server" || pkg == "./internal/testdaemon" {
+	if pkg == "./internal/apextest" {
+		if err := os.MkdirAll(filepath.Join(workdir, "internal", "apextest"), 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if pkg == "./internal/apextest" || pkg == "./internal/gladecli" || pkg == "./internal/playground" || pkg == "./internal/server" || pkg == "./internal/testdaemon" || pkg == "./internal/visualforce" || pkg == "./internal/lwc/compile" {
 		hasTimeout := false
 		for _, value := range env {
 			if strings.HasPrefix(value, "CI_RACE_TIMEOUT_COMMAND=") {
@@ -628,6 +681,10 @@ if [[ "$1" == test && "$*" == *" -c "* ]]; then
   printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' >"$output"
   cat >>"$output" <<'BIN'
 line=binary; for argument in "$@"; do printf -v quoted '%q' "$argument"; line+=" $quoted"; done; printf '%s\n' "$line" >>"$CI_RACE_CALL_LOG"
+if [[ -n "${CI_RACE_EXPECT_PACKAGE_DIR:-}" ]]; then
+  [[ "$(pwd -P)" == "$(cd "$CI_RACE_EXPECT_PACKAGE_DIR" && pwd -P)" ]] || exit 93
+  [[ "$(cat testdata/cwd.txt)" == package-relative-fixture ]] || exit 94
+fi
 if [[ "$*" == *"-test.list ."* ]]; then
   case "${CI_RACE_BINARY_DISCOVERY_MODE:-valid}" in
     failure) exit "${CI_RACE_BINARY_DISCOVERY_STATUS:-32}" ;;
@@ -645,6 +702,11 @@ if [[ "$*" == *"-test.list ."* ]]; then
   exit 0
 fi
 while IFS= read -r candidate; do if [[ "$*" == *"$candidate"* ]]; then test="$candidate"; break; fi; done <<<"$CI_RACE_TEST_NAMES"
+if [[ "${CI_RACE_DEFERRED_TEST:-}" == "$test" ]]; then
+  name="${test}${CI_RACE_DEFERRED_SUFFIX:-}"
+  printf '{"Action":"output","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s","Output":"    dataweave_typed_proof_test.go:15: %s\\n"}\n' "$name" "${CI_RACE_DEFERRED_REASON:-requires explicitly installed DataWeave toolchain}"
+  printf '{"Action":"skip","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}\n' "$name"
+else
 case "${CI_RACE_DIRECT_EVENTS:-valid}" in
   malformed) printf '{bad-json}\n' ;;
   duplicate) printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}\n' "$test"; printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}\n' "$test" ;;
@@ -652,6 +714,8 @@ case "${CI_RACE_DIRECT_EVENTS:-valid}" in
   skip|fail) printf '{"Action":"%s","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}\n' "$CI_RACE_DIRECT_EVENTS" "$test" ;;
   *) printf '{"Action":"run","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}\n' "$test"; printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}\n' "$test" ;;
 esac
+fi
+printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/apextest"}\n'
 if [[ "${CI_RACE_DIRECT_FAIL_TEST:-}" == "$test" ]]; then exit "${CI_RACE_DIRECT_STATUS:-31}"; fi
 BIN
   chmod +x "$output"
@@ -914,6 +978,7 @@ while IFS= read -r candidate; do
 done <<<"$CI_RACE_TEST_NAMES"
 printf '{"Action":"run","Package":"github.com/glade-sh/glade/%s","Test":"%s"}\n' "${CI_RACE_PACKAGE#./}" "$test"
 printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s","Test":"%s","Elapsed":0.01}\n' "${CI_RACE_PACKAGE#./}" "$test"
+printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s"}\n' "${CI_RACE_PACKAGE#./}"
 `)
 			planner := writeRaceFixture(t, "fake-planner", racePlannerFixture())
 			resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
@@ -1038,6 +1103,13 @@ func TestCIRacePackageRunnerSentinelMatchesTopology(t *testing.T) {
 
 func TestCIRacePackageRunnerApextestBuildsOnceAndUsesSixteenDirectShards(t *testing.T) {
 	root := t.TempDir()
+	packageDir := filepath.Join(root, "internal", "apextest")
+	if err := os.MkdirAll(filepath.Join(packageDir, "testdata"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(packageDir, "testdata", "cwd.txt"), []byte("package-relative-fixture"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	logPath := filepath.Join(root, "calls.log")
 	testNames := raceApextestTestNames()
 	goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
@@ -1048,6 +1120,7 @@ func TestCIRacePackageRunnerApextestBuildsOnceAndUsesSixteenDirectShards(t *test
 		"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_CALL_LOG=" + logPath,
 		"CI_RACE_TEST_NAMES=" + strings.Join(testNames, "\n") + "\n",
 		"CI_RACE_BINARY_DISCOVERY_PASS=1",
+		"CI_RACE_EXPECT_PACKAGE_DIR=" + packageDir,
 		"TMPDIR=" + root,
 	}, "./internal/apextest", "internal-apextest")
 	if err != nil {
@@ -1058,7 +1131,7 @@ func TestCIRacePackageRunnerApextestBuildsOnceAndUsesSixteenDirectShards(t *test
 		t.Fatal(err)
 	}
 	log := string(data)
-	if strings.Count(log, "go test ") != 1 || strings.Count(log, "go test -race -c -o") != 1 || strings.Count(log, "go tool test2json -p github.com/glade-sh/glade/internal/apextest") != 16 {
+	if strings.Count(log, "go test ") != 1 || strings.Count(log, "go test -race -c -o") != 1 || strings.Count(log, "go tool test2json -t -p github.com/glade-sh/glade/internal/apextest") != 16 {
 		t.Fatalf("apextest build/test2json calls:\n%s", log)
 	}
 	if strings.Count(log, "binary -test.list .") != 1 || strings.Count(log, "binary -test.v=test2json -test.count=1 -test.timeout=60m -test.run=") != 16 || strings.Contains(log, "go test -json -race") || strings.Contains(log, "go test -race -list") {
@@ -1253,6 +1326,7 @@ func writeApextestAggregateArtifact(t *testing.T, root, runner string, indexes [
 		for _, name := range shardTests {
 			events = append(events, fmt.Sprintf(`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}`, name))
 		}
+		events = append(events, `{"Action":"pass","Package":"github.com/glade-sh/glade/internal/apextest"}`)
 		if err := os.WriteFile(filepath.Join(shardDir, "events.json"), []byte(strings.Join(events, "\n")+"\n"), 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -1594,6 +1668,9 @@ func TestCIRacePackageRunnerApextestSignalStopsActiveLaneAndRemovesBinary(t *tes
 	for _, phase := range []string{"discovery", "direct"} {
 		t.Run(phase, func(t *testing.T) {
 			root := t.TempDir()
+			if err := os.MkdirAll(filepath.Join(root, "internal", "apextest"), 0o700); err != nil {
+				t.Fatal(err)
+			}
 			logPath := filepath.Join(root, "calls.log")
 			runnerPIDPath := filepath.Join(root, "runner.pid")
 			testNames := raceApextestTestNames()
@@ -1696,6 +1773,7 @@ if [[ "$*" == *"-list ."* ]]; then printf '%b' "$CI_RACE_TEST_NAMES"; printf 'ok
 printf 'native %s\n' "$*" >>"$CI_RACE_CALL_LOG"
 while IFS= read -r candidate; do if [[ "$*" == *"$candidate"* ]]; then test="$candidate"; break; fi; done <<<"$CI_RACE_TEST_NAMES"
 printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/playground","Test":"%s"}\n' "$test"
+printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/playground"}\n'
 `)
 	planner := writeRaceFixture(t, "fake-planner", `#!/usr/bin/env bash
 set -euo pipefail
@@ -1795,6 +1873,7 @@ case "$CI_RACE_EVENTS" in
   skip|fail) printf '{"Action":"%s","Package":"github.com/glade-sh/glade/internal/playground","Test":"%s"}\n' "$CI_RACE_EVENTS" "$test" ;;
   *) printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/playground","Test":"%s"}\n' "$test" ;;
 esac
+printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/playground"}\n'
 exit "${CI_RACE_GO_STATUS:-0}"
 `)
 			plannerText := fixture.planner
@@ -1957,6 +2036,7 @@ func TestCIRacePackageRunnerRejectsMissingOrdinaryResourceEvidence(t *testing.T)
 	goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
 if [[ "$*" == *"-list ."* ]]; then printf '%b' "$CI_RACE_TEST_NAMES"; printf 'ok   github.com/glade-sh/glade/internal/playground 0.001s\n'; exit 0; fi
 while IFS= read -r test; do if [[ "$*" == *"$test"* ]]; then printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/playground","Test":"%s"}\n' "$test"; break; fi; done <<<"$CI_RACE_TEST_NAMES"
+printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/playground"}\n'
 `)
 	planner := writeRaceFixture(t, "fake-planner", racePlaygroundPlannerFixture())
 	resource := writeRaceFixture(t, "fake-resource", `#!/usr/bin/env bash

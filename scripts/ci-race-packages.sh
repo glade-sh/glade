@@ -54,9 +54,10 @@ if not isinstance(packages, list) or sorted(packages) != sorted(expected) or len
 	raise SystemExit("race partition requires the exact unique full-manifest packages")
 early = ["./internal/gladecli", "./internal/repoguard"]
 apextest = "./internal/apextest"
-excluded = set(early + [apextest])
+dedicated = [apextest, "./internal/visualforce", "./internal/lwc/compile"]
+excluded = set(early + dedicated)
 generic = [package for package in packages if package not in excluded]
-combined = early + generic + [apextest]
+combined = early + generic + dedicated
 if sorted(combined) != sorted(packages) or len(combined) != len(set(combined)):
     raise SystemExit("race package partition does not exactly cover the full manifest")
 print(json.dumps(early, separators=(",", ":")))

@@ -201,7 +201,7 @@ func TestCIResourceTelemetryCoversAuthoritativeLanes(t *testing.T) {
 		"sema":                  {"resource-usage.json", "scripts/ci-go-test.sh sema-shard"},
 		"sema-full":             {"resource-usage.json", "scripts/ci-go-test.sh sema-full"},
 		"server-and-playground": {"resource-server-and-playground.json", "scripts/ci-go-test.sh lane server-and-playground"},
-		"test":                  {"resource-repoguard.json", "resource-remaining-go.json", "scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
+		"test":                  {"resource-repoguard.json", "resource-remaining-go.json", "scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go", "scripts/ci-go-test.sh visualforce-shard"},
 		"apextest":              {"resource-usage.json", "scripts/ci-go-test.sh apex-shard"},
 	}
 	for job, markers := range want {
@@ -214,8 +214,8 @@ func TestCIResourceTelemetryCoversAuthoritativeLanes(t *testing.T) {
 			t.Errorf("%s does not use resource wrapper", job)
 		}
 	}
-	if got := strings.Count(workflow, "scripts/ci-resource-run.sh"); got != 9 {
-		t.Fatalf("resource wrapper invocation count = %d, want 9", got)
+	if got := strings.Count(workflow, "scripts/ci-resource-run.sh"); got != 10 {
+		t.Fatalf("resource wrapper invocation count = %d, want 10", got)
 	}
 	for _, forbidden := range []string{"runs-on: ubuntu-latest-", "GOMAXPROCS: \"4\"", "GOMAXPROCS: \"8\""} {
 		if strings.Contains(workflow, forbidden) {
