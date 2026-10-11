@@ -175,12 +175,18 @@ func l07SalesforceConformance(t *testing.T) {
 	report.WriteString(reviewReport)
 	matches, total, compileMatches, domMatches, localDOMRows := 0, 0, 0, 0, 0
 	carriedRows, diagnosticMatches, diagnosticTotal, diagnosticCarries := 0, 0, 0, 0
+	compiledByAPI := make(map[string]map[string]compile.BundleResult, len(versions))
 	for _, api := range versions {
-		compiled := l07CompileCases(t, api, compileCases)
-		dom, domErrors, runtimeCompileErr, browserErr := l07ObserveDOM(t, api, runtimeCases, dependencyRoot)
-		if browserErr != nil {
-			t.Fatalf("L07 browser environment: %v", browserErr)
-		}
+		compiledByAPI[api] = l07CompileCases(t, api, compileCases)
+	}
+	observations, browserErr := l07ObserveDOM(t, versions, runtimeCases, dependencyRoot)
+	if browserErr != nil {
+		t.Fatalf("L07 browser environment: %v", browserErr)
+	}
+	for _, api := range versions {
+		compiled := compiledByAPI[api]
+		observed := observations[api]
+		dom, domErrors, runtimeCompileErr := observed.Values, observed.Errors, observed.CompileErr
 		apiMatches := 0
 		for _, c := range cases {
 			want, got, reason := c.Expected[api], "", ""
@@ -453,44 +459,52 @@ func l07CompileCases(t *testing.T, api string, cases []l07Case) map[string]compi
 	return results
 }
 
-func l07ObserveDOM(t *testing.T, api string, cases []l07Case, dependencyRoot string) (map[string]json.RawMessage, map[string]string, error, error) {
+type l07DOMObservation struct {
+	Values     map[string]json.RawMessage `json:"values"`
+	Errors     map[string]string          `json:"errors"`
+	CompileErr error                      `json:"-"`
+}
+
+// Prepare each API sequentially, with its own project, server, org and index.
+// Both servers live until the bounded browser pool has drained every page.
+func l07PrepareDOM(t *testing.T, api string) (string, error, error) {
 	t.Helper()
 	root := t.TempDir()
 	l07Copy(t, filepath.Join("testdata", "l07_runtime", "api"+api[:2]), root)
 	p, err := project.Load(root)
 	if err != nil {
-		return nil, nil, nil, err
+		return "", nil, err
 	}
 	manifest, err := compile.Compile(p, compile.Options{OutDir: filepath.Join(root, "dist")})
 	l07CheckCompilerEnvironment(t, err)
 	if err != nil {
-		return nil, nil, err, nil
+		return "", err, nil
 	}
 	page := "familyL07Runtime" + api[:2]
 	_, ok := manifest.Modules["c:"+page]
 	if !ok {
-		return nil, nil, fmt.Errorf("runtime entry %s missing", page), nil
+		return "", fmt.Errorf("runtime entry %s missing", page), nil
 	}
 	localManifest := lwcbrowser.Manifest{Modules: map[string]lwcbrowser.ModuleEntry{}}
 	for qualified, module := range manifest.Modules {
 		rel, err := filepath.Rel(manifest.OutDir, module.File)
 		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-			return nil, nil, nil, fmt.Errorf("L07 module escapes output: %s", module.File)
+			return "", nil, fmt.Errorf("L07 module escapes output: %s", module.File)
 		}
 		localManifest.Modules[qualified] = lwcbrowser.ModuleEntry{URL: "/lightning/modules/" + filepath.ToSlash(rel), Tag: module.Tag}
 	}
 	bootstrap := lwcbrowser.BootstrapHTML(lwcbrowser.PageConfig{Namespace: "c", Manifest: localManifest})
 	registry, err := resource.LoadProject(p)
 	if err != nil {
-		return nil, nil, nil, err
+		return "", nil, err
 	}
 	schema, err := gladeschema.LoadProject(p)
 	if err != nil {
-		return nil, nil, nil, err
+		return "", nil, err
 	}
 	source, err := server.NewSourceMetadataFromProject(p)
 	if err != nil {
-		return nil, nil, nil, err
+		return "", nil, err
 	}
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
@@ -509,26 +523,46 @@ func l07ObserveDOM(t *testing.T, api string, cases []l07Case, dependencyRoot str
 		fmt.Fprintf(w, `<!doctype html><script>window.__l07Error=null;</script><script id="glade-lwc-context" type="application/json">{}</script><main id="l07-host"></main>%s<script>window.$Lightning.createComponent(%q,{},"l07-host",(_el,status,message)=>{if(status!=="SUCCESS")window.__l07Error={name:"Error",message};});</script>`, bootstrap, "c:"+page)
 	})
 	local := httptest.NewServer(mux)
-	defer local.Close()
-	playwright := os.Getenv("GLADE_LWC_PLAYWRIGHT_MODULE")
-	if playwright == "" {
-		playwright = filepath.Join(dependencyRoot, "lwcruntime", "node_modules", "playwright")
-	}
-	observer, err := filepath.Abs("testdata/l07_browser.mjs")
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	// Preserve native source order: all Apex rows share page 0's storable cache;
-	// LDS rows alternate between pages 1/2 and use distinct owned records.
+	t.Cleanup(local.Close)
+	return local.URL, nil, nil
+}
+
+func l07ObserveDOM(t *testing.T, versions []string, cases []l07Case, dependencyRoot string) (map[string]l07DOMObservation, error) {
+	t.Helper()
+	observations := make(map[string]l07DOMObservation, len(versions))
+	// Preserve each API's three native page histories: all Apex rows share
+	// page 0's storable cache; LDS rows alternate between pages 1/2.
 	specs := make([]map[string]string, len(cases))
 	ids := map[string]bool{}
 	for index, c := range cases {
 		specs[index] = map[string]string{"id": c.ID, "adapter": c.Adapter}
 		ids[c.ID] = true
 	}
-	config, err := json.Marshal(map[string]any{"url": local.URL, "specs": specs, "playwrightModule": playwright, "executablePath": os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE")})
+	var fixtures []map[string]any
+	for _, api := range versions {
+		url, compileErr, err := l07PrepareDOM(t, api)
+		if err != nil {
+			return nil, err
+		}
+		observations[api] = l07DOMObservation{CompileErr: compileErr}
+		if compileErr == nil {
+			fixtures = append(fixtures, map[string]any{"api": api, "url": url, "specs": specs})
+		}
+	}
+	if len(fixtures) == 0 {
+		return observations, nil
+	}
+	playwright := os.Getenv("GLADE_LWC_PLAYWRIGHT_MODULE")
+	if playwright == "" {
+		playwright = filepath.Join(dependencyRoot, "lwcruntime", "node_modules", "playwright")
+	}
+	observer, err := filepath.Abs("testdata/l07_browser.mjs")
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
+	}
+	config, err := json.Marshal(map[string]any{"fixtures": fixtures, "playwrightModule": playwright, "executablePath": os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE")})
+	if err != nil {
+		return nil, err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
@@ -538,26 +572,36 @@ func l07ObserveDOM(t *testing.T, api string, cases []l07Case, dependencyRoot str
 	cmd.Stderr = &stderr
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("local observer: %w: %s", err, l07OneLine(stderr.String()))
+		return nil, fmt.Errorf("local observer: %w: %s", err, l07OneLine(stderr.String()))
 	}
-	var observed struct {
-		Values map[string]json.RawMessage `json:"values"`
-		Errors map[string]string          `json:"errors"`
-	}
+	var observed map[string]l07DOMObservation
 	if err := json.Unmarshal(output, &observed); err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
-	for id := range observed.Values {
-		if !ids[id] || observed.Errors[id] != "" {
-			return nil, nil, nil, fmt.Errorf("unexpected or conflicting local L07 row %s", id)
+	for api, result := range observed {
+		prepared, ok := observations[api]
+		if !ok || prepared.CompileErr != nil {
+			return nil, fmt.Errorf("unexpected local L07 API %s", api)
+		}
+		for id := range result.Values {
+			if !ids[id] || result.Errors[id] != "" {
+				return nil, fmt.Errorf("unexpected or conflicting local L07 row %s API %s", id, api)
+			}
+		}
+		for id := range result.Errors {
+			if !ids[id] {
+				return nil, fmt.Errorf("unexpected local L07 error row %s API %s", id, api)
+			}
+		}
+		observations[api] = result
+	}
+	for _, fixture := range fixtures {
+		api := fixture["api"].(string)
+		if _, ok := observed[api]; !ok {
+			return nil, fmt.Errorf("missing local L07 API %s", api)
 		}
 	}
-	for id := range observed.Errors {
-		if !ids[id] {
-			return nil, nil, nil, fmt.Errorf("unexpected local L07 error row %s", id)
-		}
-	}
-	return observed.Values, observed.Errors, nil, nil
+	return observations, nil
 }
 
 func l07CheckCompilerEnvironment(t *testing.T, err error) {
