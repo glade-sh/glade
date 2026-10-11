@@ -105,6 +105,132 @@ jobs:
           path: ci-artifacts/race-plan/plan.json
           if-no-files-found: error
 
+  race-browser:
+    needs: plan
+    if: needs.plan.outputs.has-packages == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        include:
+          - package: ./internal/visualforce
+            slug: internal-visualforce
+            shard: 0
+          - package: ./internal/visualforce
+            slug: internal-visualforce
+            shard: 1
+          - package: ./internal/visualforce
+            slug: internal-visualforce
+            shard: 2
+          - package: ./internal/visualforce
+            slug: internal-visualforce
+            shard: 3
+          - package: ./internal/lwc/compile
+            slug: internal-lwc-compile
+            shard: 0
+          - package: ./internal/lwc/compile
+            slug: internal-lwc-compile
+            shard: 1
+          - package: ./internal/lwc/compile
+            slug: internal-lwc-compile
+            shard: 2
+          - package: ./internal/lwc/compile
+            slug: internal-lwc-compile
+            shard: 3
+          - package: ./internal/lwc/compile
+            slug: internal-lwc-compile
+            shard: 4
+          - package: ./internal/lwc/compile
+            slug: internal-lwc-compile
+            shard: 5
+          - package: ./internal/lwc/compile
+            slug: internal-lwc-compile
+            shard: 6
+          - package: ./internal/lwc/compile
+            slug: internal-lwc-compile
+            shard: 7
+    env:
+      GOMAXPROCS: "2"
+      CI_RACE_SHARD_INDEX: ${{ matrix.shard }}
+      CI_RACE_HEAD_SHA: ${{ github.sha }}
+      GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
+      GLADE_LWC_COMPILE: "1"
+      NO_COLOR: "1"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.9"
+          cache: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install LWC toolchain
+        if: matrix.package == './internal/lwc/compile'
+        run: npm ci --prefix third_party/lwc
+      - name: Install browser conformance dependencies
+        run: npm ci --prefix lwcruntime
+      - name: Install conformance Chromium
+        run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+      - name: Run assigned browser race shard
+        env:
+          PACKAGE: ${{ matrix.package }}
+          SLUG: ${{ matrix.slug }}
+        run: scripts/ci-race-test.sh "$PACKAGE" "$SLUG"
+      - name: Upload browser race evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-${{ matrix.slug }}-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/race/${{ matrix.slug }}
+          if-no-files-found: error
+
+  race-browser-aggregate:
+    needs: [plan, race-browser]
+    if: always() && needs.plan.outputs.has-packages == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: ./internal/visualforce
+            slug: internal-visualforce
+            shards: 4
+          - package: ./internal/lwc/compile
+            slug: internal-lwc-compile
+            shards: 8
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download browser race evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: race-${{ matrix.slug }}-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/race/browser-runners
+      - name: Validate combined browser race evidence
+        env:
+          PACKAGE: ${{ matrix.package }}
+          SLUG: ${{ matrix.slug }}
+          SHARD_COUNT: ${{ matrix.shards }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          roots=()
+          for ((index=0; index<SHARD_COUNT; index++)); do
+            roots+=("ci-artifacts/race/browser-runners/race-${SLUG}-${index}-${RUN_ID}-${RUN_ATTEMPT}")
+          done
+          scripts/ci-race-shard-aggregate.sh "$PACKAGE" "ci-artifacts/race/${SLUG}-aggregate/union-validation.json" "$HEAD_SHA" "${roots[@]}"
+      - name: Upload combined browser race evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-${{ matrix.slug }}-aggregate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/race/${{ matrix.slug }}-aggregate/union-validation.json
+          if-no-files-found: error
+
   race-early:
     needs: plan
     if: needs.plan.outputs.has-early-packages == 'true'
@@ -169,11 +295,12 @@ jobs:
     timeout-minutes: 70
     strategy:
       fail-fast: false
-      max-parallel: 14
+      max-parallel: 6
       matrix:
         package: ${{ fromJSON(needs.plan.outputs.generic-packages) }}
     env:
       GOMAXPROCS: "2"
+      GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
@@ -181,28 +308,28 @@ jobs:
           go-version: "1.26.9"
           cache: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server","./internal/visualforce"]'), matrix.package) }}
+        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
         with:
           node-version: "22"
       - name: Resolve npm cache path
         id: npm-cache
-        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
         run: echo "dir=$(npm config get cache)" >>"$GITHUB_OUTPUT"
       - name: Restore LWC npm cache
         id: npm-cache-restore
-        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ steps.npm-cache.outputs.dir }}
           key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}
       - name: Install LWC toolchain
-        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
-        if: ${{ contains(fromJSON('["./internal/lwc/compile","./internal/lwcbrowser","./internal/server","./internal/visualforce"]'), matrix.package) }}
+        if: ${{ contains(fromJSON('["./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
         run: npm ci --prefix lwcruntime
       - name: Install conformance Chromium
-        if: ${{ contains(fromJSON('["./internal/lwc/compile","./internal/lwcbrowser","./internal/server","./internal/visualforce"]'), matrix.package) }}
+        if: ${{ contains(fromJSON('["./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
         run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - name: Resolve artifact name
         id: artifact

@@ -8,17 +8,28 @@ fi
 
 package="$1"
 slug="$2"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 go_command="${CI_RACE_GO_COMMAND:-go}"
 resource_runner="${CI_RACE_RESOURCE_RUNNER:-scripts/ci-resource-run.sh}"
 shard_planner="${CI_RACE_SHARD_PLANNER:-}"
 git_command="${CI_RACE_GIT_COMMAND:-git}"
-artifact_dir="ci-artifacts/race/${slug}"
+artifact_dir="${PWD}/ci-artifacts/race/${slug}"
 apextest_shard_indexes="${CI_RACE_APEXTEST_SHARD_INDEXES:-}"
 apextest_runner="${CI_RACE_APEXTEST_RUNNER:-}"
 apextest_head_sha="${CI_RACE_HEAD_SHA:-}"
+browser_shard_index="${CI_RACE_SHARD_INDEX:-}"
+browser_shard_count=0
+case "${package}" in
+	./internal/visualforce) browser_shard_count=4 ;;
+	./internal/lwc/compile) browser_shard_count=8 ;;
+esac
 
 if [[ ! "${package}" =~ ^\./[A-Za-z0-9._/-]+$ ]] || [[ "${package}" == *...* ]]; then
 	printf '[ci] invalid exact race package %q\n' "${package}" >&2
+	exit 2
+fi
+if [[ -n "${browser_shard_index}" ]] && { [[ ! "${browser_shard_index}" =~ ^[0-7]$ ]] || [[ "${browser_shard_index}" -ge "${browser_shard_count}" ]]; }; then
+	echo "[ci] race shard index must select one of the four Visualforce or eight LWC compile shards" >&2
 	exit 2
 fi
 package_body="${package#./}"
@@ -53,6 +64,13 @@ elif ! command -v "${resource_runner}" >/dev/null 2>&1; then
 fi
 
 mkdir -p "${artifact_dir}"
+
+validate_package_summary() {
+	local events="$1" summary="$2"
+	local metadata="${artifact_dir}/package-metadata.tsv"
+	printf '%s\thas-tests\n' "${package_name}" >"${metadata}"
+	bash "${script_dir}/ci-go-test.sh" package-summary race "${slug}" "${events}" "${summary}" "${metadata}" "${package_name}"
+}
 
 validate_resource_evidence() {
 	local path="$1"
@@ -94,7 +112,7 @@ PY
 
 heavy_package=false
 case "${package}" in
-	./internal/apextest|./internal/gladecli|./internal/playground|./internal/server|./internal/testdaemon)
+	./internal/apextest|./internal/gladecli|./internal/playground|./internal/server|./internal/testdaemon|./internal/visualforce|./internal/lwc/compile)
 		heavy_package=true
 		;;
 	*)
@@ -131,6 +149,12 @@ if [[ "${heavy_package}" == true && "${CI_RACE_DEADLINE_ACTIVE:-0}" != "1" ]]; t
 fi
 
 package_name="github.com/glade-sh/glade/${package#./}"
+if [[ -n "${browser_shard_index}" ]]; then
+	if [[ ! "${apextest_head_sha}" =~ ^[0-9a-f]{40}$ ]] || [[ "$("${git_command}" rev-parse HEAD)" != "${apextest_head_sha}" ]]; then
+		echo "[ci] browser race runner requires the exact checkout head SHA" >&2
+		exit 2
+	fi
+fi
 go_test_package_args=()
 if [[ "${package}" == "./internal/server" ]]; then
 	go_test_package_args=(-p=1)
@@ -146,7 +170,7 @@ if [[ "${package}" == "./internal/playground" ]]; then
 	sentinel_counts='[0,0,0,0,0,0,0,0,0]'
 elif [[ "${package}" == "./internal/apextest" || "${package}" == "./internal/gladecli" ]]; then
 	sentinel_counts='[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]'
-elif [[ "${package}" == "./internal/server" ]]; then
+elif [[ "${package}" == "./internal/server" || "${package}" == "./internal/lwc/compile" ]]; then
 	sentinel_counts='[0,0,0,0,0,0,0,0]'
 else
 	sentinel_counts='[0,0,0,0]'
@@ -314,7 +338,7 @@ if digest.hexdigest() != expected_sha:
 PY
 	}
 	set +e
-	run_apextest_command "${binary_path}" -test.list '.' >"${discovery_raw}"
+	run_apextest_command bash -c 'cd "$1"; shift; exec "$@"' bash "${PWD}/${package#./}" "${binary_path}" -test.list '.' >"${discovery_raw}"
 	discovery_native_rc="$?"
 	set -e
 	if [[ "${discovery_native_rc}" -ne 0 ]]; then exit "${discovery_native_rc}"; fi
@@ -398,7 +422,7 @@ elif [[ "${package}" == "./internal/apextest" ]]; then
 	plan_mode=apextest
 elif [[ "${package}" == "./internal/gladecli" ]]; then
 	planner_shards=16
-elif [[ "${package}" == "./internal/server" ]]; then
+elif [[ "${package}" == "./internal/server" || "${package}" == "./internal/lwc/compile" ]]; then
 	planner_shards=8
 fi
 if [[ -n "${shard_planner}" ]]; then
@@ -503,7 +527,7 @@ if [[ "${package}" == "./internal/apextest" ]]; then
 		run_apextest_command "${resource_runner}" "${resource}" "race-${slug}-${lane_name}" -- \
 			bash -c '
 set -euo pipefail
-binary="$1"; expected_size="$2"; events="$3"; go_command="$4"; package="$5"; regex="$6"
+binary="$1"; expected_size="$2"; events="$3"; go_command="$4"; package="$5"; regex="$6"; package_dir="$7"
 actual_size="$(python3 - "$binary" <<'"'"'PY'"'"'
 import os
 import stat
@@ -523,13 +547,13 @@ if [[ "$actual_size" != "$expected_size" ]]; then
     exit 125
 fi
 set +e
-"$binary" -test.v=test2json -test.count=1 -test.timeout=60m -test.run="$regex" | \
-    "$go_command" tool test2json -p "$package" >"$events"
+(cd "$package_dir" && "$binary" -test.v=test2json -test.count=1 -test.timeout=60m -test.run="$regex") | \
+    "$go_command" tool test2json -t -p "$package" >"$events"
 statuses=("${PIPESTATUS[@]}")
 set -e
 if [[ "${statuses[0]}" -ne 0 ]]; then exit "${statuses[0]}"; fi
 exit "${statuses[1]}"
-' bash "${binary_path}" "${binary_size}" "${events}" "${go_command}" "${package_name}" "${regex}"
+' bash "${binary_path}" "${binary_size}" "${events}" "${go_command}" "${package_name}" "${regex}" "${PWD}/${package#./}"
 		native_rc="$?"
 		set -e
 		set +e
@@ -542,11 +566,12 @@ exit "${statuses[1]}"
 		if [[ "${validation_rc}" -ne 0 ]]; then
 			exit "${validation_rc}"
 		fi
-		python3 - "${shard_dir}/selection.json" "${events}" "${package_name}" "${lane_name}" <<'PY'
+		validate_package_summary "${events}" "${shard_dir}/package-summary.json"
+		python3 - "${shard_dir}/selection.json" "${events}" "${package_name}" "${lane_name}" "${shard_dir}/package-summary.json" <<'PY'
 import json
 import sys
 
-selection_path, events_path, package, index = sys.argv[1:]
+selection_path, events_path, package, index, summary_path = sys.argv[1:]
 
 def reject_duplicates(pairs):
     value = {}
@@ -561,6 +586,8 @@ with open(selection_path, encoding="utf-8") as source:
 if not isinstance(selection, dict) or set(selection) != {"index", "tests", "estimatedDurationMillis", "regex"}:
     raise SystemExit(f"race shard {index} selection has an invalid schema")
 expected = selection["tests"]
+with open(summary_path, encoding="utf-8") as source:
+    deferred = {row["test"] for row in json.load(source)["deferred"]}
 terminals = {}
 with open(events_path, encoding="utf-8") as source:
     for number, line in enumerate(source, 1):
@@ -578,7 +605,7 @@ with open(events_path, encoding="utf-8") as source:
 if set(terminals) != set(expected):
     raise SystemExit(f"race shard {index} terminal set does not match selection")
 for name in expected:
-    if terminals[name] != ["pass"]:
+    if terminals[name] != ["pass"] and not (name in deferred and terminals[name] == ["skip"]):
         raise SystemExit(f"race shard {index} test {name} does not have exactly one passing terminal")
 PY
 		event_paths+=("${events}")
@@ -649,22 +676,25 @@ with open(discovery_path, encoding="utf-8") as source:
     expected = source.read().splitlines()
 passed = []
 shard_counts = []
+deferred = []
 for path in event_paths:
     shard_passed = []
+    with open(os.path.join(os.path.dirname(path), "package-summary.json"), encoding="utf-8") as source:
+        deferred.extend(json.load(source)["deferred"])
     with open(path, encoding="utf-8") as source:
         for line in source:
             if not line.strip():
                 continue
             event = json.loads(line)
             name = event.get("Test")
-            if event.get("Package") == package and isinstance(name, str) and "/" not in name and event.get("Action") == "pass":
+            if event.get("Package") == package and isinstance(name, str) and "/" not in name and event.get("Action") in ("pass", "skip"):
                 passed.append(name)
                 shard_passed.append(name)
     shard_counts.append(len(shard_passed))
 if len(passed) != len(set(passed)) or sorted(passed) != expected:
     raise SystemExit("race passing apextest shard union does not exactly match discovery")
 canonical = "".join(name + "\n" for name in expected).encode("utf-8")
-result = {"schema_version": 1, "package": package, "discovered_count": len(expected), "shard_counts": shard_counts, "names_sha256": hashlib.sha256(canonical).hexdigest(), "valid": True}
+result = {"schema_version": 1, "package": package, "discovered_count": len(expected), "shard_counts": shard_counts, "names_sha256": hashlib.sha256(canonical).hexdigest(), "deferred": deferred, "valid": True}
 descriptor, temporary = tempfile.mkstemp(prefix=".union-validation.", dir=os.path.dirname(output_path), text=True)
 try:
     with os.fdopen(descriptor, "w", encoding="utf-8") as target:
@@ -688,10 +718,13 @@ if [[ "${package}" == "./internal/playground" ]]; then
 	lane_names=(group-0 group-1 group-2 group-3 ordinary-0 ordinary-1 ordinary-2 ordinary-3 ordinary-4)
 elif [[ "${package}" == "./internal/gladecli" ]]; then
 	lane_names=(shard-0 shard-1 shard-2 shard-3 shard-4 shard-5 shard-6 shard-7 shard-8 shard-9 shard-10 shard-11 shard-12 shard-13 shard-14 shard-15)
-elif [[ "${package}" == "./internal/server" ]]; then
+elif [[ "${package}" == "./internal/server" || "${package}" == "./internal/lwc/compile" ]]; then
 	lane_names=(shard-0 shard-1 shard-2 shard-3 shard-4 shard-5 shard-6 shard-7)
 else
 	lane_names=(shard-0 shard-1 shard-2 shard-3)
+fi
+if [[ -n "${browser_shard_index}" ]]; then
+	lane_names=("shard-${browser_shard_index}")
 fi
 event_paths=()
 for lane_name in "${lane_names[@]}"; do
@@ -716,11 +749,12 @@ for lane_name in "${lane_names[@]}"; do
 	if [[ "${validation_rc}" -ne 0 ]]; then
 		exit "${validation_rc}"
 	fi
-	python3 - "${shard_dir}/selection.json" "${events}" "${package_name}" "${lane_name}" <<'PY'
+	validate_package_summary "${events}" "${shard_dir}/package-summary.json"
+	python3 - "${shard_dir}/selection.json" "${events}" "${package_name}" "${lane_name}" "${shard_dir}/package-summary.json" <<'PY'
 import json
 import sys
 
-selection_path, events_path, package, index = sys.argv[1:]
+selection_path, events_path, package, index, summary_path = sys.argv[1:]
 
 def reject_duplicates(pairs):
     value = {}
@@ -732,6 +766,8 @@ def reject_duplicates(pairs):
 
 with open(selection_path, encoding="utf-8") as source:
     expected = json.load(source, object_pairs_hook=reject_duplicates)["tests"]
+with open(summary_path, encoding="utf-8") as source:
+    deferred = {row["test"] for row in json.load(source)["deferred"]}
 terminals = {}
 with open(events_path, encoding="utf-8") as source:
     for number, line in enumerate(source, 1):
@@ -749,11 +785,30 @@ with open(events_path, encoding="utf-8") as source:
 if set(terminals) != set(expected):
     raise SystemExit(f"race shard {index} terminal set does not match selection")
 for name in expected:
-    if terminals[name] != ["pass"]:
+    if terminals[name] != ["pass"] and not (name in deferred and terminals[name] == ["skip"]):
         raise SystemExit(f"race shard {index} test {name} does not have exactly one passing terminal")
 PY
 	event_paths+=("${events}")
 done
+
+if [[ -n "${browser_shard_index}" ]]; then
+	python3 - "${artifact_dir}" "${browser_shard_index}" "${apextest_head_sha}" "${package_name}" <<'PY'
+import hashlib
+import json
+import os
+import sys
+root, index, head, package = sys.argv[1:]
+result = {"schema_version": 1, "package": package, "head_sha": head, "shard_index": int(index)}
+for name in ("discovery", "plan"):
+    filename = name + (".txt" if name == "discovery" else ".json")
+    with open(os.path.join(root, filename), "rb") as source:
+        result[name + "_sha256"] = hashlib.sha256(source.read()).hexdigest()
+with open(os.path.join(root, "runner-validation.json"), "w", encoding="utf-8") as target:
+    json.dump(result, target, sort_keys=True)
+    target.write("\n")
+PY
+	exit 0
+fi
 
 python3 - "${discovery}" "${package_name}" "${union_validation}" "${event_paths[@]}" <<'PY'
 import hashlib
@@ -767,7 +822,7 @@ if package == "github.com/glade-sh/glade/internal/playground":
     expected_lanes = 9
 elif package == "github.com/glade-sh/glade/internal/gladecli":
     expected_lanes = 16
-elif package == "github.com/glade-sh/glade/internal/server":
+elif package in ("github.com/glade-sh/glade/internal/server", "github.com/glade-sh/glade/internal/lwc/compile"):
     expected_lanes = 8
 else:
     expected_lanes = 4
@@ -777,15 +832,18 @@ with open(discovery_path, encoding="utf-8") as source:
     expected = source.read().splitlines()
 passed = []
 shard_counts = []
+deferred = []
 for path in event_paths:
     shard_passed = []
+    with open(os.path.join(os.path.dirname(path), "package-summary.json"), encoding="utf-8") as source:
+        deferred.extend(json.load(source)["deferred"])
     with open(path, encoding="utf-8") as source:
         for line in source:
             if not line.strip():
                 continue
             event = json.loads(line)
             name = event.get("Test")
-            if event.get("Package") == package and isinstance(name, str) and "/" not in name and event.get("Action") == "pass":
+            if event.get("Package") == package and isinstance(name, str) and "/" not in name and event.get("Action") in ("pass", "skip"):
                 passed.append(name)
                 shard_passed.append(name)
     shard_counts.append(len(shard_passed))
@@ -798,6 +856,7 @@ result = {
     "discovered_count": len(expected),
     "shard_counts": shard_counts,
     "names_sha256": hashlib.sha256(canonical).hexdigest(),
+    "deferred": deferred,
     "valid": True,
 }
 output_dir = os.path.dirname(output_path)
