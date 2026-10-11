@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import { observeDOM, actDOM, mountDOM, observeInspector } from "./l19_native_dom.mjs";
 import { observeInteractionDOM, selectInteractionPicklist, editInteractionDate } from "./l19_interaction_dom.mjs";
+import { createL19BatchAllocator, l19PageCount as pageCount } from "./l19_browser_scheduling.mjs";
 
 const config = JSON.parse(fs.readFileSync(0, "utf8"));
 const fixturePath = "/services/data/v" + config.fixtureApi;
@@ -229,18 +230,19 @@ function createPageSession() {
   };
 }
 
-// Each page owns disjoint records. Six bounded pages preserve the native
-// fifteen-row batches and all five/eight-second observation windows.
-const pageCount = 6;
+// Main observations retain native fifteen-row batches. Control rows already
+// open fresh pages, so free workers can claim them individually. A remount
+// primer and its measured capture stay together inside the same row.
+const nextBatch = createL19BatchAllocator(config.cases, config.controlProject);
 
 async function replayPage(worker) {
   const session = createPageSession();
   let ordinaryRows = 0, resetPage = true;
   try {
-    for (let batch = worker * 15; batch < config.cases.length; batch += pageCount * 15) {
+    for (let batch = nextBatch(worker); batch; batch = nextBatch(worker)) {
       resetPage = true;
-      process.stderr.write(`L19 API ${config.api} page ${worker} batch ${batch} starting\n`);
-      for (const { id, spec, observer, cachePhase, projection } of config.cases.slice(batch, batch + 15)) {
+      process.stderr.write(`L19 API ${config.api} page ${worker} batch ${batch.index} starting\n`);
+      for (const { id, spec, observer, cachePhase, projection } of batch.rows) {
         if (environmentError) return;
         let fixtures, observation, failure = "";
         try {
